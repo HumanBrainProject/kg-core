@@ -1,0 +1,26 @@
+{
+  "@id": "http://simpsons/homer_eats_donuts",
+  "@type": [
+    "http://www.w3.org/ns/prov#Activity",
+    "https://schema.hbp.eu/Meal"
+  ],
+  "http://schema.org/name": "Homer ate some donuts",
+  "https://schema.hbp.eu/amount": "20",
+  "http://www.w3.org/ns/prov#qualifiedAssociation": {
+    "@type": "http://www.w3.org/ns/prov#Association",
+    "http://www.w3.org/ns/prov#agent": {
+      "@id": "http://simpsons/homer"
+    },
+    "http://www.w3.org/ns/prov#hadRole": {
+      "@id": "http://schema.hbp.eu/roles/meal/Consumer",
+      "http://schema.org/name": "Consumer"
+    },
+    "http://www.w3.org/2000/01/rdf-schema#comment": "Homer was super hungry"
+  },
+  "http://www.w3.org/ns/prov#used": {
+    "@id": "http://simpsons/donut"
+  },
+  "http://www.w3.org/ns/prov#generated": {
+    "@id": "http://simpsons/big_belly"
+  }
+}

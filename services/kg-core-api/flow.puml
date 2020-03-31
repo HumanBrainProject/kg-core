@@ -1,0 +1,12 @@
+@startuml
+actor Client
+Client -> Core: Upload/Delete JSON-LD file (/instances)
+Core -> JsonLD: Normalize JSON-LD (/jsonld)
+Core -> PrimaryStore: Post upsert event (/events)
+PrimaryStore -> Ids: Resolve or generate and register id (/ids)
+PrimaryStore -> PrimaryStore: Persist event
+PrimaryStore -> Indexing: Index event (/indexing)
+PrimaryStore --> PrimaryStore: Broadcast event via SSE
+Indexing -> GraphDBSync: Send todo list (/todoLists)
+GraphDBSync -> GraphDBSync: Process and register payload
+@enduml

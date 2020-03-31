@@ -1,0 +1,19 @@
+{
+  "https://schema.hbp.eu/graphQuery/meta": {
+    "https://schema.hbp.eu/graphQuery/alias": "simpsonsFamilyMembers",
+    "https://schema.hbp.eu/graphQuery/name": "Simpson Family Members",
+    "https://schema.hbp.eu/graphQuery/type": "https://thesimpsons.com/FamilyMember"
+  },
+  "https://schema.hbp.eu/graphQuery/structure": [
+    {
+      "https://schema.hbp.eu/graphQuery/path": {
+        "@id": "http://schema.org/givenName"
+      },
+      "https://schema.hbp.eu/graphQuery/filter": {
+        "https://schema.hbp.eu/graphQuery/op": "EQUALS",
+        "https://schema.hbp.eu/graphQuery/parameter": "givenName",
+        "https://schema.hbp.eu/graphQuery/value": "Homer"
+      }
+    }
+  ]
+}

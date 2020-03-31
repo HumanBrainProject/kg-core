@@ -1,0 +1,41 @@
+.idea
+
+HELP.md
+target/
+!**/src/main/**
+!**/src/test/**
+**/.mvn
+**/mvnw*
+
+eventTracking.json
+
+### MAC OS X ###
+.DS_Store
+
+### STS ###
+.apt_generated
+.classpath
+.factorypath
+.project
+.settings
+.springBeans
+.sts4-cache
+
+### IntelliJ IDEA ###
+**/.idea
+**/*.iws
+**/*.iml
+**/*.ipr
+
+### NetBeans ###
+/nbproject/private/
+/nbbuild/
+/dist/
+/nbdist/
+/.nb-gradle/
+build/
+
+### VS Code ###
+.vscode/
+
+/services/kg-graphdb-commons/src/test/java/eu/hbp/kg/graphdb/consistency/ConsistencyTest.java

@@ -1,0 +1,11 @@
+{
+  "http://schema.org/identifier": "http://simpsons/bart",
+  "@type": [
+    "http://schema.org/Person",
+    "https://thesimpsons.com/FamilyMember",
+    "http://schema.org/Kid"
+  ],
+  "http://schema.org/familyName": "Simpson",
+  "http://schema.org/givenName": "Bart",
+  "http://schema.org/sayings": ["¡Ay, caramba!"]
+}
