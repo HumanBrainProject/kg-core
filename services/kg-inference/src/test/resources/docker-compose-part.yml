@@ -1,0 +1,59 @@
+version: '3'
+services:
+  kg-graphdb:
+    image: registry.humanbrainproject.org/humanbrainproject/kg-core/kg-graphdb:latest
+    ports:
+      - 9140:9140
+    environment:
+      - EUREKA_URI=http://${EXTERNAL_IP}:9500/eureka
+      - EXTERNAL_IP=${EXTERNAL_IP}
+      - EXTERNAL_PORT=9140
+      - ARANGO_PWD=changeMe
+      - ARANGO_HOST=${EXTERNAL_IP}
+      - ARANGO_PORT=9141
+    depends_on:
+      - kg-service-discovery
+
+  kg-primarystore:
+    image: registry.humanbrainproject.org/humanbrainproject/kg-core/kg-primarystore:latest
+    ports:
+      - 9180:9180
+    environment:
+      - EXTERNAL_PORT=9180
+      - EXTERNAL_IP=${EXTERNAL_IP}
+      - EUREKA_URI=http://${EXTERNAL_IP}:9500/eureka
+      - ARANGO_PWD=changeMe
+      - ARANGO_HOST=${EXTERNAL_IP}
+      - ARANGO_PORT=9141
+    depends_on:
+      - kg-service-discovery
+
+  arango-sync:
+    image: arangodb:3.4
+    ports:
+      - 9141:8529
+    environment:
+      - ARANGO_ROOT_PASSWORD=changeMe
+    #  volumes:
+    #   - /tmp/arango:/var/lib/arangodb3
+    depends_on:
+      - kg-service-discovery
+
+  kg-service-discovery:
+    image: registry.humanbrainproject.org/humanbrainproject/kg-core/kg-service-discovery:latest
+    ports:
+      - 9500:9500
+    environment:
+      - EXTERNAL_IP=${EXTERNAL_IP}
+      - EXTERNAL_PORT=9500
+
+  kg-jsonld:
+    image: registry.humanbrainproject.org/humanbrainproject/kg-core/kg-jsonld:latest
+    ports:
+      - 9160:9160
+    environment:
+      - EUREKA_URI=http://${EXTERNAL_IP}:9500/eureka
+      - EXTERNAL_IP=${EXTERNAL_IP}
+      - EXTERNAL_PORT=9160
+    depends_on:
+      - kg-service-discovery

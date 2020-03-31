@@ -1,0 +1,27 @@
+{
+  "https://schema.hbp.eu/graphQuery/meta": {
+    "https://schema.hbp.eu/graphQuery/alias": "simpsonsFamilyMembers",
+    "https://schema.hbp.eu/graphQuery/name": "Simpson Family Members",
+    "https://schema.hbp.eu/graphQuery/type": "https://thesimpsons.com/FamilyMember"
+  },
+  "https://schema.hbp.eu/graphQuery/structure": [
+    {
+      "https://schema.hbp.eu/graphQuery/path": {
+        "@id": "http://schema.org/givenName"
+      }
+    },
+    {
+      "https://schema.hbp.eu/graphQuery/path": [
+        {
+          "@id": "http://schema.org/address",
+          "https://schema.hbp.eu/graphQuery/typeFilter": [{"@id": "http://schema.org/PostalAddress"}]
+        },
+        {
+          "@id": "http://schema.org/streetAddress"
+        }
+      ],
+      "https://schema.hbp.eu/graphQuery/singleValue": "FIRST",
+      "https://schema.hbp.eu/graphQuery/sort": true
+    }
+  ]
+}

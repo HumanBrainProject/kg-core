@@ -1,0 +1,12 @@
+{
+  "http://schema.org/identifier": "http://simpsons/moe",
+  "@type": [
+    "http://schema.org/Person"
+  ],
+  "http://schema.org/familyName": "Szyslak",
+  "http://schema.org/givenName": "Moe",
+  "http://schema.org/affiliation": {
+    "@type": "http://schema.org/Corporation",
+    "http://schema.org/name": "Moe's tavern"
+  }
+}

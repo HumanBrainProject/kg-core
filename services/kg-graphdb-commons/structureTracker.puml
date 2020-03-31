@@ -1,0 +1,10 @@
+@startuml
+TodoListProcessor -> StructureTracker: calculate structural db operations
+StructureTracker -> StructureTracker: Extract "static" elements (types, properties and links between them)
+StructureTracker -> ArangoRepository: Insert non existing static elements (non-transactional)
+StructureTracker -> StructureTracker: Find "dynamic" links (document relations) for the given document id and mark for removal
+StructureTracker -> StructureTracker: Create dynamic links to all links between static elements, the document contributes to
+StructureTracker -> StructureTracker: Link all dynamic links to the given document id
+StructureTracker --> TodoListProcessor: Return a list of db operations
+
+@enduml

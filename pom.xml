@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  ~ Copyright 2020 EPFL/Human Brain Project PCO
+  ~
+  ~ Licensed under the Apache License, Version 2.0 (the "License");
+  ~ you may not use this file except in compliance with the License.
+  ~ You may obtain a copy of the License at
+  ~
+  ~     http://www.apache.org/licenses/LICENSE-2.0
+  ~
+  ~ Unless required by applicable law or agreed to in writing, software
+  ~ distributed under the License is distributed on an "AS IS" BASIS,
+  ~ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  ~ See the License for the specific language governing permissions and
+  ~ limitations under the License.
+  -->
+
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <groupId>eu.ebrains.kg</groupId>
+    <artifactId>kg-core</artifactId>
+    <packaging>pom</packaging>
+    <version>3.0-SNAPSHOT</version>
+    <modules>
+        <module>libs/kg-arango-commons</module>
+        <module>libs/kg-commons</module>
+        <module>libs/kg-microservice-commons</module>
+        <module>libs/kg-client-commons</module>
+
+        <module>libs-4-test/kg-test-utils</module>
+        <module>libs-4-test/kg-spring-test-utils</module>
+
+        <module>services/kg-admin</module>
+        <module>services/kg-ids</module>
+        <module>services/kg-authentication</module>
+        <module>services/kg-core-api</module>
+        <module>services/kg-graphdb-commons</module>
+        <!--<module>services/kg-graphdb-async</module>-->
+        <module>services/kg-graphdb-sync</module>
+        <module>services/kg-indexing</module>
+        <module>services/kg-inference</module>
+        <module>services/kg-jsonld</module>
+        <module>services/kg-primarystore</module>
+        <module>services/kg-query</module>
+        <module>services/kg-releasing</module>
+        <module>services/kg-service-discovery</module>
+        <module>services/kg-spatial-search</module>
+
+        <module>config/kg-library</module>
+        <module>config/kg-microservice</module>
+
+        <!--<module>mocks/kg-core-api-mock</module>-->
+
+        <module>tests/kg-system-test</module>
+        <!--<module>tests/kg-core-to-query-comparison</module>-->
+
+        <module>adapters/kg-nexus-v0-adapter</module>
+        <!--<module>adapters/kg-nexus-v1-adapter</module>-->
+    </modules>
+
+</project>

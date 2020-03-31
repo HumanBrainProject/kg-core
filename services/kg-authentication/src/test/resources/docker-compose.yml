@@ -1,0 +1,22 @@
+version: '3'
+services:
+  kg-service-discovery:
+    image: registry.humanbrainproject.org/humanbrainproject/kg-core/kg-service-discovery:latest
+    ports:
+      - 9500:9500
+    environment:
+      - EXTERNAL_IP=${EXTERNAL_IP}
+      - EXTERNAL_PORT=9500
+
+  keycloak:
+    image: jboss/keycloak:6.0.1
+    ports:
+      - 9100:8080
+    environment:
+      - KEYCLOAK_USER=root
+      - KEYCLOAK_PASSWORD=CHANGE_ME
+      - jboss.bind.address.management=0.0.0.0
+      - jboss.bind.address=0.0.0.0
+    depends_on:
+      - kg-service-discovery
+

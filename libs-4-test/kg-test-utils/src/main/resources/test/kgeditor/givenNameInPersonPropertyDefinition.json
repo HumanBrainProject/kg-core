@@ -1,0 +1,10 @@
+{
+
+  "@id": "https://kg.ebrains.eu/testobjects/client/kgeditor/givenNameInPersonProperty",
+  "@type": "https://kg.ebrains.eu/vocab/meta/PropertyInTypeDefinition",
+  "https://kg.ebrains.eu/vocab/meta/property": {"@id":  "http://schema.org/givenName"},
+  "https://kg.ebrains.eu/vocab/meta/type": {"@id":  "http://schema.org/Person"},
+  "https://kg.ebrains.eu/vocab/meta/property/searchable": true,
+  "https://kg.ebrains.eu/vocab/meta/property/widget": "InputText",
+  "http://schema.org/name": "Given name in Person for editor"
+}

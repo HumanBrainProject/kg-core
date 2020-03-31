@@ -1,0 +1,10 @@
+{
+  "@id": "http://simpsons/maggie",
+  "@type": [
+    "http://schema.org/Person",
+    "https://thesimpsons.com/FamilyMember",
+    "http://schema.org/Kid"
+  ],
+  "http://schema.org/familyName": "Simpson",
+  "http://schema.org/givenName": "Maggie"
+}

@@ -1,0 +1,8 @@
+{
+  "@type": [
+    "http://schema.org/Person"
+  ],
+  "http://schema.org/identifier": "http://simpsons/milhouse2",
+  "http://schema.org/familyName": "van Houten",
+  "http://schema.org/givenName": "Milhouse"
+}

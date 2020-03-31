@@ -1,0 +1,7 @@
+{
+  "@id": "https://kg.ebrains.eu/testobjects/client/kgeditor",
+  "@type": "https://kg.ebrains.eu/vocab/meta/ClientConfiguration",
+  "http://schema.org/identifier": "kgeditor",
+  "http://schema.org/name": "KG Editor",
+  "http://kg.ebrains.eu/vocab/permissions/synchronous": true
+}

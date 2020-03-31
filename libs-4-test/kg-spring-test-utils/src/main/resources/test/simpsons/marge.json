@@ -1,0 +1,23 @@
+{
+  "@id": "http://simpsons/marge",
+  "@type": [
+    "http://schema.org/Person",
+    "https://thesimpsons.com/FamilyMember"
+  ],
+  "http://schema.org/familyName": "Simpson",
+  "http://schema.org/givenName": "Marge",
+  "http://schema.org/spouse": {
+    "@id": "http://simpsons/homer"
+  },
+  "http://schema.org/children": [
+    {
+      "@id": "http://simpsons/bart"
+    },
+    {
+      "@id": "http://simpsons/lisa"
+    },
+    {
+      "@id": "http://simpsons/maggie"
+    }
+  ]
+}
