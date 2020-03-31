@@ -1,0 +1,92 @@
+/*
+ * Copyright 2020 EPFL/Human Brain Project PCO
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package eu.ebrains.kg.graphdb.commons.model;
+
+import eu.ebrains.kg.arango.commons.aqlBuilder.ArangoVocabulary;
+import eu.ebrains.kg.arango.commons.model.ArangoDocumentReference;
+import eu.ebrains.kg.commons.jsonld.IndexedJsonLdDoc;
+import eu.ebrains.kg.commons.jsonld.NormalizedJsonLd;
+
+/**
+ * An arango document is a JSON-LD with specific properties:
+ *
+ * 1. It's flat - meaning, there are no nested constructs except for lists on the first level as well as edge-maps ("@id") indicating links.
+ *    All originally nested structures have been extracted into other Arango documents and have been linked.
+ *    They share the common @documentId property though for easy lookup and lifecycle management.
+ *
+ * 2. Its compacted and contextless. {@see CompactedContextlessJsonLdDoc}
+ *
+ * 3. It contains additional, arango-internal fields (such as "_key" or "_id")
+ */
+public class ArangoDocument implements ArangoInstance {
+    private final IndexedJsonLdDoc indexedDoc;
+
+    private ArangoDocument(IndexedJsonLdDoc indexedDoc) {
+        this.indexedDoc =indexedDoc;
+    }
+
+    public static ArangoDocument from(IndexedJsonLdDoc indexedDoc){
+        return indexedDoc != null ? new ArangoDocument(indexedDoc) : null;
+    }
+
+    public static ArangoDocument from(NormalizedJsonLd jsonLdDoc){
+        return from(IndexedJsonLdDoc.from(jsonLdDoc));
+    }
+
+    public static ArangoDocument create(){
+        return from(new NormalizedJsonLd());
+    }
+
+    public IndexedJsonLdDoc asIndexedDoc(){
+        return indexedDoc;
+    }
+
+    public NormalizedJsonLd getDoc() {
+        return indexedDoc.getDoc();
+    }
+
+
+    @Override
+    public NormalizedJsonLd dumpPayload() {
+        return new NormalizedJsonLd(indexedDoc.getDoc());
+    }
+
+    @Override
+    public ArangoDocumentReference getId() {
+        return ArangoDocumentReference.fromArangoId(indexedDoc.getDoc().getAs(ArangoVocabulary.ID, String.class), false);
+    }
+
+    public void setKeyBasedOnId(){
+        indexedDoc.getDoc().put(ArangoVocabulary.KEY, getId()!=null && getId().getDocumentId() !=null ? getId().getDocumentId().toString() : null);
+    }
+
+    public void setReference(ArangoDocumentReference reference){
+        indexedDoc.getDoc().put(ArangoVocabulary.ID, reference!=null ? reference.getId() : null);
+        setKeyBasedOnId();
+    }
+
+    public ArangoDocumentReference getOriginalDocument() {
+        String originalDocument = indexedDoc.getDoc().getAs(IndexedJsonLdDoc.ORIGINAL_DOCUMENT, String.class);
+        return originalDocument != null ? ArangoDocumentReference.fromArangoId(originalDocument, false) : null;
+    }
+
+    public void setOriginalDocument(ArangoDocumentReference originalDocument) {
+        indexedDoc.getDoc().put(IndexedJsonLdDoc.ORIGINAL_DOCUMENT, originalDocument.getId());
+    }
+
+
+}

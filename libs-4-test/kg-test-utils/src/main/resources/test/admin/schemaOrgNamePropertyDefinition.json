@@ -1,0 +1,7 @@
+{
+  "@id": "https://kg.ebrains.eu/testobjects/client/admin/schemaOrgNameProperty",
+  "@type": "https://kg.ebrains.eu/vocab/meta/PropertyDefinition",
+  "https://kg.ebrains.eu/vocab/meta/property": {"@id": "http://schema.org/name"},
+  "https://kg.ebrains.eu/vocab/meta/property/label": true,
+  "http://schema.org/name": "Global name"
+}

@@ -1,0 +1,19 @@
+@startuml
+PrimaryStore -> API: trigger todoList
+API -> TodoListProcessor: Process todo todoList
+TodoListProcessor -> StructureSplitter: Translate payload
+StructureSplitter -> StructureSplitter: Extract edges
+StructureSplitter -> StructureSplitter: split nested structures
+TodoListProcessor -> TodoListProcessor: calculate DB operations for ingestion
+TodoListProcessor -> TodoListProcessor: check unresolved links if ingestion resolves them (and create DB operations)
+TodoListProcessor -> ArangoRepository: execute DB operations
+ArangoRepository -> ArangoRepository: Lookup existing instances by document id and remove them (UPSERT: DELETE & INSERT)
+ArangoRepository -> ArangoRepository: Execute DB operations
+ArangoRepository -> ArangoRepository: Link created instances to document id hook
+TodoListProcessor -> StructureTracker: calculate DB structure operations for ingestion
+TodoListProcessor -> SemanticsController: calculate additional DB operations based on known semantics
+TodoListProcessor -> ArangoRepository: execute DB operations for meta
+ArangoRepository -> ArangoRepository: Lookup existing instances by document id and remove them (UPSERT: DELETE & INSERT)
+ArangoRepository -> ArangoRepository: Execute DB operations
+ArangoRepository -> ArangoRepository: Link created instances to document id hook
+@enduml

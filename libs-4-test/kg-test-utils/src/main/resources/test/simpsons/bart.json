@@ -1,0 +1,9 @@
+{
+  "@type": [
+    "http://schema.org/Person",
+    "https://thesimpsons.com/FamilyMember"
+  ],
+  "http://schema.org/identifier": ["http://simpsons/bart", "https://kg.ebrains.eu/api/instances/simpsons/bart"],
+  "http://schema.org/familyName": "Simpson",
+  "http://schema.org/givenName": "Bart"
+}

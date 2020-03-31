@@ -1,0 +1,11 @@
+{
+  "http://schema.org/identifier": "http://simpsons/carl",
+  "@type": [
+    "http://schema.org/Person"
+  ],
+  "http://schema.org/familyName": "Carlson",
+  "http://schema.org/givenName": "Carl",
+  "http://schema.org/colleague": {
+    "@id": "http://simpsons/homer"
+  }
+}

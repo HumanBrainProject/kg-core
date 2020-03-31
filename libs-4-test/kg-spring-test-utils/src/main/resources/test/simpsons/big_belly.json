@@ -1,0 +1,7 @@
+{
+  "http://schema.org/identifier": "http://simpsons/big_belly",
+  "@type": [
+    "http://www.w3.org/ns/prov#Entity"
+  ],
+  "http://schema.org/name": "Big belly"
+}

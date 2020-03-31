@@ -1,0 +1,13 @@
+{
+  "@id": "http://simpsons/lisa",
+  "http://schema.org/identifier": "http://simpsons/lisa",
+  "@type": [
+    "http://schema.org/Person",
+    "https://thesimpsons.com/FamilyMember",
+    "https://musician.com/SaxophonePlayer"
+  ],
+  "http://schema.org/familyName": "Simpson",
+  "http://schema.org/givenName": "Lisa",
+  "http://schema.org/age": 10,
+  "http://schema.hbp.eu/test/birthdate": "2007-12-03T10:15:30+01:00"
+}

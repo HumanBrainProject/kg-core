@@ -1,0 +1,29 @@
+{
+  "@context": {
+    "schema": "http://schema.org/",
+    "@vocab": "https://schema.hbp.eu/graphQuery/",
+    "fieldname": {
+      "@type": "@id",
+      "@id": "fieldname"
+    },
+    "merge": {
+      "@type": "@id",
+      "@id": "merge"
+    },
+    "relative_path": {
+      "@type": "@id",
+      "@id": "relative_path"
+    }
+  },
+  "filter": {
+    "op": "type",
+    "value": "http://schema.hbp.eu/type/testType"
+  },
+  "fields": [
+    {
+      "fieldname": "search:name",
+      "relative_path": "schema:name",
+      "required": true
+    }
+    ]
+}
