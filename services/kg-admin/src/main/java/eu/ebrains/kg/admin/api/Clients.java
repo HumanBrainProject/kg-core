@@ -23,12 +23,16 @@ import eu.ebrains.kg.admin.serviceCall.AuthenticationSvcForAdmin;
 import eu.ebrains.kg.admin.serviceCall.GraphDBSvc;
 import eu.ebrains.kg.arango.commons.model.ArangoCollectionReference;
 import eu.ebrains.kg.commons.model.Client;
+import io.swagger.annotations.ApiOperation;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
+/**
+ * The clients api manages the registration of clients (including the registration of the required configuration in the authentication service)
+ */
 @RestController
 @RequestMapping("/clients")
 public class Clients {
@@ -36,24 +40,15 @@ public class Clients {
     private final ArangoRepository repository;
     private final SpaceController spaceController;
     private final AuthenticationSvcForAdmin authenticationSvc;
-    private final GraphDBSvc graphDBSvc;
 
-    public Clients(ArangoRepository repository, SpaceController spaceController, AuthenticationSvcForAdmin authenticationSvc, GraphDBSvc graphDBSvc) {
+    public Clients(ArangoRepository repository, SpaceController spaceController, AuthenticationSvcForAdmin authenticationSvc) {
         this.repository = repository;
         this.spaceController = spaceController;
         this.authenticationSvc = authenticationSvc;
-        this.graphDBSvc = graphDBSvc;
     }
 
-    public ResponseEntity<List<Client>> getClients() {
-        try {
-            ArangoCollectionReference arangoCollectionReference = new ArangoCollectionReference("clients", true);
-            return ResponseEntity.ok(repository.getEntities(arangoCollectionReference, Client.class));
-        } catch (ArangoDBException ex) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
-        }
-    }
 
+    @ApiOperation("Register a client in EBRAINS KG")
     @PutMapping("/{id}")
     public ResponseEntity<String> addClient(@PathVariable("id") String id) {
         try {
@@ -71,6 +66,7 @@ public class Clients {
 
     }
 
+    @ApiOperation("Receive information about a registered client")
     @GetMapping("/{id}")
     public ResponseEntity<Client> getClient(@PathVariable("id") String id) {
         try {
@@ -83,6 +79,7 @@ public class Clients {
     }
 
 
+    @ApiOperation("Remove a registered client")
     @DeleteMapping("/{id}")
     public ResponseEntity<String> deleteClient(@PathVariable("id") String id) {
         try {

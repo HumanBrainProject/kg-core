@@ -20,6 +20,7 @@ import com.google.gson.Gson;
 import eu.ebrains.kg.admin.controller.UserController;
 import eu.ebrains.kg.admin.serviceCall.AuthenticationSvcForAdmin;
 import eu.ebrains.kg.commons.model.User;
+import io.swagger.annotations.Api;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -27,6 +28,9 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+/**
+ * The users API allows to fetch information about users
+ */
 @RestController
 @RequestMapping("/users")
 public class Users {
