@@ -23,7 +23,7 @@ dockerize services kg-releasing
 dockerize services kg-service-discovery
 dockerize services kg-spatial-search
 dockerize adapters kg-nexus-v0-adapter
-#dockerize adapters kg-nexus-v1-adapter
+dockerize adapters kg-nexus-v1-adapter
 dockerize tests kg-system-test
 #dockerize tests kg-core-to-query-comparison
 #dockerize mocks kg-core-api-mock

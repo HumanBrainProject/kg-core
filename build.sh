@@ -57,7 +57,7 @@ build services kg-releasing
 waiting
 build services kg-spatial-search
 build adapters kg-nexus-v0-adapter
-#build adapters kg-nexus-v1-adapter
+build adapters kg-nexus-v1-adapter
 build tests kg-system-test
 #build tests kg-core-to-query-comparison
 #build mocks kg-core-api-mock

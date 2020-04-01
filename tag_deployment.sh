@@ -23,7 +23,7 @@ tag kg-releasing
 tag kg-service-discovery
 tag kg-spatial-search
 tag kg-nexus-v0-adapter
-#tag kg-nexus-v1-adapter
+tag kg-nexus-v1-adapter
 
 #tag kg-core-api-mock
 
