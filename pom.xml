@@ -38,7 +38,7 @@
         <module>services/kg-authentication</module>
         <module>services/kg-core-api</module>
         <module>services/kg-graphdb-commons</module>
-        <!--<module>services/kg-graphdb-async</module>-->
+       <module>services/kg-graphdb-async</module>
         <module>services/kg-graphdb-sync</module>
         <module>services/kg-indexing</module>
         <module>services/kg-inference</module>

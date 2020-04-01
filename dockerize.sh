@@ -12,7 +12,7 @@ dockerize services kg-ids
 dockerize services kg-authentication
 dockerize services kg-core-api
 dockerize services kg-graphdb-sync
-#dockerize services kg-graphdb-async
+dockerize services kg-graphdb-async
 dockerize services kg-inference
 dockerize services kg-indexing
 dockerize services kg-jsonld-node

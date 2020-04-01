@@ -46,7 +46,7 @@ build services kg-graphdb-commons
 build services kg-ids
 waiting
 build services kg-graphdb-sync
-#build services kg-graphdb-async
+build services kg-graphdb-async
 build services kg-inference
 build services kg-indexing
 waiting

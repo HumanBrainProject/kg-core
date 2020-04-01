@@ -12,7 +12,7 @@ tag kg-ids
 tag kg-authentication
 tag kg-core-api
 tag kg-graphdb-sync
-#tag kg-graphdb-async
+tag kg-graphdb-async
 tag kg-inference
 tag kg-indexing
 tag kg-jsonld-node
