@@ -35,6 +35,8 @@
         <java.version>11</java.version>
         <spring-cloud.version>Greenwich.SR1</spring-cloud.version>
         <spring-webflux.version>2.1.6.RELEASE</spring-webflux.version>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
     </properties>
 
     <dependencyManagement>

@@ -28,7 +28,7 @@ import eu.ebrains.kg.commons.jsonld.NormalizedJsonLd;
  *    All originally nested structures have been extracted into other Arango documents and have been linked.
  *    They share the common @documentId property though for easy lookup and lifecycle management.
  *
- * 2. Its compacted and contextless. {@see CompactedContextlessJsonLdDoc}
+ * 2. Its compacted and contextless.
  *
  * 3. It contains additional, arango-internal fields (such as "_key" or "_id")
  */

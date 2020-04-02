@@ -37,6 +37,8 @@
 
 
     <properties>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
         <docker.image.prefix>registry.humanbrainproject.org/humanbrainproject/kg-core</docker.image.prefix>
         <spring-webflux.version>2.1.6.RELEASE</spring-webflux.version>
         <java.version>11</java.version>

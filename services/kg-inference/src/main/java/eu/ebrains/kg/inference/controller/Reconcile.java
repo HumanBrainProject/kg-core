@@ -36,7 +36,7 @@ import java.util.stream.Collectors;
  * The reconciliation mechanism allows to unify documents talking about the same entity. The tricky part is the detection
  * of which instances are contributing to the same entity. This is solved by known-semantics. The system can think of
  * these information sources:
- * 1. Linking via shared identifiers ({@link eu.ebrains.kg.commons.semantics.vocabularies.SchemaOrgVocabulary#IDENTIFIER)}
+ * 1. Linking via shared identifiers ({@link eu.ebrains.kg.commons.semantics.vocabularies.SchemaOrgVocabulary#IDENTIFIER})
  * 2. Explicit links (instances are connected via explicit links (e.g. {@link eu.ebrains.kg.commons.semantics.vocabularies.SchemaOrgVocabulary#SAME_AS} or {@link eu.ebrains.kg.commons.semantics.vocabularies.ProvVocabulary#ALTERNATE_OF})
  * <p>
  * The reconciliation of stable links is rather straight forward: If the linking information is available already at the
@@ -50,31 +50,31 @@ import java.util.stream.Collectors;
  * SETUP
  * ======
  * bar.identifier="bar"
- * INSERT bar -> Reconcile "bar" (with info of bar)
+ * INSERT bar -&gt;Reconcile "bar" (with info of bar)
  * <p>
  * <p>
  * LINK KNOWN AT INSERTION TIME
  * ============================
  * foo.identifier=["foo", "bar"]
  * <p>
- * INSERT foo -> Reconcile "bar" (with info of bar and foo)
+ * INSERT foo -&gt; Reconcile "bar" (with info of bar and foo)
  * UPDATE foo
- * -> foo.identifier==["foo", "bar"] -> Reconcile "bar" (with info of bar and foo)
- * -> foo.identifier==["foo"] -> Reconcile "foo" (with info of foo) and "bar" (with info of bar)
- * DELETE foo -> Reconcile bar (with info of bar)
+ * -&gt; foo.identifier==["foo", "bar"] -&gt; Reconcile "bar" (with info of bar and foo)
+ * -&gt; foo.identifier==["foo"] -&gt; Reconcile "foo" (with info of foo) and "bar" (with info of bar)
+ * DELETE foo -&gt; Reconcile bar (with info of bar)
  * <p>
  * MERGE
  * ===============
  * foo.identifier=["foo"]
- * INSERT foo -> Reconcile "foo" (with info of foo)
- * UPDATE foo -> foo.identifier==["foo", "bar"] -> Reconcile "fooBar" (with identifiers & 302 redirects for "foo" and "bar") (MERGE)
+ * INSERT foo -&gt; Reconcile "foo" (with info of foo)
+ * UPDATE foo -&gt; foo.identifier==["foo", "bar"] -&gt; Reconcile "fooBar" (with identifiers &amp; 302 redirects for "foo" and "bar") (MERGE)
  * <p>
- * MERGE & DELETE
+ * MERGE &amp; DELETE
  * ==============
  * foo.identifier=["foo"]
- * INSERT foo -> Reconcile "foo" (with info of foo)
- * UPDATE foo -> foo.identifier==["foo", "bar"] -> Reconcile "fooBar" (with identifiers & 302 redirects for "foo" and "bar") (MERGE)
- * DELETE foo -> Reconcile fooBar (with info of bar, answer queries to "fooBar" with 302 redirect to "bar" since there is only one left)
+ * INSERT foo -&gt; Reconcile "foo" (with info of foo)
+ * UPDATE foo -&gt; foo.identifier==["foo", "bar"] -&gt; Reconcile "fooBar" (with identifiers &amp; 302 redirects for "foo" and "bar") (MERGE)
+ * DELETE foo -&gt; Reconcile fooBar (with info of bar, answer queries to "fooBar" with 302 redirect to "bar" since there is only one left)
  * <p>
  * Reconciliation is currently only possible within the same space (since it would mess with the access permissions otherwise)
  * <p>
