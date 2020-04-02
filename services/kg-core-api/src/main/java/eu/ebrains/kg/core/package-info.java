@@ -21,8 +21,8 @@
  * <ul>
  *     <li>Normalization of incoming payloads: Whenever a JSON-LD payload is passed via the API (e.g. ingestion, contribution, query), this component ensures that these payloads are normalized for further processing inside the core environment</li>
  *     <li>Filtering of outgoing payloads: Ensures that internal properties and/or filtered elements are removed from the response.</li>
- *     <li>Initial authentication: A first check of authentication (e.g. if the user & client tokens are valid) to fail fast</li>
- *     <li>Orchestration of API calls: One of the main purposes of this API is to orchestrate the API calls to the various services involved in the exposed functionalities.</li>
+ *     <li>Initial authentication: A first check of authentication (e.g. if the user &amp; client tokens are valid) to fail fast</li>
+ *     <li>Orchestration of API calls: One of the main purposes of this API is to orchestrate the API calls to the various services involved in the exposed functionality.</li>
  * </ul>
  */
 package eu.ebrains.kg.core;
