@@ -17,6 +17,7 @@
 package eu.ebrains.kg.core.api;
 
 import eu.ebrains.kg.commons.AuthContext;
+import eu.ebrains.kg.commons.ExtraApi;
 import eu.ebrains.kg.commons.Version;
 import eu.ebrains.kg.commons.jsonld.JsonLdDoc;
 import eu.ebrains.kg.commons.jsonld.NormalizedJsonLd;
@@ -33,6 +34,7 @@ import org.springframework.web.bind.annotation.*;
  */
 @RestController
 @RequestMapping(Version.API)
+@ExtraApi
 public class ExtraOperations {
     private final JsonLdSvc jsonLdSvc;
     private final AuthContext authContext;

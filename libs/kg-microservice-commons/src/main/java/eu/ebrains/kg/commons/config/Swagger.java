@@ -17,10 +17,13 @@
 package eu.ebrains.kg.commons.config;
 
 import com.google.common.base.Predicates;
+import eu.ebrains.kg.commons.ExtraApi;
 import eu.ebrains.kg.commons.Version;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Primary;
+import springfox.documentation.PathProvider;
 import springfox.documentation.builders.*;
 import springfox.documentation.service.*;
 import springfox.documentation.spi.DocumentationType;
@@ -43,10 +46,14 @@ public class Swagger {
 
     private final String applicationName;
     private final String loginEndpoint;
+    private final String basePath;
+    private final boolean versioned;
 
-    public Swagger(@Value("${spring.application.name}") String applicationName, @Value("${eu.ebrains.kg.login.endpoint}") String loginEndpoint) {
+    public Swagger(@Value("${spring.application.name}") String applicationName, @Value("${eu.ebrains.kg.login.endpoint}") String loginEndpoint, @Value("${eu.ebrains.kg.api.basePath}") String basePath, @Value("${eu.ebrains.kg.api.versioned}") boolean versioned) {
         this.applicationName = applicationName;
         this.loginEndpoint = loginEndpoint;
+        this.basePath = basePath;
+        this.versioned = versioned;
     }
 
 
@@ -63,9 +70,36 @@ public class Swagger {
     }
 
     @Bean
-    public Docket api() {
-        return new Docket(DocumentationType.SWAGGER_2).select()
-                .apis(RequestHandlerSelectors.basePackage("eu.ebrains.kg")).paths(Predicates.and(Predicates.not(PathSelectors.regex("^/error.*")), Predicates.not(PathSelectors.regex("^/"))))
+    @Primary
+    public PathProvider customPathProvider() {
+        return new PathProvider() {
+            @Override
+            public String getApplicationBasePath() {
+                return basePath+(versioned ? "/"+Version.API : "");
+            }
+
+            @Override
+            public String getOperationPath(String operationPath) {
+                return versioned ? operationPath.replace("/"+Version.API, "") : operationPath;
+            }
+            @Override
+            public String getResourceListingPath(String groupName, String apiDeclaration) {
+                return getApplicationBasePath();
+            }
+        };
+    }
+
+    @Bean
+    public Docket publicApi() {
+        return new Docket(DocumentationType.SWAGGER_2).groupName("public").pathProvider(customPathProvider()).select()
+                .apis(Predicates.and(RequestHandlerSelectors.basePackage("eu.ebrains.kg"), Predicates.not(RequestHandlerSelectors.withClassAnnotation(ExtraApi.class)))).paths(Predicates.and(Predicates.not(PathSelectors.regex("^/error.*")), Predicates.not(PathSelectors.regex("^/"))))
+                .build().apiInfo(apiInfo()).securitySchemes(getSecuritySchemes()).securityContexts(Collections.singletonList(securityContext()));
+    }
+
+    @Bean
+    public Docket extraApi() {
+        return new Docket(DocumentationType.SWAGGER_2).groupName("xtra").pathProvider(customPathProvider()).select()
+                .apis(Predicates.and(RequestHandlerSelectors.basePackage("eu.ebrains.kg"), RequestHandlerSelectors.withClassAnnotation(ExtraApi.class))).paths(Predicates.and(Predicates.not(PathSelectors.regex("^/error.*")), Predicates.not(PathSelectors.regex("^/"))))
                 .build().apiInfo(apiInfo()).securitySchemes(getSecuritySchemes()).securityContexts(Collections.singletonList(securityContext()));
     }
 
