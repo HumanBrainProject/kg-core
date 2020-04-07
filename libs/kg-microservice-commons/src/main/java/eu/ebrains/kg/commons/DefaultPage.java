@@ -17,6 +17,9 @@
 package eu.ebrains.kg.commons;
 
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnExpression;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.context.annotation.PropertySource;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -25,22 +28,25 @@ import java.time.ZonedDateTime;
 
 /**
  * This bean is providing the default page of the service (located at the / of the service) pointing to the various documentation components
- *
+ * <p>
  * Also see the defaultPage template.
  */
+
+@ConditionalOnProperty("eu.ebrains.kg.api.entryPage")
 @Controller
 public class DefaultPage {
 
     private final String applicationName;
-        public DefaultPage(@Value("${spring.application.name}") String applicationName){
-            this.applicationName = applicationName;
-        }
 
-        @GetMapping("/")
-        public String defaultPage(Model model) {
-            model.addAttribute("appname", this.applicationName+" "+Version.API);
-            model.addAttribute("currentYear", ZonedDateTime.now().getYear());
-            return "defaultPage";
-        }
+    public DefaultPage(@Value("${spring.application.name}") String applicationName) {
+        this.applicationName = applicationName;
+    }
+
+    @GetMapping("/")
+    public String defaultPage(Model model) {
+        model.addAttribute("appname", this.applicationName + " " + Version.API);
+        model.addAttribute("currentYear", ZonedDateTime.now().getYear());
+        return "defaultPage";
+    }
 
 }
