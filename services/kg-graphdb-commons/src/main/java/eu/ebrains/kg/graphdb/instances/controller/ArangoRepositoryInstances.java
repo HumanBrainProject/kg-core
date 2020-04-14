@@ -88,6 +88,11 @@ public class ArangoRepositoryInstances {
         if (alternatives) {
             List<NormalizedJsonLd[]> embeddedDocuments = getEmbeddedDocuments(documents, stage, true);
             resolveUsersForAlternatives(stage, embeddedDocuments);
+            for (NormalizedJsonLd[] embeddedDocument : embeddedDocuments) {
+                Arrays.stream(embeddedDocument).forEach(e -> {
+                    e.remove(EBRAINSVocabulary.META_REVISION);
+                });
+            }
             addEmbeddedInstancesToDocument(documents, embeddedDocuments);
         } else {
             documents.forEach(d -> d.remove(EBRAINSVocabulary.META_ALTERNATIVE));
