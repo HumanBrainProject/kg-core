@@ -22,6 +22,7 @@ import eu.ebrains.kg.commons.model.DataStage;
 import eu.ebrains.kg.commons.model.Paginated;
 import eu.ebrains.kg.commons.model.PaginationParam;
 import eu.ebrains.kg.commons.model.Space;
+import eu.ebrains.kg.commons.semantics.vocabularies.EBRAINSVocabulary;
 import eu.ebrains.kg.graphdb.spaces.controller.ArangoRepositorySpaces;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -46,7 +47,8 @@ public class Spaces {
 
     @GetMapping("/spaces")
     public Paginated<NormalizedJsonLd> getSpaces(@PathVariable("stage") DataStage stage, PaginationParam paginationParam) {
-       return repositorySpaces.getSpaces(stage, paginationParam);
+        Paginated<NormalizedJsonLd> spaces = repositorySpaces.getSpaces(stage, paginationParam);
+        spaces.getData().forEach(e -> e.remove(EBRAINSVocabulary.META_SPACE));
+        return spaces;
     }
-
 }
