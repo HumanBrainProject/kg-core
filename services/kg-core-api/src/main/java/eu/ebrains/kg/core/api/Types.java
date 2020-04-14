@@ -57,7 +57,7 @@ public class Types {
     @ApiOperation("Returns the types available - either with property information or without")
     @GetMapping("/types")
     public PaginatedResult<NormalizedJsonLd> getTypes(@RequestParam("stage") ExposedStage stage, @RequestParam(value = "workspace", required = false) String space, @RequestParam(value = "withProperties", defaultValue = "false") boolean withProperties, PaginationParam paginationParam) {
-        return graphDBSvc.getTypes(stage.getStage(), space != null ? new Space(space) : null, withProperties, paginationParam);
+        return PaginatedResult.ok(graphDBSvc.getTypes(stage.getStage(), space != null ? new Space(space) : null, withProperties, paginationParam));
     }
 
     @ApiOperation("Returns the types according to the list of names - either with property information or without")

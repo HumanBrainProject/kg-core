@@ -48,12 +48,12 @@ public class GraphDB4TypesSvc {
         return serviceCall.post(BASE_URL + String.format("/%s/%s?space=%s", stage.name(), withProperties ? "typesWithPropertiesByName": "typesByName",  space != null ? space.getName() : ""), types, authContext.getAuthTokens(), StringPayloadMapping.class);
     }
 
-    public PaginatedResultOfDocuments getTypes(DataStage stage, Space space, boolean withProperties, PaginationParam paginationParam) {
+    public Paginated<NormalizedJsonLd> getTypes(DataStage stage, Space space, boolean withProperties, PaginationParam paginationParam) {
         String relativeUrl = String.format("/%s/%s?space=%s", stage.name(),  withProperties ? "typesWithProperties" : "types", space != null ? space.getName() : "");
         if (paginationParam != null && paginationParam.getSize() != null) {
             relativeUrl = String.format("%s&from=%d&size=%d", relativeUrl, paginationParam.getFrom(), paginationParam.getSize());
         }
-        return serviceCall.get(BASE_URL + relativeUrl, authContext.getAuthTokens(), PaginatedResultOfDocuments.class);
+        return serviceCall.get(BASE_URL + relativeUrl, authContext.getAuthTokens(), PaginatedDocuments.class);
     }
 
 }
