@@ -122,7 +122,7 @@ public class ArangoRepositoryInstances {
                                     UUID uuid = idUtils.getUUID(new JsonLdId(id));
                                     Result<NormalizedJsonLd> userResult = null;
                                     if(uuid!=null) {
-                                        userResult = usersById.get(id);
+                                        userResult = usersById.get(uuid);
                                     }
                                     NormalizedJsonLd user = userResult != null && userResult.getData() != null ? userResult.getData() : null;
                                     NormalizedJsonLd reducedUser = new NormalizedJsonLd();
