@@ -62,8 +62,7 @@ public class CoreInstancesToGraphDB {
     }
 
     public SuggestionResult getSuggestedLinksForProperty(NormalizedJsonLd payload, DataStage stage, InstanceId instanceId, UUID originalId, String propertyName, Type type, String search, PaginationParam paginationParam) {
-        return serviceCall.post(BASE_URL + String.format("/%s/instances/%s/suggestedLinksForProperty?property=%s&type=%s&search=%s&from=%d&size=%s", stage.name(), instanceId != null ? instanceId.serialize() : String.format("un    known/%s", originalId), propertyName, type != null ? type.getEncodedName() : "", search != null ? search : "", paginationParam.getFrom(), paginationParam.getSize() != null ? String.valueOf(paginationParam.getSize()) : ""), payload, authContext.getAuthTokens(), SuggestionResult.class);
-
+        return serviceCall.post(BASE_URL + String.format("/%s/instances/%s/suggestedLinksForProperty?property=%s&type=%s&search=%s&from=%d&size=%s", stage.name(), instanceId != null ? instanceId.serialize() : String.format("unknown/%s", originalId), propertyName, type != null ? type.getEncodedName() : "", search != null ? search : "", paginationParam.getFrom(), paginationParam.getSize() != null ? String.valueOf(paginationParam.getSize()) : ""), payload, authContext.getAuthTokens(), SuggestionResult.class);
     }
 
     public JsonLdDoc getSpace(DataStage stage, InstanceId instanceId) {

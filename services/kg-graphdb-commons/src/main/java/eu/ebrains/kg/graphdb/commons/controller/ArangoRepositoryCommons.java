@@ -91,7 +91,7 @@ public class ArangoRepositoryCommons {
         ArangoCollectionReference unresolvedEdges = ArangoCollectionReference.fromSpace(InternalSpace.UNRESOLVED_SPACE);
         if (db.collection(unresolvedEdges.getCollectionName()).exists()) {
             String query = "FOR doc IN `" + unresolvedEdges.getCollectionName() + "`\n" +
-                    "   FILTER doc."+ IndexedJsonLdDoc.ORIGINAL_TO+" IN @ids\n" +
+                    "   FILTER doc." + IndexedJsonLdDoc.ORIGINAL_TO + " IN @ids\n" +
                     "   RETURN doc";
             Map<String, Object> bindVars = new HashMap<>();
             bindVars.put("ids", ids);
@@ -116,7 +116,7 @@ public class ArangoRepositoryCommons {
         query.append(String.join(", ", collections));
         Map<String, Object> bindVars = new HashMap<>();
         if (filterByIds != null) {
-            query.append(" FILTER e."+IndexedJsonLdDoc.ORIGINAL_TO+" IN @ids");
+            query.append(" FILTER e." + IndexedJsonLdDoc.ORIGINAL_TO + " IN @ids");
             bindVars.put("ids", filterByIds);
         }
         query.append("        RETURN e)\n");
@@ -126,10 +126,9 @@ public class ArangoRepositoryCommons {
         return query(db, query.toString(), bindVars, EMPTY_QUERY_OPTIONS, ArangoEdge.class);
     }
 
-    private <T> List<T> query(ArangoDatabase db, String query, Map<String, Object> bindVars, AqlQueryOptions options, Class<T> clazz){
+    private <T> List<T> query(ArangoDatabase db, String query, Map<String, Object> bindVars, AqlQueryOptions options, Class<T> clazz) {
         return db.query(query, bindVars, options, String.class).asListRemaining().stream().map(i -> gson.fromJson(i, clazz)).collect(Collectors.toList());
     }
-
 
 
     public ArangoDocument getDocument(DataStage stage, ArangoDocumentReference reference) {
@@ -140,7 +139,7 @@ public class ArangoRepositoryCommons {
         return databases.getByStage(stage).collection(reference.getArangoCollectionReference().getCollectionName()).documentExists(reference.getDocumentId().toString());
     }
 
-    public Set<ArangoInstance> checkExistenceOfInstances(DataStage stage, Collection<ArangoInstance> instances, boolean returnExisting){
+    public Set<ArangoInstance> checkExistenceOfInstances(DataStage stage, Collection<ArangoInstance> instances, boolean returnExisting) {
         AQL aql = new AQL();
         String documentList = instances.stream().map(i -> "DOCUMENT(\"" + AQL.preventAqlInjection(i.getId().getId()).getValue() + "\")").collect(Collectors.joining(","));
         aql.addLine(AQL.trust(String.format(String.format("FOR d IN [%s]", documentList))));
@@ -170,9 +169,9 @@ public class ArangoRepositoryCommons {
         return Collections.emptySet();
     }
 
-    public List<ArangoDocumentReference> getEdgesFrom(DataStage stage, ArangoCollectionReference edgeCollection, ArangoDocumentReference from){
+    public List<ArangoDocumentReference> getEdgesFrom(DataStage stage, ArangoCollectionReference edgeCollection, ArangoDocumentReference from) {
         ArangoDatabase db = databases.getByStage(stage);
-        if(db.collection(edgeCollection.getCollectionName()).exists()){
+        if (db.collection(edgeCollection.getCollectionName()).exists()) {
             String aql = "FOR doc IN @@edgeCollection" +
                     "FILTER doc._from == @from" +
                     "RETURN doc._id";
@@ -199,7 +198,7 @@ public class ArangoRepositoryCommons {
 
 
     public void executeTransactional(DataStage stage, ArangoDatabase db, List<? extends DBOperation> operations) {
-        if(operations.isEmpty()){
+        if (operations.isEmpty()) {
             logger.debug("No operations to be executed - we therefore do not do anything");
             return;
         }
@@ -210,7 +209,7 @@ public class ArangoRepositoryCommons {
         transactionBuilder.append("const db = require('@arangodb').db;\n");
         List<DBOperation> distinctOperations = operations.stream().distinct().collect(Collectors.toList());
         Set<ArangoDocumentReference> deleteIds = distinctOperations.stream().filter(o -> o instanceof DeleteOperation).map(o -> ((DeleteOperation) o).getLifecycleDocumentRef()).collect(Collectors.toSet());
-        Set<DeleteInstanceOperation> deleteInstanceOperations = distinctOperations.stream().filter(o -> o instanceof DeleteInstanceOperation).map(o -> (DeleteInstanceOperation)o).collect(Collectors.toSet());
+        Set<DeleteInstanceOperation> deleteInstanceOperations = distinctOperations.stream().filter(o -> o instanceof DeleteInstanceOperation).map(o -> (DeleteInstanceOperation) o).collect(Collectors.toSet());
         List<UpsertOperation> upserts = distinctOperations.stream().filter(o -> o instanceof UpsertOperation).map(o -> (UpsertOperation) o).filter(u -> u.getDocumentReference() != null).filter(u -> u.isOverrideIfExists() || !doesDocumentExist(stage, u.getDocumentReference())).collect(Collectors.toList());
         List<EdgeResolutionOperation> edgeResolutionOperations = distinctOperations.stream().filter(o -> o instanceof EdgeResolutionOperation).map(o -> (EdgeResolutionOperation) o).collect(Collectors.toList());
 
@@ -237,8 +236,8 @@ public class ArangoRepositoryCommons {
                 removedDocuments.add(documentReference);
             }
         });
-        deleteInstanceOperations.forEach( delete->{
-            if(delete.getDocumentReference()!=null && !removedDocuments.contains(delete.getDocumentReference())){
+        deleteInstanceOperations.forEach(delete -> {
+            if (delete.getDocumentReference() != null && !removedDocuments.contains(delete.getDocumentReference())) {
                 collections.add(delete.getDocumentReference().getArangoCollectionReference());
                 transactionBuilder.append(String.format("db.%s.remove(\"%s\");\n", delete.getDocumentReference().getArangoCollectionReference().getCollectionName(), delete.getDocumentReference().getDocumentId()));
                 removedDocuments.add(delete.getDocumentReference());
@@ -286,7 +285,7 @@ public class ArangoRepositoryCommons {
             if (upsert.isAttachToOriginalDocument()) {
                 //Attention: The following method is non-transactional. It's just the hook-document though and therefore acceptable
                 ArangoDocumentReference documentIdHook = documentIdHooks.get(upsert.getLifecycleDocumentId());
-                if(documentIdHook==null){
+                if (documentIdHook == null) {
                     documentIdHook = entryHookDocuments.getOrCreateDocumentIdHookDocument(upsert.getLifecycleDocumentId(), db);
                     documentIdHooks.put(upsert.getLifecycleDocumentId(), documentIdHook);
                 }
@@ -307,31 +306,28 @@ public class ArangoRepositoryCommons {
 
     private final int NUMBER_OF_CONFLICT_RETRIES = 10;
 
-    private void executeTransactionWithRetry(ArangoDatabase db, String transaction, String[] collectionNames, int retry){
+    private void executeTransactionWithRetry(ArangoDatabase db, String transaction, String[] collectionNames, int retry) {
         try {
-            db.transaction(transaction, String.class, new TransactionOptions().writeCollections(collectionNames).lockTimeout(retry*30));
-        }
-        catch(ArangoDBException ex){
+            db.transaction(transaction, String.class, new TransactionOptions().writeCollections(collectionNames).lockTimeout(retry * 30));
+        } catch (ArangoDBException ex) {
             logger.debug(String.format("Execution of transaction has failed. \n\n TRANSACTION: %s\n\n INVOLVED WRITE COLLECTIONS: \n%s", transaction, String.join("\n- ", collectionNames)));
-            if(HttpStatus.CONFLICT.value() == ex.getResponseCode() && retry<NUMBER_OF_CONFLICT_RETRIES){
+            if (HttpStatus.CONFLICT.value() == ex.getResponseCode() && retry < NUMBER_OF_CONFLICT_RETRIES) {
                 retry++;
                 try {
                     Thread.sleep(1000 * retry * retry);
-                }
-                catch (InterruptedException ie){
+                } catch (InterruptedException ie) {
                     //Don't do anything.
                 }
                 logger.debug(String.format("There was a conflict - %d retries left", retry));
                 executeTransactionWithRetry(db, transaction, collectionNames, retry);
-            }
-            else {
+            } else {
                 throw ex;
             }
         }
     }
 
     private Set<ArangoDocumentReference> addRemovalOfAllDependenciesForDocumentId(ArangoDatabase db, Set<ArangoCollectionReference> collections, StringBuilder transactionBuilder, ArangoDocumentReference delete, Set<ArangoDocumentReference> skipList) {
-            transactionBuilder.append("\n// add removal of dependencies for document id\n");
+        transactionBuilder.append("\n// add removal of dependencies for document id\n");
         return findArangoReferencesForDocumentId(db, delete.getDocumentId()).stream().filter(Objects::nonNull).filter(ref -> !skipList.contains(ref)).map(reference -> {
             collections.add(reference.getArangoCollectionReference());
             transactionBuilder.append(String.format("db.%s.remove(\"%s\");\n", reference.getArangoCollectionReference().getCollectionName(), reference.getDocumentId()));
@@ -339,36 +335,38 @@ public class ArangoRepositoryCommons {
         }).collect(Collectors.toSet());
     }
 
-    public Paginated<NormalizedJsonLd> queryDocuments(ArangoDatabase db, AQLQuery aqlQuery){
+    public Paginated<NormalizedJsonLd> queryDocuments(ArangoDatabase db, AQLQuery aqlQuery) {
         return queryDocuments(db, aqlQuery, null);
     }
 
 
-    public <T> Paginated<T> queryDocuments(ArangoDatabase db, AQLQuery aqlQuery, Function<NormalizedJsonLd, T> mapper){
+    public <T> Paginated<T> queryDocuments(ArangoDatabase db, AQLQuery aqlQuery, Function<NormalizedJsonLd, T> mapper) {
         AQL aql = aqlQuery.getAql();
         String value = aql.build().getValue();
         long launch = new Date().getTime();
         ArangoCursor<String> result = db.query(value, aqlQuery.getBindVars(), aql.getQueryOptions(), String.class);
-        logger.debug(String.format("Received %d results from Arango in %dms", result.getCount(), new Date().getTime()-launch));
+        logger.debug(String.format("Received %d results from Arango in %dms", result.getCount(), new Date().getTime() - launch));
         Long totalCount;
-        if(aql.getPaginationParam()!=null && aql.getPaginationParam().getSize()!=null) {
+        if (aql.getPaginationParam() != null && aql.getPaginationParam().getSize() != null) {
             totalCount = result.getStats().getFullCount();
-        }
-        else{
+        } else {
             totalCount = result.getCount() != null ? result.getCount().longValue() : null;
         }
         List<T> mappedResult;
         List<NormalizedJsonLd> normalizedJsonLds = result.asListRemaining().stream().map(i -> gson.fromJson(i, NormalizedJsonLd.class)).collect(Collectors.toList());
-        logger.debug(String.format("Done parsing the results after %dms", new Date().getTime()-launch));
+        logger.debug(String.format("Done parsing the results after %dms", new Date().getTime() - launch));
 
-        if(mapper!=null){
+        if (mapper != null) {
             mappedResult = normalizedJsonLds.stream().map(mapper).collect(Collectors.toList());
+        } else {
+            mappedResult = (List<T>) normalizedJsonLds;
         }
-        else{
-            mappedResult = (List<T>)normalizedJsonLds;
+        logger.debug(String.format("Done processing the Arango result - received %d results in %dms total", mappedResult.size(), new Date().getTime() - launch));
+        if (aql.getPaginationParam() != null && aql.getPaginationParam().getSize() == null && (int) aql.getPaginationParam().getFrom() > 0 && (int) aql.getPaginationParam().getFrom() < mappedResult.size()) {
+            List<T> mappedResultWithOffset = mappedResult.subList((int) aql.getPaginationParam().getFrom(), mappedResult.size());
+            return new Paginated<>(mappedResultWithOffset, totalCount, mappedResult.size(), aql.getPaginationParam().getFrom());
         }
-        logger.debug(String.format("Done processing the Arango result - received %d results in %dms total", mappedResult.size(), new Date().getTime()-launch));
-        return new Paginated<>(mappedResult, totalCount, mappedResult.size(), aql.getPaginationParam()!=null ? aql.getPaginationParam().getFrom() : 0);
+        return new Paginated<>(mappedResult, totalCount, mappedResult.size(), aql.getPaginationParam() != null ? aql.getPaginationParam().getFrom() : 0);
     }
 
 }

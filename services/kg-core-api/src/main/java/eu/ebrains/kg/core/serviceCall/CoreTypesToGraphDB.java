@@ -49,10 +49,7 @@ public class CoreTypesToGraphDB {
     }
 
     public Paginated<NormalizedJsonLd> getTypes(DataStage stage, Space space, boolean withProperties, PaginationParam paginationParam) {
-        String relativeUrl = String.format("/%s/%s?space=%s", stage.name(),  withProperties ? "typesWithProperties" : "types", space != null ? space.getName() : "");
-        if (paginationParam != null && paginationParam.getSize() != null) {
-            relativeUrl = String.format("%s&from=%d&size=%d", relativeUrl, paginationParam.getFrom(), paginationParam.getSize());
-        }
+        String relativeUrl = String.format("/%s/%s?space=%s&from=%d&size=%s", stage.name(),  withProperties ? "typesWithProperties" : "types", space != null ? space.getName() : "", paginationParam.getFrom(), paginationParam.getSize() != null ? String.valueOf(paginationParam.getSize()) : "");
         return serviceCall.get(BASE_URL + relativeUrl, authContext.getAuthTokens(), PaginatedDocuments.class);
     }
 
