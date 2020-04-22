@@ -35,6 +35,12 @@
         </dependency>
         <dependency>
             <groupId>eu.ebrains.kg</groupId>
+            <artifactId>kg-test-utils</artifactId>
+            <version>3.0-SNAPSHOT</version>
+            <scope>compile</scope>
+        </dependency>
+        <dependency>
+            <groupId>eu.ebrains.kg</groupId>
             <artifactId>kg-arango-commons</artifactId>
             <version>3.0-SNAPSHOT</version>
         </dependency>

@@ -354,9 +354,9 @@ public class TodoListProcessorTest {
         todoListProcessor.upsertDocument(admin.doc(UUID.randomUUID()), TestObjectFactory.createJsonLd("admin/givenNameInPersonPropertyDefinition.json"), stage, null);
         todoListProcessor.upsertDocument(admin.doc(UUID.randomUUID()), TestObjectFactory.createJsonLd("admin/childrenPropertyDefinition.json"), stage, null);
 
-        todoListProcessor.upsertDocument(kgeditor.doc(UUID.randomUUID()), TestObjectFactory.createJsonLd("kgeditor/personTypeDefinition.json"), stage, null);
-        todoListProcessor.upsertDocument(kgeditor.doc(UUID.randomUUID()), TestObjectFactory.createJsonLd("kgeditor/givenNamePropertyDefinition.json"), stage, null);
-        todoListProcessor.upsertDocument(kgeditor.doc(UUID.randomUUID()), TestObjectFactory.createJsonLd("kgeditor/givenNameInPersonPropertyDefinition.json"), stage, null);
+        todoListProcessor.upsertDocument(kgeditor.doc(UUID.randomUUID()), TestObjectFactory.createJsonLd("kg-editor/personTypeDefinition.json"), stage, null);
+        todoListProcessor.upsertDocument(kgeditor.doc(UUID.randomUUID()), TestObjectFactory.createJsonLd("kg-editor/givenNamePropertyDefinition.json"), stage, null);
+        todoListProcessor.upsertDocument(kgeditor.doc(UUID.randomUUID()), TestObjectFactory.createJsonLd("kg-editor/givenNameInPersonPropertyDefinition.json"), stage, null);
 
         //Then
 

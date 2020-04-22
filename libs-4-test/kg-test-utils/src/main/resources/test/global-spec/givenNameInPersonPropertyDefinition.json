@@ -4,7 +4,6 @@
   "@type": "https://kg.ebrains.eu/vocab/meta/PropertyInTypeDefinition",
   "https://kg.ebrains.eu/vocab/meta/property": {"@id":  "http://schema.org/givenName"},
   "https://kg.ebrains.eu/vocab/meta/type": {"@id":  "http://schema.org/Person"},
-  "https://kg.ebrains.eu/vocab/meta/space": "simpsons",
   "https://kg.ebrains.eu/vocab/meta/property/searchable": true,
   "http://schema.org/name": "Given name of Person in space simpsons"
 }

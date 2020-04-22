@@ -21,9 +21,7 @@ import eu.ebrains.kg.commons.model.Space;
 
 public class InternalSpace extends Space {
 
-    public static final Space ADMIN = new Space("admin");
-
-
+    public static final Space GLOBAL_SPEC = new Space("global_spec");
 
     public static final InternalSpace INFERENCE_OF_SPACE = new InternalSpace(InferredJsonLdDoc.INFERENCE_OF);
     public static final InternalSpace UNRESOLVED_SPACE = new InternalSpace("unresolved");
@@ -42,7 +40,7 @@ public class InternalSpace extends Space {
     public static final ArangoCollectionReference RELEASE_STATUS_EDGE_COLLECTION = new ArangoCollectionReference("internalrelease", true);
     public static final InternalSpace RELEASE_STATUS_SPACE = new InternalSpace("releaseStatus");
 
-    public static final ArangoCollectionReference GLOBAL_TYPE_TO_PROPERTY_EDGE_COLLECTION = new ArangoCollectionReference("type2property", true);
+    public static final ArangoCollectionReference GLOBAL_TYPE_TO_PROPERTY_EDGE_COLLECTION = new ArangoCollectionReference("globaltype2property", true);
     public static final ArangoCollectionReference TYPE_TO_PROPERTY_EDGE_COLLECTION = new ArangoCollectionReference("type2property", true);
     public static final ArangoCollectionReference PROPERTY_TO_TYPE_EDGE_COLLECTION = new ArangoCollectionReference("property2type", true);
     public static final Space TYPES_SPACE = new Space("types");

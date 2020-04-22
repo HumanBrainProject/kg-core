@@ -16,12 +16,14 @@
 
 package eu.ebrains.kg.core.api;
 
+import eu.ebrains.kg.arango.commons.model.InternalSpace;
 import eu.ebrains.kg.commons.AuthContext;
 import eu.ebrains.kg.commons.Version;
 import eu.ebrains.kg.commons.jsonld.JsonLdConsts;
 import eu.ebrains.kg.commons.jsonld.JsonLdId;
 import eu.ebrains.kg.commons.jsonld.NormalizedJsonLd;
 import eu.ebrains.kg.commons.model.Event;
+import eu.ebrains.kg.commons.model.Space;
 import eu.ebrains.kg.commons.semantics.vocabularies.EBRAINSVocabulary;
 import eu.ebrains.kg.core.serviceCall.PrimaryStoreSvc;
 import io.swagger.annotations.ApiOperation;
@@ -47,20 +49,21 @@ public class Properties {
 
     @ApiOperation(value = "Upload a property specification either globally or on a type level for the requesting client")
     @PutMapping("/properties")
-    public void defineProperty(@RequestBody NormalizedJsonLd payload, @RequestParam("property") String property, @ApiParam("If defined, the property specification is only valid for this type - otherwise, the specification is applied globally") @RequestParam(value = "type", required = false) String type, @ApiParam("Specifies, if this property provides a label for the entity (usually this is the case for properties such as http://schema.org/name)") @RequestParam(value = "labelProperty", required = false) Boolean labelProperty) {
+    public void defineProperty(@RequestBody NormalizedJsonLd payload, @RequestParam("property") String property, @ApiParam("If defined, the property specification is only valid for this type - otherwise, the specification is applied for all types") @RequestParam(value = "type", required = false) String type, @ApiParam("Specifies, if this property provides a label for the entity (usually this is the case for properties such as http://schema.org/name)") @RequestParam(value = "labelProperty", required = false) Boolean labelProperty, @ApiParam("By default, the specification is only valid for the current client. If this flag is set to true (and the client/user combination has the permission), the specification is applied for all clients (unless they have defined something by themselves)")  @RequestParam(value = "global", required = false) boolean global) {
         payload.put(EBRAINSVocabulary.META_PROPERTY, new JsonLdId(property));
+        Space targetSpace = global ? InternalSpace.GLOBAL_SPEC : authContext.getClientSpace();
         if(type==null || type.isBlank()){
-            payload.setId(EBRAINSVocabulary.createIdForStructureDefinition("clients", authContext.getUserWithRoles().getClientId(), "properties", property));
+            payload.setId(EBRAINSVocabulary.createIdForStructureDefinition("clients", targetSpace.getName(), "properties", property));
             payload.put(JsonLdConsts.TYPE, EBRAINSVocabulary.META_PROPERTY_DEFINITION_TYPE);
         }
         else{
-            payload.setId(EBRAINSVocabulary.createIdForStructureDefinition("clients", authContext.getUserWithRoles().getClientId(), "types", type, "properties", property));
+            payload.setId(EBRAINSVocabulary.createIdForStructureDefinition("clients", targetSpace.getName(), "types", type, "properties", property));
             payload.put(JsonLdConsts.TYPE, EBRAINSVocabulary.META_PROPERTY_IN_TYPE_DEFINITION_TYPE);
             payload.put(EBRAINSVocabulary.META_TYPE, new JsonLdId(type));
         }
         if(labelProperty!=null){
             payload.put(EBRAINSVocabulary.META_LABELPROPERTY, labelProperty);
         }
-        primaryStoreSvc.postEvent(Event.createUpsertEvent(authContext.getClientSpace(), UUID.nameUUIDFromBytes(payload.getId().getId().getBytes(StandardCharsets.UTF_8)), Event.Type.INSERT, payload), false, authContext.getAuthTokens());
+        primaryStoreSvc.postEvent(Event.createUpsertEvent(targetSpace, UUID.nameUUIDFromBytes(payload.getId().getId().getBytes(StandardCharsets.UTF_8)), Event.Type.INSERT, payload), false, authContext.getAuthTokens());
     }
 }

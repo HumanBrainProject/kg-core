@@ -42,4 +42,6 @@ public class AQLQuery {
     public void addBindVar(String key, Object value){
         this.bindVars.put(key, value);
     }
+
+
 }

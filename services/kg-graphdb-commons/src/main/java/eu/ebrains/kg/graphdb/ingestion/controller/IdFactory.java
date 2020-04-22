@@ -28,6 +28,10 @@ public class IdFactory {
         return InternalSpace.TYPE_TO_PROPERTY_EDGE_COLLECTION.doc(UUID.nameUUIDFromBytes((collectionName + "_" + typeName + "_" + propertyName).getBytes(StandardCharsets.UTF_8)));
     }
 
+    public static ArangoDocumentReference createDocumentRefForGlobalTypeToPropertyEdge(String typeName, String propertyName) {
+        return InternalSpace.GLOBAL_TYPE_TO_PROPERTY_EDGE_COLLECTION.doc(UUID.nameUUIDFromBytes((typeName + "_" + propertyName).getBytes(StandardCharsets.UTF_8)));
+    }
+
     public static ArangoDocumentReference createDocumentRefForSpaceTypePropertyToTypeEdge(String originCollectionName, String originTypeName, String propertyName, String targetCollectionName, String targetTypeName) {
         return InternalSpace.PROPERTY_TO_TYPE_EDGE_COLLECTION.doc(UUID.nameUUIDFromBytes((originCollectionName + "_" + originTypeName + "_" + propertyName + "_" + targetCollectionName + "_" + targetTypeName).getBytes(StandardCharsets.UTF_8)));
     }
