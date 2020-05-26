@@ -40,7 +40,7 @@ public class JsonLdTest {
         context.setVocab("http://schema.hbp.eu/");
         ld.setContext(context);
         ld.put("foo", "bar");
-        String result = webClient.build().post().uri("http://kg-jsonld/").contentType(MediaType.APPLICATION_JSON).body(BodyInserters.fromObject(ld)).retrieve().bodyToMono(String.class).block();
+        String result = webClient.build().post().uri("http://kg-jsonld/internal/").contentType(MediaType.APPLICATION_JSON).body(BodyInserters.fromObject(ld)).retrieve().bodyToMono(String.class).block();
         System.out.println(result);
     }
 

@@ -58,6 +58,7 @@
         <!--<module>tests/kg-core-to-query-comparison</module>-->
 
         <module>adapters/kg-nexus-v0-adapter</module>
+        <module>bundle/full</module>
         <!--<module>adapters/kg-nexus-v1-adapter</module>-->
     </modules>
 

@@ -24,7 +24,7 @@ import eu.ebrains.kg.commons.model.Event;
 import eu.ebrains.kg.commons.model.PersistedEvent;
 import eu.ebrains.kg.commons.model.Space;
 import eu.ebrains.kg.docker.SpringDockerComposeRunner;
-import eu.ebrains.kg.indexing.api.Indexing;
+import eu.ebrains.kg.indexing.api.IndexingAPI;
 import eu.ebrains.kg.test.TestObjectFactory;
 import org.junit.Before;
 import org.junit.Test;
@@ -51,7 +51,7 @@ public class IndexingTest {
     }
 
     @Autowired
-    Indexing indexing;
+    IndexingAPI indexing;
 
     @Autowired
     IdUtils idUtils;

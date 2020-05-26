@@ -23,8 +23,8 @@ import eu.ebrains.kg.commons.model.DataStage;
 import eu.ebrains.kg.commons.model.Event;
 import eu.ebrains.kg.commons.model.Space;
 import eu.ebrains.kg.docker.SpringDockerComposeRunner;
-import eu.ebrains.kg.inference.api.Inference;
-import eu.ebrains.kg.test.GraphDBSyncSvcForTest;
+import eu.ebrains.kg.inference.api.InferenceAPI;
+import eu.ebrains.kg.test.TestToGraphDB;
 import eu.ebrains.kg.test.TestObjectFactory;
 import org.junit.Assert;
 import org.junit.Before;
@@ -53,10 +53,10 @@ public class InferenceTest {
     }
 
     @Autowired
-    GraphDBSyncSvcForTest graphDBSvc;
+    TestToGraphDB graphDBSvc;
 
     @Autowired
-    Inference inference;
+    InferenceAPI inference;
 
     @Autowired
     IdUtils idUtils;

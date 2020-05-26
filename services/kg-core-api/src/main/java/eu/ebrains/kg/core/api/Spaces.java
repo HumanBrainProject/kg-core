@@ -26,7 +26,7 @@ import eu.ebrains.kg.commons.permission.FunctionalityInstance;
 import eu.ebrains.kg.commons.semantics.vocabularies.EBRAINSVocabulary;
 import eu.ebrains.kg.commons.semantics.vocabularies.SchemaOrgVocabulary;
 import eu.ebrains.kg.core.model.ExposedStage;
-import eu.ebrains.kg.core.serviceCall.GraphDB4SpacesSvc;
+import eu.ebrains.kg.core.serviceCall.CoreSpacesToGraphDB;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -39,11 +39,11 @@ import java.util.stream.Collectors;
 @RequestMapping(Version.API+"/spaces")
 public class Spaces {
 
-    private final GraphDB4SpacesSvc graphDbSvc;
+    private final CoreSpacesToGraphDB graphDbSvc;
 
     private final AuthContext authContext;
 
-    public Spaces(GraphDB4SpacesSvc graphDbSvc, AuthContext authContext) {
+    public Spaces(CoreSpacesToGraphDB graphDbSvc, AuthContext authContext) {
         this.graphDbSvc = graphDbSvc;
         this.authContext = authContext;
     }

@@ -18,7 +18,7 @@ package eu.ebrains.kg.commons;
 
 import eu.ebrains.kg.commons.model.Space;
 import eu.ebrains.kg.commons.models.UserWithRoles;
-import eu.ebrains.kg.commons.serviceCall.AuthenticationSvc;
+import eu.ebrains.kg.commons.serviceCall.ToAuthentication;
 import org.springframework.context.annotation.Scope;
 import org.springframework.context.annotation.ScopedProxyMode;
 import org.springframework.stereotype.Component;
@@ -33,11 +33,11 @@ import org.springframework.web.context.annotation.RequestScope;
 @Scope(value = "request", proxyMode = ScopedProxyMode.TARGET_CLASS)
 public class AuthContext {
 
-    private final AuthenticationSvc authenticationSvc;
+    private final ToAuthentication authenticationSvc;
 
     private UserWithRoles userWithRoles;
 
-    public AuthContext(AuthenticationSvc authenticationSvc) {
+    public AuthContext(ToAuthentication authenticationSvc) {
         this.authenticationSvc = authenticationSvc;
     }
 

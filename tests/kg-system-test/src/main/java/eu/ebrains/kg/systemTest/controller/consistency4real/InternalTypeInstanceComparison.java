@@ -30,7 +30,7 @@ import eu.ebrains.kg.commons.model.*;
 import eu.ebrains.kg.commons.semantics.vocabularies.EBRAINSVocabulary;
 import eu.ebrains.kg.commons.semantics.vocabularies.SchemaOrgVocabulary;
 import eu.ebrains.kg.systemTest.model.ComparisonResult;
-import eu.ebrains.kg.systemTest.serviceCall.CoreSvc;
+import eu.ebrains.kg.systemTest.serviceCall.SystemTestToCore;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -44,7 +44,7 @@ public class InternalTypeInstanceComparison {
 
     private final Gson gson;
 
-    private final CoreSvc coreSvc;
+    private final SystemTestToCore coreSvc;
 
     private final IdUtils idUtils;
 
@@ -53,7 +53,7 @@ public class InternalTypeInstanceComparison {
 
     private final Logger logger = LoggerFactory.getLogger(getClass());
 
-    public InternalTypeInstanceComparison(Gson gson, CoreSvc coreSvc, IdUtils idUtils, @Qualifier("liveMeta") ArangoDatabaseProxy liveMeta, @Qualifier("releasedMeta") ArangoDatabaseProxy releasedMeta) {
+    public InternalTypeInstanceComparison(Gson gson, SystemTestToCore coreSvc, IdUtils idUtils, @Qualifier("liveMetaTest") ArangoDatabaseProxy liveMeta, @Qualifier("releasedMetaTest") ArangoDatabaseProxy releasedMeta) {
         this.gson = gson;
         this.coreSvc = coreSvc;
         this.idUtils = idUtils;

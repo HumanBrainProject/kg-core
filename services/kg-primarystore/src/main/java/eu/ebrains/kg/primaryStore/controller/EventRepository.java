@@ -26,6 +26,7 @@ import eu.ebrains.kg.primaryStore.model.DeferredInference;
 import eu.ebrains.kg.primaryStore.model.FailedEvent;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Component;
 
 import java.util.*;
@@ -39,7 +40,7 @@ public class EventRepository {
 
     private final Logger logger = LoggerFactory.getLogger(getClass());
 
-    public EventRepository(ArangoDatabaseProxy arangoDatabase, Gson gson) {
+    public EventRepository(@Qualifier("primaryStoreDB") ArangoDatabaseProxy arangoDatabase, Gson gson) {
         this.arangoDatabase = arangoDatabase;
         this.gson = gson;
     }

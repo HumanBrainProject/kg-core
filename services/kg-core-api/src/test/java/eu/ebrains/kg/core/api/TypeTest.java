@@ -21,7 +21,7 @@ import com.netflix.discovery.EurekaClient;
 import eu.ebrains.kg.commons.IdUtils;
 import eu.ebrains.kg.commons.model.Space;
 import eu.ebrains.kg.docker.SpringDockerComposeRunner;
-import eu.ebrains.kg.test.GraphDBSyncSvcForTest;
+import eu.ebrains.kg.test.TestToGraphDB;
 import eu.ebrains.kg.test.TestObjectFactory;
 import org.junit.Before;
 import org.junit.runner.RunWith;
@@ -47,7 +47,7 @@ public class TypeTest {
     Types types;
 
     @Autowired
-    GraphDBSyncSvcForTest graphDBSyncSvcForTest;
+    TestToGraphDB graphDBSyncSvcForTest;
 
     private final Space space = TestObjectFactory.SIMPSONS;
 

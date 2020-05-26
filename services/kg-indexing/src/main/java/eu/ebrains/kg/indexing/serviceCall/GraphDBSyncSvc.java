@@ -35,6 +35,6 @@ public class GraphDBSyncSvc {
     AuthContext authContext;
 
     public void handleTodoList(List<TodoItem> todoItems, DataStage stage) {
-        serviceCall.post(String.format("http://kg-graphdb-sync/%s/todoLists", stage.name()), todoItems, authContext.getAuthTokens(), Void.class);
+        serviceCall.post(String.format("http://kg-graphdb-sync/internal/graphdb/%s/todoLists", stage.name()), todoItems, authContext.getAuthTokens(), Void.class);
     }
 }

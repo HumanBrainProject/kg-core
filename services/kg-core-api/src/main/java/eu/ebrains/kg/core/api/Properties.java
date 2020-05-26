@@ -25,7 +25,7 @@ import eu.ebrains.kg.commons.jsonld.NormalizedJsonLd;
 import eu.ebrains.kg.commons.model.Event;
 import eu.ebrains.kg.commons.model.Space;
 import eu.ebrains.kg.commons.semantics.vocabularies.EBRAINSVocabulary;
-import eu.ebrains.kg.core.serviceCall.PrimaryStoreSvc;
+import eu.ebrains.kg.core.serviceCall.CoreToPrimaryStore;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiParam;
 import org.springframework.web.bind.annotation.*;
@@ -39,10 +39,10 @@ import java.util.UUID;
 @RequestMapping(Version.API)
 public class Properties {
 
-    private final PrimaryStoreSvc primaryStoreSvc;
+    private final CoreToPrimaryStore primaryStoreSvc;
     private final AuthContext authContext;
 
-    public Properties(PrimaryStoreSvc primaryStoreSvc, AuthContext authContext) {
+    public Properties(CoreToPrimaryStore primaryStoreSvc, AuthContext authContext) {
         this.primaryStoreSvc = primaryStoreSvc;
         this.authContext = authContext;
     }

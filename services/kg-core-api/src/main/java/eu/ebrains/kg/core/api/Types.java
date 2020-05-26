@@ -24,10 +24,9 @@ import eu.ebrains.kg.commons.jsonld.NormalizedJsonLd;
 import eu.ebrains.kg.commons.model.*;
 import eu.ebrains.kg.commons.semantics.vocabularies.EBRAINSVocabulary;
 import eu.ebrains.kg.core.model.ExposedStage;
-import eu.ebrains.kg.core.serviceCall.GraphDB4TypesSvc;
-import eu.ebrains.kg.core.serviceCall.PrimaryStoreSvc;
+import eu.ebrains.kg.core.serviceCall.CoreTypesToGraphDB;
+import eu.ebrains.kg.core.serviceCall.CoreToPrimaryStore;
 import io.swagger.annotations.ApiOperation;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
 
 import java.nio.charset.StandardCharsets;
@@ -42,13 +41,13 @@ import java.util.UUID;
 @RequestMapping(Version.API)
 public class Types {
 
-    private final GraphDB4TypesSvc graphDBSvc;
+    private final CoreTypesToGraphDB graphDBSvc;
 
     private final AuthContext authContext;
 
-    private final PrimaryStoreSvc primaryStoreSvc;
+    private final CoreToPrimaryStore primaryStoreSvc;
 
-    public Types(GraphDB4TypesSvc graphDBSvc, AuthContext authContext, PrimaryStoreSvc primaryStoreSvc) {
+    public Types(CoreTypesToGraphDB graphDBSvc, AuthContext authContext, CoreToPrimaryStore primaryStoreSvc) {
         this.graphDBSvc = graphDBSvc;
         this.authContext = authContext;
         this.primaryStoreSvc = primaryStoreSvc;

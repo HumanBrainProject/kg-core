@@ -23,10 +23,10 @@ import eu.ebrains.kg.commons.jsonld.JsonLdDoc;
 import eu.ebrains.kg.commons.jsonld.NormalizedJsonLd;
 import eu.ebrains.kg.commons.model.*;
 import eu.ebrains.kg.commons.query.KgQuery;
-import eu.ebrains.kg.core.controller.QueryController;
+import eu.ebrains.kg.core.controller.CoreQueryController;
 import eu.ebrains.kg.core.model.ExposedStage;
-import eu.ebrains.kg.core.serviceCall.IdsSvc;
-import eu.ebrains.kg.core.serviceCall.JsonLdSvc;
+import eu.ebrains.kg.core.serviceCall.CoreToIds;
+import eu.ebrains.kg.core.serviceCall.CoreToJsonLd;
 import io.swagger.annotations.ApiOperation;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -45,13 +45,13 @@ public class Queries {
     IdUtils idUtils;
 
     @Autowired
-    QueryController queryController;
+    CoreQueryController queryController;
 
     @Autowired
-    JsonLdSvc jsonLdSvc;
+    CoreToJsonLd jsonLdSvc;
 
     @Autowired
-    IdsSvc idsSvc;
+    CoreToIds idsSvc;
 
     @ApiOperation(value = "List the queries which have been registered for the given root type")
     @GetMapping

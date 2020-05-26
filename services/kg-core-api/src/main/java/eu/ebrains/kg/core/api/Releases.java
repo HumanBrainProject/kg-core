@@ -22,8 +22,8 @@ import eu.ebrains.kg.commons.model.DataStage;
 import eu.ebrains.kg.commons.model.ReleaseStatus;
 import eu.ebrains.kg.commons.model.Result;
 import eu.ebrains.kg.commons.params.ReleaseTreeScope;
-import eu.ebrains.kg.core.serviceCall.IdsSvc;
-import eu.ebrains.kg.core.serviceCall.ReleaseSvc;
+import eu.ebrains.kg.core.serviceCall.CoreToIds;
+import eu.ebrains.kg.core.serviceCall.CoreToRelease;
 import io.swagger.annotations.ApiOperation;
 import io.swagger.annotations.ApiResponse;
 import io.swagger.annotations.ApiResponses;
@@ -43,10 +43,10 @@ import java.util.stream.Collectors;
 @RequestMapping(Version.API+"/releases")
 public class Releases {
 
-    private final ReleaseSvc releaseSvc;
-    private final IdsSvc idsSvc;
+    private final CoreToRelease releaseSvc;
+    private final CoreToIds idsSvc;
 
-    public Releases(ReleaseSvc releaseSvc, IdsSvc idsSvc) {
+    public Releases(CoreToRelease releaseSvc, CoreToIds idsSvc) {
         this.releaseSvc = releaseSvc;
         this.idsSvc = idsSvc;
     }

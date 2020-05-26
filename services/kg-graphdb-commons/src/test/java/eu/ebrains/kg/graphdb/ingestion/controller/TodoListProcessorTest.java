@@ -29,7 +29,7 @@ import eu.ebrains.kg.graphdb.commons.controller.ArangoDatabases;
 import eu.ebrains.kg.graphdb.commons.controller.ArangoRepositoryCommons;
 import eu.ebrains.kg.graphdb.commons.model.ArangoDocument;
 import eu.ebrains.kg.graphdb.serviceCall.PrimaryStoreSvcTest;
-import eu.ebrains.kg.test.IdsSvcForTest;
+import eu.ebrains.kg.test.TestToIds;
 import eu.ebrains.kg.test.TestObjectFactory;
 import org.junit.Assert;
 import org.junit.Before;
@@ -69,7 +69,7 @@ public class TodoListProcessorTest {
     ArangoDatabases arangoDatabases;
 
     @Autowired
-    IdsSvcForTest idsSvcForTest;
+    TestToIds idsSvcForTest;
 
 
     @Before

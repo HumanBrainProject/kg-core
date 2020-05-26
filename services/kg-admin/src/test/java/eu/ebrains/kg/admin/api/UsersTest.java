@@ -18,10 +18,10 @@ package eu.ebrains.kg.admin.api;
 
 import com.google.gson.Gson;
 import com.netflix.discovery.EurekaClient;
-import eu.ebrains.kg.admin.controller.ArangoRepository;
-import eu.ebrains.kg.admin.controller.UserController;
-import eu.ebrains.kg.admin.serviceCall.AuthenticationSvcForAdmin;
-import eu.ebrains.kg.admin.serviceCall.GraphDBSvc;
+import eu.ebrains.kg.admin.controller.AdminArangoRepository;
+import eu.ebrains.kg.admin.controller.AdminUserController;
+import eu.ebrains.kg.admin.serviceCall.AdminToAuthentication;
+import eu.ebrains.kg.admin.serviceCall.AdminToGraphDB;
 import eu.ebrains.kg.commons.IdUtils;
 import eu.ebrains.kg.commons.jsonld.JsonLdDoc;
 import eu.ebrains.kg.commons.model.User;
@@ -45,12 +45,12 @@ public class UsersTest {
     @Autowired
     EurekaClient discoveryClient;
 
-    Users users;
+    AdminUsersAPI users;
 
     SpringDockerComposeRunner dockerComposeRunner;
 
     @Autowired
-    ArangoRepository repository;
+    AdminArangoRepository repository;
 
     @Autowired
     IdUtils idUtils;
@@ -59,11 +59,11 @@ public class UsersTest {
     Gson gson;
 
     @Autowired
-    GraphDBSvc graphDBSvc;
+    AdminToGraphDB graphDBSvc;
 
 
     @Autowired
-    UserController userController;
+    AdminUserController userController;
 
     String userId = "test";
 
@@ -72,14 +72,14 @@ public class UsersTest {
         this.dockerComposeRunner = new SpringDockerComposeRunner(discoveryClient, true, false, Arrays.asList("arango"), "kg-primarystore", "kg-query", "kg-graphdb-sync", "kg-jsonld", "kg-indexing", "kg-inference", "kg-permissions");
         dockerComposeRunner.start();
 
-        AuthenticationSvcForAdmin authenticationSvcMock = Mockito.mock(AuthenticationSvcForAdmin.class);
+        AdminToAuthentication authenticationSvcMock = Mockito.mock(AdminToAuthentication.class);
 
         JsonLdDoc responseFromAuthentication = new JsonLdDoc();
         responseFromAuthentication.addProperty("sub", userId);
 
         Mockito.doReturn(responseFromAuthentication).when(authenticationSvcMock).getUser();
 
-        users = new Users(authenticationSvcMock, userController, gson);
+        users = new AdminUsersAPI(authenticationSvcMock, userController, gson);
 
     }
 

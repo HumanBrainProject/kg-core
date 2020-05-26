@@ -35,7 +35,7 @@ import eu.ebrains.kg.graphdb.commons.controller.EntryHookDocuments;
 import eu.ebrains.kg.graphdb.commons.model.ArangoDocument;
 import eu.ebrains.kg.graphdb.commons.model.ArangoEdge;
 import eu.ebrains.kg.graphdb.commons.model.ArangoInstance;
-import eu.ebrains.kg.graphdb.commons.serviceCall.IdsSvc;
+import eu.ebrains.kg.graphdb.commons.serviceCall.GraphDBToIds;
 import eu.ebrains.kg.graphdb.ingestion.model.DBOperation;
 import eu.ebrains.kg.graphdb.ingestion.model.DeleteOperation;
 import eu.ebrains.kg.graphdb.ingestion.model.EdgeResolutionOperation;
@@ -65,7 +65,7 @@ public class DataController {
     private ArangoUtils arangoUtils;
 
     @Autowired
-    private IdsSvc idLookupSvc;
+    private GraphDBToIds idLookupSvc;
 
     @Autowired
     private ReleasingController releasingController;

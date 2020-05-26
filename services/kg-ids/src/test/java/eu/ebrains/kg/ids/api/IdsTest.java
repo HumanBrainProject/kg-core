@@ -49,7 +49,7 @@ public class IdsTest {
 
 
     @Autowired
-    Ids ids;
+    IdsAPI ids;
 
     @Autowired
     IdUtils idUtils;

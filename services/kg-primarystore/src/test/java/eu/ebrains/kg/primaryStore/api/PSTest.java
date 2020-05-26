@@ -49,7 +49,7 @@ public class PSTest {
     }
 
     @Autowired
-    Events primaryStore;
+    PrimaryStoreEventsAPI primaryStore;
 
     private final Space space = TestObjectFactory.SIMPSONS;
 

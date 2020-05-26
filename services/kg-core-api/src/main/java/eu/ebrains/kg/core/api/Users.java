@@ -20,7 +20,7 @@ import eu.ebrains.kg.commons.Version;
 import eu.ebrains.kg.commons.jsonld.JsonLdDoc;
 import eu.ebrains.kg.commons.model.Result;
 import eu.ebrains.kg.commons.model.User;
-import eu.ebrains.kg.core.serviceCall.Authentication4CoreSvc;
+import eu.ebrains.kg.core.serviceCall.CoreToAuthentication;
 import io.swagger.annotations.ApiOperation;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -38,9 +38,9 @@ import java.util.List;
 @RequestMapping(Version.API+"/users")
 public class Users {
 
-    private final Authentication4CoreSvc authenticationSvc;
+    private final CoreToAuthentication authenticationSvc;
 
-    public Users(Authentication4CoreSvc authenticationSvc) {
+    public Users(CoreToAuthentication authenticationSvc) {
         this.authenticationSvc = authenticationSvc;
     }
 

@@ -21,7 +21,7 @@ import eu.ebrains.kg.commons.model.DataStage;
 import eu.ebrains.kg.commons.model.PaginatedResult;
 import eu.ebrains.kg.commons.model.Type;
 import eu.ebrains.kg.systemTest.model.ComparisonResult;
-import eu.ebrains.kg.systemTest.serviceCall.CoreSvc;
+import eu.ebrains.kg.systemTest.serviceCall.SystemTestToCore;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
@@ -30,13 +30,13 @@ import java.util.*;
 
 @Component
 public class PropertiesComparison {
-    private final CoreSvc coreSvc;
+    private final SystemTestToCore coreSvc;
 
     private final Logger logger = LoggerFactory.getLogger(getClass());
 
     public static final List<String> PROPERTIES_TO_SKIP = Arrays.asList("https://kg.ebrains.eu/vocab/meta/alternative", "https://kg.ebrains.eu/vocab/meta/revision");
 
-    public PropertiesComparison(CoreSvc coreSvc) {
+    public PropertiesComparison(SystemTestToCore coreSvc) {
         this.coreSvc = coreSvc;
     }
 

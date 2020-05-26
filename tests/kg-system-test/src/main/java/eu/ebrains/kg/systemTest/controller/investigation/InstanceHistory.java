@@ -26,7 +26,7 @@ import eu.ebrains.kg.commons.jsonld.JsonLdIdMapping;
 import eu.ebrains.kg.commons.jsonld.NormalizedJsonLd;
 import eu.ebrains.kg.commons.model.DataStage;
 import eu.ebrains.kg.commons.model.IdWithAlternatives;
-import eu.ebrains.kg.systemTest.serviceCall.IdsSvc;
+import eu.ebrains.kg.systemTest.serviceCall.SystemTestToIds;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -41,13 +41,13 @@ public class InstanceHistory {
 
     private final Logger logger = LoggerFactory.getLogger(getClass());
 
-    private final IdsSvc idsSvc;
+    private final SystemTestToIds idsSvc;
 
     private final IdUtils idUtils;
 
     private ArangoDatabaseProxy events;
 
-    public InstanceHistory(IdUtils idUtils, IdsSvc idsSvc,  @Qualifier("events") ArangoDatabaseProxy events) {
+    public InstanceHistory(IdUtils idUtils, SystemTestToIds idsSvc, @Qualifier("eventsTest") ArangoDatabaseProxy events) {
         this.events = events;
         this.idsSvc = idsSvc;
         this.idUtils = idUtils;

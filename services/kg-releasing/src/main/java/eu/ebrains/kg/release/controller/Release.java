@@ -22,8 +22,8 @@ import eu.ebrains.kg.commons.model.Event;
 import eu.ebrains.kg.commons.model.ReleaseStatus;
 import eu.ebrains.kg.commons.model.Space;
 import eu.ebrains.kg.commons.params.ReleaseTreeScope;
-import eu.ebrains.kg.release.serviceCall.GraphDBSyncSvc;
-import eu.ebrains.kg.release.serviceCall.PrimaryStoreSvc;
+import eu.ebrains.kg.release.serviceCall.ReleaseToGraphDB;
+import eu.ebrains.kg.release.serviceCall.ReleaseToPrimaryStore;
 import org.springframework.stereotype.Component;
 
 import java.util.Date;
@@ -32,12 +32,12 @@ import java.util.UUID;
 @Component
 public class Release {
 
-    private final GraphDBSyncSvc graphDBSvc;
+    private final ReleaseToGraphDB graphDBSvc;
 
-    private final PrimaryStoreSvc releasePrimaryStoreSvc;
+    private final ReleaseToPrimaryStore releasePrimaryStoreSvc;
 
 
-    public Release(GraphDBSyncSvc graphDBSvc, PrimaryStoreSvc releasePrimaryStoreSvc) {
+    public Release(ReleaseToGraphDB graphDBSvc, ReleaseToPrimaryStore releasePrimaryStoreSvc) {
         this.graphDBSvc = graphDBSvc;
         this.releasePrimaryStoreSvc = releasePrimaryStoreSvc;
     }

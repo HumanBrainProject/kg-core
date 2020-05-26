@@ -26,7 +26,7 @@ import eu.ebrains.kg.commons.models.UserWithRoles;
 import eu.ebrains.kg.commons.query.KgQuery;
 import eu.ebrains.kg.docker.SpringDockerComposeRunner;
 import eu.ebrains.kg.graphdb.ingestion.controller.TodoListProcessor;
-import eu.ebrains.kg.test.IdsSvcForTest;
+import eu.ebrains.kg.test.TestToIds;
 import eu.ebrains.kg.test.TestObjectFactory;
 import org.junit.Assert;
 import org.junit.Before;
@@ -55,7 +55,7 @@ public class QueryControllerTest {
     TodoListProcessor todoListProcessor;
 
     @Autowired
-    IdsSvcForTest idsSvcForTest;
+    TestToIds idsSvcForTest;
 
     @Autowired
     IdUtils idUtils;

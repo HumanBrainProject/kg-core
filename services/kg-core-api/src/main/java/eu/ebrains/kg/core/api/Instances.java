@@ -24,11 +24,11 @@ import eu.ebrains.kg.commons.jsonld.NormalizedJsonLd;
 import eu.ebrains.kg.commons.model.*;
 import eu.ebrains.kg.commons.models.ExternalEventInformation;
 import eu.ebrains.kg.commons.params.ReleaseTreeScope;
-import eu.ebrains.kg.core.controller.InstanceController;
+import eu.ebrains.kg.core.controller.CoreInstanceController;
 import eu.ebrains.kg.core.model.ExposedStage;
-import eu.ebrains.kg.core.serviceCall.GraphDB4InstancesSvc;
-import eu.ebrains.kg.core.serviceCall.IdsSvc;
-import eu.ebrains.kg.core.serviceCall.ReleaseSvc;
+import eu.ebrains.kg.core.serviceCall.CoreInstancesToGraphDB;
+import eu.ebrains.kg.core.serviceCall.CoreToIds;
+import eu.ebrains.kg.core.serviceCall.CoreToRelease;
 import io.swagger.annotations.ApiOperation;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -49,15 +49,15 @@ import java.util.stream.Collectors;
 @RequestMapping(Version.API)
 public class Instances {
 
-    private final IdsSvc idsSvc;
-    private final InstanceController instanceController;
-    private final GraphDB4InstancesSvc graphDB4InstancesSvc;
-    private final ReleaseSvc releaseSvc;
+    private final CoreToIds idsSvc;
+    private final CoreInstanceController instanceController;
+    private final CoreInstancesToGraphDB graphDB4InstancesSvc;
+    private final CoreToRelease releaseSvc;
     private final IdUtils idUtils;
 
     private final Logger logger = LoggerFactory.getLogger(getClass());
 
-    public Instances(IdsSvc idsSvc, InstanceController instanceController, GraphDB4InstancesSvc graphDB4InstancesSvc, ReleaseSvc releaseSvc, IdUtils idUtils) {
+    public Instances(CoreToIds idsSvc, CoreInstanceController instanceController, CoreInstancesToGraphDB graphDB4InstancesSvc, CoreToRelease releaseSvc, IdUtils idUtils) {
         this.idsSvc = idsSvc;
         this.instanceController = instanceController;
         this.graphDB4InstancesSvc = graphDB4InstancesSvc;

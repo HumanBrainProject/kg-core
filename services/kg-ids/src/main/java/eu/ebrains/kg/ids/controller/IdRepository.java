@@ -32,6 +32,7 @@ import eu.ebrains.kg.commons.model.DataStage;
 import eu.ebrains.kg.commons.model.IdWithAlternatives;
 import eu.ebrains.kg.commons.model.Space;
 import eu.ebrains.kg.ids.model.PersistedId;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Component;
 
 import java.util.*;
@@ -55,7 +56,7 @@ public class IdRepository {
         return null;
     }
 
-    public IdRepository(ArangoDatabaseProxy arangoDatabase, Gson gson, IdUtils idUtils) {
+    public IdRepository(@Qualifier("idsDB") ArangoDatabaseProxy arangoDatabase, Gson gson, IdUtils idUtils) {
         this.arangoDatabase = arangoDatabase;
         this.gson = gson;
         this.idUtils = idUtils;

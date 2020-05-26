@@ -89,10 +89,18 @@ public class Swagger {
         };
     }
 
+
     @Bean
-    public Docket publicApi() {
-        return new Docket(DocumentationType.SWAGGER_2).groupName("public").pathProvider(customPathProvider()).select()
-                .apis(Predicates.and(RequestHandlerSelectors.basePackage("eu.ebrains.kg"), Predicates.not(RequestHandlerSelectors.withClassAnnotation(ExtraApi.class)))).paths(Predicates.and(Predicates.not(PathSelectors.regex("^/error.*")), Predicates.not(PathSelectors.regex("^/"))))
+    public Docket coreApi() {
+        return new Docket(DocumentationType.SWAGGER_2).groupName("core").pathProvider(customPathProvider()).select()
+                .apis(Predicates.and(RequestHandlerSelectors.basePackage("eu.ebrains.kg.core"), Predicates.not(RequestHandlerSelectors.withClassAnnotation(ExtraApi.class)))).paths(Predicates.and(Predicates.not(PathSelectors.regex("^/error.*")), Predicates.not(PathSelectors.regex("^/"))))
+                .build().apiInfo(apiInfo()).securitySchemes(getSecuritySchemes()).securityContexts(Collections.singletonList(securityContext()));
+    }
+
+    @Bean
+    public Docket internalApi() {
+        return new Docket(DocumentationType.SWAGGER_2).groupName("internal").pathProvider(customPathProvider()).select()
+                .apis(Predicates.and(RequestHandlerSelectors.basePackage("eu.ebrains.kg"), Predicates.not(RequestHandlerSelectors.basePackage("eu.ebrains.kg.core")), Predicates.not(RequestHandlerSelectors.withClassAnnotation(ExtraApi.class)))).paths(Predicates.and(Predicates.not(PathSelectors.regex("^/error.*")), Predicates.not(PathSelectors.regex("^/"))))
                 .build().apiInfo(apiInfo()).securitySchemes(getSecuritySchemes()).securityContexts(Collections.singletonList(securityContext()));
     }
 

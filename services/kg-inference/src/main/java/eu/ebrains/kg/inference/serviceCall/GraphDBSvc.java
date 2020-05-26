@@ -46,7 +46,7 @@ public class GraphDBSvc {
         this.authContext = authContext;
     }
 
-    private final static String SERVICE_URL = "http://kg-graphdb-sync";
+    private final static String SERVICE_URL = "http://kg-graphdb-sync/internal/graphdb";
 
     public List<IndexedJsonLdDoc> getRelatedInstancesByIdentifiers(Space space, UUID id, DataStage stage, boolean embedded) {
         return Arrays.stream(serviceCall.get(String.format("%s/%s/instances/%s/%s/relatedByIdentifier?returnEmbedded=%b", SERVICE_URL, stage.name(), space.getName(), id, embedded), authContext.getAuthTokens(), NormalizedJsonLd[].class)).map(IndexedJsonLdDoc::from).collect(Collectors.toList());

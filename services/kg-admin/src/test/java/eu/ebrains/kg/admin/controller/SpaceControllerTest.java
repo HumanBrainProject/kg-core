@@ -43,7 +43,7 @@ public class SpaceControllerTest {
     }
 
     @Autowired
-    SpaceController spaceController;
+    AdminSpaceController spaceController;
 
     @Test
     public void testSpaceCreation() {

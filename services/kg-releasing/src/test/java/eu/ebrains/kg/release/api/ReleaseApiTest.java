@@ -23,7 +23,7 @@ import eu.ebrains.kg.commons.jsonld.NormalizedJsonLd;
 import eu.ebrains.kg.commons.model.DataStage;
 import eu.ebrains.kg.commons.model.Space;
 import eu.ebrains.kg.docker.SpringDockerComposeRunner;
-import eu.ebrains.kg.test.GraphDBSyncSvcForTest;
+import eu.ebrains.kg.test.TestToGraphDB;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -45,7 +45,7 @@ public class ReleaseApiTest {
     EurekaClient discoveryClient;
 
     @Autowired
-    ReleaseApi releaseApi;
+    ReleaseAPI releaseApi;
 
     SpringDockerComposeRunner dockerComposeRunner;
 
@@ -60,7 +60,7 @@ public class ReleaseApiTest {
     }
 
     @Autowired
-    GraphDBSyncSvcForTest graphDb;
+    TestToGraphDB graphDb;
 
     @Autowired
     IdUtils idUtils;

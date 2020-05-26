@@ -29,6 +29,6 @@ public class ClientSvc {
 
 
     public String addClient(String clientId) {
-        return serviceCall.put(String.format("http://kg-admin/clients/%s", clientId) ,null, new AuthTokens(), String.class);
+        return serviceCall.put(String.format("http://kg-admin/internal/admin/clients/%s", clientId) ,null, new AuthTokens(), String.class);
     }
 }

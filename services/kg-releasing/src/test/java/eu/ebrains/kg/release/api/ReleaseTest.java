@@ -26,7 +26,7 @@ import eu.ebrains.kg.commons.model.Space;
 import eu.ebrains.kg.commons.params.ReleaseTreeScope;
 import eu.ebrains.kg.docker.SpringDockerComposeRunner;
 import eu.ebrains.kg.release.controller.Release;
-import eu.ebrains.kg.test.GraphDBSyncSvcForTest;
+import eu.ebrains.kg.test.TestToGraphDB;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -63,7 +63,7 @@ public class ReleaseTest {
     }
 
     @Autowired
-    GraphDBSyncSvcForTest graphDb;
+    TestToGraphDB graphDb;
 
     @Autowired
     IdUtils idUtils;

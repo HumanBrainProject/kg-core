@@ -20,15 +20,15 @@ import eu.ebrains.kg.commons.model.DataStage;
 import eu.ebrains.kg.commons.model.Event;
 import eu.ebrains.kg.commons.model.User;
 import eu.ebrains.kg.commons.models.UserWithRoles;
-import eu.ebrains.kg.commons.serviceCall.AuthenticationSvc;
+import eu.ebrains.kg.commons.serviceCall.ToAuthentication;
 import org.springframework.stereotype.Component;
 
 @Component
 public class UserResolver {
 
-    public final AuthenticationSvc authenticationSvc;
+    public final ToAuthentication authenticationSvc;
 
-    public UserResolver(AuthenticationSvc authenticationSvc) {
+    public UserResolver(ToAuthentication authenticationSvc) {
         this.authenticationSvc = authenticationSvc;
     }
 

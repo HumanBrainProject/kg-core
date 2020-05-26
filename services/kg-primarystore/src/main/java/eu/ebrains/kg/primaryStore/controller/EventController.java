@@ -28,8 +28,8 @@ import eu.ebrains.kg.commons.permission.Functionality;
 import eu.ebrains.kg.commons.permission.FunctionalityInstance;
 import eu.ebrains.kg.commons.permissions.controller.PermissionSvc;
 import eu.ebrains.kg.commons.semantics.vocabularies.EBRAINSVocabulary;
-import eu.ebrains.kg.primaryStore.serviceCall.GraphDBSvc;
-import eu.ebrains.kg.primaryStore.serviceCall.IdsSvc;
+import eu.ebrains.kg.primaryStore.serviceCall.PrimaryStoreToGraphDB;
+import eu.ebrains.kg.primaryStore.serviceCall.PrimaryStoreToIds;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
@@ -46,14 +46,14 @@ import java.util.UUID;
 public class EventController {
 
     private final PermissionSvc permissionSvc;
-    private final IdsSvc idsSvc;
+    private final PrimaryStoreToIds idsSvc;
     private final EventRepository eventRepository;
     private final IdUtils idUtils;
-    private final GraphDBSvc graphDBSvc;
+    private final PrimaryStoreToGraphDB graphDBSvc;
 
     private final Logger logger = LoggerFactory.getLogger(getClass());
 
-    public EventController(PermissionSvc permissionSvc, IdsSvc idsSvc, EventRepository eventRepository, IdUtils idUtils, GraphDBSvc graphDBSvc) {
+    public EventController(PermissionSvc permissionSvc, PrimaryStoreToIds idsSvc, EventRepository eventRepository, IdUtils idUtils, PrimaryStoreToGraphDB graphDBSvc) {
         this.permissionSvc = permissionSvc;
         this.idsSvc = idsSvc;
         this.eventRepository = eventRepository;

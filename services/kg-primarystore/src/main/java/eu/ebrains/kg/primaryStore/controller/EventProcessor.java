@@ -24,8 +24,8 @@ import eu.ebrains.kg.commons.models.UserWithRoles;
 import eu.ebrains.kg.primaryStore.model.DeferredInference;
 import eu.ebrains.kg.primaryStore.model.ExecutedDeferredInference;
 import eu.ebrains.kg.primaryStore.model.FailedEvent;
-import eu.ebrains.kg.primaryStore.serviceCall.IndexingSvc;
-import eu.ebrains.kg.primaryStore.serviceCall.InferenceSvc;
+import eu.ebrains.kg.primaryStore.serviceCall.PrimaryStoreToIndexing;
+import eu.ebrains.kg.primaryStore.serviceCall.PrimaryStoreToInference;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.scheduling.annotation.Async;
@@ -40,7 +40,7 @@ import java.util.stream.Collectors;
 
 @Component
 public class EventProcessor {
-    private final IndexingSvc indexingSvc;
+    private final PrimaryStoreToIndexing indexingSvc;
 
     private final SSEProducer sseProducer;
 
@@ -48,13 +48,13 @@ public class EventProcessor {
 
     private final EventController eventController;
 
-    private final InferenceSvc inferenceSvc;
+    private final PrimaryStoreToInference inferenceSvc;
 
     private static final int LIMIT_DEFERRED_INFERENCE_RETRIES = 10;
 
     private final Logger logger = LoggerFactory.getLogger(getClass());
 
-    public EventProcessor(IndexingSvc indexingSvc, SSEProducer sseProducer, EventRepository eventRepository, EventController eventController, InferenceSvc inferenceSvc) {
+    public EventProcessor(PrimaryStoreToIndexing indexingSvc, SSEProducer sseProducer, EventRepository eventRepository, EventController eventController, PrimaryStoreToInference inferenceSvc) {
         this.indexingSvc = indexingSvc;
         this.sseProducer = sseProducer;
         this.eventRepository = eventRepository;

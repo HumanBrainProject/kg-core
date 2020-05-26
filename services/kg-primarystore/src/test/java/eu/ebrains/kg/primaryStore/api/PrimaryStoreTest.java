@@ -35,7 +35,7 @@ import java.util.UUID;
 public class PrimaryStoreTest {
 
     @Autowired
-    Events primaryStore;
+    PrimaryStoreEventsAPI primaryStore;
 
     @Test
     @Ignore("This is an integration test - make sure you wrap it with the docker-compose context it needs.")

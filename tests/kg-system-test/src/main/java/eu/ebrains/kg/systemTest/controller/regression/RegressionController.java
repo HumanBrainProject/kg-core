@@ -23,7 +23,7 @@ import eu.ebrains.kg.commons.model.DataStage;
 import eu.ebrains.kg.commons.model.Result;
 import eu.ebrains.kg.commons.model.Type;
 import eu.ebrains.kg.systemTest.controller.TestObjectFactory;
-import eu.ebrains.kg.systemTest.serviceCall.CoreSvc;
+import eu.ebrains.kg.systemTest.serviceCall.SystemTestToCore;
 import org.springframework.stereotype.Component;
 
 import java.util.HashSet;
@@ -34,11 +34,11 @@ import java.util.UUID;
 @Component
 public class RegressionController {
 
-    private final CoreSvc coreSvc;
+    private final SystemTestToCore coreSvc;
     private final TestObjectFactory testObjectFactory;
     private final IdUtils idUtils;
 
-    public RegressionController(CoreSvc coreSvc, TestObjectFactory testObjectFactory, IdUtils idUtils) {
+    public RegressionController(SystemTestToCore coreSvc, TestObjectFactory testObjectFactory, IdUtils idUtils) {
         this.coreSvc = coreSvc;
         this.testObjectFactory = testObjectFactory;
         this.idUtils = idUtils;
