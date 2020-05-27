@@ -93,10 +93,40 @@ public class ArangoRepositoryInstances {
             documents.forEach(d -> d.remove(EBRAINSVocabulary.META_ALTERNATIVE));
         }
         if (embedded) {
+            resolveUsersForDocuments(stage, documents);
             addEmbeddedInstancesToDocument(documents, getEmbeddedDocuments(documents, stage, false));
         }
     }
 
+    private void resolveUsersForDocuments(DataStage stage, List<NormalizedJsonLd> documents) {
+        List<ArangoDocumentReference> userIdsToResolve = documents.stream()
+                .filter(e -> e.containsKey(EBRAINSVocabulary.META_USER) && e.get(EBRAINSVocabulary.META_USER) != null)
+                .map(d -> {
+                    Map<String, Object> userObj = d.getAs(EBRAINSVocabulary.META_USER, Map.class);
+                    UUID uuid = idUtils.getUUID(new JsonLdId(userObj.get(JsonLdConsts.ID).toString()));
+                    return ArangoCollectionReference.fromSpace(InternalSpace.USERS_SPACE).doc(uuid);
+                }).filter(Objects::nonNull).distinct().collect(Collectors.toList());
+
+        Map<UUID, Result<NormalizedJsonLd>> usersById = getDocumentsByReferenceList(DataStage.NATIVE, userIdsToResolve, false, false);
+        documents.forEach(e -> {
+            if (e.containsKey(EBRAINSVocabulary.META_USER)) {
+                Map<String, Object> userObj = e.getAs(EBRAINSVocabulary.META_USER, Map.class);
+                if (userObj.containsKey(JsonLdConsts.ID)) {
+                    UUID uuid = idUtils.getUUID(new JsonLdId(userObj.get(JsonLdConsts.ID).toString()));
+                    Result<NormalizedJsonLd> userResult = null;
+                    if (uuid != null) {
+                        userResult = usersById.get(uuid);
+                    }
+                    NormalizedJsonLd user = userResult != null && userResult.getData() != null ? userResult.getData() : null;
+                    NormalizedJsonLd reducedUser = new NormalizedJsonLd();
+                    reducedUser.put(SchemaOrgVocabulary.NAME, user != null ? user.get(SchemaOrgVocabulary.NAME) : "Unknown");
+                    reducedUser.put(SchemaOrgVocabulary.ALTERNATE_NAME, user != null ? user.get(SchemaOrgVocabulary.ALTERNATE_NAME) : "unknown");
+                    reducedUser.put(SchemaOrgVocabulary.IDENTIFIER, user != null ? user.get(SchemaOrgVocabulary.IDENTIFIER) : Collections.emptyList());
+                    e.put(EBRAINSVocabulary.META_USER, reducedUser);
+                }
+            }
+        });
+    }
 
     private void resolveUsersForAlternatives(DataStage stage, List<NormalizedJsonLd[]> alternatives) {
         List<ArangoDocumentReference> userIdsToResolve = alternatives.stream().flatMap(Arrays::stream).map(d ->
@@ -121,8 +151,8 @@ public class ArangoRepositoryInstances {
                                 List<Object> users = new NormalizedJsonLd(alternative).getAsListOf(EBRAINSVocabulary.META_USER, String.class).stream().map(id -> {
                                     UUID uuid = idUtils.getUUID(new JsonLdId(id));
                                     Result<NormalizedJsonLd> userResult = null;
-                                    if(uuid!=null) {
-                                        userResult = usersById.get(id);
+                                    if (uuid != null) {
+                                        userResult = usersById.get(uuid);
                                     }
                                     NormalizedJsonLd user = userResult != null && userResult.getData() != null ? userResult.getData() : null;
                                     NormalizedJsonLd reducedUser = new NormalizedJsonLd();
@@ -147,7 +177,7 @@ public class ArangoRepositoryInstances {
 
         for (ArangoDocumentReference reference : documentReferences) {
             bindVars.put("doc" + counter, reference.getId());
-            aql.addLine(AQL.trust("\""+reference.getDocumentId()+"\": DOCUMENT(@doc" + counter + ")"));
+            aql.addLine(AQL.trust("\"" + reference.getDocumentId() + "\": DOCUMENT(@doc" + counter + ")"));
             counter++;
             if (counter < documentReferences.size()) {
                 aql.add(AQL.trust(", "));
@@ -157,16 +187,15 @@ public class ArangoRepositoryInstances {
         Map<UUID, Result<NormalizedJsonLd>> result = new HashMap<>();
         List<NormalizedJsonLd> results = db.query(aql.build().getValue(), bindVars, ArangoRepositoryCommons.EMPTY_QUERY_OPTIONS, NormalizedJsonLd.class).asListRemaining().stream().filter(Objects::nonNull).collect(Collectors.toList());
         List<NormalizedJsonLd> normalizedJsonLds = new ArrayList<>();
-        if(!results.isEmpty()) {
+        if (!results.isEmpty()) {
             // The response object is always just a single dictionary
             NormalizedJsonLd singleResult = results.get(0);
             for (String uuid : singleResult.keySet()) {
                 NormalizedJsonLd doc = singleResult.getAs(uuid, NormalizedJsonLd.class);
-                if(doc!=null){
+                if (doc != null) {
                     normalizedJsonLds.add(doc);
-                    result.put(UUID.fromString(uuid),Result.ok(doc));
-                }
-                else{
+                    result.put(UUID.fromString(uuid), Result.ok(doc));
+                } else {
                     result.put(UUID.fromString(uuid), Result.nok(HttpStatus.NOT_FOUND.value(), HttpStatus.NOT_FOUND.getReasonPhrase()));
                 }
             }
@@ -257,13 +286,13 @@ public class ArangoRepositoryInstances {
         aql.addLine(AQL.trust("]"));
     }
 
-    public List<String> getDocumentIdsBySpace(Space space){
+    public List<String> getDocumentIdsBySpace(Space space) {
         AQL aql = new AQL();
         Map<String, Object> bindVars = new HashMap<>();
         aql.addLine(AQL.trust("FOR doc IN @@space"));
         bindVars.put("@space", ArangoCollectionReference.fromSpace(space).getCollectionName());
-        aql.addLine(AQL.trust("FILTER doc."+IndexedJsonLdDoc.EMBEDDED+" == NULL"));
-        aql.addLine(AQL.trust("RETURN doc.`"+IndexedJsonLdDoc.DOCUMENT_ID+"`"));
+        aql.addLine(AQL.trust("FILTER doc." + IndexedJsonLdDoc.EMBEDDED + " == NULL"));
+        aql.addLine(AQL.trust("RETURN doc.`" + IndexedJsonLdDoc.DOCUMENT_ID + "`"));
         return databases.getByStage(DataStage.NATIVE).query(aql.build().getValue(), bindVars, aql.getQueryOptions(), String.class).asListRemaining();
     }
 
@@ -276,12 +305,12 @@ public class ArangoRepositoryInstances {
             AQL aql = new AQL();
             iterateThroughTypeList(typesWithLabelInfo, bindVars, aql);
             Map<String, Object> whitelistFilter = permissionsController.whitelistFilter(authContext.getUserWithRoles(), stage);
-            if(whitelistFilter!=null){
+            if (whitelistFilter != null) {
                 aql.specifyWhitelist();
                 bindVars.putAll(whitelistFilter);
             }
             aql.indent().addLine(AQL.trust("FOR v IN 1..1 OUTBOUND typeDefinition.type @@typeRelationCollection"));
-            if(whitelistFilter!=null) {
+            if (whitelistFilter != null) {
                 aql.addDocumentFilterWithWhitelistFilter(AQL.trust("v"));
             }
             addSearchLabelFilter(bindVars, aql, search);
@@ -380,7 +409,7 @@ public class ArangoRepositoryInstances {
     public List<NormalizedJsonLd> getDocumentsByIdentifiers(Set<String> allIdentifiersIncludingId, DataStage stage, Space space, boolean embedded, boolean alternatives) {
         ArangoDatabase db = databases.getByStage(stage);
         ArangoCollectionReference collectionReference = ArangoCollectionReference.fromSpace(space);
-        if(!db.collection(collectionReference.getCollectionName()).exists()){
+        if (!db.collection(collectionReference.getCollectionName()).exists()) {
             return Collections.emptyList();
         }
         if (allIdentifiersIncludingId != null && !allIdentifiersIncludingId.isEmpty()) {
