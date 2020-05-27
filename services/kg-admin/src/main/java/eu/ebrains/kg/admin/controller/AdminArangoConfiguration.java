@@ -18,15 +18,17 @@ package eu.ebrains.kg.admin.controller;
 
 import com.arangodb.ArangoDB;
 import eu.ebrains.kg.arango.commons.model.ArangoDatabaseProxy;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 @Configuration
-public class ArangoConfiguration {
+public class AdminArangoConfiguration {
 
     @Bean
-    public ArangoDB.Builder produceArangoDB(
+    @Qualifier("arangoBuilderForAdmin")
+    public ArangoDB.Builder produceAdminArangoDB(
             @Value("${eu.ebrains.kg.arango.host}") String host,
             @Value("${eu.ebrains.kg.arango.port}") Integer port,
             @Value("${eu.ebrains.kg.arango.user}") String user,
@@ -44,7 +46,8 @@ public class ArangoConfiguration {
     }
 
     @Bean
-    public ArangoDatabaseProxy produceDefaultDb(ArangoDB.Builder arangoDB) {
+    @Qualifier("adminDB")
+    public ArangoDatabaseProxy produceAdminDb(@Qualifier("arangoBuilderForAdmin") ArangoDB.Builder arangoDB) {
         return new ArangoDatabaseProxy(arangoDB.build(), "kg1-admin");
     }
 
