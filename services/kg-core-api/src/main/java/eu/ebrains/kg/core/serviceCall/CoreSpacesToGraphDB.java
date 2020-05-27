@@ -42,10 +42,7 @@ public class CoreSpacesToGraphDB {
     }
 
     public Paginated<NormalizedJsonLd> getSpaces(DataStage stage, PaginationParam paginationParam) {
-        String relativeUrl = String.format("/%s/spaces", stage.name());
-        if (paginationParam != null && paginationParam.getSize() != null) {
-            relativeUrl = String.format("%s?from=%d&size=%d", relativeUrl, paginationParam.getFrom(), paginationParam.getSize());
-        }
+        String relativeUrl = String.format("/%s/spaces?from=%d&size=%s", stage.name(), paginationParam.getFrom(), paginationParam.getSize() != null ? String.valueOf(paginationParam.getSize()) : "");
         return serviceCall.get(BASE_URL + relativeUrl, authContext.getAuthTokens(), PaginatedDocuments.class);
     }
 
