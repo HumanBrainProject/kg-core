@@ -60,7 +60,7 @@
         <module>adapters/kg-nexus-v0-adapter</module>
         <!--<module>adapters/kg-nexus-v1-adapter</module>-->
 
-        <module>bundle/all-in-one</module>
+        <module>bundle/kg-core-allinone</module>
     </modules>
 
 </project>
