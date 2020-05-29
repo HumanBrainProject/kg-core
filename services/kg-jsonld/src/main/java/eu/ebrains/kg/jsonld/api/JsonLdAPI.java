@@ -21,14 +21,10 @@ import eu.ebrains.kg.commons.jsonld.JsonLdConsts;
 import eu.ebrains.kg.commons.jsonld.JsonLdDoc;
 import eu.ebrains.kg.commons.jsonld.NormalizedJsonLd;
 import eu.ebrains.kg.commons.semantics.vocabularies.EBRAINSVocabulary;
+import eu.ebrains.kg.jsonld.controller.JsonLDJS;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.reactive.function.BodyInserters;
-import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.reactive.function.client.WebClientResponseException;
 
 import java.util.Collection;
@@ -39,15 +35,11 @@ import java.util.Map;
 @RequestMapping("/internal/jsonld")
 public class JsonLdAPI {
 
-    @Value("${eu.ebrains.kg.jsonld-node}")
-    String nodeEndpoint;
-
     private final Logger logger = LoggerFactory.getLogger(getClass());
+    private final JsonLDJS jsonLDJS;
 
-    private final  WebClient.Builder internalWebClient;
-
-    public JsonLdAPI(@Qualifier("direct") WebClient.Builder internalWebClient) {
-        this.internalWebClient = internalWebClient;
+    public JsonLdAPI(JsonLDJS jsonLDJS) {
+        this.jsonLDJS = jsonLDJS;
     }
 
     private final static String NULL_PLACEHOLDER = EBRAINSVocabulary.NAMESPACE + "jsonld/nullvalue";
@@ -93,7 +85,7 @@ public class JsonLdAPI {
         }
         Object originalContext = payload.get(JsonLdConsts.CONTEXT);
         try {
-            NormalizedJsonLd normalized = internalWebClient.build().post().uri(nodeEndpoint).accept(MediaType.APPLICATION_JSON).contentType(MediaType.APPLICATION_JSON).body(BodyInserters.fromObject(payload)).retrieve().bodyToMono(NormalizedJsonLd.class).block();
+            NormalizedJsonLd normalized = this.jsonLDJS.normalize(payload).join();
             if (originalContext != null) {
                 normalized.put(JsonLdConsts.CONTEXT, originalContext);
             }

@@ -24,10 +24,10 @@ import org.springframework.scheduling.annotation.EnableAsync;
 @SpringBootApplication
 @Configuration
 @EnableAsync
-public class KgCoreFull {
+public class KgCoreAllInOne {
 
 	public static void main(String[] args) {
-		SpringApplication.run(KgCoreFull.class, args);
+		SpringApplication.run(KgCoreAllInOne.class, args);
 	}
 
 }

@@ -113,13 +113,7 @@ services:
       - EUREKA_URI=http://${EXTERNAL_IP}:9500/eureka
       - EXTERNAL_IP=${EXTERNAL_IP}
       - EXTERNAL_PORT=9160
-      - NODE_ENDPOINT=http://kg-jsonld-node:3000/
       - JAVA_OPTS=-Xms128m -Xmx256m
-    depends_on:
-      - kg-jsonld-node
-
-  kg-jsonld-node:
-    image: registry.humanbrainproject.org/humanbrainproject/kg-core/kg-jsonld-node:latest
 
   kg-permissions:
     image: registry.humanbrainproject.org/humanbrainproject/kg-core/kg-permissions:latest
