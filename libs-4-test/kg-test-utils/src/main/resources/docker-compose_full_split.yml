@@ -15,7 +15,7 @@ services:
       - arango-admin
 
   arango-admin:
-    image: arangodb:3.4
+    image: arangodb:3.6
     ports:
       - 9111:8529
     environment:
@@ -62,7 +62,7 @@ services:
       - arango-graphdb-sync
 
   arango-graphdb-sync:
-    image: arangodb:3.4
+    image: arangodb:3.6
     ports:
       - 9141:8529
     environment:
@@ -88,7 +88,7 @@ services:
       - arango-graphdb-async
 
   arango-graphdb-async:
-    image: arangodb:3.4
+    image: arangodb:3.6
     ports:
       - 9146:8529
     environment:
@@ -139,7 +139,7 @@ services:
       - arango-primary
 
   arango-primary:
-    image: arangodb:3.4
+    image: arangodb:3.6
     ports:
       - 9181:8529
     environment:
@@ -228,7 +228,7 @@ services:
       - arango-ids
 
   arango-ids:
-    image: arangodb:3.4
+    image: arangodb:3.6
     ports:
       - 9261:8529
     environment:

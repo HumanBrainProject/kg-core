@@ -56,7 +56,7 @@ public class RestControllerAdvice {
      * Retrieves the authorization headers (user and client) and populates them in the {@link AuthContext}
      */
     @ModelAttribute
-    public void interceptAuthorizationToken(@RequestHeader(value = "Authorization", required = false) String userAuthorizationToken, @RequestHeader(value = "Client-Authorization", required = false) String clientAuthorizationToken) {
+    public void interceptAuthorizationToken(@RequestHeader(value = "Authorization", required = false) String userAuthorizationToken, @RequestHeader(value = "Client-Authorization", required = false) String clientAuthorizationToken, @RequestHeader(value = "Client-Id", required = false) String clientId, @RequestHeader(value = "Client-Secret", required = false) String clientSecret) {
         UserAuthToken userToken = null;
         ClientAuthToken clientToken = null;
         if (userAuthorizationToken != null) {
@@ -64,6 +64,10 @@ public class RestControllerAdvice {
         }
         if (clientAuthorizationToken != null) {
             clientToken = new ClientAuthToken(clientAuthorizationToken);
+        }
+        else if(clientId!=null && clientSecret!=null){
+            //TODO fetch client token from auth
+
         }
         AuthTokens authTokens = new AuthTokens(userToken, clientToken);
         authContext.setAuthTokens(authTokens);

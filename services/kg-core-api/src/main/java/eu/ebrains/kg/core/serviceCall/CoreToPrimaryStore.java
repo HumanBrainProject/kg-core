@@ -24,6 +24,7 @@ import eu.ebrains.kg.commons.model.Space;
 import org.springframework.stereotype.Component;
 
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
 
@@ -37,7 +38,8 @@ public class CoreToPrimaryStore {
     }
 
     public List<InstanceId> postEvent(Event event, boolean deferInference, AuthTokens authTokens) {
-        return Arrays.asList(serviceCall.post(String.format("http://kg-primarystore/events?deferInference=%b", deferInference), event, authTokens, InstanceId[].class));
+        InstanceId[] result = serviceCall.post(String.format("http://kg-primarystore/events?deferInference=%b", deferInference), event, authTokens, InstanceId[].class);
+        return result!=null ? Arrays.asList(result) : Collections.emptyList();
     }
 
     public void inferInstance(Space space, UUID id, AuthTokens authTokens) {

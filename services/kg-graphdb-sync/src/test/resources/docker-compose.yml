@@ -2,7 +2,7 @@ version: '3'
 services:
 
   arango-sync:
-    image: arangodb:3.4
+    image: arangodb:3.6
     ports:
       - 9141:8529
     environment:
@@ -13,7 +13,7 @@ services:
       - kg-service-discovery
 
   arango-async:
-    image: arangodb:3.4
+    image: arangodb:3.6
     ports:
       - 9146:8529
     environment:
