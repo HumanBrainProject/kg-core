@@ -51,61 +51,73 @@
             <groupId>eu.ebrains.kg</groupId>
             <artifactId>kg-admin</artifactId>
             <version>3.0-SNAPSHOT</version>
+            <classifier>library</classifier>
         </dependency>
         <dependency>
             <groupId>eu.ebrains.kg</groupId>
             <artifactId>kg-authentication</artifactId>
             <version>3.0-SNAPSHOT</version>
+            <classifier>library</classifier>
         </dependency>
         <dependency>
             <groupId>eu.ebrains.kg</groupId>
             <artifactId>kg-core-api</artifactId>
             <version>3.0-SNAPSHOT</version>
+            <classifier>library</classifier>
         </dependency>
         <dependency>
             <groupId>eu.ebrains.kg</groupId>
             <artifactId>kg-graphdb-sync</artifactId>
             <version>3.0-SNAPSHOT</version>
+            <classifier>library</classifier>
         </dependency>
         <dependency>
             <groupId>eu.ebrains.kg</groupId>
             <artifactId>kg-ids</artifactId>
             <version>3.0-SNAPSHOT</version>
+            <classifier>library</classifier>
         </dependency>
-       <dependency>
+        <dependency>
             <groupId>eu.ebrains.kg</groupId>
             <artifactId>kg-indexing</artifactId>
             <version>3.0-SNAPSHOT</version>
+            <classifier>library</classifier>
         </dependency>
         <dependency>
             <groupId>eu.ebrains.kg</groupId>
             <artifactId>kg-jsonld</artifactId>
             <version>3.0-SNAPSHOT</version>
+            <classifier>library</classifier>
         </dependency>
         <dependency>
             <groupId>eu.ebrains.kg</groupId>
             <artifactId>kg-inference</artifactId>
             <version>3.0-SNAPSHOT</version>
+            <classifier>library</classifier>
         </dependency>
         <dependency>
             <groupId>eu.ebrains.kg</groupId>
             <artifactId>kg-primarystore</artifactId>
             <version>3.0-SNAPSHOT</version>
+            <classifier>library</classifier>
         </dependency>
         <dependency>
             <groupId>eu.ebrains.kg</groupId>
             <artifactId>kg-query</artifactId>
             <version>3.0-SNAPSHOT</version>
+            <classifier>library</classifier>
         </dependency>
         <dependency>
             <groupId>eu.ebrains.kg</groupId>
             <artifactId>kg-releasing</artifactId>
             <version>3.0-SNAPSHOT</version>
+            <classifier>library</classifier>
         </dependency>
         <dependency>
             <groupId>eu.ebrains.kg</groupId>
             <artifactId>kg-spatial-search</artifactId>
             <version>3.0-SNAPSHOT</version>
+            <classifier>library</classifier>
         </dependency>
     </dependencies>
 
