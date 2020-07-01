@@ -16,14 +16,10 @@
 
 package eu.ebrains.kg;
 
-import eu.ebrains.kg.authentication.keycloak.KeycloakConfig;
-import org.keycloak.admin.client.Keycloak;
-import org.keycloak.admin.client.KeycloakBuilder;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.cache.annotation.EnableCaching;
 import org.springframework.cloud.netflix.eureka.EnableEurekaClient;
-import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 @EnableEurekaClient
@@ -36,8 +32,4 @@ public class KgAuthenticationApplication {
         SpringApplication.run(KgAuthenticationApplication.class, args);
     }
 
-    @Bean
-    public Keycloak createKeycloakAdmin(KeycloakConfig config) {
-        return KeycloakBuilder.builder().username(config.getUser()).password(config.getPwd()).serverUrl(config.getServerUrl()).realm("master").clientId("admin-cli").build();
-    }
 }
