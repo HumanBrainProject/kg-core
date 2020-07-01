@@ -21,12 +21,16 @@ import eu.ebrains.kg.commons.jsonld.JsonLdDoc;
 import eu.ebrains.kg.commons.jsonld.NormalizedJsonLd;
 import org.graalvm.polyglot.Context;
 import org.graalvm.polyglot.Value;
+import org.springframework.core.io.Resource;
 import org.springframework.stereotype.Component;
+import org.springframework.util.FileCopyUtils;
 
 import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.Reader;
+import java.io.UncheckedIOException;
 import java.net.URISyntaxException;
-import java.nio.file.Files;
-import java.nio.file.Paths;
+import java.nio.charset.StandardCharsets;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
 
@@ -36,9 +40,17 @@ public class JsonLDJS {
     private final Context context;
     private final Gson gson;
 
-    public JsonLDJS(Gson gson) throws URISyntaxException, IOException {
+
+    private Resource resources;
+
+    public JsonLDJS(Gson gson, @org.springframework.beans.factory.annotation.Value("classpath:jsonld.min.js") Resource libraryResource) throws URISyntaxException, IOException {
         this.gson = gson;
-        String library = Files.readString(Paths.get(getClass().getClassLoader().getResource("jsonld.min.js").toURI()));
+        String library;
+        try (Reader reader = new InputStreamReader(libraryResource.getInputStream(), StandardCharsets.UTF_8)) {
+            library = FileCopyUtils.copyToString(reader);
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
         this.context = Context.newBuilder("js").allowAllAccess(true).out(System.out).build();
         this.context.eval("js", "const window={};");
         this.context.eval("js", library);

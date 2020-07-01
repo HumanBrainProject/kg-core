@@ -20,6 +20,7 @@ import com.google.common.base.Predicates;
 import eu.ebrains.kg.commons.ExtraApi;
 import eu.ebrains.kg.commons.Version;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Primary;
@@ -98,6 +99,7 @@ public class Swagger {
     }
 
     @Bean
+    @ConditionalOnProperty(value = "eu.ebrains.kg.api.doc.hideInternal", havingValue = "false", matchIfMissing = true)
     public Docket internalApi() {
         return new Docket(DocumentationType.SWAGGER_2).groupName("internal").pathProvider(customPathProvider()).select()
                 .apis(Predicates.and(RequestHandlerSelectors.basePackage("eu.ebrains.kg"), Predicates.not(RequestHandlerSelectors.basePackage("eu.ebrains.kg.core")), Predicates.not(RequestHandlerSelectors.withClassAnnotation(ExtraApi.class)))).paths(Predicates.and(Predicates.not(PathSelectors.regex("^/error.*")), Predicates.not(PathSelectors.regex("^/"))))
