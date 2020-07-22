@@ -65,7 +65,7 @@ public class Types {
         return Result.ok(graphDBSvc.getTypesByNameList(listOfTypeNames, stage.getStage(), space != null ? new Space(space) : null, withProperties));
     }
 
-    @ApiOperation("Returns the types according to the list of names - either with property information or without")
+    @ApiOperation("Define a type")
     @PutMapping("/typesByName")
     public void defineType(@RequestBody NormalizedJsonLd payload, @RequestParam(value = "name") String name) {
         payload.put(EBRAINSVocabulary.META_TYPE, new JsonLdId(name));
