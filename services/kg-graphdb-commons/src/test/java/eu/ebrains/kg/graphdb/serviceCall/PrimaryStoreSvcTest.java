@@ -30,7 +30,7 @@ public class PrimaryStoreSvcTest {
     ServiceCall serviceCall;
 
 
-    private static final String BASE_URL = "http://kg-primarystore/events";
+    private static final String BASE_URL = "http://kg-primarystore/internal/primaryStore/events";
 
     public void postEventWithSpace(Space space, Event payload){
         serviceCall.post(String.format("%s/%s", BASE_URL, space.getName()), payload, new AuthTokens(), Void.class);

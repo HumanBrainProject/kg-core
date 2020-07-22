@@ -32,7 +32,7 @@ public class ReleaseToPrimaryStore {
     AuthContext authContext;
 
     public void pushToStore(Event event) {
-        serviceCall.post("http://kg-primarystore/events", event, authContext.getAuthTokens(), Void.class);
+        serviceCall.post("http://kg-primarystore/internal/primaryStore/events", event, authContext.getAuthTokens(), Void.class);
     }
 
 }

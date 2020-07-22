@@ -38,16 +38,16 @@ public class CoreToPrimaryStore {
     }
 
     public List<InstanceId> postEvent(Event event, boolean deferInference, AuthTokens authTokens) {
-        InstanceId[] result = serviceCall.post(String.format("http://kg-primarystore/events?deferInference=%b", deferInference), event, authTokens, InstanceId[].class);
+        InstanceId[] result = serviceCall.post(String.format("http://kg-primarystore/internal/primaryStore/events?deferInference=%b", deferInference), event, authTokens, InstanceId[].class);
         return result!=null ? Arrays.asList(result) : Collections.emptyList();
     }
 
     public void inferInstance(Space space, UUID id, AuthTokens authTokens) {
-        serviceCall.post(String.format("http://kg-primarystore/events/inference/%s/%s", space.getName(), id), null, authTokens, String.class);
+        serviceCall.post(String.format("http://kg-primarystore/internal/primaryStore/events/inference/%s/%s", space.getName(), id), null, authTokens, String.class);
     }
 
     public void inferDeferred(AuthTokens authTokens) {
-        serviceCall.post("http://kg-primarystore/events/inference/deferred", null, authTokens, String.class);
+        serviceCall.post("http://kg-primarystore/internal/internal/primaryStore/inference/deferred", null, authTokens, String.class);
     }
 
 }

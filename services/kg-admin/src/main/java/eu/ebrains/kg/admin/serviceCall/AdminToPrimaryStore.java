@@ -31,7 +31,7 @@ public class AdminToPrimaryStore {
     AuthContext authContext;
 
     public void addUser(Event event) {
-        serviceCall.post("http://kg-primarystore/events", event, authContext.getAuthTokens(), Void.class);
+        serviceCall.post("http://kg-primarystore/internal/primaryStore/events", event, authContext.getAuthTokens(), Void.class);
     }
 
 }
