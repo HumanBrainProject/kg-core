@@ -37,27 +37,25 @@ import java.util.function.Consumer;
 @Component
 public class JsonLDJS {
 
-    private final Context context;
     private final Gson gson;
-
+    private final String library;
 
     private Resource resources;
 
     public JsonLDJS(Gson gson, @org.springframework.beans.factory.annotation.Value("classpath:jsonld.min.js") Resource libraryResource) throws URISyntaxException, IOException {
         this.gson = gson;
-        String library;
         try (Reader reader = new InputStreamReader(libraryResource.getInputStream(), StandardCharsets.UTF_8)) {
             library = FileCopyUtils.copyToString(reader);
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }
-        this.context = Context.newBuilder("js").allowAllAccess(true).out(System.out).build();
-        this.context.eval("js", "const window={};");
-        this.context.eval("js", library);
     }
 
     public CompletableFuture<NormalizedJsonLd> normalize(JsonLdDoc payload) {
         CompletableFuture<NormalizedJsonLd> future = new CompletableFuture<>();
+        Context context = Context.newBuilder("js").allowAllAccess(true).out(System.out).build();
+        context.eval("js", "const window={};");
+        context.eval("js", this.library);
         context.getBindings("js").putMember("payload", gson.toJson(payload));
         Value jsPromise = context.eval("js", "new Promise(r => window.jsonld.expand(JSON.parse(payload)).then(exp => window.jsonld.compact(exp, {}).then(comp => r(JSON.stringify(comp)))));");
         Consumer<Object> javaThen = (value)-> future.complete(gson.fromJson(value.toString(), NormalizedJsonLd.class));
