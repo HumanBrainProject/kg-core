@@ -25,11 +25,9 @@ import io.swagger.annotations.ApiOperation;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import java.util.List;
 
 /**
  * The user API allows to retrieve information how to access the authentication service and to retrieve information about the users.
@@ -65,13 +63,6 @@ public class Users {
     public ResponseEntity<Result<User>> profile() {
         User myUserProfile = authenticationSvc.getMyUserProfile();
         return myUserProfile!=null ? ResponseEntity.ok(Result.ok(myUserProfile)) : ResponseEntity.notFound().build();
-    }
-
-    @ApiOperation("Retrieve user information based on a keycloak attribute (excluding detailed information such as e-mail address)")
-    @GetMapping("/byAttribute/{attribute}/{value}")
-    public ResponseEntity<List<User>> getUsersByAttribute(@PathVariable("attribute") String attribute, @PathVariable("value") String value){
-        List<User> users = authenticationSvc.getUsersByAttribute(attribute, value);
-        return users != null ? ResponseEntity.ok(users) : ResponseEntity.notFound().build();
     }
 
 }

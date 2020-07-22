@@ -26,13 +26,16 @@ import eu.ebrains.kg.commons.model.*;
 import eu.ebrains.kg.core.controller.CoreInferenceController;
 import eu.ebrains.kg.core.model.ExposedStage;
 import eu.ebrains.kg.core.serviceCall.CoreExtraToGraphDB;
+import eu.ebrains.kg.core.serviceCall.CoreToAuthentication;
 import eu.ebrains.kg.core.serviceCall.CoreToIds;
 import eu.ebrains.kg.core.serviceCall.CoreToJsonLd;
 import io.swagger.annotations.ApiOperation;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
 import java.util.UUID;
 
 /**
@@ -47,15 +50,17 @@ public class Extra {
     private final CoreInferenceController inferenceController;
     private final CoreToIds idsSvc;
     private final CoreExtraToGraphDB graphDB4ExtraSvc;
+    private final CoreToAuthentication authenticationSvc;
 
     private final Logger logger = LoggerFactory.getLogger(getClass());
 
-    public Extra(CoreToJsonLd coreToJsonLd, AuthContext authContext, CoreInferenceController inferenceController, CoreToIds idsSvc, CoreExtraToGraphDB graphDB4ExtraSvc) {
+    public Extra(CoreToJsonLd coreToJsonLd, AuthContext authContext, CoreInferenceController inferenceController, CoreToIds idsSvc, CoreExtraToGraphDB graphDB4ExtraSvc, CoreToAuthentication authenticationSvc) {
         this.coreToJsonLd = coreToJsonLd;
         this.authContext = authContext;
         this.inferenceController = inferenceController;
         this.idsSvc = idsSvc;
         this.graphDB4ExtraSvc = graphDB4ExtraSvc;
+        this.authenticationSvc = authenticationSvc;
     }
 
     @ApiOperation("Triggers the inference of all documents of the given space")
@@ -92,6 +97,13 @@ public class Extra {
     public Result<SuggestionResult> getSuggestedLinksForProperty(@RequestBody NormalizedJsonLd payload, @RequestParam("stage") ExposedStage stage, @RequestParam(value = "property") String propertyName, @PathVariable("id") UUID id, @RequestParam(value = "type", required = false) String type, @RequestParam(value = "search", required = false) String search, PaginationParam paginationParam) {
         InstanceId instanceId = idsSvc.resolveId(DataStage.IN_PROGRESS, id);
         return Result.ok(graphDB4ExtraSvc.getSuggestedLinksForProperty(payload, stage.getStage(), instanceId, id, propertyName, type != null && !type.isBlank() ? new Type(type) : null, search, paginationParam, authContext.getAuthTokens()));
+    }
+
+    @ApiOperation("Retrieve user information based on a keycloak attribute (excluding detailed information such as e-mail address)")
+    @GetMapping("/extra/users/byAttribute/{attribute}/{value}")
+    public ResponseEntity<List<User>> getUsersByAttribute(@PathVariable("attribute") String attribute, @PathVariable("value") String value){
+        List<User> users = authenticationSvc.getUsersByAttribute(attribute, value);
+        return users != null ? ResponseEntity.ok(users) : ResponseEntity.notFound().build();
     }
 
 }
