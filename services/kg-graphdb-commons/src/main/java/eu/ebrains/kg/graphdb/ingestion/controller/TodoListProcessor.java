@@ -108,7 +108,7 @@ public class TodoListProcessor {
                     break;
                 case DELETE:
                     logger.info("Removing an instance");
-                    deleteDocument(DataStage.LIVE, rootDocumentReference);
+                    deleteDocument(DataStage.IN_PROGRESS, rootDocumentReference);
                     break;
                 case UNRELEASE:
                     logger.info("Unreleasing a document");
@@ -139,18 +139,18 @@ public class TodoListProcessor {
 
     private void unreleaseDocument(ArangoDocumentReference rootDocumentReference) {
         deleteDocument(DataStage.RELEASED, rootDocumentReference);
-        repository.executeTransactional(DataStage.LIVE, Collections.singletonList(new DeleteInstanceOperation(releasingController.getReleaseStatusEdgeId(rootDocumentReference))));
+        repository.executeTransactional(DataStage.IN_PROGRESS, Collections.singletonList(new DeleteInstanceOperation(releasingController.getReleaseStatusEdgeId(rootDocumentReference))));
     }
 
     private void releaseDocument(ArangoDocumentReference rootDocumentReference, NormalizedJsonLd payload) {
         // Releasing a specific revision
         upsertDocument(rootDocumentReference, payload, DataStage.RELEASED, null);
-        repository.executeTransactional(DataStage.LIVE, Collections.singletonList(releasingController.getReleaseStatusUpdateOperation(rootDocumentReference, true)));
+        repository.executeTransactional(DataStage.IN_PROGRESS, Collections.singletonList(releasingController.getReleaseStatusUpdateOperation(rootDocumentReference, true)));
     }
 
 
     private boolean hasChangedReleaseStatus(DataStage stage, ArangoDocumentReference documentReference, NormalizedJsonLd payload) {
-        if (stage == DataStage.LIVE) {
+        if (stage == DataStage.IN_PROGRESS) {
             //TODO analyze payload for change by comparison with current instance - ignore alternatives
             return true;
         }
@@ -163,7 +163,7 @@ public class TodoListProcessor {
         repository.executeTransactional(stage, upsertOperationsForDocument);
         List<EdgeResolutionOperation> lazyIdResolutionOperations;
         if (stage != DataStage.NATIVE) {
-            //We don't need to resolve links in NATIVE and neither do META structures... it is sufficient if we do this in LIVE and RELEASED
+            //We don't need to resolve links in NATIVE and neither do META structures... it is sufficient if we do this in IN_PROGRESS and RELEASED
             lazyIdResolutionOperations = dataController.createResolutionsForPreviouslyUnresolved(stage, rootDocumentRef, payload.getAllIdentifiersIncludingId());
             repository.executeTransactional(stage, lazyIdResolutionOperations);
             repository.executeTransactionalOnMeta(stage, metaDataController.createUpsertOperations(stage, rootDocumentRef, payload.getTypes(), arangoInstances, lazyIdResolutionOperations, mergeIds));

@@ -132,7 +132,7 @@ public class EventProcessor {
     }
 
     public List<PersistedEvent> triggerInference(Space space, UUID documentId, UserWithRoles userWithRoles, AuthTokens authTokens){
-        List<PersistedEvent> events = inferenceSvc.infer(space, documentId, authTokens).stream().map(e -> eventController.persistEvent(authTokens, e, DataStage.LIVE, userWithRoles, null)).collect(Collectors.toList());
+        List<PersistedEvent> events = inferenceSvc.infer(space, documentId, authTokens).stream().map(e -> eventController.persistEvent(authTokens, e, DataStage.IN_PROGRESS, userWithRoles, null)).collect(Collectors.toList());
         events.forEach(evt -> {
             try {
                 indexingSvc.indexEvent(evt, authTokens);

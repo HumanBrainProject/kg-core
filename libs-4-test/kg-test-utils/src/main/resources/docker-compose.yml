@@ -21,7 +21,7 @@ services:
     environment:
       - ARANGO_ROOT_PASSWORD=changeMe
     volumes:
-      - /data/arango:/var/lib/arangodb3
+      - /tmp/arango:/var/lib/arangodb3
     command: >
       --log.level queries=trace
 #      - /data/arangoconf:/etc/arangodb3

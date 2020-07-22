@@ -90,7 +90,7 @@ public class PSTest {
         //Then
         System.out.println("Hello world");
 
-        //TODO assert only one instance is left in live
+        //TODO assert only one instance is left in inProgress
     }
 
     @Test
@@ -106,6 +106,6 @@ public class PSTest {
         //Then
         System.out.println("Hello world");
 
-        //TODO assert only one instance is left in live
+        //TODO assert only one instance is left in inProgress
     }
 }

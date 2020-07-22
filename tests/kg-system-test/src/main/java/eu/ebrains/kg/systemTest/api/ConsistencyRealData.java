@@ -44,17 +44,17 @@ public class ConsistencyRealData {
 
     @GetMapping("typesAndInstances")
     public Map<String, ComparisonResult<Long>> compareStatsBetweenTypeAndInstancesAPIs(@RequestParam(defaultValue = "false") boolean failingOnly, @RequestParam(defaultValue = "false") boolean analyzeFailing){
-        return internalTypeInstanceComparison.compareTypesWithInstances(DataStage.LIVE, failingOnly, analyzeFailing);
+        return internalTypeInstanceComparison.compareTypesWithInstances(DataStage.IN_PROGRESS, failingOnly, analyzeFailing);
     }
 
     @GetMapping("properties")
     public Map<String, Map<String, ComparisonResult<Long>>> checkProperties(@RequestParam(defaultValue = "0") int from, @RequestParam(required = false) Integer size,  @RequestParam(defaultValue = "false") boolean unsuccessfulOnly) {
-        return propertiesComparison.compareProperties(DataStage.LIVE, unsuccessfulOnly, from ,size);
+        return propertiesComparison.compareProperties(DataStage.IN_PROGRESS, unsuccessfulOnly, from ,size);
     }
 
     @PostMapping("propertiesByType")
     public Map<String, Map<String, ComparisonResult<Long>>> checkPropertiesByType(@RequestBody List<String> listOfTypeNames, @RequestParam(defaultValue = "false") boolean unsuccessfulOnly) {
-        return propertiesComparison.comparePropertiesByType(DataStage.LIVE, unsuccessfulOnly, listOfTypeNames);
+        return propertiesComparison.comparePropertiesByType(DataStage.IN_PROGRESS, unsuccessfulOnly, listOfTypeNames);
     }
 
 }

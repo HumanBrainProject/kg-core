@@ -53,7 +53,7 @@ public class ArangoRepositoryTypesTest {
     TodoListProcessor todoListProcessor;
 
 
-    private static final DataStage STAGE = DataStage.LIVE;
+    private static final DataStage STAGE = DataStage.IN_PROGRESS;
     private static final String CLIENT = "kgeditor";
 
     @Before

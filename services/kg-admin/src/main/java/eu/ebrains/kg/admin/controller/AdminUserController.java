@@ -49,12 +49,12 @@ public class AdminUserController {
 
     public User getOrCreateUserInfo(User authUserInfo) {
         UUID instanceId = UUID.nameUUIDFromBytes(authUserInfo.getNativeId().getBytes(StandardCharsets.UTF_8));
-        NormalizedJsonLd instance = graphDBSvc.getInstance(DataStage.LIVE, USERS_SPACE, instanceId, true);
+        NormalizedJsonLd instance = graphDBSvc.getInstance(DataStage.IN_PROGRESS, USERS_SPACE, instanceId, true);
         if (instance == null) {
             authUserInfo.setId(idUtils.buildAbsoluteUrl(instanceId));
             Event event = new Event(USERS_SPACE, instanceId, authUserInfo, Event.Type.INSERT, new Date());
             primaryStoreSvc.addUser(event);
-            instance = graphDBSvc.getInstance(DataStage.LIVE, USERS_SPACE, instanceId, true);
+            instance = graphDBSvc.getInstance(DataStage.IN_PROGRESS, USERS_SPACE, instanceId, true);
             if (instance == null) {
                 throw new RuntimeException("Failed to get user info after creation");
             }
@@ -69,7 +69,7 @@ public class AdminUserController {
             try{
                 UUID uuid = UUID.fromString(id);
                 //It's a kg-id. We need to resolve it to the native authentication system id first...
-                NormalizedJsonLd document = graphDBSvc.getInstance(DataStage.LIVE, USERS_SPACE, uuid, true);
+                NormalizedJsonLd document = graphDBSvc.getInstance(DataStage.IN_PROGRESS, USERS_SPACE, uuid, true);
                 if (document != null) {
                     return new User(document).getNativeId();
                 } else {

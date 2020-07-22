@@ -52,19 +52,19 @@ public class Investigation {
 
     @GetMapping("analyzeType")
     public Map<String, Set<UUID>> analyzeType(@RequestParam String type){
-        return internalTypeInstanceComparison.analyzeType(DataStage.LIVE, new Type(type));
+        return internalTypeInstanceComparison.analyzeType(DataStage.IN_PROGRESS, new Type(type));
     }
 
     @PutMapping("selfHeal")
     public Map<String, Set<UUID>> selfHeal(@RequestParam String type){
-        return internalTypeInstanceComparison.selfHeal(DataStage.LIVE, new Type(type));
+        return internalTypeInstanceComparison.selfHeal(DataStage.IN_PROGRESS, new Type(type));
     }
 
     @PutMapping("selfHealAll")
     public void selfHealAll(){
-        Map<String, ComparisonResult<Long>> failingTypes = internalTypeInstanceComparison.compareTypesWithInstances(DataStage.LIVE, true, false);
+        Map<String, ComparisonResult<Long>> failingTypes = internalTypeInstanceComparison.compareTypesWithInstances(DataStage.IN_PROGRESS, true, false);
         failingTypes.keySet().forEach(type -> {
-            internalTypeInstanceComparison.selfHeal(DataStage.LIVE, new Type(type));
+            internalTypeInstanceComparison.selfHeal(DataStage.IN_PROGRESS, new Type(type));
         });
     }
 }

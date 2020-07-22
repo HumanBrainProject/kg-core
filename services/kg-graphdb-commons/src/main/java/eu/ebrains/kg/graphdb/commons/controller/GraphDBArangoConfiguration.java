@@ -52,9 +52,9 @@ public class GraphDBArangoConfiguration {
     }
 
     @Bean
-    @Qualifier("live")
-    public ArangoDatabaseProxy produceLiveDB(@Qualifier("arangoBuilderForGraphDB") ArangoDB.Builder arangoDB) {
-        return new ArangoDatabaseProxy(arangoDB.build(), "kg1-live");
+    @Qualifier("inProgress")
+    public ArangoDatabaseProxy produceInProgressDB(@Qualifier("arangoBuilderForGraphDB") ArangoDB.Builder arangoDB) {
+        return new ArangoDatabaseProxy(arangoDB.build(), "kg1-inProgress");
     }
 
     @Bean
@@ -70,9 +70,9 @@ public class GraphDBArangoConfiguration {
     }
 
     @Bean
-    @Qualifier("liveMeta")
-    public ArangoDatabaseProxy produceLiveMetaDB(@Qualifier("arangoBuilderForGraphDB") ArangoDB.Builder arangoDB) {
-        return new ArangoDatabaseProxy(arangoDB.build(), "kg1-live-meta");
+    @Qualifier("inProgressMeta")
+    public ArangoDatabaseProxy produceInProgressMetaDB(@Qualifier("arangoBuilderForGraphDB") ArangoDB.Builder arangoDB) {
+        return new ArangoDatabaseProxy(arangoDB.build(), "kg1-inProgress-meta");
     }
 
     @Bean

@@ -6,7 +6,7 @@
 ## Arango Documents
 ```plantuml
 database "Arango" {
-  folder "Live space" as f1 {
+  folder "In_progress space" as f1 {
     frame "Document2" as D2 {
       note as N2
         @id=893483984-493993

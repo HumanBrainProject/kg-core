@@ -23,9 +23,9 @@ public enum DataStage {
      **/
     NATIVE,
     /**
-     * The live space is built based on the native space by applying inference logic (e.g. merging instances which contribute to the same entity)
+     * The in_progress space is built based on the native space by applying inference logic (e.g. merging instances which contribute to the same entity)
      **/
-    LIVE,
+    IN_PROGRESS,
     /**
      * The released space contains instances looking similar to the inferred, but "copied-away" in the specific released revision. Typically, data is moved from the inferred to the released stage when its content has been validated.
      */

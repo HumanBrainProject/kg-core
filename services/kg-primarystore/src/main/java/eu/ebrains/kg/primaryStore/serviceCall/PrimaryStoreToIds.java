@@ -42,7 +42,7 @@ public class PrimaryStoreToIds {
     private final static String SERVICE_URL = "http://kg-ids/internal";
 
     public List<JsonLdId> deprecateInstance(UUID instance, AuthTokens authTokens) {
-        JsonLdId[] result = serviceCall.delete(String.format("%s/ids/%s/%s", SERVICE_URL, DataStage.LIVE.name(), instance), authTokens, JsonLdId[].class);
+        JsonLdId[] result = serviceCall.delete(String.format("%s/ids/%s/%s", SERVICE_URL, DataStage.IN_PROGRESS.name(), instance), authTokens, JsonLdId[].class);
         if (result != null) {
             return Arrays.asList(result);
         }

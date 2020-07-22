@@ -72,8 +72,8 @@ public class ReleaseApiTest {
         NormalizedJsonLd jsonLd = new NormalizedJsonLd();
         jsonLd.setId(idUtils.buildAbsoluteUrl(this.docId));
 
-        graphDb.upsert(jsonLd, DataStage.LIVE, this.docId, space);
-        IndexedJsonLdDoc inferredDoc = graphDb.get(DataStage.LIVE, space, this.docId);
+        graphDb.upsert(jsonLd, DataStage.IN_PROGRESS, this.docId, space);
+        IndexedJsonLdDoc inferredDoc = graphDb.get(DataStage.IN_PROGRESS, space, this.docId);
 
         //When
         releaseApi.releaseInstance(space.getName(), this.docId, inferredDoc.getRevision());
@@ -100,7 +100,7 @@ public class ReleaseApiTest {
     }
     @Test
     public void testReleaseNestedDocuments() {
-        DataStage insertStage = DataStage.LIVE;
+        DataStage insertStage = DataStage.IN_PROGRESS;
         DataStage fetchStage = DataStage.RELEASED;
         String linkProperty = "https://schema.hbp.eu/Location";
 

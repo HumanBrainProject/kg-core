@@ -90,7 +90,7 @@ public class Extra {
     @ApiOperation(value = "Returns suggestions for an instance to be linked by the given property (e.g. for the KG Editor) - and takes into account the passed payload (already chosen values, reflection on dependencies between properties - e.g. providing only parcellations for an already chosen brain atlas)")
     @PostMapping("/extra/instances/{id}/suggestedLinksForProperty")
     public Result<SuggestionResult> getSuggestedLinksForProperty(@RequestBody NormalizedJsonLd payload, @RequestParam("stage") ExposedStage stage, @RequestParam(value = "property") String propertyName, @PathVariable("id") UUID id, @RequestParam(value = "type", required = false) String type, @RequestParam(value = "search", required = false) String search, PaginationParam paginationParam) {
-        InstanceId instanceId = idsSvc.resolveId(DataStage.LIVE, id);
+        InstanceId instanceId = idsSvc.resolveId(DataStage.IN_PROGRESS, id);
         return Result.ok(graphDB4ExtraSvc.getSuggestedLinksForProperty(payload, stage.getStage(), instanceId, id, propertyName, type != null && !type.isBlank() ? new Type(type) : null, search, paginationParam, authContext.getAuthTokens()));
     }
 

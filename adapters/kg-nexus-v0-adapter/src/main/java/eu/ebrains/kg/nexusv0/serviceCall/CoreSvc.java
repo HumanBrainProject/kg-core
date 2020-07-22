@@ -49,7 +49,7 @@ public class CoreSvc {
     }
 
     public Result<List<NormalizedJsonLd>> getInstancesByIdentifiers(Set<String> identifiers){
-        return serviceCallWithClientSecret.post(String.format("%s/instancesByIdentifiers?stage=LIVE&returnEmbedded=false", SERVICE_URL), identifiers, new AuthTokens(), ResultOfDocuments.class);
+        return serviceCallWithClientSecret.post(String.format("%s/instancesByIdentifiers?stage=IN_PROGRESS&returnEmbedded=false", SERVICE_URL), identifiers, new AuthTokens(), ResultOfDocuments.class);
     }
 
     public Result<?> createInstance(JsonLdDoc payload, Space space, String user, ZonedDateTime dateTime, boolean deferInference){

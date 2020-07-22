@@ -108,7 +108,7 @@ public class Reconcile {
         handledDocumentIds.add(id);
         Set<UUID> nonProcessedRelatedDocumentIds = relatedInstancesByIdentifiers.stream().map(IndexedJsonLdDoc::getDocumentId).filter(docId -> !handledDocumentIds.contains(docId)).collect(Collectors.toSet());
         //Find already existing instances for this document
-        List<InferredJsonLdDoc> inferredInstances = graphDBSvc.getRelatedInstancesByIncomingRelation(space, id, DataStage.LIVE, InferredJsonLdDoc.INFERENCE_OF, true).stream().map(InferredJsonLdDoc::from).collect(Collectors.toList());
+        List<InferredJsonLdDoc> inferredInstances = graphDBSvc.getRelatedInstancesByIncomingRelation(space, id, DataStage.IN_PROGRESS, InferredJsonLdDoc.INFERENCE_OF, true).stream().map(InferredJsonLdDoc::from).collect(Collectors.toList());
         if (inferredInstances.size() > 1) {
             throw new IllegalStateException(String.format("There are %d inferred instances for the id %s - this is not acceptable", inferredInstances.size(), id));
         } else if (inferredInstances.size() == 1) {

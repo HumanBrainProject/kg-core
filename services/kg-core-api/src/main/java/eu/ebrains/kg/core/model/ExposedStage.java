@@ -23,7 +23,7 @@ import eu.ebrains.kg.commons.model.DataStage;
  */
 public enum ExposedStage {
 
-    LIVE(DataStage.LIVE), RELEASED(DataStage.RELEASED);
+    IN_PROGRESS(DataStage.IN_PROGRESS), RELEASED(DataStage.RELEASED);
 
     private DataStage stage;
 

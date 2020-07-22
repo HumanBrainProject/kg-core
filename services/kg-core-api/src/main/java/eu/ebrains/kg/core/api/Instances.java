@@ -81,7 +81,7 @@ public class Instances {
     @PostMapping("/instances/{id}")
     public ResponseEntity<Result<NormalizedJsonLd>> createNewInstance(@RequestBody JsonLdDoc jsonLdDoc, @PathVariable("id") UUID id, @RequestParam(value = "space") String space, @RequestParam(value = "returnPayload", required = false, defaultValue = "true") boolean returnPayload, @RequestParam(value = "returnPermissions", required = false, defaultValue = "false") boolean returnPermissions, @RequestParam(value = "returnAlternatives", required = false, defaultValue = "false") boolean returnAlternatives, @RequestParam(value = "returnEmbedded", required = false, defaultValue = "true") boolean returnEmbedded,  @RequestParam(value = "deferInference", required = false, defaultValue = "false") boolean deferInference, ExternalEventInformation externalEventInformation) {
         //We want to prevent the UUID to be used twice...
-        InstanceId instanceId = idsSvc.resolveId(DataStage.LIVE, id);
+        InstanceId instanceId = idsSvc.resolveId(DataStage.IN_PROGRESS, id);
         if(instanceId!=null){
             return ResponseEntity.status(HttpStatus.CONFLICT).body(Result.nok(HttpStatus.CONFLICT.value(), String.format("The uuid you're providing (%s) is already in use. Please use a different one or do a PATCH instead", id)));
         }
@@ -93,7 +93,7 @@ public class Instances {
 
     private ResponseEntity<Result<NormalizedJsonLd>> contributeToInstance(JsonLdDoc jsonLdDoc, UUID id, boolean undeprecate,  boolean returnPayload, boolean returnPermissions, boolean returnAlternatives, boolean returnEmbedded, boolean deferInference, ExternalEventInformation externalEventInformation, boolean removeNonDeclaredFields) {
         logger.debug(String.format("Contributing to instance with id %s", id));
-        InstanceId instanceId = idsSvc.resolveId(DataStage.LIVE, id);
+        InstanceId instanceId = idsSvc.resolveId(DataStage.IN_PROGRESS, id);
         if (instanceId == null) {
             return ResponseEntity.notFound().build();
         } else if (instanceId.isDeprecated()) {
@@ -151,7 +151,7 @@ public class Instances {
     @ApiOperation(value = "Deprecate an instance")
     @DeleteMapping("/instances/{id}")
     public ResponseEntity<Result<Void>> deleteInstance(@PathVariable("id") UUID id, ExternalEventInformation externalEventInformation) {
-        InstanceId instanceId = idsSvc.resolveId(DataStage.LIVE, id);
+        InstanceId instanceId = idsSvc.resolveId(DataStage.IN_PROGRESS, id);
         if (instanceId == null) {
             return ResponseEntity.notFound().build();
         } else {

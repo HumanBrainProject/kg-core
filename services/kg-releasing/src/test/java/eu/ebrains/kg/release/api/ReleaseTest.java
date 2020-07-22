@@ -73,7 +73,7 @@ public class ReleaseTest {
         //Given
         NormalizedJsonLd jsonLd = new NormalizedJsonLd();
         jsonLd.setId(idUtils.buildAbsoluteUrl(this.docId));
-        graphDb.upsert(jsonLd, DataStage.LIVE, this.docId, space);
+        graphDb.upsert(jsonLd, DataStage.IN_PROGRESS, this.docId, space);
 
         //When
         release.release(space, this.docId, "1");
@@ -86,7 +86,7 @@ public class ReleaseTest {
         //Given
         NormalizedJsonLd jsonLd = new NormalizedJsonLd();
         jsonLd.setId(idUtils.buildAbsoluteUrl(this.docId));
-        graphDb.upsert(jsonLd, DataStage.LIVE, this.docId, space);
+        graphDb.upsert(jsonLd, DataStage.IN_PROGRESS, this.docId, space);
 
         //When
         ReleaseStatus status = release.getStatus(space, docId, ReleaseTreeScope.TOP_INSTANCE_ONLY);
@@ -100,8 +100,8 @@ public class ReleaseTest {
         //Given
         NormalizedJsonLd jsonLd = new NormalizedJsonLd();
         jsonLd.setId(idUtils.buildAbsoluteUrl(this.docId));
-        graphDb.upsert(jsonLd, DataStage.LIVE, this.docId, space);
-        IndexedJsonLdDoc inferredDoc = graphDb.get(DataStage.LIVE, space, docId);
+        graphDb.upsert(jsonLd, DataStage.IN_PROGRESS, this.docId, space);
+        IndexedJsonLdDoc inferredDoc = graphDb.get(DataStage.IN_PROGRESS, space, docId);
         release.release(space, docId, inferredDoc.getRevision());
 
         //When
@@ -116,14 +116,14 @@ public class ReleaseTest {
         //Given
         NormalizedJsonLd jsonLd = new NormalizedJsonLd();
         jsonLd.setId(idUtils.buildAbsoluteUrl(this.docId));
-        graphDb.upsert(jsonLd, DataStage.LIVE, this.docId, space);
+        graphDb.upsert(jsonLd, DataStage.IN_PROGRESS, this.docId, space);
 
-        IndexedJsonLdDoc inferredDoc = graphDb.get(DataStage.LIVE, space, docId);
+        IndexedJsonLdDoc inferredDoc = graphDb.get(DataStage.IN_PROGRESS, space, docId);
         release.release(space, docId, inferredDoc.getRevision());
         jsonLd.addProperty("http://schema.org/name", "new name");
-        graphDb.upsert(jsonLd, DataStage.LIVE, this.docId, space);
+        graphDb.upsert(jsonLd, DataStage.IN_PROGRESS, this.docId, space);
 
-        IndexedJsonLdDoc reinferredDoc = graphDb.get(DataStage.LIVE, space, docId);
+        IndexedJsonLdDoc reinferredDoc = graphDb.get(DataStage.IN_PROGRESS, space, docId);
         release.release(space, docId, reinferredDoc.getRevision());
         //When
         ReleaseStatus status = release.getStatus(space, docId, ReleaseTreeScope.TOP_INSTANCE_ONLY);
@@ -139,12 +139,12 @@ public class ReleaseTest {
         //Given
         NormalizedJsonLd jsonLd = new NormalizedJsonLd();
         jsonLd.setId(idUtils.buildAbsoluteUrl(this.docId));
-        graphDb.upsert(jsonLd, DataStage.LIVE, this.docId, space);
+        graphDb.upsert(jsonLd, DataStage.IN_PROGRESS, this.docId, space);
 
-        IndexedJsonLdDoc inferredDoc = graphDb.get(DataStage.LIVE, space, docId);
+        IndexedJsonLdDoc inferredDoc = graphDb.get(DataStage.IN_PROGRESS, space, docId);
         release.release(space, docId, inferredDoc.getRevision());
         jsonLd.addProperty("http://schema.org/name", "new name");
-        graphDb.upsert(jsonLd, DataStage.LIVE, this.docId, space);
+        graphDb.upsert(jsonLd, DataStage.IN_PROGRESS, this.docId, space);
         //When
         ReleaseStatus status = release.getStatus(space, docId, ReleaseTreeScope.TOP_INSTANCE_ONLY);
 
@@ -157,7 +157,7 @@ public class ReleaseTest {
         //Given
         NormalizedJsonLd jsonLd = new NormalizedJsonLd();
         jsonLd.setId(idUtils.buildAbsoluteUrl(this.docId));
-        graphDb.upsert(jsonLd, DataStage.LIVE, this.docId, space);
+        graphDb.upsert(jsonLd, DataStage.IN_PROGRESS, this.docId, space);
 
         //When
         ReleaseStatus status = release.getStatus(space, UUID.randomUUID(), ReleaseTreeScope.TOP_INSTANCE_ONLY);

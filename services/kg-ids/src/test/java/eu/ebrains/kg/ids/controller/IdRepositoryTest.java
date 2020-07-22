@@ -67,7 +67,7 @@ public class IdRepositoryTest {
         newPersistedId.setAlternativeIds(new HashSet<>(Arrays.asList(secondAbsoluteId)));
 
         //When
-        List<JsonLdId> mergedIds = idRepository.upsert(DataStage.LIVE, newPersistedId);
+        List<JsonLdId> mergedIds = idRepository.upsert(DataStage.IN_PROGRESS, newPersistedId);
 
         //Then
         assertEquals(1, mergedIds.size());

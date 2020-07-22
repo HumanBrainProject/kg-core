@@ -56,19 +56,19 @@ public class EventRepository {
     }
 
     void recordDeferredInference(DeferredInference e) {
-        ArangoCollection events = getOrCreateDeferredInferenceCollection(DataStage.LIVE);
+        ArangoCollection events = getOrCreateDeferredInferenceCollection(DataStage.IN_PROGRESS);
         events.insertDocument(gson.toJson(e), new DocumentCreateOptions().overwrite(true));
     }
 
     DeferredInference getNextDeferredInference(int offset) {
         HashMap<String, Object> bindVars = new HashMap<>();
-        bindVars.put("@collection", getOrCreateDeferredInferenceCollection(DataStage.LIVE).name());
+        bindVars.put("@collection", getOrCreateDeferredInferenceCollection(DataStage.IN_PROGRESS).name());
         List<DeferredInference> collect = arangoDatabase.getOrCreate().query(String.format("FOR doc IN @@collection LIMIT %d, 1 RETURN doc\n", offset), bindVars, new AqlQueryOptions(), String.class).asListRemaining().stream().map(d -> gson.fromJson(d, DeferredInference.class)).collect(Collectors.toList());
         return collect.size()>0 ? collect.get(0) : null;
     }
 
     void removeDeferredInference(DeferredInference inference) {
-        getOrCreateDeferredInferenceCollection(DataStage.LIVE).deleteDocument(inference.getKey());
+        getOrCreateDeferredInferenceCollection(DataStage.IN_PROGRESS).deleteDocument(inference.getKey());
     }
 
     void insert(PersistedEvent e) {

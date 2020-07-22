@@ -453,7 +453,7 @@ public class ArangoRepositoryInstances {
     }
 
     private ReleaseStatus getTopInstanceReleaseStatus(Space space, UUID id) {
-        ArangoDatabase db = databases.getByStage(DataStage.LIVE);
+        ArangoDatabase db = databases.getByStage(DataStage.IN_PROGRESS);
         ArangoCollectionReference collectionReference = ArangoCollectionReference.fromSpace(space);
         ArangoCollectionReference releaseStatusCollection = InternalSpace.RELEASE_STATUS_EDGE_COLLECTION;
         ArangoCollection collection = db.collection(collectionReference.getCollectionName());

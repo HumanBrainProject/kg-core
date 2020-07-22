@@ -55,7 +55,7 @@ public class Releases {
     @ApiOperation("Release or re-release an instance")
     @PutMapping
     public ResponseEntity<Void> releaseInstance(@RequestParam("id") UUID id, @RequestParam("revision") String revision) {
-        InstanceId instanceId = idsSvc.resolveId(DataStage.LIVE, id);
+        InstanceId instanceId = idsSvc.resolveId(DataStage.IN_PROGRESS, id);
         if (instanceId == null) {
             return ResponseEntity.notFound().build();
         }
@@ -70,7 +70,7 @@ public class Releases {
     @ApiResponses(value = {@ApiResponse(code = 200, message = "The instance that has been unreleased"), @ApiResponse(code = 404, message = "Instance not found")})
     @DeleteMapping
     public ResponseEntity<Void> unreleaseInstance(@RequestParam("id") UUID id) {
-        InstanceId instanceId = idsSvc.resolveId(DataStage.LIVE, id);
+        InstanceId instanceId = idsSvc.resolveId(DataStage.IN_PROGRESS, id);
         if (instanceId == null) {
             return ResponseEntity.notFound().build();
         }
@@ -87,7 +87,7 @@ public class Releases {
             @ApiResponse(code = 404, message = "Instance not found")})
     @GetMapping(value = "/status")
     public ResponseEntity<Result<ReleaseStatus>> getReleaseStatus(@RequestParam("id") UUID id, @RequestParam("releaseTreeScope") ReleaseTreeScope releaseTreeScope) {
-        InstanceId instanceId = idsSvc.resolveId(DataStage.LIVE, id);
+        InstanceId instanceId = idsSvc.resolveId(DataStage.IN_PROGRESS, id);
         if (instanceId == null) {
             return ResponseEntity.notFound().build();
         }
@@ -104,7 +104,7 @@ public class Releases {
             @ApiResponse(code = 404, message = "Instance not found")})
     @PostMapping(value = "/statusByIds")
     public Result<Map<UUID, Result<ReleaseStatus>>> getReleasesStatusByIds(@RequestBody List<UUID> listOfIds, @RequestParam("releaseTreeScope") ReleaseTreeScope releaseTreeScope) {
-        List<InstanceId> instanceIds = idsSvc.resolveIdsByUUID(DataStage.LIVE, listOfIds, false);
+        List<InstanceId> instanceIds = idsSvc.resolveIdsByUUID(DataStage.IN_PROGRESS, listOfIds, false);
         return Result.ok(instanceIds.stream().filter(instanceId -> !instanceId.isDeprecated()).collect(Collectors.toMap(InstanceId::getUuid, instanceId ->
                 Result.ok(releaseSvc.getReleaseStatus(instanceId, releaseTreeScope))
         )));

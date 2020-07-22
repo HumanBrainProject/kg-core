@@ -66,12 +66,12 @@ public class CoreInferenceController {
         } else {
             uuids = graphSvc.getRelatedInstancesByIdentifiers(space, identifier, DataStage.NATIVE, authTokens).stream().map(IndexedJsonLdDoc::getDocumentId).collect(Collectors.toList());
             if (uuids.isEmpty()) {
-                //We can't find any uuids - it could be that the passed identifier is the id of the LIVE stage -> we therefore have to try to look it up...
+                //We can't find any uuids - it could be that the passed identifier is the id of the IN_PROGRESS stage -> we therefore have to try to look it up...
                 UUID uuid = extractInternalUUID(identifier);
                 if (uuid != null) {
-                    InstanceId instanceId = idsSvc.resolveId(DataStage.LIVE, uuid, authTokens);
+                    InstanceId instanceId = idsSvc.resolveId(DataStage.IN_PROGRESS, uuid, authTokens);
                     if (instanceId != null) {
-                        NormalizedJsonLd instance = graphSvc.getInstance(DataStage.LIVE, instanceId, false, false, false, authTokens);
+                        NormalizedJsonLd instance = graphSvc.getInstance(DataStage.IN_PROGRESS, instanceId, false, false, false, authTokens);
                         List<JsonLdId> inferenceOf = InferredJsonLdDoc.from(instance).getInferenceOf();
                         //To be sure, we re-infer all of the previous sources...
                         uuids = inferenceOf.stream().map(idUtils::getUUID).filter(Objects::nonNull).collect(Collectors.toList());

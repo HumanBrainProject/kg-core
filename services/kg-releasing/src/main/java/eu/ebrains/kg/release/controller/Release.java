@@ -43,7 +43,7 @@ public class Release {
     }
 
     public void release(Space space, UUID id, String revision) {
-        IndexedJsonLdDoc jsonLdDoc = getInstance(DataStage.LIVE, space, id);
+        IndexedJsonLdDoc jsonLdDoc = getInstance(DataStage.IN_PROGRESS, space, id);
         if (jsonLdDoc == null) {
             throw new IllegalArgumentException(String.format("Instance %s/%s not found", space.getName(), id));
         } else if (jsonLdDoc.hasRevision(revision)) {

@@ -47,8 +47,8 @@ public class RegressionController {
 
     private long getNumberOfInstancesByTypeAndCheckStatsInstanceConsistency(NormalizedJsonLd payload){
         Type type = new Type(payload.getTypes().stream().findFirst().orElseThrow());
-        long fromInstances = coreSvc.getInstances(type, 0, 0, DataStage.LIVE).getTotal();
-        List<Tuple<Type, Long>> types = coreSvc.getTypes(DataStage.LIVE);
+        long fromInstances = coreSvc.getInstances(type, 0, 0, DataStage.IN_PROGRESS).getTotal();
+        List<Tuple<Type, Long>> types = coreSvc.getTypes(DataStage.IN_PROGRESS);
         Long fromStats = types.stream().filter(t -> t.getA().equals(type)).findFirst().orElse(new Tuple<Type, Long>().setB(0L)).getB();
         if(fromInstances == fromStats){
             return fromInstances;

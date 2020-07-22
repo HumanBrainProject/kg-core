@@ -54,7 +54,7 @@ public class InstanceHistory {
     }
 
     public List<NormalizedJsonLd> loadHistoryOfInstance(UUID uuid) {
-        List<JsonLdIdMapping> jsonLdIdMappings = idsSvc.resolveIds(DataStage.LIVE, Collections.singletonList(new IdWithAlternatives(uuid, null, null)));
+        List<JsonLdIdMapping> jsonLdIdMappings = idsSvc.resolveIds(DataStage.IN_PROGRESS, Collections.singletonList(new IdWithAlternatives(uuid, null, null)));
         if (jsonLdIdMappings.isEmpty()) {
             return null;
         } else {
@@ -66,16 +66,16 @@ public class InstanceHistory {
                 logger.warn(String.format("The id %s resolved to %d ids - there is something wrong!", uuid, resolvedIds.size()));
             }
             Set<UUID> resolvedUUIDs = resolvedIds.stream().map(idUtils::getUUID).filter(Objects::nonNull).collect(Collectors.toSet());
-            List<NormalizedJsonLd> liveEventsByResolvedIds = resolvedUUIDs.stream().map(id -> getEvents(id, DataStage.LIVE)).flatMap(Collection::stream).collect(Collectors.toList());
-            Set<UUID> involvedLiveIds = liveEventsByResolvedIds.stream().map(e -> e.getAs("data", NormalizedJsonLd.class).getIdentifiers().stream().map(identifier -> JsonLdId.cast(identifier, null)).filter(Objects::nonNull).map(idUtils::getUUID).filter(Objects::nonNull).collect(Collectors.toSet())).flatMap(Collection::stream).collect(Collectors.toSet());
-            Set<UUID> allLiveIds = Stream.concat(resolvedUUIDs.stream(), involvedLiveIds.stream()).collect(Collectors.toSet());
-            List<NormalizedJsonLd> liveEvents = allLiveIds.stream().map(id -> getEvents(id, DataStage.LIVE)).flatMap(Collection::stream).collect(Collectors.toList());
-            Set<UUID> involvedNativeUUIDs = liveEvents.stream().map(e -> {
+            List<NormalizedJsonLd> inProgressEventsByResolvedIds = resolvedUUIDs.stream().map(id -> getEvents(id, DataStage.IN_PROGRESS)).flatMap(Collection::stream).collect(Collectors.toList());
+            Set<UUID> involvedInProgressIds = inProgressEventsByResolvedIds.stream().map(e -> e.getAs("data", NormalizedJsonLd.class).getIdentifiers().stream().map(identifier -> JsonLdId.cast(identifier, null)).filter(Objects::nonNull).map(idUtils::getUUID).filter(Objects::nonNull).collect(Collectors.toSet())).flatMap(Collection::stream).collect(Collectors.toSet());
+            Set<UUID> allInProgressIds = Stream.concat(resolvedUUIDs.stream(), involvedInProgressIds.stream()).collect(Collectors.toSet());
+            List<NormalizedJsonLd> inProgressEvents = allInProgressIds.stream().map(id -> getEvents(id, DataStage.IN_PROGRESS)).flatMap(Collection::stream).collect(Collectors.toList());
+            Set<UUID> involvedNativeUUIDs = inProgressEvents.stream().map(e -> {
                 NormalizedJsonLd data = e.getAs("data", NormalizedJsonLd.class);
                 return InferredJsonLdDoc.from(data).getInferenceOf().stream().map(idUtils::getUUID).filter(Objects::nonNull).collect(Collectors.toSet());
             }).flatMap(Collection::stream).collect(Collectors.toSet());
             List<NormalizedJsonLd> nativeEvents = involvedNativeUUIDs.stream().map(id -> getEvents(id, DataStage.NATIVE)).flatMap(Collection::stream).collect(Collectors.toList());
-            return Stream.concat(liveEvents.stream(), nativeEvents.stream()).sorted((o1, o2)-> {
+            return Stream.concat(inProgressEvents.stream(), nativeEvents.stream()).sorted((o1, o2)-> {
                 Long o1ts = o1==null ? null : o1.getAs("indexedTimestamp", Long.class);
                 Long o2ts = o2==null ? null : o2.getAs("indexedTimestamp", Long.class);
                 return o1ts != null ? o2ts != null ? o1ts.compareTo(o2ts) : 1 : 0;

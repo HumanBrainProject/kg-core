@@ -47,7 +47,7 @@ public class ReleaseToGraphDB {
     }
 
     public ReleaseStatus getReleaseStatus(Space space, UUID id, ReleaseTreeScope treeScope){
-        return serviceCall.get(String.format("%s/%s/instances/%s/%s/releaseStatus?releaseTreeScope=%s", SERVICE_ENDPOINT, DataStage.LIVE, space.getName(), id, treeScope.toString()), authContext.getAuthTokens(), ReleaseStatus.class);
+        return serviceCall.get(String.format("%s/%s/instances/%s/%s/releaseStatus?releaseTreeScope=%s", SERVICE_ENDPOINT, DataStage.IN_PROGRESS, space.getName(), id, treeScope.toString()), authContext.getAuthTokens(), ReleaseStatus.class);
     }
 
 }

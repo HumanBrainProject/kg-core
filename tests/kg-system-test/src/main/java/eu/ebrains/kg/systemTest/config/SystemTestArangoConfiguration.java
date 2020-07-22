@@ -52,9 +52,9 @@ public class SystemTestArangoConfiguration {
     }
 
     @Bean
-    @Qualifier("liveMetaTest")
-    public ArangoDatabaseProxy produceTestLiveMetaDB(@Qualifier("arangoBuilderForSystemTest") ArangoDB.Builder arangoDB) {
-        return new ArangoDatabaseProxy(arangoDB.build(), "kg1-live-meta");
+    @Qualifier("inProgressMetaTest")
+    public ArangoDatabaseProxy produceTestInProgressMetaDB(@Qualifier("arangoBuilderForSystemTest") ArangoDB.Builder arangoDB) {
+        return new ArangoDatabaseProxy(arangoDB.build(), "kg1-inProgress-meta");
     }
 
     @Bean

@@ -69,7 +69,7 @@ public class IdRepository {
         Set<UUID> mergedIds = Collections.emptySet();
         ArangoCollection coll = getOrCreateCollection(stage);
         //TODO make this transactional
-        if (stage == DataStage.LIVE) {
+        if (stage == DataStage.IN_PROGRESS) {
             PersistedId document = gson.fromJson(coll.getDocument(id.getId().toString(), String.class), PersistedId.class);
             //It could happen that identifiers disappear during updates. We need to make sure that the old identifiers are not lost though (getting rid of them is called "splitting" and is a separate process).
             if (document != null && document.getAlternativeIds() != null) {

@@ -59,7 +59,7 @@ public class EntryHookDocuments {
     }
 
     public ArangoDocumentReference getOrCreateReleaseStatusHookDocument(boolean doRelease) {
-        return getOrCreateSingleDocumentWithNamePayload(ArangoCollectionReference.fromSpace(InternalSpace.RELEASE_STATUS_SPACE).docWithStableId(doRelease ? ReleaseStatus.RELEASED.name() :  ReleaseStatus.HAS_CHANGED.name()), doRelease ? ReleaseStatus.RELEASED.name() : ReleaseStatus.HAS_CHANGED.name(), databases.getByStage(DataStage.LIVE));
+        return getOrCreateSingleDocumentWithNamePayload(ArangoCollectionReference.fromSpace(InternalSpace.RELEASE_STATUS_SPACE).docWithStableId(doRelease ? ReleaseStatus.RELEASED.name() :  ReleaseStatus.HAS_CHANGED.name()), doRelease ? ReleaseStatus.RELEASED.name() : ReleaseStatus.HAS_CHANGED.name(), databases.getByStage(DataStage.IN_PROGRESS));
     }
 
 

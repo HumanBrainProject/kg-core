@@ -173,20 +173,20 @@ public class TodoListProcessorTest {
     public void updateDocumentWithMerge() {
         //Given
         NormalizedJsonLd milhouse1 = TestObjectFactory.createJsonLd("simpsons/milhouse1.json");
-        ArangoDocumentReference milhouse1Id = todoListProcessor.upsertDocument(simpsons.doc(UUID.randomUUID()), milhouse1, DataStage.LIVE, null);
+        ArangoDocumentReference milhouse1Id = todoListProcessor.upsertDocument(simpsons.doc(UUID.randomUUID()), milhouse1, DataStage.IN_PROGRESS, null);
         Assert.assertNotNull(milhouse1Id);
 
         NormalizedJsonLd milhouse2 = TestObjectFactory.createJsonLd("simpsons/milhouse2.json");
-        ArangoDocumentReference milhouse2Id = todoListProcessor.upsertDocument(simpsons.doc(UUID.randomUUID()), milhouse2, DataStage.LIVE, null);
+        ArangoDocumentReference milhouse2Id = todoListProcessor.upsertDocument(simpsons.doc(UUID.randomUUID()), milhouse2, DataStage.IN_PROGRESS, null);
         Assert.assertNotNull(milhouse2Id);
 
         NormalizedJsonLd milhouseMerge = TestObjectFactory.createJsonLd("simpsons/milhouseMerge.json");
 
         //When
-        ArangoDocumentReference milhouseMergeId = todoListProcessor.upsertDocument(simpsons.doc(UUID.randomUUID()), milhouseMerge, DataStage.LIVE, Collections.singletonList(milhouse2Id.getDocumentId()));
+        ArangoDocumentReference milhouseMergeId = todoListProcessor.upsertDocument(simpsons.doc(UUID.randomUUID()), milhouseMerge, DataStage.IN_PROGRESS, Collections.singletonList(milhouse2Id.getDocumentId()));
 
         //Then
-        ArangoDocument milhouseMerged = repository.getDocument(DataStage.LIVE, milhouseMergeId);
+        ArangoDocument milhouseMerged = repository.getDocument(DataStage.IN_PROGRESS, milhouseMergeId);
         System.out.println(milhouseMerged);
 
     }
@@ -197,11 +197,11 @@ public class TodoListProcessorTest {
         NormalizedJsonLd editorClient = TestObjectFactory.createJsonLd("admin/kgeditorClient.json");
 
         //When
-        ArangoDocumentReference clientId = todoListProcessor.upsertDocument(admin.doc(UUID.randomUUID()), editorClient, DataStage.LIVE, null);
+        ArangoDocumentReference clientId = todoListProcessor.upsertDocument(admin.doc(UUID.randomUUID()), editorClient, DataStage.IN_PROGRESS, null);
 
         //Then
-        ArangoDocument client = repository.getDocument(DataStage.LIVE, clientId);
-        Map docInMeta = arangoDatabases.getMetaByStage(DataStage.LIVE).getDocument(clientId.getId(), Map.class);
+        ArangoDocument client = repository.getDocument(DataStage.IN_PROGRESS, clientId);
+        Map docInMeta = arangoDatabases.getMetaByStage(DataStage.IN_PROGRESS).getDocument(clientId.getId(), Map.class);
         Assert.assertNotNull(docInMeta);
     }
 
@@ -210,17 +210,17 @@ public class TodoListProcessorTest {
     public void upsertTypeDefinitionForClient() {
         //Given
         NormalizedJsonLd bart = TestObjectFactory.createJsonLd("simpsons/bart.json");
-        todoListProcessor.upsertDocument(simpsons.doc(UUID.randomUUID()), bart, DataStage.LIVE, null);
+        todoListProcessor.upsertDocument(simpsons.doc(UUID.randomUUID()), bart, DataStage.IN_PROGRESS, null);
         NormalizedJsonLd editorClient = TestObjectFactory.createJsonLd("admin/kgeditorClient.json");
-        todoListProcessor.upsertDocument(admin.doc(UUID.randomUUID()), editorClient, DataStage.LIVE, null);
+        todoListProcessor.upsertDocument(admin.doc(UUID.randomUUID()), editorClient, DataStage.IN_PROGRESS, null);
         NormalizedJsonLd typeDefinition = TestObjectFactory.createJsonLd("kgeditor/personTypeDefinition.json");
 
         //When
         ArangoDocumentReference typeDocId = todoListProcessor.upsertDocument(kgeditor.doc(UUID.randomUUID()), typeDefinition, DataStage.NATIVE, null);
 
         //Then
-        ArangoDocument typeDoc = repository.getDocument(DataStage.LIVE, typeDocId);
-        Map docInMeta = arangoDatabases.getMetaByStage(DataStage.LIVE).getDocument(typeDocId.getId(), Map.class);
+        ArangoDocument typeDoc = repository.getDocument(DataStage.IN_PROGRESS, typeDocId);
+        Map docInMeta = arangoDatabases.getMetaByStage(DataStage.IN_PROGRESS).getDocument(typeDocId.getId(), Map.class);
         Assert.assertNotNull(docInMeta);
     }
 
@@ -235,11 +235,11 @@ public class TodoListProcessorTest {
         NormalizedJsonLd typeDefinition = TestObjectFactory.createJsonLd("kgeditor/givenNamePropertyDefinition.json");
 
         //When
-        ArangoDocumentReference typeDocId = todoListProcessor.upsertDocument(kgeditor.doc(UUID.randomUUID()), typeDefinition, DataStage.LIVE, null);
+        ArangoDocumentReference typeDocId = todoListProcessor.upsertDocument(kgeditor.doc(UUID.randomUUID()), typeDefinition, DataStage.IN_PROGRESS, null);
 
         //Then
-        ArangoDocument typeDoc = repository.getDocument(DataStage.LIVE, typeDocId);
-        Map docInMeta = arangoDatabases.getMetaByStage(DataStage.LIVE).getDocument(typeDocId.getId(), Map.class);
+        ArangoDocument typeDoc = repository.getDocument(DataStage.IN_PROGRESS, typeDocId);
+        Map docInMeta = arangoDatabases.getMetaByStage(DataStage.IN_PROGRESS).getDocument(typeDocId.getId(), Map.class);
         Assert.assertNotNull(docInMeta);
     }
 
@@ -249,15 +249,15 @@ public class TodoListProcessorTest {
         NormalizedJsonLd bart = TestObjectFactory.createJsonLd("simpsons/bart.json");
         todoListProcessor.upsertDocument(simpsons.doc(UUID.randomUUID()), bart, DataStage.NATIVE, null);
         NormalizedJsonLd editorClient = TestObjectFactory.createJsonLd("admin/kgeditorClient.json");
-        ArangoDocumentReference clientId = todoListProcessor.upsertDocument(admin.doc(UUID.randomUUID()), editorClient, DataStage.LIVE, null);
+        ArangoDocumentReference clientId = todoListProcessor.upsertDocument(admin.doc(UUID.randomUUID()), editorClient, DataStage.IN_PROGRESS, null);
         NormalizedJsonLd typeDefinition = TestObjectFactory.createJsonLd("kgeditor/givenNameInPersonPropertyDefinition.json");
 
         //When
-        ArangoDocumentReference typeDocId = todoListProcessor.upsertDocument(kgeditor.doc(UUID.randomUUID()), typeDefinition, DataStage.LIVE, null);
+        ArangoDocumentReference typeDocId = todoListProcessor.upsertDocument(kgeditor.doc(UUID.randomUUID()), typeDefinition, DataStage.IN_PROGRESS, null);
 
         //Then
-        ArangoDocument typeDoc = repository.getDocument(DataStage.LIVE, typeDocId);
-        Map docInMeta = arangoDatabases.getMetaByStage(DataStage.LIVE).getDocument(typeDocId.getId(), Map.class);
+        ArangoDocument typeDoc = repository.getDocument(DataStage.IN_PROGRESS, typeDocId);
+        Map docInMeta = arangoDatabases.getMetaByStage(DataStage.IN_PROGRESS).getDocument(typeDocId.getId(), Map.class);
         Assert.assertNotNull(docInMeta);
     }
 
@@ -265,7 +265,7 @@ public class TodoListProcessorTest {
     @Test
     public void testUpdateTypeList() {
         //Given
-        DataStage stage = DataStage.LIVE;
+        DataStage stage = DataStage.IN_PROGRESS;
 
         NormalizedJsonLd bart = TestObjectFactory.createJsonLd("simpsons/bart.json");
         ArangoDocumentReference bartId = todoListProcessor.upsertDocument(simpsons.doc(UUID.randomUUID()), bart, stage, null);
@@ -286,7 +286,7 @@ public class TodoListProcessorTest {
     @Test
     public void testUpdateTypeListInverse() {
         //Given
-        DataStage stage = DataStage.LIVE;
+        DataStage stage = DataStage.IN_PROGRESS;
 
         NormalizedJsonLd bart = TestObjectFactory.createJsonLd("simpsons/bartUpdate.json");
         ArangoDocumentReference bartId = todoListProcessor.upsertDocument(simpsons.doc(UUID.randomUUID()), bart, stage, null);
@@ -307,7 +307,7 @@ public class TodoListProcessorTest {
     @Test
     public void testUpdateStructureLazyResolve() {
         //Given
-        DataStage stage = DataStage.LIVE;
+        DataStage stage = DataStage.IN_PROGRESS;
 
         NormalizedJsonLd homer = TestObjectFactory.createJsonLd("simpsons/homer.json");
         ArangoDocumentReference homerId = todoListProcessor.upsertDocument(simpsons.doc(UUID.randomUUID()), homer, stage, null);
@@ -335,7 +335,7 @@ public class TodoListProcessorTest {
     @Test
     public void upsertAllStructureChanges() {
         //Given
-        DataStage stage = DataStage.LIVE;
+        DataStage stage = DataStage.IN_PROGRESS;
 
         ArangoDocumentReference bartId = uploadToDatabase(stage, TestObjectFactory.SIMPSONS, "simpsons/bart.json");
         ArangoDocumentReference homerId = uploadToDatabase(stage, TestObjectFactory.SIMPSONS, "simpsons/homer.json");

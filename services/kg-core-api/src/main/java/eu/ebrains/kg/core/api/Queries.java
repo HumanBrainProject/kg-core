@@ -73,7 +73,7 @@ public class Queries {
     @ApiOperation(value = "Get the query specification with the given query id in a specific space (note that query ids are unique per space only)")
     @GetMapping("/{queryId}")
     public Result<NormalizedJsonLd> getQuerySpecification(@PathVariable("queryId") UUID queryId, @RequestParam("space") String space) {
-        KgQuery kgQuery = queryController.fetchQueryById(queryId, new Space(space), DataStage.LIVE);
+        KgQuery kgQuery = queryController.fetchQueryById(queryId, new Space(space), DataStage.IN_PROGRESS);
         return Result.ok(kgQuery.getPayload());
     }
 
@@ -89,7 +89,7 @@ public class Queries {
         NormalizedJsonLd normalizedJsonLd = jsonLdSvc.toNormalizedJsonLd(query);
         normalizedJsonLd.addTypes(KgQuery.getKgQueryType());
         Space querySpace = new Space(space);
-        InstanceId resolveId = idsSvc.resolveId(DataStage.LIVE, queryId);
+        InstanceId resolveId = idsSvc.resolveId(DataStage.IN_PROGRESS, queryId);
         if(resolveId != null){
             return queryController.updateQuery(normalizedJsonLd, resolveId);
         }

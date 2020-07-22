@@ -103,7 +103,7 @@ public class EventController {
         if (persistedEvent.getType() == Event.Type.DELETE) {
             idsSvc.deprecateInstance(persistedEvent.getDocumentId(), authTokens);
         } else {
-            if (dataStage == DataStage.LIVE) {
+            if (dataStage == DataStage.IN_PROGRESS) {
                 ensureMergeOfIdentifiers(authTokens, persistedEvent, dataStage);
                 List<JsonLdId> mergedIds = idsSvc.upsert(dataStage, new IdWithAlternatives(persistedEvent.getDocumentId(), persistedEvent.getSpace(), persistedEvent.getData().getIdentifiers()), authTokens);
                 if (mergedIds != null) {
@@ -132,7 +132,7 @@ public class EventController {
     }
 
     private void ensureMergeOfIdentifiers(AuthTokens authTokens, PersistedEvent persistedEvent, DataStage dataStage) {
-        //If we're in the live stage, we look up if there are merges needed
+        //If we're in the inProgress stage, we look up if there are merges needed
         Set<JsonLdId> resolvedIds = idsSvc.resolveIds(dataStage, persistedEvent.getDocumentId(), persistedEvent.getData().getIdentifiers(), persistedEvent.getSpace(), authTokens);
         if (resolvedIds != null && !resolvedIds.isEmpty()) {
             if (resolvedIds.size() > 1) {

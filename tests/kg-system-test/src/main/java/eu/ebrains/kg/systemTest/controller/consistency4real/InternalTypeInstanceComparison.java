@@ -48,16 +48,16 @@ public class InternalTypeInstanceComparison {
 
     private final IdUtils idUtils;
 
-    private final ArangoDatabaseProxy liveMeta;
+    private final ArangoDatabaseProxy inProgressMeta;
     private final ArangoDatabaseProxy releasedMeta;
 
     private final Logger logger = LoggerFactory.getLogger(getClass());
 
-    public InternalTypeInstanceComparison(Gson gson, SystemTestToCore coreSvc, IdUtils idUtils, @Qualifier("liveMetaTest") ArangoDatabaseProxy liveMeta, @Qualifier("releasedMetaTest") ArangoDatabaseProxy releasedMeta) {
+    public InternalTypeInstanceComparison(Gson gson, SystemTestToCore coreSvc, IdUtils idUtils, @Qualifier("inProgressMetaTest") ArangoDatabaseProxy inProgressMeta, @Qualifier("releasedMetaTest") ArangoDatabaseProxy releasedMeta) {
         this.gson = gson;
         this.coreSvc = coreSvc;
         this.idUtils = idUtils;
-        this.liveMeta = liveMeta;
+        this.inProgressMeta = inProgressMeta;
         this.releasedMeta = releasedMeta;
     }
 
@@ -134,8 +134,8 @@ public class InternalTypeInstanceComparison {
         aql.addLine(AQL.trust("RETURN typeDoc"));
         ArangoDatabaseProxy proxy;
         switch(stage){
-            case LIVE:
-                proxy = liveMeta;
+            case IN_PROGRESS:
+                proxy = inProgressMeta;
                 break;
             case RELEASED:
                 proxy = releasedMeta;

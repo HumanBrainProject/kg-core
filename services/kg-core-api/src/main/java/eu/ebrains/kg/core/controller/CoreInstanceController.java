@@ -65,7 +65,7 @@ public class CoreInstanceController {
     public  ResponseEntity<Result<NormalizedJsonLd>> createNewInstance(JsonLdDoc jsonLdDoc, UUID id, String space, boolean returnPayload, boolean returnPermissions, boolean returnAlternatives, boolean returnEmbedded, boolean deferInference, ExternalEventInformation externalEventInformation){
         NormalizedJsonLd normalizedJsonLd = jsonLdSvc.toNormalizedJsonLd(jsonLdDoc);
         Space s = new Space(space);
-        List<InstanceId> instanceIdsInSameSpace = idsSvc.resolveIds(DataStage.LIVE, new IdWithAlternatives(id, s, normalizedJsonLd.getAllIdentifiersIncludingId()), false).stream().filter(i -> s.equals(i.getSpace())).collect(Collectors.toList());
+        List<InstanceId> instanceIdsInSameSpace = idsSvc.resolveIds(DataStage.IN_PROGRESS, new IdWithAlternatives(id, s, normalizedJsonLd.getAllIdentifiersIncludingId()), false).stream().filter(i -> s.equals(i.getSpace())).collect(Collectors.toList());
         //Were only interested in those instance ids in the same space. Since merging is not done cross-space, we want to allow instances being created with the same identifiers across spaces.
         if (!instanceIdsInSameSpace.isEmpty()) {
             return ResponseEntity.status(HttpStatus.CONFLICT).body(Result.nok(HttpStatus.CONFLICT.value(), String.format("The id and/or the payload you're providing are pointing to the instance(s) %s. Please do a PATCH instead", instanceIdsInSameSpace.stream().map(i -> i.getUuid().toString()).distinct().collect(Collectors.joining(", ")))));
@@ -165,9 +165,9 @@ public class CoreInstanceController {
     public ResponseEntity<Result<NormalizedJsonLd>> handleIngestionResponse(boolean returnPayload, List<InstanceId> instanceIds, boolean returnEmbedded, boolean returnAlternatives, boolean returnPermissions) {
         Result<NormalizedJsonLd> result;
         if (returnPayload) {
-            Map<UUID, Result<NormalizedJsonLd>> instancesByIds = graphDbSvc.getInstancesByIds(DataStage.LIVE, instanceIds, returnEmbedded, returnAlternatives);
+            Map<UUID, Result<NormalizedJsonLd>> instancesByIds = graphDbSvc.getInstancesByIds(DataStage.IN_PROGRESS, instanceIds, returnEmbedded, returnAlternatives);
             if (returnPermissions) {
-                enrichWithPermissionInformation(DataStage.LIVE, instancesByIds.values());
+                enrichWithPermissionInformation(DataStage.IN_PROGRESS, instancesByIds.values());
             }
             result = AmbiguousResult.ok(instancesByIds.values().stream().map(Result::getData).collect(Collectors.toList()));
         } else {

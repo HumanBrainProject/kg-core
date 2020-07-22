@@ -157,7 +157,7 @@ public class DataController {
     private void defineChangedReleaseStatusIfApplicable(ArangoDocumentReference documentReference, List<DBOperation> operations) {
         logger.trace("set release status");
         UpsertOperation releaseStatusOperation = releasingController.getReleaseStatusUpdateOperation(documentReference, false);
-        if (repository.doesDocumentExist(DataStage.LIVE, releaseStatusOperation.getDocumentReference())) {
+        if (repository.doesDocumentExist(DataStage.IN_PROGRESS, releaseStatusOperation.getDocumentReference())) {
             //There is already a release status assignment -> regardless if it was "changed" or "released" beforehand -> we are going to update it to "changed"
             operations.add(releaseStatusOperation);
         }

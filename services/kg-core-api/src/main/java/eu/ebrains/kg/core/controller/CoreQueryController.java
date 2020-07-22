@@ -49,15 +49,15 @@ public class CoreQueryController {
     }
 
     public Paginated<NormalizedJsonLd> listQueries(String search, PaginationParam paginationParam){
-        return graphDB4InstancesSvc.getQueriesByType(DataStage.LIVE, paginationParam, search, false, null);
+        return graphDB4InstancesSvc.getQueriesByType(DataStage.IN_PROGRESS, paginationParam, search, false, null);
     }
 
     public Paginated<NormalizedJsonLd> listQueriesPerRootType(String search, Type type, PaginationParam paginationParam){
-        return graphDB4InstancesSvc.getQueriesByType(DataStage.LIVE, paginationParam, search, false, type);
+        return graphDB4InstancesSvc.getQueriesByType(DataStage.IN_PROGRESS, paginationParam, search, false, type);
     }
 
     public KgQuery fetchQueryById(UUID queryId, Space space, DataStage stage){
-        NormalizedJsonLd instance = graphDB4InstancesSvc.getInstance(DataStage.LIVE, new InstanceId(queryId, space), true, false);
+        NormalizedJsonLd instance = graphDB4InstancesSvc.getInstance(DataStage.IN_PROGRESS, new InstanceId(queryId, space), true, false);
         return new KgQuery(instance, stage);
     }
 

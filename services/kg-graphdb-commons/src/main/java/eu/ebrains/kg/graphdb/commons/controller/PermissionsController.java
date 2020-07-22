@@ -60,7 +60,7 @@ public class PermissionsController {
 
     private Functionality getReadFunctionality(DataStage stage) {
         switch (stage) {
-            case LIVE:
+            case IN_PROGRESS:
                 return Functionality.READ;
             case RELEASED:
                 return Functionality.READ_RELEASED;

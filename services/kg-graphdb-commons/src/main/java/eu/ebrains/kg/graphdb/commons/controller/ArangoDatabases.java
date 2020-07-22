@@ -35,8 +35,8 @@ public class ArangoDatabases {
     ArangoDatabaseProxy nativeDB;
 
     @Autowired
-    @Qualifier("live")
-    ArangoDatabaseProxy liveDB;
+    @Qualifier("inProgress")
+    ArangoDatabaseProxy inProgressDB;
 
     @Autowired
     @Qualifier("releasedMeta")
@@ -47,15 +47,15 @@ public class ArangoDatabases {
     ArangoDatabaseProxy nativeMetaDB;
 
     @Autowired
-    @Qualifier("liveMeta")
-    ArangoDatabaseProxy liveMetaDB;
+    @Qualifier("inProgressMeta")
+    ArangoDatabaseProxy inProgressMetaDB;
 
     public ArangoDatabase getByStage(DataStage stage) {
         switch (stage) {
             case NATIVE:
                 return nativeDB.getOrCreate();
-            case LIVE:
-                return liveDB.getOrCreate();
+            case IN_PROGRESS:
+                return inProgressDB.getOrCreate();
             case RELEASED:
                 return releasedDB.getOrCreate();
             default:
@@ -65,10 +65,10 @@ public class ArangoDatabases {
 
     public ArangoDatabase getMetaByStage(DataStage stage) {
         switch (stage) {
-            //The native space doesn't have its own meta data stage -> so we're reflecting on live.
+            //The native space doesn't have its own meta data stage -> so we're reflecting on inProgress.
             case NATIVE:
-            case LIVE:
-                return liveMetaDB.getOrCreate();
+            case IN_PROGRESS:
+                return inProgressMetaDB.getOrCreate();
             case RELEASED:
                 return releasedMetaDB.getOrCreate();
             default:

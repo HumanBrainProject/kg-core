@@ -35,18 +35,18 @@ public enum Functionality {
     DELETE_SPACE("spaces-delete", Permission.Level.GLOBAL_ONLY, FunctionalityGroup.SPACES, null),
 
     //Invitations
-    INVITE_FOR_REVIEW("instances-invite4review", Permission.Level.ALL_LEVELS, FunctionalityGroup.INSTANCE, DataStage.LIVE),
-    INVITE_FOR_SUGGESTION("instances-invite4suggestion", Permission.Level.ALL_LEVELS, FunctionalityGroup.INSTANCE, DataStage.LIVE),
+    INVITE_FOR_REVIEW("instances-invite4review", Permission.Level.ALL_LEVELS, FunctionalityGroup.INSTANCE, DataStage.IN_PROGRESS),
+    INVITE_FOR_SUGGESTION("instances-invite4suggestion", Permission.Level.ALL_LEVELS, FunctionalityGroup.INSTANCE, DataStage.IN_PROGRESS),
 
     //Instances
     READ_RELEASED("releasedInstances-read", Permission.Level.ALL_LEVELS, FunctionalityGroup.INSTANCE, DataStage.RELEASED),
-    READ("instances-read", Permission.Level.ALL_LEVELS, FunctionalityGroup.INSTANCE, DataStage.LIVE),
-    SUGGEST("instances-suggest", Permission.Level.ALL_LEVELS, FunctionalityGroup.INSTANCE, DataStage.LIVE),
-    WRITE("instances-write", Permission.Level.GLOBAL_AND_SPACE, FunctionalityGroup.INSTANCE, DataStage.LIVE),
-    CREATE("instances-create", Permission.Level.GLOBAL_AND_SPACE, FunctionalityGroup.INSTANCE, DataStage.LIVE),
-    RELEASE("instances-release", Permission.Level.GLOBAL_AND_SPACE, FunctionalityGroup.INSTANCE, DataStage.LIVE),
+    READ("instances-read", Permission.Level.ALL_LEVELS, FunctionalityGroup.INSTANCE, DataStage.IN_PROGRESS),
+    SUGGEST("instances-suggest", Permission.Level.ALL_LEVELS, FunctionalityGroup.INSTANCE, DataStage.IN_PROGRESS),
+    WRITE("instances-write", Permission.Level.GLOBAL_AND_SPACE, FunctionalityGroup.INSTANCE, DataStage.IN_PROGRESS),
+    CREATE("instances-create", Permission.Level.GLOBAL_AND_SPACE, FunctionalityGroup.INSTANCE, DataStage.IN_PROGRESS),
+    RELEASE("instances-release", Permission.Level.GLOBAL_AND_SPACE, FunctionalityGroup.INSTANCE, DataStage.IN_PROGRESS),
     UNRELEASE("instances-unrelease", Permission.Level.GLOBAL_AND_SPACE, FunctionalityGroup.INSTANCE, DataStage.RELEASED),
-    DELETE("instances-delete", Permission.Level.GLOBAL_AND_SPACE, FunctionalityGroup.INSTANCE, DataStage.LIVE),
+    DELETE("instances-delete", Permission.Level.GLOBAL_AND_SPACE, FunctionalityGroup.INSTANCE, DataStage.IN_PROGRESS),
 
 
     // Client mgmt

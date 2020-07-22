@@ -44,7 +44,7 @@ public class CoreToIds {
     private final static String SERVICE_URL = "http://kg-ids/internal";
 
     public void undeprecateInstance(UUID instance) {
-        serviceCall.delete(String.format("%s/ids/%s/%s?revert=true", SERVICE_URL, DataStage.LIVE.name(), instance), authContext.getAuthTokens(), Void.class);
+        serviceCall.delete(String.format("%s/ids/%s/%s?revert=true", SERVICE_URL, DataStage.IN_PROGRESS.name(), instance), authContext.getAuthTokens(), Void.class);
     }
 
     public InstanceId resolveId(DataStage stage, UUID id) {

@@ -67,7 +67,7 @@ public class TypeTest {
 //        NormalizedJsonLd doc = TestObjectFactory.createJsonLd(testSpace, "metaFieldTest.json");
 //        doc.setId(idUtils.buildAbsoluteUrl(documentId));
 //        String type = "http://schema.org/Person";
-//        graphDBSyncSvcForTest.upsert(doc, DataStage.LIVE);
+//        graphDBSyncSvcForTest.upsert(doc, DataStage.IN_PROGRESS);
 //        List<String> typeRequest = Collections.singletonList(type);
 //        //When
 //        PaginatedResult<Map<String, Object>> results = types.getTypesByName(testSpace.getName(), true, typeRequest, new PaginationParam());

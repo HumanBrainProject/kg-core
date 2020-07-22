@@ -81,15 +81,15 @@ public class ConsistencyCheckTest {
             JsonLdId id = document.getBody().getData().getId();
             System.out.println(String.format("Created instance %s", id.getId()));
         }
-        Assert.assertEquals(createInstances, getAllInstancesFromLive(ExposedStage.LIVE).size());
-        Assert.assertEquals(1, types.getTypes(ExposedStage.LIVE, null, false, EMPTY_PAGINATION).getSize());
-        List<NormalizedJsonLd> typeWithProperties = types.getTypes(ExposedStage.LIVE, null, true, EMPTY_PAGINATION).getData();
+        Assert.assertEquals(createInstances, getAllInstancesFromInProgress(ExposedStage.IN_PROGRESS).size());
+        Assert.assertEquals(1, types.getTypes(ExposedStage.IN_PROGRESS, null, false, EMPTY_PAGINATION).getSize());
+        List<NormalizedJsonLd> typeWithProperties = types.getTypes(ExposedStage.IN_PROGRESS, null, true, EMPTY_PAGINATION).getData();
         Assert.assertEquals(1, typeWithProperties.size());
         NormalizedJsonLd typeWithProperty = typeWithProperties.get(0);
         Assert.assertEquals(type, typeWithProperty.get(SchemaOrgVocabulary.IDENTIFIER));
     }
 
-    private List<NormalizedJsonLd> getAllInstancesFromLive(ExposedStage stage){
+    private List<NormalizedJsonLd> getAllInstancesFromInProgress(ExposedStage stage){
         return this.instances.getInstances(stage, type, null, false, false, false, EMPTY_PAGINATION).getData();
     }
 
@@ -98,7 +98,7 @@ public class ConsistencyCheckTest {
         float updateRatio = 0.5f;
         testInsert();
         int updated = 0;
-        for (NormalizedJsonLd instance : getAllInstancesFromLive(ExposedStage.LIVE)) {
+        for (NormalizedJsonLd instance : getAllInstancesFromInProgress(ExposedStage.IN_PROGRESS)) {
             if (updated < createInstances * updateRatio) {
                 JsonLdDoc doc = new JsonLdDoc();
                 doc.addTypes(type);
@@ -107,7 +107,7 @@ public class ConsistencyCheckTest {
                 updated++;
             }
         }
-        Assert.assertEquals(createInstances, getAllInstancesFromLive(ExposedStage.LIVE).size());
+        Assert.assertEquals(createInstances, getAllInstancesFromInProgress(ExposedStage.IN_PROGRESS).size());
     }
 
     @Test
@@ -115,13 +115,13 @@ public class ConsistencyCheckTest {
         float releaseRatio = 0.2f;
         testInsert();
         int released = 0;
-        for (NormalizedJsonLd instance : getAllInstancesFromLive(ExposedStage.LIVE)) {
+        for (NormalizedJsonLd instance : getAllInstancesFromInProgress(ExposedStage.IN_PROGRESS)) {
             if (released < createInstances * releaseRatio) {
                 this.releases.releaseInstance(idUtils.getUUID(instance.getId()), IndexedJsonLdDoc.from(instance).getRevision());
                 released++;
             }
         }
-        Assert.assertEquals((int)Math.floor(createInstances*releaseRatio), getAllInstancesFromLive(ExposedStage.RELEASED).size());
+        Assert.assertEquals((int)Math.floor(createInstances*releaseRatio), getAllInstancesFromInProgress(ExposedStage.RELEASED).size());
     }
 
 
@@ -131,13 +131,13 @@ public class ConsistencyCheckTest {
         float deleteRatio = 0.2f;
         testInsert();
         int deleted = 0;
-        for (NormalizedJsonLd instance : getAllInstancesFromLive(ExposedStage.LIVE)) {
+        for (NormalizedJsonLd instance : getAllInstancesFromInProgress(ExposedStage.IN_PROGRESS)) {
             if (deleted < createInstances * deleteRatio) {
                 this.instances.deleteInstance(idUtils.getUUID(instance.getId()), null);
                 deleted++;
             }
         }
-        Assert.assertEquals(createInstances-(int)Math.floor(createInstances*deleteRatio), getAllInstancesFromLive(ExposedStage.LIVE).size());
+        Assert.assertEquals(createInstances-(int)Math.floor(createInstances*deleteRatio), getAllInstancesFromInProgress(ExposedStage.IN_PROGRESS).size());
     }
 
 
@@ -146,7 +146,7 @@ public class ConsistencyCheckTest {
         float updateRatio = 0.2f;
         testInsert();
         int updated = 0;
-        for (NormalizedJsonLd instance : getAllInstancesFromLive(ExposedStage.LIVE)) {
+        for (NormalizedJsonLd instance : getAllInstancesFromInProgress(ExposedStage.IN_PROGRESS)) {
             if (updated < createInstances * updateRatio) {
                 JsonLdDoc doc = new JsonLdDoc();
                 doc.addProperty("http://schema.hbp.eu/foo", "valueWithoutType" + updated);
@@ -154,16 +154,16 @@ public class ConsistencyCheckTest {
                 updated++;
             }
         }
-        Assert.assertEquals(createInstances-(int)Math.floor(createInstances*updateRatio), getAllInstancesFromLive(ExposedStage.LIVE).size());
+        Assert.assertEquals(createInstances-(int)Math.floor(createInstances*updateRatio), getAllInstancesFromInProgress(ExposedStage.IN_PROGRESS).size());
     }
 
     @Test
     public void testDeleteAllAfterUpdate() {
         testUpdate();
         int deleted = 0;
-        for (NormalizedJsonLd instance : getAllInstancesFromLive(ExposedStage.LIVE)) {
+        for (NormalizedJsonLd instance : getAllInstancesFromInProgress(ExposedStage.IN_PROGRESS)) {
             this.instances.deleteInstance(idUtils.getUUID(instance.getId()), null);
         }
-        Assert.assertEquals(0, getAllInstancesFromLive(ExposedStage.LIVE).size());
+        Assert.assertEquals(0, getAllInstancesFromInProgress(ExposedStage.IN_PROGRESS).size());
     }
 }

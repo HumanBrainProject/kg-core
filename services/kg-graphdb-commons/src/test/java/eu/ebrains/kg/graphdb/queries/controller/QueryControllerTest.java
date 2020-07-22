@@ -61,7 +61,7 @@ public class QueryControllerTest {
     IdUtils idUtils;
 
     private final Space space = TestObjectFactory.SIMPSONS;
-    private final DataStage stage = DataStage.LIVE;
+    private final DataStage stage = DataStage.IN_PROGRESS;
     private final ArangoCollectionReference simpsons = ArangoCollectionReference.fromSpace(TestObjectFactory.SIMPSONS);
     private final UserWithRoles userWithRoles = Mockito.mock(UserWithRoles.class);
 
