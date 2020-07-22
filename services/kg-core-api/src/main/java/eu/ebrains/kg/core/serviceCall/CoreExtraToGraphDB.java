@@ -21,13 +21,13 @@ import eu.ebrains.kg.commons.ServiceCall;
 import eu.ebrains.kg.commons.jsonld.IndexedJsonLdDoc;
 import eu.ebrains.kg.commons.jsonld.InstanceId;
 import eu.ebrains.kg.commons.jsonld.NormalizedJsonLd;
-import eu.ebrains.kg.commons.model.DataStage;
-import eu.ebrains.kg.commons.model.Space;
+import eu.ebrains.kg.commons.model.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 @Component
@@ -51,6 +51,10 @@ public class CoreExtraToGraphDB {
 
     public NormalizedJsonLd getInstance(DataStage stage, InstanceId instanceId, boolean returnEmbedded, boolean returnAlternatives, boolean removeInternalProperties, AuthTokens authTokens) {
         return serviceCall.get(BASE_URL + String.format("/%s/instances/%s?returnEmbedded=%b&returnAlternatives=%b&removeInternalProperties=%b", stage.name(), instanceId.serialize(), returnEmbedded, returnAlternatives, removeInternalProperties), authTokens, NormalizedJsonLd.class);
+    }
+
+    public SuggestionResult getSuggestedLinksForProperty(NormalizedJsonLd payload, DataStage stage, InstanceId instanceId, UUID originalId, String propertyName, Type type, String search, PaginationParam paginationParam, AuthTokens authTokens) {
+        return serviceCall.post(BASE_URL + String.format("/%s/instances/%s/suggestedLinksForProperty?property=%s&type=%s&search=%s&from=%d&size=%s", stage.name(), instanceId != null ? instanceId.serialize() : String.format("unknown/%s", originalId), propertyName, type != null ? type.getEncodedName() : "", search != null ? search : "", paginationParam.getFrom(), paginationParam.getSize() != null ? String.valueOf(paginationParam.getSize()) : ""), payload, authTokens, SuggestionResult.class);
     }
 
 }

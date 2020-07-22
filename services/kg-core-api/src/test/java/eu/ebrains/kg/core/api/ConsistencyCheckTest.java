@@ -103,7 +103,7 @@ public class ConsistencyCheckTest {
                 JsonLdDoc doc = new JsonLdDoc();
                 doc.addTypes(type);
                 doc.addProperty("http://schema.hbp.eu/foo", "updatedValue" + updated);
-                this.instances.contributeToInstance(doc, idUtils.getUUID(instance.getId()), false, false, false, false, false, false, false, null);
+                this.instances.contributeToInstancePartialReplacement(doc, idUtils.getUUID(instance.getId()), false, false,  false, false, false, false, null);
                 updated++;
             }
         }
@@ -150,7 +150,7 @@ public class ConsistencyCheckTest {
             if (updated < createInstances * updateRatio) {
                 JsonLdDoc doc = new JsonLdDoc();
                 doc.addProperty("http://schema.hbp.eu/foo", "valueWithoutType" + updated);
-                this.instances.contributeToInstance(doc, idUtils.getUUID(instance.getId()), true, false, false, false, false, false, false, null);
+                this.instances.contributeToInstancePartialReplacement(doc, idUtils.getUUID(instance.getId()), true, false, false, false, false, false, null);
                 updated++;
             }
         }

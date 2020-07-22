@@ -19,15 +19,21 @@ package eu.ebrains.kg.core.api;
 import eu.ebrains.kg.commons.AuthContext;
 import eu.ebrains.kg.commons.ExtraApi;
 import eu.ebrains.kg.commons.Version;
+import eu.ebrains.kg.commons.jsonld.InstanceId;
 import eu.ebrains.kg.commons.jsonld.JsonLdDoc;
 import eu.ebrains.kg.commons.jsonld.NormalizedJsonLd;
-import eu.ebrains.kg.commons.model.Space;
+import eu.ebrains.kg.commons.model.*;
 import eu.ebrains.kg.core.controller.CoreInferenceController;
+import eu.ebrains.kg.core.model.ExposedStage;
+import eu.ebrains.kg.core.serviceCall.CoreExtraToGraphDB;
+import eu.ebrains.kg.core.serviceCall.CoreToIds;
 import eu.ebrains.kg.core.serviceCall.CoreToJsonLd;
 import io.swagger.annotations.ApiOperation;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.UUID;
 
 /**
  * Extra operations are exposing specific functionality for closely integrated clients (such as adapters).
@@ -39,13 +45,17 @@ public class Extra {
     private final CoreToJsonLd coreToJsonLd;
     private final AuthContext authContext;
     private final CoreInferenceController inferenceController;
+    private final CoreToIds idsSvc;
+    private final CoreExtraToGraphDB graphDB4ExtraSvc;
 
     private final Logger logger = LoggerFactory.getLogger(getClass());
 
-    public Extra(CoreToJsonLd coreToJsonLd, AuthContext authContext, CoreInferenceController inferenceController) {
+    public Extra(CoreToJsonLd coreToJsonLd, AuthContext authContext, CoreInferenceController inferenceController, CoreToIds idsSvc, CoreExtraToGraphDB graphDB4ExtraSvc) {
         this.coreToJsonLd = coreToJsonLd;
         this.authContext = authContext;
         this.inferenceController = inferenceController;
+        this.idsSvc = idsSvc;
+        this.graphDB4ExtraSvc = graphDB4ExtraSvc;
     }
 
     @ApiOperation("Triggers the inference of all documents of the given space")
@@ -69,6 +79,19 @@ public class Extra {
     @PostMapping("/extra/normalizedPayload")
     public NormalizedJsonLd normalizePayload(@RequestBody JsonLdDoc payload) {
         return coreToJsonLd.toNormalizedJsonLd(payload);
+    }
+
+    @ApiOperation(value = "Returns suggestions for an instance to be linked by the given property (e.g. for the KG Editor)")
+    @GetMapping("/extra/instances/{id}/suggestedLinksForProperty")
+    public Result<SuggestionResult> getSuggestedLinksForProperty(@RequestParam("stage") ExposedStage stage, @PathVariable("id") UUID id, @RequestParam(value = "property") String propertyName, @RequestParam(value = "type", required = false) String type, @RequestParam(value = "search", required = false) String search, PaginationParam paginationParam) {
+        return getSuggestedLinksForProperty(null, stage, propertyName, id, type, search, paginationParam);
+    }
+
+    @ApiOperation(value = "Returns suggestions for an instance to be linked by the given property (e.g. for the KG Editor) - and takes into account the passed payload (already chosen values, reflection on dependencies between properties - e.g. providing only parcellations for an already chosen brain atlas)")
+    @PostMapping("/extra/instances/{id}/suggestedLinksForProperty")
+    public Result<SuggestionResult> getSuggestedLinksForProperty(@RequestBody NormalizedJsonLd payload, @RequestParam("stage") ExposedStage stage, @RequestParam(value = "property") String propertyName, @PathVariable("id") UUID id, @RequestParam(value = "type", required = false) String type, @RequestParam(value = "search", required = false) String search, PaginationParam paginationParam) {
+        InstanceId instanceId = idsSvc.resolveId(DataStage.LIVE, id);
+        return Result.ok(graphDB4ExtraSvc.getSuggestedLinksForProperty(payload, stage.getStage(), instanceId, id, propertyName, type != null && !type.isBlank() ? new Type(type) : null, search, paginationParam, authContext.getAuthTokens()));
     }
 
 }

@@ -26,7 +26,6 @@ import eu.ebrains.kg.commons.models.ExternalEventInformation;
 import eu.ebrains.kg.commons.params.ReleaseTreeScope;
 import eu.ebrains.kg.core.controller.CoreInstanceController;
 import eu.ebrains.kg.core.model.ExposedStage;
-import eu.ebrains.kg.core.serviceCall.CoreInstancesToGraphDB;
 import eu.ebrains.kg.core.serviceCall.CoreToIds;
 import eu.ebrains.kg.core.serviceCall.CoreToRelease;
 import io.swagger.annotations.ApiOperation;
@@ -51,16 +50,14 @@ public class Instances {
 
     private final CoreToIds idsSvc;
     private final CoreInstanceController instanceController;
-    private final CoreInstancesToGraphDB graphDB4InstancesSvc;
     private final CoreToRelease releaseSvc;
     private final IdUtils idUtils;
 
     private final Logger logger = LoggerFactory.getLogger(getClass());
 
-    public Instances(CoreToIds idsSvc, CoreInstanceController instanceController, CoreInstancesToGraphDB graphDB4InstancesSvc, CoreToRelease releaseSvc, IdUtils idUtils) {
+    public Instances(CoreToIds idsSvc, CoreInstanceController instanceController, CoreToRelease releaseSvc, IdUtils idUtils) {
         this.idsSvc = idsSvc;
         this.instanceController = instanceController;
-        this.graphDB4InstancesSvc = graphDB4InstancesSvc;
         this.releaseSvc = releaseSvc;
         this.idUtils = idUtils;
     }
@@ -94,25 +91,33 @@ public class Instances {
         return newInstance;
     }
 
-
-    @ApiOperation(value = "Contribute to existing instance")
-    @PatchMapping("/instances/{id}")
-    public ResponseEntity<Result<NormalizedJsonLd>> contributeToInstance(@RequestBody JsonLdDoc jsonLdDoc, @PathVariable("id") UUID id, @RequestParam(value = "removeNonDeclaredProperties", required = false, defaultValue = "false") boolean removeNonDeclaredProperties, @RequestParam(value = "undeprecate", required = false, defaultValue = "false") boolean undeprecate, @RequestParam(value = "returnPayload", required = false, defaultValue = "true") boolean returnPayload, @RequestParam(value = "returnPermissions", required = false, defaultValue = "false") boolean returnPermissions, @RequestParam(value = "returnAlternatives", required = false, defaultValue = "false") boolean returnAlternatives, @RequestParam(value = "returnEmbedded", required = false, defaultValue = "true") boolean returnEmbedded,  @RequestParam(value = "deferInference", required = false, defaultValue = "false") boolean deferInference, ExternalEventInformation externalEventInformation) {
+    private ResponseEntity<Result<NormalizedJsonLd>> contributeToInstance(JsonLdDoc jsonLdDoc, UUID id, boolean undeprecate,  boolean returnPayload, boolean returnPermissions, boolean returnAlternatives, boolean returnEmbedded, boolean deferInference, ExternalEventInformation externalEventInformation, boolean removeNonDeclaredFields) {
         logger.debug(String.format("Contributing to instance with id %s", id));
         InstanceId instanceId = idsSvc.resolveId(DataStage.LIVE, id);
         if (instanceId == null) {
             return ResponseEntity.notFound().build();
         } else if (instanceId.isDeprecated()) {
-            if(undeprecate){
+            if (undeprecate) {
                 idsSvc.undeprecateInstance(instanceId.getUuid());
-            }
-            else {
+            } else {
                 return ResponseEntity.status(HttpStatus.GONE).body(Result.nok(HttpStatus.GONE.value(), "The instance you're trying to contribute to has been deprecated."));
             }
         }
-        ResponseEntity<Result<NormalizedJsonLd>> resultResponseEntity = instanceController.contributeToInstance(jsonLdDoc, instanceId, removeNonDeclaredProperties, returnPayload, returnPermissions, returnAlternatives, returnEmbedded, deferInference, externalEventInformation);
+        ResponseEntity<Result<NormalizedJsonLd>> resultResponseEntity = instanceController.contributeToInstance(jsonLdDoc, instanceId, removeNonDeclaredFields, returnPayload, returnPermissions, returnAlternatives, returnEmbedded, deferInference, externalEventInformation);
         logger.debug(String.format("Done contributing to instance with id %s", id));
         return resultResponseEntity;
+    }
+
+    @ApiOperation(value = "Replace contribution to an existing instance")
+    @PutMapping("/instances/{id}")
+    public ResponseEntity<Result<NormalizedJsonLd>> contributeToInstanceFullReplacement(@RequestBody JsonLdDoc jsonLdDoc, @PathVariable("id") UUID id, @RequestParam(value = "undeprecate", required = false, defaultValue = "false") boolean undeprecate, @RequestParam(value = "returnPayload", required = false, defaultValue = "true") boolean returnPayload, @RequestParam(value = "returnPermissions", required = false, defaultValue = "false") boolean returnPermissions, @RequestParam(value = "returnAlternatives", required = false, defaultValue = "false") boolean returnAlternatives, @RequestParam(value = "returnEmbedded", required = false, defaultValue = "true") boolean returnEmbedded,  @RequestParam(value = "deferInference", required = false, defaultValue = "false") boolean deferInference, ExternalEventInformation externalEventInformation) {
+        return contributeToInstance(jsonLdDoc, id, undeprecate, returnPayload, returnPermissions, returnAlternatives, returnEmbedded, deferInference, externalEventInformation, true);
+    }
+
+    @ApiOperation(value = "Partially update contribution to an existing instance")
+    @PatchMapping("/instances/{id}")
+    public ResponseEntity<Result<NormalizedJsonLd>> contributeToInstancePartialReplacement(@RequestBody JsonLdDoc jsonLdDoc, @PathVariable("id") UUID id, @RequestParam(value = "undeprecate", required = false, defaultValue = "false") boolean undeprecate, @RequestParam(value = "returnPayload", required = false, defaultValue = "true") boolean returnPayload, @RequestParam(value = "returnPermissions", required = false, defaultValue = "false") boolean returnPermissions, @RequestParam(value = "returnAlternatives", required = false, defaultValue = "false") boolean returnAlternatives, @RequestParam(value = "returnEmbedded", required = false, defaultValue = "true") boolean returnEmbedded,  @RequestParam(value = "deferInference", required = false, defaultValue = "false") boolean deferInference, ExternalEventInformation externalEventInformation) {
+        return contributeToInstance(jsonLdDoc, id, undeprecate, returnPayload, returnPermissions, returnAlternatives, returnEmbedded, deferInference, externalEventInformation, false);
     }
 
     @ApiOperation(value = "Get the instance by its KG-internal ID")
@@ -141,19 +146,6 @@ public class Instances {
         IdWithAlternatives idWithAlternative = new IdWithAlternatives(UUID.randomUUID(), null, new HashSet<>(identifiers));
         List<InstanceId> instanceIds = idsSvc.resolveIds(stage.getStage(), idWithAlternative, false);
         return Result.ok(instanceController.getInstancesByIds(instanceIds.stream().filter(instanceId -> !instanceId.isDeprecated()).map(InstanceId::getUuid).collect(Collectors.toList()), stage.getStage(), returnEmbedded, returnAlternatives, returnPermissions).values().stream().map(Result::getData).collect(Collectors.toList()));
-    }
-
-    @ApiOperation(value = "Returns suggestions for an instance to be linked by the given property (e.g. for the KG Editor)")
-    @GetMapping("/instances/{id}/suggestedLinksForProperty")
-    public Result<SuggestionResult> getSuggestedLinksForProperty(@RequestParam("stage") ExposedStage stage, @PathVariable("id") UUID id, @RequestParam(value = "property") String propertyName, @RequestParam(value = "type", required = false) String type, @RequestParam(value = "search", required = false) String search, PaginationParam paginationParam) {
-        return getSuggestedLinksForProperty(null, stage, propertyName, id, type, search, paginationParam);
-    }
-
-    @ApiOperation(value = "Returns suggestions for an instance to be linked by the given property (e.g. for the KG Editor) - and takes into account the passed payload (already chosen values, reflection on dependencies between properties - e.g. providing only parcellations for an already chosen brain atlas)")
-    @PostMapping("/instances/{id}/suggestedLinksForProperty")
-    public Result<SuggestionResult> getSuggestedLinksForProperty(@RequestBody NormalizedJsonLd payload, @RequestParam("stage") ExposedStage stage, @RequestParam(value = "property") String propertyName, @PathVariable("id") UUID id, @RequestParam(value = "type", required = false) String type, @RequestParam(value = "search", required = false) String search, PaginationParam paginationParam) {
-        InstanceId instanceId = idsSvc.resolveId(DataStage.LIVE, id);
-        return Result.ok(graphDB4InstancesSvc.getSuggestedLinksForProperty(payload, stage.getStage(), instanceId, id, propertyName, type != null && !type.isBlank() ? new Type(type) : null, search, paginationParam));
     }
 
     @ApiOperation(value = "Deprecate an instance")
