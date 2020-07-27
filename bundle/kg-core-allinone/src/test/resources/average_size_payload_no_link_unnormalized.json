@@ -1,0 +1,32 @@
+{
+  "@type": "https://core.kg.ebrains.eu/TestPayload",
+  "@context": {
+    "core": "https://core.kg.ebrains.eu/"
+  },
+  "core:fooA": "barA",
+  "core:fooB": ["barB1","barB2"],
+  "core:fooC": "barC",
+  "core:fooD": "barD",
+  "core:fooE": "barE",
+  "core:fooF": ["barF1","barF2", "barF3"],
+  "core:fooG": "barG",
+  "core:fooH": "barH",
+  "core:fooI": "barI",
+  "core:fooJ": ["barJ1","barJ2"],
+  "core:fooK": "barK",
+  "core:fooL": "barL",
+  "core:fooM": ["barM1","barM2", "barM3"],
+  "core:fooN": "barN",
+  "core:fooO": "barO",
+  "core:fooP": "barP",
+  "core:fooQ": ["barQ1","barQ2"],
+  "core:fooR": "barR",
+  "core:fooS": "barS",
+  "core:fooT": "barT",
+  "core:fooU": "barU",
+  "core:fooV": "barV",
+  "core:fooW": "barW",
+  "core:fooX": ["barX1","barX2"],
+  "core:fooY": "barY",
+  "core:fooZ": "barZ"
+}

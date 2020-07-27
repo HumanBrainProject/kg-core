@@ -21,6 +21,7 @@ public class Result<T> {
     protected T data;
     protected String message;
     protected Error error;
+    protected Long durationInMs;
 
     public static class Error{
         private int code;
@@ -43,14 +44,15 @@ public class Result<T> {
         }
     }
 
+    public static <T> Result<T> ok(){
+        return ok(null, null);
+    }
+
     public static <T> Result<T> ok(T data) {
         return ok(data, null);
     }
 
     public static <T> Result<T> ok(T data, String message) {
-        if(data==null){
-            return null;
-        }
         Result<T> result = new Result<>();
         result.data = data;
         if (message != null) {
@@ -79,5 +81,14 @@ public class Result<T> {
 
     public String getMessage() {
         return message;
+    }
+
+    public Result<T> setDuration(long durationInMs){
+        this.durationInMs = Long.valueOf(durationInMs);
+        return this;
+    }
+
+    public Long getDurationInMs() {
+        return durationInMs;
     }
 }

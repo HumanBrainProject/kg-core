@@ -64,6 +64,7 @@ public class CoreInstanceController {
 
     public  ResponseEntity<Result<NormalizedJsonLd>> createNewInstance(JsonLdDoc jsonLdDoc, UUID id, String space, boolean returnPayload, boolean returnPermissions, boolean returnAlternatives, boolean returnEmbedded, boolean deferInference, ExternalEventInformation externalEventInformation){
         NormalizedJsonLd normalizedJsonLd = jsonLdSvc.toNormalizedJsonLd(jsonLdDoc);
+        //NormalizedJsonLd normalizedJsonLd = new NormalizedJsonLd(jsonLdDoc);
         Space s = new Space(space);
         List<InstanceId> instanceIdsInSameSpace = idsSvc.resolveIds(DataStage.IN_PROGRESS, new IdWithAlternatives(id, s, normalizedJsonLd.getAllIdentifiersIncludingId()), false).stream().filter(i -> s.equals(i.getSpace())).collect(Collectors.toList());
         //Were only interested in those instance ids in the same space. Since merging is not done cross-space, we want to allow instances being created with the same identifiers across spaces.
@@ -73,7 +74,8 @@ public class CoreInstanceController {
         normalizedJsonLd.setFieldUpdateTimes(normalizedJsonLd.keySet().stream().collect(Collectors.toMap(k -> k, k -> externalEventInformation!=null && externalEventInformation.getExternalEventTime()!=null ? externalEventInformation.getExternalEventTime() : ZonedDateTime.now())));
         Event upsertEvent = createUpsertEvent(id, externalEventInformation, normalizedJsonLd, s);
         List<InstanceId> ids = primaryStoreSvc.postEvent(upsertEvent, deferInference, authContext.getAuthTokens());
-        return handleIngestionResponse(returnPayload, ids, returnEmbedded, returnAlternatives, returnPermissions);
+        ResponseEntity<Result<NormalizedJsonLd>> resultResponseEntity = handleIngestionResponse(returnPayload, ids, returnEmbedded, returnAlternatives, returnPermissions);
+        return resultResponseEntity;
     }
 
     public ResponseEntity<Result<NormalizedJsonLd>> contributeToInstance(JsonLdDoc jsonLdDoc, InstanceId instanceId, boolean removeNonDeclaredProperties, boolean returnPayload, boolean returnPermissions, boolean returnAlternatives, boolean returnEmbedded, boolean deferInference, ExternalEventInformation externalEventInformation){
@@ -81,7 +83,8 @@ public class CoreInstanceController {
         normalizedJsonLd = patchInstance(instanceId, normalizedJsonLd, removeNonDeclaredProperties, externalEventInformation!=null ? externalEventInformation.getExternalEventTime() : null);
         Event upsertEvent = createUpsertEvent(instanceId.getUuid(), externalEventInformation, normalizedJsonLd, instanceId.getSpace());
         List<InstanceId> ids = primaryStoreSvc.postEvent(upsertEvent, deferInference, authContext.getAuthTokens());
-        return handleIngestionResponse(returnPayload, ids, returnEmbedded, returnAlternatives, returnPermissions);
+        ResponseEntity<Result<NormalizedJsonLd>> resultResponseEntity = handleIngestionResponse(returnPayload, ids, returnEmbedded, returnAlternatives, returnPermissions);
+        return resultResponseEntity;
     }
 
     public List<InstanceId> deleteInstance(InstanceId instanceId, ExternalEventInformation externalEventInformation){

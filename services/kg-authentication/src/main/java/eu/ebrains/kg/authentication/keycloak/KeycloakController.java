@@ -86,7 +86,7 @@ public class KeycloakController {
         this.authContext = authContext;
         this.authenticationConfig = authenticationConfig;
         this.keycloakUsers = keycloakUsers;
-        this.jwtVerifier = JWT.require(getAlgorithmFromKeycloakConfig(keycloakClient.getPublicKey())).withIssuer(config.getIssuer()).build(); //Reusable verifier instance;
+        this.jwtVerifier = authenticationConfig.isDevelopMode() ? null : JWT.require(getAlgorithmFromKeycloakConfig(keycloakClient.getPublicKey())).withIssuer(config.getIssuer()).build(); //Reusable verifier instance;
     }
 
     private OpenIdConfig openIdConfig;

@@ -19,6 +19,7 @@ package eu.ebrains.kg.graphdb.instances.controller;
 import com.arangodb.ArangoCollection;
 import com.arangodb.ArangoDatabase;
 import com.arangodb.entity.CollectionType;
+import com.arangodb.model.AqlQueryOptions;
 import com.arangodb.model.CollectionCreateOptions;
 import eu.ebrains.kg.arango.commons.aqlBuilder.AQL;
 import eu.ebrains.kg.arango.commons.aqlBuilder.ArangoVocabulary;
@@ -38,6 +39,7 @@ import eu.ebrains.kg.commons.semantics.vocabularies.HBPVocabulary;
 import eu.ebrains.kg.commons.semantics.vocabularies.SchemaOrgVocabulary;
 import eu.ebrains.kg.graphdb.commons.controller.ArangoDatabases;
 import eu.ebrains.kg.graphdb.commons.controller.ArangoRepositoryCommons;
+import eu.ebrains.kg.graphdb.commons.controller.ArangoUtils;
 import eu.ebrains.kg.graphdb.commons.controller.PermissionsController;
 import eu.ebrains.kg.graphdb.commons.model.ArangoDocument;
 import eu.ebrains.kg.graphdb.instances.model.ArangoRelation;
@@ -53,17 +55,19 @@ public class ArangoRepositoryInstances {
     private final ArangoRepositoryCommons arangoRepositoryCommons;
     private final PermissionsController permissionsController;
     private final AuthContext authContext;
+    private final ArangoUtils arangoUtils;
 
     private final ArangoDatabases databases;
 
     private final IdUtils idUtils;
 
-    public ArangoRepositoryInstances(ArangoRepositoryCommons arangoRepositoryCommons, ArangoDatabases databases, IdUtils idUtils, PermissionsController permissionsController, AuthContext authContext) {
+    public ArangoRepositoryInstances(ArangoRepositoryCommons arangoRepositoryCommons, ArangoDatabases databases, IdUtils idUtils, PermissionsController permissionsController, AuthContext authContext, ArangoUtils arangoUtils) {
         this.arangoRepositoryCommons = arangoRepositoryCommons;
         this.databases = databases;
         this.permissionsController = permissionsController;
         this.authContext = authContext;
         this.idUtils = idUtils;
+        this.arangoUtils = arangoUtils;
     }
 
     public NormalizedJsonLd getInstance(DataStage stage, Space space, UUID id, boolean embedded, boolean removeInternalProperties, boolean alternatives) {
@@ -190,7 +194,7 @@ public class ArangoRepositoryInstances {
         }
         aql.addLine(AQL.trust("}"));
         Map<UUID, Result<NormalizedJsonLd>> result = new HashMap<>();
-        List<NormalizedJsonLd> results = db.query(aql.build().getValue(), bindVars, ArangoRepositoryCommons.EMPTY_QUERY_OPTIONS, NormalizedJsonLd.class).asListRemaining().stream().filter(Objects::nonNull).collect(Collectors.toList());
+        List<NormalizedJsonLd> results = db.query(aql.build().getValue(), bindVars,  new AqlQueryOptions(), NormalizedJsonLd.class).asListRemaining().stream().filter(Objects::nonNull).collect(Collectors.toList());
         List<NormalizedJsonLd> normalizedJsonLds = new ArrayList<>();
         if (!results.isEmpty()) {
             // The response object is always just a single dictionary
@@ -389,7 +393,7 @@ public class ArangoRepositoryInstances {
             bindVars.put("@relation", relationColl.getCollectionName());
             bindVars.put("@space", documentSpace.getCollectionName());
             bindVars.put("id", useOriginalTo ? idUtils.buildAbsoluteUrl(id).getId() : space.getName() + "/" + id);
-            List<NormalizedJsonLd> result = db.query(aql, bindVars, ArangoRepositoryCommons.EMPTY_QUERY_OPTIONS, NormalizedJsonLd.class).asListRemaining();
+            List<NormalizedJsonLd> result = db.query(aql, bindVars,  new AqlQueryOptions(), NormalizedJsonLd.class).asListRemaining();
             handleAlternativesAndEmbedded(result, stage, alternatives, embedded);
             exposeRevision(result);
             return result;
@@ -432,7 +436,7 @@ public class ArangoRepositoryInstances {
                 identifierCnt++;
             }
             aql.addLine(AQL.trust("RETURN doc"));
-            List<NormalizedJsonLd> result = db.query(aql.build().getValue(), bindVars, ArangoRepositoryCommons.EMPTY_QUERY_OPTIONS, NormalizedJsonLd.class).asListRemaining();
+            List<NormalizedJsonLd> result = db.query(aql.build().getValue(), bindVars,  new AqlQueryOptions(), NormalizedJsonLd.class).asListRemaining();
             handleAlternativesAndEmbedded(result, stage, alternatives, embedded);
             exposeRevision(result);
             return result;
@@ -470,7 +474,7 @@ public class ArangoRepositoryInstances {
         bindVars.put("@space", collectionReference.getCollectionName());
         bindVars.put("@releaseStatusCollection", releaseStatusCollection.getCollectionName());
         bindVars.put("id", id);
-        List<String> data = db.query(aql, bindVars, ArangoRepositoryCommons.EMPTY_QUERY_OPTIONS, String.class).asListRemaining();
+        List<String> data = db.query(aql, bindVars,  new AqlQueryOptions(), String.class).asListRemaining();
         if (data.isEmpty()) {
             return ReleaseStatus.UNRELEASED;
         } else {
@@ -514,7 +518,9 @@ public class ArangoRepositoryInstances {
         Map<String, Object> bindVars = new HashMap<>();
         bindVars.put("@documentIdRelationCollection", InternalSpace.DOCUMENT_ID_EDGE_COLLECTION.getCollectionName());
         bindVars.put("idlist", ids);
-        return databases.getByStage(stage).query(aql.build().getValue(), bindVars, ArangoRepositoryCommons.EMPTY_QUERY_OPTIONS, NormalizedJsonLd[].class).asListRemaining();
+        ArangoDatabase database = databases.getByStage(stage);
+        arangoUtils.getOrCreateArangoCollection(database, InternalSpace.DOCUMENT_ID_EDGE_COLLECTION);
+        return database.query(aql.build().getValue(), bindVars,  new AqlQueryOptions(), NormalizedJsonLd[].class).asListRemaining();
     }
 
     void mergeEmbeddedDocuments(NormalizedJsonLd originalDocument, Map<String, NormalizedJsonLd> embeddedById) {

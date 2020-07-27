@@ -16,6 +16,7 @@
 
 package eu.ebrains.kg.graphdb.ingestion.controller.structure;
 
+import com.arangodb.model.AqlQueryOptions;
 import eu.ebrains.kg.arango.commons.aqlBuilder.AQL;
 import eu.ebrains.kg.arango.commons.aqlBuilder.ArangoVocabulary;
 import eu.ebrains.kg.arango.commons.model.ArangoCollectionReference;
@@ -205,7 +206,7 @@ public class StructureTracker {
             aql.addLine(AQL.trust("FILTER IS_SAME_COLLECTION(@propertyToType, edge._to)"));
             bindVars.put("propertyToType", InternalSpace.PROPERTY_TO_TYPE_EDGE_COLLECTION.getCollectionName());
             aql.addLine(AQL.trust("RETURN DISTINCT {\"origin\" : edge."+ IndexedJsonLdDoc.ORIGINAL_DOCUMENT+", \"docTypes\": TO_ARRAY(edge."+IndexedJsonLdDoc.DOC_TYPES+"), \"property\": DOCUMENT(DOCUMENT(edge._to)._from).`" + SchemaOrgVocabulary.IDENTIFIER + "`}"));
-            return new HashSet<>(databases.getMetaByStage(stage).query(aql.build().getValue(), bindVars, ArangoRepositoryCommons.EMPTY_QUERY_OPTIONS, IncomingProperty.class).asListRemaining());
+            return new HashSet<>(databases.getMetaByStage(stage).query(aql.build().getValue(), bindVars,  new AqlQueryOptions(), IncomingProperty.class).asListRemaining());
         }
         return Collections.emptySet();
     }
@@ -228,7 +229,7 @@ public class StructureTracker {
             bindVars.put("propertyToTypeSpaceName", InternalSpace.PROPERTY_TO_TYPE_EDGE_COLLECTION.getCollectionName());
             aql.addLine(AQL.trust("LET linkedSpaceType = DOCUMENT(doc._to)"));
             aql.addLine(AQL.trust("RETURN DISTINCT linkedSpaceType._id"));
-            return new HashSet<>(databases.getMetaByStage(stage).query(aql.build().getValue(), bindVars, ArangoRepositoryCommons.EMPTY_QUERY_OPTIONS, String.class).asListRemaining());
+            return new HashSet<>(databases.getMetaByStage(stage).query(aql.build().getValue(), bindVars,  new AqlQueryOptions(), String.class).asListRemaining());
         }
         return Collections.emptySet();
     }
@@ -251,7 +252,7 @@ public class StructureTracker {
                 bindVars.put("typeList", spaceTypeIdFilterList);
             }
             aql.addLine(AQL.trust("RETURN d._id"));
-            List<String> typesWithLinks = databases.getMetaByStage(stage).query(aql.build().getValue(), bindVars, ArangoRepositoryCommons.EMPTY_QUERY_OPTIONS, String.class).asListRemaining();
+            List<String> typesWithLinks = databases.getMetaByStage(stage).query(aql.build().getValue(), bindVars,  new AqlQueryOptions(), String.class).asListRemaining();
             return typesWithLinks.stream().map(m -> ArangoDocumentReference.fromArangoId(m, true)).collect(Collectors.toSet());
         }
         return Collections.emptySet();

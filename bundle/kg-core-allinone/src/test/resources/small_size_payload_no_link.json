@@ -1,0 +1,8 @@
+{
+  "@type": "https://core.kg.ebrains.eu/TestPayload",
+  "https://core.kg.ebrains.eu/fooA": "barA",
+  "https://core.kg.ebrains.eu/fooB": ["barB1","barB2"],
+  "https://core.kg.ebrains.eu/fooC": "barC",
+  "https://core.kg.ebrains.eu/fooD": "barD",
+  "https://core.kg.ebrains.eu/fooE": "barE"
+}

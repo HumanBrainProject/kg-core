@@ -67,8 +67,6 @@ public class ArangoRepositoryCommons {
         this.entryHookDocuments = entryHookDocuments;
     }
 
-    public static final AqlQueryOptions EMPTY_QUERY_OPTIONS = new AqlQueryOptions();
-
 
     private List<ArangoCollectionReference> getAllEdgeCollections(ArangoDatabase db) {
         Collection<CollectionEntity> collections = db.getCollections(new CollectionsReadOptions().excludeSystem(true));
@@ -83,7 +81,7 @@ public class ArangoRepositoryCommons {
         bindVars.put("@collection", collectionReference.getCollectionName());
         bindVars.put("origin", origin.getId());
         bindVars.put("target", target.getId());
-        return query(db, query, bindVars, EMPTY_QUERY_OPTIONS, String.class).stream().map(s -> ArangoDocumentReference.fromArangoId(s, true)).collect(Collectors.toList());
+        return query(db, query, bindVars,  new AqlQueryOptions(), String.class).stream().map(s -> ArangoDocumentReference.fromArangoId(s, true)).collect(Collectors.toList());
     }
 
     public List<ArangoEdge> findUnresolvedEdgesForIds(DataStage stage, Set<String> ids) {
@@ -95,7 +93,7 @@ public class ArangoRepositoryCommons {
                     "   RETURN doc";
             Map<String, Object> bindVars = new HashMap<>();
             bindVars.put("ids", ids);
-            return query(db, query, bindVars, EMPTY_QUERY_OPTIONS, ArangoEdge.class);
+            return query(db, query, bindVars,  new AqlQueryOptions(), ArangoEdge.class);
         }
         return Collections.emptyList();
     }
@@ -123,7 +121,7 @@ public class ArangoRepositoryCommons {
         query.append("FOR edge IN edges\n");
         query.append("  RETURN edge");
         bindVars.put("document", documentReference.getId());
-        return query(db, query.toString(), bindVars, EMPTY_QUERY_OPTIONS, ArangoEdge.class);
+        return query(db, query.toString(), bindVars,  new AqlQueryOptions(), ArangoEdge.class);
     }
 
     private <T> List<T> query(ArangoDatabase db, String query, Map<String, Object> bindVars, AqlQueryOptions options, Class<T> clazz) {
@@ -145,7 +143,7 @@ public class ArangoRepositoryCommons {
         aql.addLine(AQL.trust(String.format(String.format("FOR d IN [%s]", documentList))));
         aql.addLine(AQL.trust("FILTER d != null"));
         aql.addLine(AQL.trust("RETURN d._id"));
-        List<String> ids = databases.getByStage(stage).query(aql.build().getValue(), new HashMap<>(), EMPTY_QUERY_OPTIONS, String.class).asListRemaining();
+        List<String> ids = databases.getByStage(stage).query(aql.build().getValue(), new HashMap<>(),  new AqlQueryOptions(), String.class).asListRemaining();
         return instances.stream().filter(i -> returnExisting == ids.contains(i.getId().getId())).collect(Collectors.toSet());
     }
 
@@ -163,7 +161,7 @@ public class ArangoRepositoryCommons {
             bindVars.put("@collection", documentIdSpace.getCollectionName());
             bindVars.put("documentId", documentId.toString());
             bindVars.put("@relation", InternalSpace.DOCUMENT_ID_EDGE_COLLECTION.getCollectionName());
-            List<String> ids = db.query(aql, bindVars, EMPTY_QUERY_OPTIONS, String.class).asListRemaining();
+            List<String> ids = db.query(aql, bindVars,  new AqlQueryOptions(), String.class).asListRemaining();
             return ids.stream().filter(Objects::nonNull).map(id -> ArangoDocumentReference.fromArangoId(id, null)).collect(Collectors.toSet());
         }
         return Collections.emptySet();
@@ -178,7 +176,7 @@ public class ArangoRepositoryCommons {
             Map<String, Object> bindVars = new HashMap<>();
             bindVars.put("@edgeCollection", edgeCollection.getCollectionName());
             bindVars.put("from", from.getDocumentId());
-            List<String> documentIds = db.query(aql, bindVars, EMPTY_QUERY_OPTIONS, String.class).asListRemaining();
+            List<String> documentIds = db.query(aql, bindVars,  new AqlQueryOptions(), String.class).asListRemaining();
             return documentIds.stream().map(id -> ArangoDocumentReference.fromArangoId(id, true)).collect(Collectors.toList());
         }
         return Collections.emptyList();

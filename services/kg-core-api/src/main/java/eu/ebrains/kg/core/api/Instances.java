@@ -35,10 +35,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
+import java.util.*;
 import java.util.stream.Collectors;
 
 /**
@@ -65,6 +62,7 @@ public class Instances {
     @ApiOperation(value = "Create new instance with a system generated id")
     @PostMapping("/instances")
     public ResponseEntity<Result<NormalizedJsonLd>> createNewInstance(@RequestBody JsonLdDoc jsonLdDoc, @RequestParam(value = "space") String space, @RequestParam(value = "returnPayload", required = false, defaultValue = "true") boolean returnPayload, @RequestParam(value = "returnPermissions", required = false, defaultValue = "false") boolean returnPermissions, @RequestParam(value = "returnAlternatives", required = false, defaultValue = "false") boolean returnAlternatives, @RequestParam(value = "returnEmbedded", required = false, defaultValue = "true") boolean returnEmbedded,  @RequestParam(value = "deferInference", required = false, defaultValue = "false") boolean deferInference, ExternalEventInformation externalEventInformation) {
+        long startTime = new Date().getTime();
         UUID id = UUID.randomUUID();
         logger.debug(String.format("Creating new instance with id %s", id));
         ResponseEntity<Result<NormalizedJsonLd>> newInstance = instanceController.createNewInstance(jsonLdDoc, id, space, returnPayload, returnPermissions, returnAlternatives, returnEmbedded, deferInference, externalEventInformation);
@@ -74,12 +72,14 @@ public class Instances {
             idPayload.setId(idUtils.buildAbsoluteUrl(id));
             return ResponseEntity.ok(Result.ok(idPayload));
         }
+        newInstance.getBody().setDuration(new Date().getTime()-startTime);
         return newInstance;
     }
 
     @ApiOperation(value = "Create new instance with a client defined id")
     @PostMapping("/instances/{id}")
     public ResponseEntity<Result<NormalizedJsonLd>> createNewInstance(@RequestBody JsonLdDoc jsonLdDoc, @PathVariable("id") UUID id, @RequestParam(value = "space") String space, @RequestParam(value = "returnPayload", required = false, defaultValue = "true") boolean returnPayload, @RequestParam(value = "returnPermissions", required = false, defaultValue = "false") boolean returnPermissions, @RequestParam(value = "returnAlternatives", required = false, defaultValue = "false") boolean returnAlternatives, @RequestParam(value = "returnEmbedded", required = false, defaultValue = "true") boolean returnEmbedded,  @RequestParam(value = "deferInference", required = false, defaultValue = "false") boolean deferInference, ExternalEventInformation externalEventInformation) {
+        long startTime = new Date().getTime();
         //We want to prevent the UUID to be used twice...
         InstanceId instanceId = idsSvc.resolveId(DataStage.IN_PROGRESS, id);
         if(instanceId!=null){
@@ -88,10 +88,12 @@ public class Instances {
         logger.debug(String.format("Creating new instance with id %s", id));
         ResponseEntity<Result<NormalizedJsonLd>> newInstance = instanceController.createNewInstance(jsonLdDoc, id, space, returnPayload, returnPermissions, returnAlternatives, returnEmbedded, deferInference, externalEventInformation);
         logger.debug(String.format("Done creating new instance with id %s", id));
+        newInstance.getBody().setDuration(new Date().getTime()-startTime);
         return newInstance;
     }
 
     private ResponseEntity<Result<NormalizedJsonLd>> contributeToInstance(JsonLdDoc jsonLdDoc, UUID id, boolean undeprecate,  boolean returnPayload, boolean returnPermissions, boolean returnAlternatives, boolean returnEmbedded, boolean deferInference, ExternalEventInformation externalEventInformation, boolean removeNonDeclaredFields) {
+        long startTime = new Date().getTime();
         logger.debug(String.format("Contributing to instance with id %s", id));
         InstanceId instanceId = idsSvc.resolveId(DataStage.IN_PROGRESS, id);
         if (instanceId == null) {
@@ -105,6 +107,7 @@ public class Instances {
         }
         ResponseEntity<Result<NormalizedJsonLd>> resultResponseEntity = instanceController.contributeToInstance(jsonLdDoc, instanceId, removeNonDeclaredFields, returnPayload, returnPermissions, returnAlternatives, returnEmbedded, deferInference, externalEventInformation);
         logger.debug(String.format("Done contributing to instance with id %s", id));
+        resultResponseEntity.getBody().setDuration(new Date().getTime()-startTime);
         return resultResponseEntity;
     }
 
@@ -123,34 +126,41 @@ public class Instances {
     @ApiOperation(value = "Get the instance by its KG-internal ID")
     @GetMapping("/instances/{id}")
     public ResponseEntity<Result<NormalizedJsonLd>> getInstanceById(@PathVariable("id") UUID id, @RequestParam("stage") ExposedStage stage, @RequestParam(value = "returnEmbedded", defaultValue = "false") boolean returnEmbedded, @RequestParam(value = "returnAlternatives", defaultValue = "false") boolean returnAlternatives, @RequestParam(value = "returnPermissions", defaultValue = "false") boolean returnPermissions) {
+        long startTime = new Date().getTime();
         NormalizedJsonLd instanceById = instanceController.getInstanceById(id, stage.getStage(), returnEmbedded, returnAlternatives, returnPermissions);
-        return instanceById != null ? ResponseEntity.ok(Result.ok(instanceById)) : ResponseEntity.notFound().build();
+        return instanceById != null ? ResponseEntity.ok(Result.ok(instanceById).setDuration(new Date().getTime()-startTime)) : ResponseEntity.notFound().build();
     }
 
     @ApiOperation(value = "Returns a list of instances according to their types")
     @GetMapping("/instances")
     public PaginatedResult<NormalizedJsonLd> getInstances(@RequestParam("stage") ExposedStage stage, @RequestParam("type") String type, @RequestParam(value = "searchByLabel", required = false) String searchByLabel, @RequestParam(value = "returnEmbedded", defaultValue = "false") boolean returnEmbedded, @RequestParam(value = "returnAlternatives", defaultValue = "false") boolean returnAlternatives, @RequestParam(value = "returnPermissions", defaultValue = "false") boolean returnPermissions, PaginationParam paginationParam) {
-        return PaginatedResult.ok(instanceController.getInstances(stage.getStage(), new Type(type), searchByLabel, returnEmbedded, returnAlternatives, returnPermissions, paginationParam));
+        long startTime = new Date().getTime();
+        PaginatedResult<NormalizedJsonLd> result = PaginatedResult.ok(instanceController.getInstances(stage.getStage(), new Type(type), searchByLabel, returnEmbedded, returnAlternatives, returnPermissions, paginationParam));
+        result.setDuration(new Date().getTime()-startTime);
+        return result;
     }
 
     @ApiOperation(value = "Bulk operation of /instances/{id} to read instances by their KG-internal IDs")
     @PostMapping("/instancesByIds")
     public Result<Map<UUID, Result<NormalizedJsonLd>>> getInstancesByIds(@RequestBody List<UUID> ids, @RequestParam("stage") ExposedStage stage, @RequestParam(value = "returnEmbedded", defaultValue = "false") boolean returnEmbedded, @RequestParam(value = "returnAlternatives", defaultValue = "false") boolean returnAlternatives, @RequestParam(value = "returnPermissions", defaultValue = "false") boolean returnPermissions) {
-        return Result.ok(instanceController.getInstancesByIds(ids, stage.getStage(), returnEmbedded, returnAlternatives, returnPermissions));
+        long startTime = new Date().getTime();
+        return Result.ok(instanceController.getInstancesByIds(ids, stage.getStage(), returnEmbedded, returnAlternatives, returnPermissions)).setDuration(new Date().getTime()-startTime);
     }
 
 
     @ApiOperation(value = "Read instances by the given list of (external) identifiers")
     @PostMapping("/instancesByIdentifiers")
     public Result<List<NormalizedJsonLd>> getInstancesByIdentifiers(@RequestBody List<String> identifiers, @RequestParam("stage") ExposedStage stage, @RequestParam(value = "returnEmbedded", defaultValue = "false") boolean returnEmbedded, @RequestParam(value = "returnAlternatives", defaultValue = "false") boolean returnAlternatives, @RequestParam(value = "returnPermissions", defaultValue = "false") boolean returnPermissions) {
+        long startTime = new Date().getTime();
         IdWithAlternatives idWithAlternative = new IdWithAlternatives(UUID.randomUUID(), null, new HashSet<>(identifiers));
         List<InstanceId> instanceIds = idsSvc.resolveIds(stage.getStage(), idWithAlternative, false);
-        return Result.ok(instanceController.getInstancesByIds(instanceIds.stream().filter(instanceId -> !instanceId.isDeprecated()).map(InstanceId::getUuid).collect(Collectors.toList()), stage.getStage(), returnEmbedded, returnAlternatives, returnPermissions).values().stream().map(Result::getData).collect(Collectors.toList()));
+        return Result.ok(instanceController.getInstancesByIds(instanceIds.stream().filter(instanceId -> !instanceId.isDeprecated()).map(InstanceId::getUuid).collect(Collectors.toList()), stage.getStage(), returnEmbedded, returnAlternatives, returnPermissions).values().stream().map(Result::getData).collect(Collectors.toList())).setDuration(new Date().getTime()-startTime);
     }
 
     @ApiOperation(value = "Deprecate an instance")
     @DeleteMapping("/instances/{id}")
     public ResponseEntity<Result<Void>> deleteInstance(@PathVariable("id") UUID id, ExternalEventInformation externalEventInformation) {
+        long startTime = new Date().getTime();
         InstanceId instanceId = idsSvc.resolveId(DataStage.IN_PROGRESS, id);
         if (instanceId == null) {
             return ResponseEntity.notFound().build();
@@ -160,7 +170,7 @@ public class Instances {
                 return ResponseEntity.status(HttpStatus.CONFLICT).body(Result.nok(HttpStatus.CONFLICT.value(), "Was not able to remove instance because it is released still"));
             }
             instanceController.deleteInstance(instanceId, externalEventInformation);
-            return ResponseEntity.status(HttpStatus.OK).build();
+            return ResponseEntity.ok(Result.<Void>ok().setDuration(new Date().getTime()-startTime));
         }
     }
 }
