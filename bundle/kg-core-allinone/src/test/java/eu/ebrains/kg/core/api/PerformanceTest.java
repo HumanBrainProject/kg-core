@@ -83,7 +83,7 @@ public class PerformanceTest {
     }
 
     private JsonLdDoc getDoc(Path path) throws IOException {
-        return new JsonLdDoc(new Gson().fromJson(Files.lines(averageNoLink).collect(Collectors.joining("\n")), LinkedHashMap.class));
+        return new JsonLdDoc(new Gson().fromJson(Files.lines(path).collect(Collectors.joining("\n")), LinkedHashMap.class));
     }
 
     // INSERTION
