@@ -56,6 +56,7 @@ public class PerformanceTest {
     private static Path averageNoLink;
     private static Path averageNoLinkUnnormalized;
     private static Path smallNoLink;
+    private static Path bigNoLink;
 
     private static int batchInsertion = 100;
 
@@ -78,11 +79,14 @@ public class PerformanceTest {
         averageNoLink = Paths.get(PerformanceTest.class.getClassLoader().getResource("average_size_payload_no_link.json").toURI());
         averageNoLinkUnnormalized = Paths.get(PerformanceTest.class.getClassLoader().getResource("average_size_payload_no_link_unnormalized.json").toURI());
         smallNoLink = Paths.get(PerformanceTest.class.getClassLoader().getResource("small_size_payload_no_link.json").toURI());
+        bigNoLink = Paths.get(PerformanceTest.class.getClassLoader().getResource("big_size_payload_no_link.json").toURI());
     }
 
     private JsonLdDoc getDoc(Path path) throws IOException {
         return new JsonLdDoc(new Gson().fromJson(Files.lines(averageNoLink).collect(Collectors.joining("\n")), LinkedHashMap.class));
     }
+
+    // INSERTION
 
     @Test
     public void testInsertSingleAverageNoLink() throws IOException {
@@ -142,6 +146,42 @@ public class PerformanceTest {
 
     }
 
+    @Test
+    public void testInsertBigNoLink() throws IOException {
+
+        //Given
+        JsonLdDoc payload = getDoc(bigNoLink);
+
+        //When
+        List<ResponseEntity<Result<NormalizedJsonLd>>> results = new ArrayList<>();
+        for (int i = 0; i < batchInsertion; i++) {
+            results.add(instances.createNewInstance(payload, "test", true, false, false, false, false, null));
+        }
+
+        //Then
+        for (int i = 0; i < results.size(); i++) {
+            System.out.println(String.format("Result %d: %d ms", i, results.get(i).getBody().getDurationInMs()));
+        }
+
+    }
+
+    @Test
+    public void testInsertBigNoLinkFullParallelism() throws IOException, InterruptedException {
+
+        //Given
+        JsonLdDoc payload = getDoc(bigNoLink);
+
+        ExecutorService executorService = Executors.newFixedThreadPool(4);
+        //When
+        for (int i = 0; i < batchInsertion; i++) {
+            executorService.execute(() -> {
+                ResponseEntity<Result<NormalizedJsonLd>> result = instances.createNewInstance(payload, "test", true, false, false, false, false, null);
+                System.out.println(String.format("Result: %d ms", result.getBody().getDurationInMs()));
+            });
+        }
+        executorService.shutdown();
+        executorService.awaitTermination(5, TimeUnit.HOURS);
+    }
 
     @Test
     public void testInsertSingleSmallNoLinkFullParallelism() throws IOException, InterruptedException {
@@ -160,7 +200,4 @@ public class PerformanceTest {
         executorService.shutdown();
         executorService.awaitTermination(5, TimeUnit.HOURS);
     }
-
-
-
 }
