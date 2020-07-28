@@ -171,7 +171,7 @@ public class PerformanceTest {
         //Given
         JsonLdDoc payload = getDoc(bigNoLink);
 
-        ExecutorService executorService = Executors.newFixedThreadPool(4);
+        ExecutorService executorService = Executors.newFixedThreadPool(6);
         //When
         for (int i = 0; i < batchInsertion; i++) {
             executorService.execute(() -> {
@@ -189,7 +189,7 @@ public class PerformanceTest {
         //Given
         JsonLdDoc payload = getDoc(smallNoLink);
 
-        ExecutorService executorService = Executors.newFixedThreadPool(4);
+        ExecutorService executorService = Executors.newFixedThreadPool(6);
         //When
         for (int i = 0; i < batchInsertion; i++) {
             executorService.execute(() -> {
