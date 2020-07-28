@@ -19,14 +19,19 @@ package eu.ebrains.kg.core.api;
 import com.google.gson.Gson;
 import eu.ebrains.kg.KgCoreAllInOne;
 import eu.ebrains.kg.commons.AuthContext;
+import eu.ebrains.kg.commons.IdUtils;
 import eu.ebrains.kg.commons.jsonld.JsonLdDoc;
 import eu.ebrains.kg.commons.jsonld.NormalizedJsonLd;
+import eu.ebrains.kg.commons.model.PaginationParam;
 import eu.ebrains.kg.commons.model.Result;
 import eu.ebrains.kg.commons.serviceCall.ToAuthentication;
+import eu.ebrains.kg.core.model.ExposedStage;
 import org.junit.Before;
 import org.junit.BeforeClass;
+import org.junit.FixMethodOrder;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.junit.runners.MethodSorters;
 import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -51,6 +56,7 @@ import java.util.stream.Collectors;
 @RunWith(SpringRunner.class)
 @SpringBootTest(classes = KgCoreAllInOne.class, webEnvironment = SpringBootTest.WebEnvironment.DEFINED_PORT)
 @TestPropertySource(properties = {"eu.ebrains.kg.arango.pwd=changeMe", "eu.ebrains.kg.arango.port=9111", "eu.ebrains.kg.develop=true"})
+@FixMethodOrder(MethodSorters.NAME_ASCENDING)
 public class PerformanceTest {
 
     private static Path averageNoLink;
@@ -67,12 +73,19 @@ public class PerformanceTest {
     private Instances instances;
 
     @Autowired
+    private IdUtils idUtils;
+
+    @Autowired
     private ToAuthentication authenticationSvc;
 
     @Before
     public void setup() {
         Mockito.doReturn(authenticationSvc.getUserWithRoles()).when(authContext).getUserWithRoles();
     }
+
+    PaginationParam EMPTY_PAGINATION = new PaginationParam();
+
+    String type = "https://core.kg.ebrains.eu/TestPayload";
 
     @BeforeClass
     public static void loadResources() throws URISyntaxException {
@@ -85,6 +98,11 @@ public class PerformanceTest {
     private JsonLdDoc getDoc(Path path) throws IOException {
         return new JsonLdDoc(new Gson().fromJson(Files.lines(path).collect(Collectors.joining("\n")), LinkedHashMap.class));
     }
+
+    private List<NormalizedJsonLd> getAllInstancesFromInProgress(ExposedStage stage){
+        return this.instances.getInstances(stage, type, null, false, false, false, EMPTY_PAGINATION).getData();
+    }
+
 
     // INSERTION
 
@@ -106,7 +124,6 @@ public class PerformanceTest {
         }
 
     }
-
 
     @Test
     public void testInsertSingleSmallNoLink() throws IOException {
@@ -195,6 +212,39 @@ public class PerformanceTest {
             executorService.execute(() -> {
                 ResponseEntity<Result<NormalizedJsonLd>> result = instances.createNewInstance(payload, "test", true, false, false, false, false, null);
                 System.out.println(String.format("Result: %d ms", result.getBody().getDurationInMs()));
+            });
+        }
+        executorService.shutdown();
+        executorService.awaitTermination(5, TimeUnit.HOURS);
+    }
+
+    // DELETION
+    @Test
+    public void testDeleteSingleAverageNoLink() throws IOException {
+        //Given
+        testInsertSingleAverageNoLink();
+        List<NormalizedJsonLd> allInstancesFromInProgress = getAllInstancesFromInProgress(ExposedStage.IN_PROGRESS).subList(0, batchInsertion);
+        //When
+        for (int i = 0; i < allInstancesFromInProgress.size(); i++) {
+            ResponseEntity<Result<Void>> resultResponseEntity = instances.deleteInstance(idUtils.getUUID(allInstancesFromInProgress.get(i).getId()), null);
+            System.out.println(String.format("Result %d: %d ms", i, resultResponseEntity.getBody().getDurationInMs()));
+        }
+    }
+
+
+    @Test
+    public void testDeleteSingleAverageNoLinkFullParallelism() throws IOException, InterruptedException {
+        //Given
+        testInsertSingleAverageNoLink();
+        List<NormalizedJsonLd> allInstancesFromInProgress = getAllInstancesFromInProgress(ExposedStage.IN_PROGRESS).subList(0, batchInsertion);
+
+        //When
+        ExecutorService executorService = Executors.newFixedThreadPool(6);
+        for (int i = 0; i < allInstancesFromInProgress.size(); i++) {
+            int finalI = i;
+            executorService.execute(() -> {
+                ResponseEntity<Result<Void>> resultResponseEntity = instances.deleteInstance(idUtils.getUUID(allInstancesFromInProgress.get(finalI).getId()), null);
+                System.out.println(String.format("Result %d: %d ms", finalI, resultResponseEntity.getBody().getDurationInMs()));
             });
         }
         executorService.shutdown();
