@@ -31,6 +31,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -54,7 +55,8 @@ public class Releases {
     //RELEASE instances
     @ApiOperation("Release or re-release an instance")
     @PutMapping
-    public ResponseEntity<Void> releaseInstance(@RequestParam("id") UUID id, @RequestParam("revision") String revision) {
+    public ResponseEntity<Result<Void>> releaseInstance(@RequestParam("id") UUID id, @RequestParam("revision") String revision) {
+        long startTime = new Date().getTime();
         InstanceId instanceId = idsSvc.resolveId(DataStage.IN_PROGRESS, id);
         if (instanceId == null) {
             return ResponseEntity.notFound().build();
@@ -63,13 +65,14 @@ public class Releases {
             return ResponseEntity.status(HttpStatus.GONE).build();
         }
         releaseSvc.releaseInstance(instanceId, revision);
-        return ResponseEntity.status(HttpStatus.OK).build();
+        return ResponseEntity.ok(Result.<Void>ok().setDuration(new Date().getTime()-startTime));
     }
 
     @ApiOperation(value = "Unrelease an instance")
     @ApiResponses(value = {@ApiResponse(code = 200, message = "The instance that has been unreleased"), @ApiResponse(code = 404, message = "Instance not found")})
     @DeleteMapping
-    public ResponseEntity<Void> unreleaseInstance(@RequestParam("id") UUID id) {
+    public ResponseEntity<Result<Void>> unreleaseInstance(@RequestParam("id") UUID id) {
+        long startTime = new Date().getTime();
         InstanceId instanceId = idsSvc.resolveId(DataStage.IN_PROGRESS, id);
         if (instanceId == null) {
             return ResponseEntity.notFound().build();
@@ -78,7 +81,7 @@ public class Releases {
             return ResponseEntity.status(HttpStatus.GONE).build();
         }
         releaseSvc.unreleaseInstance(instanceId);
-        return ResponseEntity.status(HttpStatus.OK).build();
+        return ResponseEntity.ok(Result.<Void>ok().setDuration(new Date().getTime()-startTime));
     }
 
     @ApiOperation(value = "Get the release status for an instance")
