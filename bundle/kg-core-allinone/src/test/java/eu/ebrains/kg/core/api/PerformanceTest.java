@@ -39,6 +39,7 @@ import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.junit4.SpringRunner;
@@ -352,11 +353,48 @@ public class PerformanceTest {
         releases.releaseInstance(idUtils.getUUID(id), from.getRevision());
         ResponseEntity<Result<ReleaseStatus>> releaseStatus = releases.getReleaseStatus(idUtils.getUUID(id), ReleaseTreeScope.TOP_INSTANCE_ONLY);
 
+        //Then
         assertEquals(ReleaseStatus.RELEASED.getReleaseStatus(), releaseStatus.getBody().getData().getReleaseStatus());
 
         releases.unreleaseInstance(idUtils.getUUID(id));
         ResponseEntity<Result<ReleaseStatus>> releaseStatusAfterUnrelease = releases.getReleaseStatus(idUtils.getUUID(id), ReleaseTreeScope.TOP_INSTANCE_ONLY);
 
-        assertEquals(releaseStatusAfterUnrelease.getBody().getData().getReleaseStatus(), ReleaseStatus.UNRELEASED.getReleaseStatus());
+        assertEquals(ReleaseStatus.UNRELEASED.getReleaseStatus(), releaseStatusAfterUnrelease.getBody().getData().getReleaseStatus());
     }
+
+    @Test
+    public void testInsertAndDeleteInstance() throws  IOException {
+        //Given
+        JsonLdDoc payload = getDoc(smallNoLink);
+        ResponseEntity<Result<NormalizedJsonLd>> instance = instances.createNewInstance(payload, "test", true, false, false, false, false, null);
+        JsonLdId id = instance.getBody().getData().getId();
+
+        //When
+        ResponseEntity<Result<Void>> resultResponseEntity = instances.deleteInstance(idUtils.getUUID(id), null);
+
+        //Then
+        assertEquals(HttpStatus.OK, resultResponseEntity.getStatusCode());
+
+        ResponseEntity<Result<NormalizedJsonLd>> instanceById = instances.getInstanceById(idUtils.getUUID(id), ExposedStage.IN_PROGRESS, false, false, false);
+
+        assertEquals(HttpStatus.NOT_FOUND, instanceById.getStatusCode());
+
+    }
+
+    @Test
+    public  void testInsertAndUpdateInstance() throws IOException {
+        //Given
+        JsonLdDoc payload = getDoc(smallNoLink);
+        ResponseEntity<Result<NormalizedJsonLd>> instance = instances.createNewInstance(payload, "test", true, false, false, false, false, null);
+        JsonLdId id = instance.getBody().getData().getId();
+
+        //When
+        JsonLdDoc doc = new JsonLdDoc();
+        doc.addProperty("https://core.kg.ebrains.eu/fooE", "fooEUpdated");
+        ResponseEntity<Result<NormalizedJsonLd>> resultResponseEntity = instances.contributeToInstancePartialReplacement(doc, idUtils.getUUID(id), false, true, false, false, false, false, null);
+
+        //Then
+        assertEquals("fooEUpdated", resultResponseEntity.getBody().getData().getAs("https://core.kg.ebrains.eu/fooE", String.class));
+    }
+
 }
