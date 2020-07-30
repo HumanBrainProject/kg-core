@@ -30,6 +30,7 @@ import eu.ebrains.kg.commons.model.Result;
 import eu.ebrains.kg.commons.params.ReleaseTreeScope;
 import eu.ebrains.kg.commons.serviceCall.ToAuthentication;
 import eu.ebrains.kg.core.model.ExposedStage;
+import eu.ebrains.kg.metrics.TestInformation;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -51,6 +52,7 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.UUID;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
@@ -74,6 +76,9 @@ public class PerformanceTest {
     @MockBean
     AuthContext authContext;
 
+    @MockBean
+    TestInformation testInformation;
+
     @Autowired
     private Instances instances;
 
@@ -86,9 +91,13 @@ public class PerformanceTest {
     @Autowired
     private ToAuthentication authenticationSvc;
 
+    String testRunId;
+
     @Before
     public void setup() {
         Mockito.doReturn(authenticationSvc.getUserWithRoles()).when(authContext).getUserWithRoles();
+        testRunId = UUID.randomUUID().toString();
+        Mockito.doReturn(testRunId).when(testInformation).getRunId();
     }
 
     PaginationParam EMPTY_PAGINATION = new PaginationParam();
@@ -112,7 +121,6 @@ public class PerformanceTest {
     }
 
     // INSERTION
-
     @Test
     public void testInsertSingleAverageNoLink() throws IOException {
 
@@ -122,6 +130,7 @@ public class PerformanceTest {
         //When
         List<ResponseEntity<Result<NormalizedJsonLd>>> results = new ArrayList<>();
         for (int i = 0; i < batchInsertion; i++) {
+            Mockito.doReturn(i).when(testInformation).getExecutionNumber();
             results.add(instances.createNewInstance(payload, "test", true, false, false, false, false, null));
         }
 
@@ -237,7 +246,6 @@ public class PerformanceTest {
             System.out.println(String.format("Result %d: %d ms", i, resultResponseEntity.getBody().getDurationInMs()));
         }
     }
-
 
     @Test
     public void testDeleteSingleAverageNoLinkFullParallelism() throws IOException, InterruptedException {
