@@ -33,6 +33,7 @@ import eu.ebrains.kg.core.model.ExposedStage;
 import eu.ebrains.kg.metrics.TestInformation;
 import org.junit.Before;
 import org.junit.BeforeClass;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mockito;
@@ -342,7 +343,7 @@ public class PerformanceTest {
     }
 
     @Test
-    public void testRealeaseAndUnreleaseInstance() throws IOException {
+    public void testRealeaseAndUnreleaseAndReReleaseInstance() throws IOException {
         //Given
         JsonLdDoc payload = getDoc(smallNoLink);
         ResponseEntity<Result<NormalizedJsonLd>> instance = instances.createNewInstance(payload, "test", true, false, false, false, false, null);
@@ -360,6 +361,10 @@ public class PerformanceTest {
         ResponseEntity<Result<ReleaseStatus>> releaseStatusAfterUnrelease = releases.getReleaseStatus(idUtils.getUUID(id), ReleaseTreeScope.TOP_INSTANCE_ONLY);
 
         assertEquals(ReleaseStatus.UNRELEASED.getReleaseStatus(), releaseStatusAfterUnrelease.getBody().getData().getReleaseStatus());
+
+        releases.releaseInstance(idUtils.getUUID(id), from.getRevision());
+        ResponseEntity<Result<ReleaseStatus>> releaseStatusRerelease = releases.getReleaseStatus(idUtils.getUUID(id), ReleaseTreeScope.TOP_INSTANCE_ONLY);
+        assertEquals(ReleaseStatus.RELEASED.getReleaseStatus(), releaseStatusRerelease.getBody().getData().getReleaseStatus());
     }
 
     @Test
@@ -382,7 +387,7 @@ public class PerformanceTest {
     }
 
     @Test
-    public  void testInsertAndUpdateInstance() throws IOException {
+    public void testInsertAndUpdateInstance() throws IOException {
         //Given
         JsonLdDoc payload = getDoc(smallNoLink);
         ResponseEntity<Result<NormalizedJsonLd>> instance = instances.createNewInstance(payload, "test", true, false, false, false, false, null);
@@ -395,6 +400,51 @@ public class PerformanceTest {
 
         //Then
         assertEquals("fooEUpdated", resultResponseEntity.getBody().getData().getAs("https://core.kg.ebrains.eu/fooE", String.class));
+    }
+
+    @Ignore("Failing")
+    @Test
+    public void testFullCycle() throws  IOException {
+        //Given
+        JsonLdDoc payload = getDoc(smallNoLink);
+        ResponseEntity<Result<NormalizedJsonLd>> instance = instances.createNewInstance(payload, "test", true, false, false, false, false, null);
+        JsonLdId id = instance.getBody().getData().getId();
+        IndexedJsonLdDoc from = IndexedJsonLdDoc.from(instance.getBody().getData());
+
+        //When
+        //Update
+        JsonLdDoc doc = new JsonLdDoc();
+        doc.addProperty("https://core.kg.ebrains.eu/fooE", "fooEUpdated");
+        ResponseEntity<Result<NormalizedJsonLd>> resultResponseEntity = instances.contributeToInstancePartialReplacement(doc, idUtils.getUUID(id), false, true, false, false, false, false, null);
+
+        //Then
+        assertEquals("fooEUpdated", resultResponseEntity.getBody().getData().getAs("https://core.kg.ebrains.eu/fooE", String.class));
+
+        //When
+        //Release
+        releases.releaseInstance(idUtils.getUUID(id), from.getRevision());
+        ResponseEntity<Result<ReleaseStatus>> releaseStatus = releases.getReleaseStatus(idUtils.getUUID(id), ReleaseTreeScope.TOP_INSTANCE_ONLY);
+
+        //Then
+        assertEquals(ReleaseStatus.RELEASED.getReleaseStatus(), releaseStatus.getBody().getData().getReleaseStatus());
+
+        //When
+        //Unrelease
+        releases.unreleaseInstance(idUtils.getUUID(id));
+        ResponseEntity<Result<ReleaseStatus>> releaseStatusAfterUnrelease = releases.getReleaseStatus(idUtils.getUUID(id), ReleaseTreeScope.TOP_INSTANCE_ONLY);
+
+        //Then
+        assertEquals(ReleaseStatus.UNRELEASED.getReleaseStatus(), releaseStatusAfterUnrelease.getBody().getData().getReleaseStatus());
+
+        //When
+        //Delete
+        ResponseEntity<Result<Void>> resultResponseEntityDeleted = instances.deleteInstance(idUtils.getUUID(id), null);
+        //Then
+        assertEquals(HttpStatus.OK, resultResponseEntityDeleted.getStatusCode());
+
+        ResponseEntity<Result<NormalizedJsonLd>> instanceById = instances.getInstanceById(idUtils.getUUID(id), ExposedStage.IN_PROGRESS, false, false, false);
+
+        assertEquals(HttpStatus.NOT_FOUND, instanceById.getStatusCode());
     }
 
 }
