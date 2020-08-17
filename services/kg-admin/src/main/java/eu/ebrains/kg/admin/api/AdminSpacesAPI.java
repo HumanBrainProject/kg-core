@@ -82,10 +82,10 @@ public class AdminSpacesAPI {
 
 
     @PutMapping("/{id}")
-    public ResponseEntity<String> addSpace(@PathVariable("id") String id) {
+    public ResponseEntity<Space> addSpace(@PathVariable("id") String id) {
         try {
             spaceController.createSpace(new Space(id));
-            return ResponseEntity.ok(String.format("Successfully inserted the space with id %s", id));
+            return getSpace(id);
         } catch (ArangoDBException ex) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
         }

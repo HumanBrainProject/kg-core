@@ -19,6 +19,7 @@ package eu.ebrains.kg.graphdb.ingestion.controller.structure;
 import eu.ebrains.kg.arango.commons.model.ArangoCollectionReference;
 import eu.ebrains.kg.arango.commons.model.ArangoDocumentReference;
 import eu.ebrains.kg.arango.commons.model.InternalSpace;
+import eu.ebrains.kg.commons.IdUtils;
 import eu.ebrains.kg.commons.Tuple;
 import eu.ebrains.kg.commons.TypeUtils;
 import eu.ebrains.kg.commons.jsonld.JsonLdConsts;
@@ -39,7 +40,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
-import java.nio.charset.StandardCharsets;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeParseException;
 import java.util.*;
@@ -182,11 +182,9 @@ public class StaticStructureController {
         return arangoDocument.getDoc().getTypes();
     }
 
-
     public static ArangoDocumentReference createDocumentRefForMetaRepresentation(String name, ArangoCollectionReference collection) {
-        return collection.doc(UUID.nameUUIDFromBytes(("metaRepresentation" + name).getBytes(StandardCharsets.UTF_8)));
+        return collection.doc(IdUtils.createMetaRepresentationUUID(name));
     }
-
 
     public static MetaRepresentation createMetaRepresentation(String t, ArangoCollectionReference collectionReference) {
         MetaRepresentation representation = new MetaRepresentation();

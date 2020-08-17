@@ -84,21 +84,24 @@ public class EventProcessor {
         return Collections.emptyList();
     }
 
-
-    @Async
-    public void asyncDeferredInference(AuthTokens authTokens, UserWithRoles userWithRoles){
-        List<ExecutedDeferredInference> results = deferInference(authTokens, userWithRoles);
+    public void syncDeferredInference(AuthTokens authTokens, Space space, UserWithRoles userWithRoles){
+        List<ExecutedDeferredInference> results = deferInference(authTokens, space, userWithRoles);
         List<String> unsuccessful = results.stream().filter(d -> !d.isSuccessful()).map(d -> String.format("%s/%s: %s", d.getDeferredInference().getSpace().getName(), d.getDeferredInference().getUuid(), d.getException().getMessage())).collect(Collectors.toList());
         if(!unsuccessful.isEmpty()){
             logger.error(String.format("Was not able to infer all deferred instances: %s", String.join(", ", unsuccessful)));
         }
     }
 
-    private synchronized List<ExecutedDeferredInference> deferInference(AuthTokens authTokens, UserWithRoles userWithRoles){
+    @Async
+    public void asyncDeferredInference(AuthTokens authTokens, Space space, UserWithRoles userWithRoles){
+        syncDeferredInference(authTokens, space, userWithRoles);
+    }
+
+    private synchronized List<ExecutedDeferredInference> deferInference(AuthTokens authTokens, Space space, UserWithRoles userWithRoles){
         DeferredInference deferredInference;
         int skipped = 0;
         List<ExecutedDeferredInference> results = new ArrayList<>();
-        while((deferredInference = eventRepository.getNextDeferredInference(skipped)) != null){
+        while((deferredInference = eventRepository.getNextDeferredInference(space, skipped)) != null){
             ExecutedDeferredInference executedDeferredInference = doDeferInference(authTokens, deferredInference, userWithRoles, 0);
             results.add(executedDeferredInference);
             if(!executedDeferredInference.isSuccessful()){

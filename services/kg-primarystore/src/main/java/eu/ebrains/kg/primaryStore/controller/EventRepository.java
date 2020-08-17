@@ -19,9 +19,11 @@ package eu.ebrains.kg.primaryStore.controller;
 import com.arangodb.ArangoCollection;
 import com.arangodb.model.*;
 import com.google.gson.Gson;
+import eu.ebrains.kg.arango.commons.aqlBuilder.AQL;
 import eu.ebrains.kg.arango.commons.model.ArangoDatabaseProxy;
 import eu.ebrains.kg.commons.model.DataStage;
 import eu.ebrains.kg.commons.model.PersistedEvent;
+import eu.ebrains.kg.commons.model.Space;
 import eu.ebrains.kg.primaryStore.model.DeferredInference;
 import eu.ebrains.kg.primaryStore.model.FailedEvent;
 import org.slf4j.Logger;
@@ -60,10 +62,14 @@ public class EventRepository {
         events.insertDocument(gson.toJson(e), new DocumentCreateOptions().overwrite(true));
     }
 
-    DeferredInference getNextDeferredInference(int offset) {
+    DeferredInference getNextDeferredInference(Space space, int offset) {
         HashMap<String, Object> bindVars = new HashMap<>();
         bindVars.put("@collection", getOrCreateDeferredInferenceCollection(DataStage.IN_PROGRESS).name());
-        List<DeferredInference> collect = arangoDatabase.getOrCreate().query(String.format("FOR doc IN @@collection LIMIT %d, 1 RETURN doc\n", offset), bindVars, new AqlQueryOptions(), String.class).asListRemaining().stream().map(d -> gson.fromJson(d, DeferredInference.class)).collect(Collectors.toList());
+        bindVars.put("space", space.getName());
+        bindVars.put("offset", offset);
+        AQL aql = new AQL();
+        aql.addLine(AQL.trust("FOR doc IN @@collection FILTER doc.space.name == @space LIMIT @offset, 1 RETURN doc"));
+        List<DeferredInference> collect = arangoDatabase.getOrCreate().query(aql.build().getValue(), bindVars, new AqlQueryOptions(), String.class).asListRemaining().stream().map(d -> gson.fromJson(d, DeferredInference.class)).collect(Collectors.toList());
         return collect.size()>0 ? collect.get(0) : null;
     }
 

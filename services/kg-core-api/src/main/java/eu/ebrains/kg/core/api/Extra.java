@@ -75,9 +75,9 @@ public class Extra {
     }
 
     @ApiOperation("Triggers the inference of all documents which have been tagged to be deferred as part of their creation/contribution")
-    @PostMapping("/extra/inference/deferred/all")
-    public void triggerDeferredInference() {
-        inferenceController.triggerDeferredInference(authContext.getAuthTokens());
+    @PostMapping("/extra/inference/deferred/{space}")
+    public void triggerDeferredInference(@RequestParam(value = "sync", required = false, defaultValue = "false") boolean sync, @PathVariable(value = "space") String space) {
+        inferenceController.triggerDeferredInference(authContext.getAuthTokens(), new Space(space), sync);
     }
 
     @ApiOperation("Normalizes the passed payload according to the EBRAINS KG conventions")

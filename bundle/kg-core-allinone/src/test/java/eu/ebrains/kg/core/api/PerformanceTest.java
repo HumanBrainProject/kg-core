@@ -24,9 +24,7 @@ import eu.ebrains.kg.commons.jsonld.IndexedJsonLdDoc;
 import eu.ebrains.kg.commons.jsonld.JsonLdDoc;
 import eu.ebrains.kg.commons.jsonld.JsonLdId;
 import eu.ebrains.kg.commons.jsonld.NormalizedJsonLd;
-import eu.ebrains.kg.commons.model.PaginationParam;
-import eu.ebrains.kg.commons.model.ReleaseStatus;
-import eu.ebrains.kg.commons.model.Result;
+import eu.ebrains.kg.commons.model.*;
 import eu.ebrains.kg.commons.params.ReleaseTreeScope;
 import eu.ebrains.kg.commons.serviceCall.ToAuthentication;
 import eu.ebrains.kg.core.model.ExposedStage;
@@ -50,17 +48,15 @@ import java.net.URISyntaxException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.UUID;
+import java.time.Duration;
+import java.time.Instant;
+import java.util.*;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.*;
 
 @RunWith(SpringRunner.class)
 @SpringBootTest(classes = KgCoreAllInOne.class, webEnvironment = SpringBootTest.WebEnvironment.DEFINED_PORT)
@@ -85,6 +81,9 @@ public class PerformanceTest {
     private Instances instances;
 
     @Autowired
+    private Extra extra;
+
+    @Autowired
     private Releases releases;
 
     @Autowired
@@ -103,6 +102,8 @@ public class PerformanceTest {
     }
 
     PaginationParam EMPTY_PAGINATION = new PaginationParam();
+    ResponseConfiguration DEFAULT_RESPONSE_CONFIG = new ResponseConfiguration();
+    IngestConfiguration DEFAULT_INGEST_CONFIG = new IngestConfiguration().setNormalizePayload(false);
 
     String type = "https://core.kg.ebrains.eu/TestPayload";
 
@@ -119,7 +120,7 @@ public class PerformanceTest {
     }
 
     private List<NormalizedJsonLd> getAllInstancesFromInProgress(ExposedStage stage) {
-        return this.instances.getInstances(stage, type, null, false, false, false, EMPTY_PAGINATION).getData();
+        return this.instances.getInstances(stage, type, null, DEFAULT_RESPONSE_CONFIG, EMPTY_PAGINATION).getData();
     }
 
     // INSERTION
@@ -133,7 +134,7 @@ public class PerformanceTest {
         List<ResponseEntity<Result<NormalizedJsonLd>>> results = new ArrayList<>();
         for (int i = 0; i < batchInsertion; i++) {
             Mockito.doReturn(i).when(testInformation).getExecutionNumber();
-            results.add(instances.createNewInstance(payload, "test", true, false, false, false, false, null));
+            results.add(instances.createNewInstance(payload, "test", DEFAULT_RESPONSE_CONFIG, DEFAULT_INGEST_CONFIG, null));
         }
 
         //Then
@@ -152,7 +153,8 @@ public class PerformanceTest {
         //When
         List<ResponseEntity<Result<NormalizedJsonLd>>> results = new ArrayList<>();
         for (int i = 0; i < batchInsertion; i++) {
-            results.add(instances.createNewInstance(payload, "test", true, false, false, false, false, null));
+            Mockito.doReturn(i).when(testInformation).getExecutionNumber();
+            results.add(instances.createNewInstance(payload, "test", DEFAULT_RESPONSE_CONFIG, DEFAULT_INGEST_CONFIG, null));
         }
 
         //Then
@@ -163,6 +165,57 @@ public class PerformanceTest {
     }
 
     @Test
+    public void testInsertSingleSmallNoLinkInferenceDeferredNormalize() throws IOException {
+
+        //Given
+        JsonLdDoc payload = getDoc(smallNoLink);
+
+        //When
+        List<ResponseEntity<Result<NormalizedJsonLd>>> results = new ArrayList<>();
+        for (int i = 0; i < batchInsertion; i++) {
+            Mockito.doReturn(i).when(testInformation).getExecutionNumber();
+            results.add(instances.createNewInstance(payload, "test", DEFAULT_RESPONSE_CONFIG, new IngestConfiguration().setDeferInference(true), null));
+        }
+
+        //Then
+        for (int i = 0; i < results.size(); i++) {
+            System.out.println(String.format("Result %d: %d ms", i, results.get(i).getBody().getDurationInMs()));
+        }
+
+        System.out.println("Trigger inference");
+        extra.triggerDeferredInference(true, "test");
+        System.out.println("Inference handled");
+
+    }
+
+    @Test
+    public void testInsertSingleSmallNoLinkInferenceDeferred() throws IOException {
+
+        //Given
+        JsonLdDoc payload = getDoc(smallNoLink);
+
+        //When
+        List<ResponseEntity<Result<NormalizedJsonLd>>> results = new ArrayList<>();
+        for (int i = 0; i < batchInsertion; i++) {
+            Mockito.doReturn(i).when(testInformation).getExecutionNumber();
+            results.add(instances.createNewInstance(payload, "test", DEFAULT_RESPONSE_CONFIG, new IngestConfiguration().setDeferInference(true).setNormalizePayload(false), null));
+        }
+
+        //Then
+        for (int i = 0; i < results.size(); i++) {
+            System.out.println(String.format("Result %d: %d ms", i, results.get(i).getBody().getDurationInMs()));
+        }
+        Instant start = Instant.now();
+        System.out.println("Trigger inference");
+        extra.triggerDeferredInference(true, "test");
+        Instant end = Instant.now();
+        System.out.println(String.format("Inference handled in %d ms", Duration.between(start, end).toMillis()));
+    }
+
+
+
+
+    @Test
     public void testInsertSingleAverageNoLinkUnnormalized() throws IOException {
 
         //Given
@@ -171,7 +224,8 @@ public class PerformanceTest {
         //When
         List<ResponseEntity<Result<NormalizedJsonLd>>> results = new ArrayList<>();
         for (int i = 0; i < batchInsertion; i++) {
-            results.add(instances.createNewInstance(payload, "test", true, false, false, false, false, null));
+            Mockito.doReturn(i).when(testInformation).getExecutionNumber();
+            results.add(instances.createNewInstance(payload, "test", DEFAULT_RESPONSE_CONFIG, DEFAULT_INGEST_CONFIG, null));
         }
 
         //Then
@@ -190,7 +244,8 @@ public class PerformanceTest {
         //When
         List<ResponseEntity<Result<NormalizedJsonLd>>> results = new ArrayList<>();
         for (int i = 0; i < batchInsertion; i++) {
-            results.add(instances.createNewInstance(payload, "test", true, false, false, false, false, null));
+            Mockito.doReturn(i).when(testInformation).getExecutionNumber();
+            results.add(instances.createNewInstance(payload, "test", DEFAULT_RESPONSE_CONFIG, DEFAULT_INGEST_CONFIG,  null));
         }
 
         //Then
@@ -210,7 +265,7 @@ public class PerformanceTest {
         //When
         for (int i = 0; i < batchInsertion; i++) {
             executorService.execute(() -> {
-                ResponseEntity<Result<NormalizedJsonLd>> result = instances.createNewInstance(payload, "test", true, false, false, false, false, null);
+                ResponseEntity<Result<NormalizedJsonLd>> result = instances.createNewInstance(payload, "test", DEFAULT_RESPONSE_CONFIG, DEFAULT_INGEST_CONFIG,  null);
                 System.out.println(String.format("Result: %d ms", result.getBody().getDurationInMs()));
             });
         }
@@ -228,7 +283,7 @@ public class PerformanceTest {
         //When
         for (int i = 0; i < batchInsertion; i++) {
             executorService.execute(() -> {
-                ResponseEntity<Result<NormalizedJsonLd>> result = instances.createNewInstance(payload, "test", true, false, false, false, false, null);
+                ResponseEntity<Result<NormalizedJsonLd>> result = instances.createNewInstance(payload, "test",DEFAULT_RESPONSE_CONFIG, DEFAULT_INGEST_CONFIG, null);
                 System.out.println(String.format("Result: %d ms", result.getBody().getDurationInMs()));
             });
         }
@@ -244,6 +299,7 @@ public class PerformanceTest {
         List<NormalizedJsonLd> allInstancesFromInProgress = getAllInstancesFromInProgress(ExposedStage.IN_PROGRESS).subList(0, batchInsertion);
         //When
         for (int i = 0; i < allInstancesFromInProgress.size(); i++) {
+            Mockito.doReturn(i).when(testInformation).getExecutionNumber();
             ResponseEntity<Result<Void>> resultResponseEntity = instances.deleteInstance(idUtils.getUUID(allInstancesFromInProgress.get(i).getId()), null);
             System.out.println(String.format("Result %d: %d ms", i, resultResponseEntity.getBody().getDurationInMs()));
         }
@@ -277,6 +333,7 @@ public class PerformanceTest {
         //When
         long startTime = new Date().getTime();
         for (int i = 0; i < allInstancesFromInProgress.size(); i++) {
+            Mockito.doReturn(i).when(testInformation).getExecutionNumber();
             IndexedJsonLdDoc from = IndexedJsonLdDoc.from(allInstancesFromInProgress.get(i));
             ResponseEntity<Result<Void>> resultResponseEntity = releases.releaseInstance(idUtils.getUUID(allInstancesFromInProgress.get(i).getId()), from.getRevision());
             System.out.println(String.format("Result %d: %d ms", i, resultResponseEntity.getBody().getDurationInMs()));
@@ -313,7 +370,8 @@ public class PerformanceTest {
         JsonLdDoc payload = getDoc(bigNoLink);
         List<ResponseEntity<Result<NormalizedJsonLd>>> l = new ArrayList<>();
         for (int i = 0; i < smallBatchInsertion; i++) {
-            ResponseEntity<Result<NormalizedJsonLd>> instance = instances.createNewInstance(payload, "test", true, false, false, false, false, null);
+            Mockito.doReturn(i).when(testInformation).getExecutionNumber();
+            ResponseEntity<Result<NormalizedJsonLd>> instance = instances.createNewInstance(payload, "test", DEFAULT_RESPONSE_CONFIG, DEFAULT_INGEST_CONFIG,  null);
             l.add(instance);
         }
 
@@ -336,6 +394,7 @@ public class PerformanceTest {
         //When
         long startTime = new Date().getTime();
         for (int i = 0; i < allInstancesFromInProgress.size(); i++) {
+            Mockito.doReturn(i).when(testInformation).getExecutionNumber();
             ResponseEntity<Result<Void>> resultResponseEntity = releases.unreleaseInstance(idUtils.getUUID(allInstancesFromInProgress.get(i).getId()));
             System.out.println(String.format("Result %d: %d ms", i, resultResponseEntity.getBody().getDurationInMs()));
         }
@@ -346,7 +405,7 @@ public class PerformanceTest {
     public void testRealeaseAndUnreleaseAndReReleaseInstance() throws IOException {
         //Given
         JsonLdDoc payload = getDoc(smallNoLink);
-        ResponseEntity<Result<NormalizedJsonLd>> instance = instances.createNewInstance(payload, "test", true, false, false, false, false, null);
+        ResponseEntity<Result<NormalizedJsonLd>> instance = instances.createNewInstance(payload, "test", DEFAULT_RESPONSE_CONFIG, DEFAULT_INGEST_CONFIG,  null);
         JsonLdId id = instance.getBody().getData().getId();
         IndexedJsonLdDoc from = IndexedJsonLdDoc.from(instance.getBody().getData());
 
@@ -371,7 +430,7 @@ public class PerformanceTest {
     public void testInsertAndDeleteInstance() throws  IOException {
         //Given
         JsonLdDoc payload = getDoc(smallNoLink);
-        ResponseEntity<Result<NormalizedJsonLd>> instance = instances.createNewInstance(payload, "test", true, false, false, false, false, null);
+        ResponseEntity<Result<NormalizedJsonLd>> instance = instances.createNewInstance(payload, "test", DEFAULT_RESPONSE_CONFIG, DEFAULT_INGEST_CONFIG,  null);
         JsonLdId id = instance.getBody().getData().getId();
 
         //When
@@ -380,7 +439,7 @@ public class PerformanceTest {
         //Then
         assertEquals(HttpStatus.OK, resultResponseEntity.getStatusCode());
 
-        ResponseEntity<Result<NormalizedJsonLd>> instanceById = instances.getInstanceById(idUtils.getUUID(id), ExposedStage.IN_PROGRESS, false, false, false);
+        ResponseEntity<Result<NormalizedJsonLd>> instanceById = instances.getInstanceById(idUtils.getUUID(id), ExposedStage.IN_PROGRESS, DEFAULT_RESPONSE_CONFIG);
 
         assertEquals(HttpStatus.NOT_FOUND, instanceById.getStatusCode());
 
@@ -390,13 +449,13 @@ public class PerformanceTest {
     public void testInsertAndUpdateInstance() throws IOException {
         //Given
         JsonLdDoc payload = getDoc(smallNoLink);
-        ResponseEntity<Result<NormalizedJsonLd>> instance = instances.createNewInstance(payload, "test", true, false, false, false, false, null);
+        ResponseEntity<Result<NormalizedJsonLd>> instance = instances.createNewInstance(payload, "test", DEFAULT_RESPONSE_CONFIG, DEFAULT_INGEST_CONFIG, null);
         JsonLdId id = instance.getBody().getData().getId();
 
         //When
         JsonLdDoc doc = new JsonLdDoc();
         doc.addProperty("https://core.kg.ebrains.eu/fooE", "fooEUpdated");
-        ResponseEntity<Result<NormalizedJsonLd>> resultResponseEntity = instances.contributeToInstancePartialReplacement(doc, idUtils.getUUID(id), false, true, false, false, false, false, null);
+        ResponseEntity<Result<NormalizedJsonLd>> resultResponseEntity = instances.contributeToInstancePartialReplacement(doc, idUtils.getUUID(id), false, DEFAULT_RESPONSE_CONFIG, DEFAULT_INGEST_CONFIG,  null);
 
         //Then
         assertEquals("fooEUpdated", resultResponseEntity.getBody().getData().getAs("https://core.kg.ebrains.eu/fooE", String.class));
@@ -407,7 +466,7 @@ public class PerformanceTest {
     public void testFullCycle() throws  IOException {
         //Given
         JsonLdDoc payload = getDoc(smallNoLink);
-        ResponseEntity<Result<NormalizedJsonLd>> instance = instances.createNewInstance(payload, "test", true, false, false, false, false, null);
+        ResponseEntity<Result<NormalizedJsonLd>> instance = instances.createNewInstance(payload, "test", DEFAULT_RESPONSE_CONFIG, DEFAULT_INGEST_CONFIG,  null);
         JsonLdId id = instance.getBody().getData().getId();
         IndexedJsonLdDoc from = IndexedJsonLdDoc.from(instance.getBody().getData());
 
@@ -415,7 +474,7 @@ public class PerformanceTest {
         //Update
         JsonLdDoc doc = new JsonLdDoc();
         doc.addProperty("https://core.kg.ebrains.eu/fooE", "fooEUpdated");
-        ResponseEntity<Result<NormalizedJsonLd>> resultResponseEntity = instances.contributeToInstancePartialReplacement(doc, idUtils.getUUID(id), false, true, false, false, false, false, null);
+        ResponseEntity<Result<NormalizedJsonLd>> resultResponseEntity = instances.contributeToInstancePartialReplacement(doc, idUtils.getUUID(id), false, DEFAULT_RESPONSE_CONFIG, DEFAULT_INGEST_CONFIG,  null);
 
         //Then
         assertEquals("fooEUpdated", resultResponseEntity.getBody().getData().getAs("https://core.kg.ebrains.eu/fooE", String.class));
@@ -442,7 +501,7 @@ public class PerformanceTest {
         //Then
         assertEquals(HttpStatus.OK, resultResponseEntityDeleted.getStatusCode());
 
-        ResponseEntity<Result<NormalizedJsonLd>> instanceById = instances.getInstanceById(idUtils.getUUID(id), ExposedStage.IN_PROGRESS, false, false, false);
+        ResponseEntity<Result<NormalizedJsonLd>> instanceById = instances.getInstanceById(idUtils.getUUID(id), ExposedStage.IN_PROGRESS, DEFAULT_RESPONSE_CONFIG);
 
         assertEquals(HttpStatus.NOT_FOUND, instanceById.getStatusCode());
     }

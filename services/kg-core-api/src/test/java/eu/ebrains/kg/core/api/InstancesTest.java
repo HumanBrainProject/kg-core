@@ -18,6 +18,8 @@ package eu.ebrains.kg.core.api;
 
 import com.netflix.discovery.EurekaClient;
 import eu.ebrains.kg.commons.jsonld.NormalizedJsonLd;
+import eu.ebrains.kg.commons.model.IngestConfiguration;
+import eu.ebrains.kg.commons.model.ResponseConfiguration;
 import eu.ebrains.kg.commons.model.Result;
 import eu.ebrains.kg.docker.SpringDockerComposeRunner;
 import eu.ebrains.kg.test.TestObjectFactory;
@@ -54,7 +56,7 @@ public class InstancesTest {
         NormalizedJsonLd homer = TestObjectFactory.createJsonLd(TestObjectFactory.SIMPSONS, "homer.json");
 
         //When
-        ResponseEntity<Result<NormalizedJsonLd>> result = instances.createNewInstance(homer, TestObjectFactory.SIMPSONS.getName(), true, false, false, false, false, null);
+        ResponseEntity<Result<NormalizedJsonLd>> result = instances.createNewInstance(homer, TestObjectFactory.SIMPSONS.getName(), new ResponseConfiguration(), new IngestConfiguration(), null);
 
         //Then
         Assert.assertNotNull(result);

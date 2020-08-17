@@ -17,6 +17,7 @@
 package eu.ebrains.kg.core.api;
 
 import eu.ebrains.kg.commons.AuthContext;
+import eu.ebrains.kg.commons.IdUtils;
 import eu.ebrains.kg.commons.Version;
 import eu.ebrains.kg.commons.jsonld.NormalizedJsonLd;
 import eu.ebrains.kg.commons.model.*;
@@ -27,6 +28,8 @@ import eu.ebrains.kg.commons.semantics.vocabularies.EBRAINSVocabulary;
 import eu.ebrains.kg.commons.semantics.vocabularies.SchemaOrgVocabulary;
 import eu.ebrains.kg.core.model.ExposedStage;
 import eu.ebrains.kg.core.serviceCall.CoreSpacesToGraphDB;
+import eu.ebrains.kg.core.serviceCall.CoreToAdmin;
+import eu.ebrains.kg.core.serviceCall.CoreToPrimaryStore;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -40,16 +43,22 @@ import java.util.stream.Collectors;
 public class Spaces {
 
     private final CoreSpacesToGraphDB graphDbSvc;
+    private final CoreToAdmin adminSvc;
+    private final CoreToPrimaryStore primaryStoreSvc;
+    private final IdUtils idUtils;
 
     private final AuthContext authContext;
 
-    public Spaces(CoreSpacesToGraphDB graphDbSvc, AuthContext authContext) {
+    public Spaces(CoreToPrimaryStore primaryStoreSvc, CoreToAdmin adminSvc, CoreSpacesToGraphDB graphDbSvc, AuthContext authContext, IdUtils idUtils) {
+        this.adminSvc = adminSvc;
         this.graphDbSvc = graphDbSvc;
         this.authContext = authContext;
+        this.primaryStoreSvc = primaryStoreSvc;
+        this.idUtils = idUtils;
     }
 
-    @GetMapping("{name}")
-    public Result<NormalizedJsonLd> getSpace(@RequestParam("stage") ExposedStage stage, @PathVariable("name") String space, @RequestParam(value = "permissions", defaultValue = "false") boolean permissions) {
+    @GetMapping("{space}")
+    public Result<NormalizedJsonLd> getSpace(@RequestParam("stage") ExposedStage stage, @PathVariable("space") String space, @RequestParam(value = "permissions", defaultValue = "false") boolean permissions) {
         NormalizedJsonLd sp = graphDbSvc.getSpace(new Space(space), stage.getStage());
         if (sp != null && permissions) {
             UserWithRoles userWithRoles = authContext.getUserWithRoles();
@@ -61,7 +70,6 @@ public class Spaces {
         }
         return Result.ok(sp);
     }
-
 
     @GetMapping
     public PaginatedResult<NormalizedJsonLd> getSpaces(@RequestParam("stage") ExposedStage stage, PaginationParam paginationParam, @RequestParam(value = "permissions", defaultValue = "false") boolean permissions) {
@@ -79,4 +87,13 @@ public class Spaces {
         return PaginatedResult.ok(spaces);
     }
 
+//    @ApiOperation(value = "Define a space specification")
+//    @PutMapping("/{space}")
+//    public void defineSpace(@RequestBody NormalizedJsonLd payload, @PathVariable("space") String space) {
+//        adminSvc.addSpace(space);
+//        payload.setId(idUtils.buildAbsoluteUrl(IdUtils.createMetaRepresentationUUID(space)));
+//        payload.addIdentifiers(space);
+//        payload.addProperty(SchemaOrgVocabulary.NAME, space);
+//        primaryStoreSvc.postEvent(Event.createUpsertEvent(InternalSpace.SPACES_SPACE, UUID.nameUUIDFromBytes(payload.getId().getId().getBytes(StandardCharsets.UTF_8)), Event.Type.INSERT, payload), false, authContext.getAuthTokens());
+//    }
 }

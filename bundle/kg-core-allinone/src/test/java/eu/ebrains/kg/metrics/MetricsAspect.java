@@ -22,6 +22,7 @@ import org.aspectj.lang.annotation.Aspect;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
 
 import java.time.Duration;
@@ -29,6 +30,7 @@ import java.time.Instant;
 
 @Aspect
 @Component
+@ConditionalOnProperty(value = "eu.ebrains.kg.metrics", havingValue = "true", matchIfMissing = false)
 public class MetricsAspect {
 
     private final Logger logger = LoggerFactory.getLogger(getClass());
@@ -39,26 +41,31 @@ public class MetricsAspect {
 
     @Around("(execution(public * eu.ebrains.kg..*.*(..)) && !execution(public * eu.ebrains.kg.commons.*.*(..))) || execution(public * com.arangodb..*.*(..)))")
     public Object time(final ProceedingJoinPoint proceedingJoinPoint) throws Throwable {
-        Instant start = Instant.now();
-        Object value;
-        try {
-            value = proceedingJoinPoint.proceed();
-        } catch (Throwable throwable) {
-            throw throwable;
-        } finally {
-            Instant end = Instant.now();
-            long ms = Duration.between(start, end).toMillis();
-            if(ms>1){
-            logger.trace(
-                    "{},{},{}.{},{},{},{}",
-                    testInformation.getRunId(),
-                    testInformation.getExecutionNumber(),
-                    proceedingJoinPoint.getSignature().getDeclaringType().getSimpleName(),
-                    proceedingJoinPoint.getSignature().getName(),
-                    ms,
-                    start.toEpochMilli(), end.toEpochMilli());
+        if(testInformation.getRunId()!=null) {
+            Instant start = Instant.now();
+            Object value;
+            try {
+                value = proceedingJoinPoint.proceed();
+            } catch (Throwable throwable) {
+                throw throwable;
+            } finally {
+                Instant end = Instant.now();
+                long ms = Duration.between(start, end).toMillis();
+                if (ms > 1) {
+                    logger.trace(
+                            "{},{},{}.{},{},{},{}",
+                            testInformation.getRunId(),
+                            testInformation.getExecutionNumber(),
+                            proceedingJoinPoint.getSignature().getDeclaringType().getSimpleName(),
+                            proceedingJoinPoint.getSignature().getName(),
+                            ms,
+                            start.toEpochMilli(), end.toEpochMilli());
+                }
             }
+            return value;
         }
-        return value;
+        else {
+            return proceedingJoinPoint.proceed();
+        }
     }
 }

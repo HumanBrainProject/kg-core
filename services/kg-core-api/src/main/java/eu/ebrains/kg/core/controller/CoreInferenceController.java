@@ -112,7 +112,7 @@ public class CoreInferenceController {
         return uuid;
     }
 
-    public void triggerDeferredInference(AuthTokens authTokens) {
-        primaryStoreSvc.inferDeferred(authTokens);
+    public void triggerDeferredInference(AuthTokens authTokens, Space space, boolean synchronous) {
+        primaryStoreSvc.inferDeferred(authTokens, space, synchronous);
     }
 }

@@ -16,12 +16,15 @@
 
 package eu.ebrains.kg.commons.model;
 
+import java.util.UUID;
+
 public class Result<T> {
 
     protected T data;
     protected String message;
     protected Error error;
     protected Long durationInMs;
+    protected UUID transactionId;
 
     public static class Error{
         private int code;

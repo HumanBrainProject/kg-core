@@ -90,11 +90,16 @@ public class PrimaryStoreEventsAPI {
     }
 
 
-    @PostMapping("/inference/deferred")
-    public void inferDeferred() {
+    @PostMapping("/inference/deferred/{space}")
+    public void inferDeferred(@PathVariable("space") String space, @RequestParam(value = "sync", required = false, defaultValue = "false") boolean sync) {
         UserWithRoles userWithRoles = authContext.getUserWithRoles();
         logger.info("Received request for deferred inference");
-        eventProcessor.asyncDeferredInference(authContext.getAuthTokens(), userWithRoles);
+        if(sync) {
+            eventProcessor.syncDeferredInference(authContext.getAuthTokens(), new Space(space), userWithRoles);
+        }
+        else {
+            eventProcessor.asyncDeferredInference(authContext.getAuthTokens(), new Space(space), userWithRoles);
+        }
     }
 
 

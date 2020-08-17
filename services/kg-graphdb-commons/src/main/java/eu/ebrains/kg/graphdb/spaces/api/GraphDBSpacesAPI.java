@@ -40,8 +40,8 @@ public class GraphDBSpacesAPI {
     @Autowired
     ArangoRepositorySpaces repositorySpaces;
 
-    @GetMapping("/spaces/{name}")
-    public NormalizedJsonLd getSpace(@PathVariable("stage") DataStage stage, @PathVariable("name") String space, PaginationParam paginationParam) {
+    @GetMapping("/spaces/{space}")
+    public NormalizedJsonLd getSpace(@PathVariable("stage") DataStage stage, @PathVariable("space") String space) {
         return repositorySpaces.getSpace(new Space(space), stage);
     }
 
