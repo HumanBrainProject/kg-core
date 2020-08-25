@@ -87,8 +87,8 @@ public class ArangoRepositoryTypes {
         return db.query(typeStructureQuery.getAql().build().getValue(), typeStructureQuery.getBindVars(), ArangoRepositoryCommons.EMPTY_QUERY_OPTIONS, NormalizedJsonLd.class).asListRemaining();
     }
 
-    private void ensureTypeStructureCollections(ArangoDatabase db){
-        List<ArangoCollectionReference> collections = Arrays.asList(ArangoCollectionReference.fromSpace(InternalSpace.GLOBAL_SPEC),
+    private void ensureTypeStructureCollections(ArangoDatabase db, boolean withProperties){
+        List<ArangoCollectionReference> collections = new ArrayList<>(Arrays.asList(ArangoCollectionReference.fromSpace(InternalSpace.GLOBAL_SPEC),
                 InternalSpace.SPACE_TO_TYPE_EDGE_COLLECTION, ArangoCollectionReference.fromSpace(InternalSpace.TYPES_SPACE),
                 ArangoCollectionReference.fromSpace(InternalSpace.SPACES_SPACE),
                 ArangoCollectionReference.fromSpace(new Space(EBRAINSVocabulary.META_TYPE), true),
@@ -96,14 +96,17 @@ public class ArangoRepositoryTypes {
                 InternalSpace.PROPERTY_TO_TYPE_EDGE_COLLECTION,
                 InternalSpace.TYPE_TO_PROPERTY_EDGE_COLLECTION, InternalSpace.DOCUMENT_RELATION_EDGE_COLLECTION,
                 InternalSpace.PROPERTY_TO_PROPERTY_VALUE_TYPE_EDGE_COLLECTION,
-                InternalSpace.CLIENT_TYPE_PROPERTY_EDGE_COLLECTION);
+                InternalSpace.CLIENT_TYPE_PROPERTY_EDGE_COLLECTION));
+        if(withProperties) {
+            collections.add(InternalSpace.GLOBAL_TYPE_TO_PROPERTY_EDGE_COLLECTION);
+        }
         collections.forEach(c -> {
             arangoUtils.getOrCreateArangoCollection(db, c);
         });
     }
 
     private AQLQuery createTypeStructureQuery(ArangoDatabase db, String client, List<Type> types, String targetTypesForProperty, Space space, boolean withProperties, PaginationParam paginationParam) {
-        ensureTypeStructureCollections(db);
+        ensureTypeStructureCollections(db, withProperties);
         Map<String, Object> bindVars = new HashMap<>();
         AQL aql = new AQL();
         aql.addComment("We first define the black list for properties we don't want to be part of the result ");
