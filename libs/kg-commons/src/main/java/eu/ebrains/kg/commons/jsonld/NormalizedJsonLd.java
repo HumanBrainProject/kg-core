@@ -43,6 +43,11 @@ public class NormalizedJsonLd extends JsonLdDoc {
         return identifiers;
     }
 
+    public NormalizedJsonLd removeAllFieldsFromNamespace(String namespace){
+        this.keySet().removeIf(k -> k.startsWith(namespace));
+        return this;
+    }
+
     public NormalizedJsonLd removeAllInternalProperties() {
         this.keySet().removeIf(NormalizedJsonLd::isInternalKey);
         return this;

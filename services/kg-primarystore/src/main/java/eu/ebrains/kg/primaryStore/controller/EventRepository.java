@@ -62,15 +62,14 @@ public class EventRepository {
         events.insertDocument(gson.toJson(e), new DocumentCreateOptions().overwrite(true));
     }
 
-    DeferredInference getNextDeferredInference(Space space, int offset) {
+    List<DeferredInference> getDeferredInferences(Space space, int pageSize) {
         HashMap<String, Object> bindVars = new HashMap<>();
         bindVars.put("@collection", getOrCreateDeferredInferenceCollection(DataStage.IN_PROGRESS).name());
         bindVars.put("space", space.getName());
-        bindVars.put("offset", offset);
+        bindVars.put("pageSize", pageSize);
         AQL aql = new AQL();
-        aql.addLine(AQL.trust("FOR doc IN @@collection FILTER doc.space.name == @space LIMIT @offset, 1 RETURN doc"));
-        List<DeferredInference> collect = arangoDatabase.getOrCreate().query(aql.build().getValue(), bindVars, new AqlQueryOptions(), String.class).asListRemaining().stream().map(d -> gson.fromJson(d, DeferredInference.class)).collect(Collectors.toList());
-        return collect.size()>0 ? collect.get(0) : null;
+        aql.addLine(AQL.trust("FOR doc IN @@collection FILTER doc.space.name == @space LIMIT @pageSize RETURN doc"));
+        return arangoDatabase.getOrCreate().query(aql.build().getValue(), bindVars, new AqlQueryOptions(), String.class).asListRemaining().stream().map(d -> gson.fromJson(d, DeferredInference.class)).collect(Collectors.toList());
     }
 
     void removeDeferredInference(DeferredInference inference) {

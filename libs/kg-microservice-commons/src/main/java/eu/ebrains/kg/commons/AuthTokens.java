@@ -19,6 +19,8 @@ package eu.ebrains.kg.commons;
 import eu.ebrains.kg.commons.permission.ClientAuthToken;
 import eu.ebrains.kg.commons.permission.UserAuthToken;
 
+import java.util.UUID;
+
 /**
  * This is a DTO carrying the token information
  */
@@ -26,6 +28,15 @@ public class AuthTokens {
 
     protected UserAuthToken userAuthToken;
     protected ClientAuthToken clientAuthToken;
+    protected UUID transactionId;
+
+    public UUID getTransactionId() {
+        return transactionId;
+    }
+
+    public void setTransactionId(UUID transactionId) {
+        this.transactionId = transactionId;
+    }
 
     public AuthTokens() {
     }

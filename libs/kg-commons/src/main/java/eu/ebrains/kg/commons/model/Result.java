@@ -16,6 +16,7 @@
 
 package eu.ebrains.kg.commons.model;
 
+import java.util.Date;
 import java.util.UUID;
 
 public class Result<T> {
@@ -23,6 +24,7 @@ public class Result<T> {
     protected T data;
     protected String message;
     protected Error error;
+    protected Long startTime;
     protected Long durationInMs;
     protected UUID transactionId;
 
@@ -86,9 +88,14 @@ public class Result<T> {
         return message;
     }
 
-    public Result<T> setDuration(long durationInMs){
-        this.durationInMs = Long.valueOf(durationInMs);
+    public Result<T> setExecutionDetails(Date startTime, Date endTime){
+        this.startTime = startTime.getTime();
+        this.durationInMs = endTime.getTime() - this.startTime;
         return this;
+    }
+
+    public Long getStartTime() {
+        return startTime;
     }
 
     public Long getDurationInMs() {

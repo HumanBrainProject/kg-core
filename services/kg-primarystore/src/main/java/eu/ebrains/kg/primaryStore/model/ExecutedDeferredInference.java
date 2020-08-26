@@ -16,15 +16,25 @@
 
 package eu.ebrains.kg.primaryStore.model;
 
+import eu.ebrains.kg.commons.model.PersistedEvent;
+
+import java.util.List;
+
 public class ExecutedDeferredInference {
    private final DeferredInference deferredInference;
    private final boolean successful;
    private final Exception exception;
+   private final List<PersistedEvent> persistedEvents;
 
-   public ExecutedDeferredInference(DeferredInference deferredInference, boolean successful, Exception exception) {
+   public ExecutedDeferredInference(List<PersistedEvent> persistedEvents, DeferredInference deferredInference, boolean successful, Exception exception) {
       this.deferredInference = deferredInference;
+      this.persistedEvents = persistedEvents;
       this.successful = successful;
       this.exception = exception;
+   }
+
+   public List<PersistedEvent> getPersistedEvents() {
+      return persistedEvents;
    }
 
    public Exception getException() {

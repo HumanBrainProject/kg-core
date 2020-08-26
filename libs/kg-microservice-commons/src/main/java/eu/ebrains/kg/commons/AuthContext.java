@@ -47,6 +47,7 @@ public class AuthContext {
         return authTokens;
     }
 
+
     public void setAuthTokens(AuthTokens authTokens) {
         this.authTokens = authTokens;
     }
@@ -66,4 +67,5 @@ public class AuthContext {
         UserWithRoles userWithRoles = getUserWithRoles();
         return userWithRoles == null || userWithRoles.getUser() ==null ? null : userWithRoles.getUser().getNativeId();
     }
+
 }

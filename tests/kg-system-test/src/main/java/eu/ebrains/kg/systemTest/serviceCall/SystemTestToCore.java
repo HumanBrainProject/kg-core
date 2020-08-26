@@ -50,11 +50,11 @@ public class SystemTestToCore {
 
 
     public Result<NormalizedJsonLd> createInstance(JsonLdDoc payload, Space space, String user, ZonedDateTime dateTime, boolean returnPayload, boolean deferInference){
-        return serviceCallWithClientSecret.post(String.format("%s/instances?space=%s&returnPayload=%b&returnEmbedded=false&externalUserDefinition=%s&externalEventTime=%s&deferInference=%b", SERVICE_URL, space.getName(),  returnPayload, user!=null ? user : "", dateTime!=null ? dateTime.format(DateTimeFormatter.ISO_INSTANT) : "", deferInference), payload, new AuthTokens(), ResultOfDocument.class);
+        return serviceCallWithClientSecret.post(String.format("%s/instances?space=%s&returnPayload=%b&returnEmbedded=false&externalUserDefinition=%s&externalEventTime=%s&deferInference=%b", SERVICE_URL, space.getName(), returnPayload, user!=null ? user : "", dateTime!=null ? dateTime.format(DateTimeFormatter.ISO_INSTANT) : "", deferInference), payload, new AuthTokens(), ResultOfDocument.class);
     }
 
     public Result<NormalizedJsonLd> replaceContribution(JsonLdDoc payload, UUID uuid, String user, ZonedDateTime dateTime, boolean returnPayload, boolean deferInference){
-        return serviceCallWithClientSecret.patch(String.format("%s/instances/%s?removeNonDeclaredProperties=true&returnPayload=%b&returnEmbedded=false&externalUserDefinition=%s&externalEventTime=%s&undeprecate=true&deferInference=%b", SERVICE_URL, uuid, returnPayload, user!=null ? user : "", dateTime!=null ? dateTime.format(DateTimeFormatter.ISO_INSTANT) : "", deferInference), payload, new AuthTokens(), ResultOfDocument.class);
+        return serviceCallWithClientSecret.patch(String.format("%s/instances/%s?removeNonDeclaredProperties=true&returnPayload=%b&returnEmbedded=false&externalUserDefinition=%s&externalEventTime=%s&undeprecate=true&deferInference=%b", SERVICE_URL, uuid, returnPayload, user!=null ? user : "", dateTime!=null ? dateTime.format(DateTimeFormatter.ISO_INSTANT) : "", deferInference), payload, new AuthTokens(),  ResultOfDocument.class);
     }
 
     public Map<Type, Map<String, Long>> getTypesFilteredByOccurences(DataStage stage, Integer from, Integer to) {
@@ -78,7 +78,7 @@ public class SystemTestToCore {
     }
 
     public Map<Type, Map<String, Long>> getTypesFilteredByOccurencesByType(DataStage stage, List<String> listOfTypeNames) {
-        NormalizedJsonLd typesByName = serviceCallWithClientSecret.post(String.format("%s/typesByName?stage=%s&withProperties=true", SERVICE_URL, stage.name()), listOfTypeNames, new AuthTokens(), NormalizedJsonLd.class);
+        NormalizedJsonLd typesByName = serviceCallWithClientSecret.post(String.format("%s/typesByName?stage=%s&withProperties=true", SERVICE_URL, stage.name()), listOfTypeNames, new AuthTokens(),  NormalizedJsonLd.class);
         Map<String, Map<String, ?>> data = (Map<String, Map<String, ?>>) typesByName.get("data");
         Map<Type, Map<String, Long>> result = new HashMap<>();
         for (Map.Entry<String, Map<String, ?>> entry : data.entrySet()) {
@@ -98,7 +98,7 @@ public class SystemTestToCore {
 
 
     public List<Tuple<Type, Long>> getTypes(DataStage stage){
-        ResultOfDocuments resultOfDocuments = serviceCallWithClientSecret.get(String.format("%s/types?stage=%s", SERVICE_URL, stage.name()), new AuthTokens(), ResultOfDocuments.class);
+        ResultOfDocuments resultOfDocuments = serviceCallWithClientSecret.get(String.format("%s/types?stage=%s", SERVICE_URL, stage.name()), new AuthTokens(),  ResultOfDocuments.class);
         return resultOfDocuments.getData().stream().map(d -> {
             String name = d.getAs(SchemaOrgVocabulary.IDENTIFIER, String.class);
             Double occurrences = d.getAs(EBRAINSVocabulary.META_OCCURRENCES, Double.class);
@@ -108,11 +108,11 @@ public class SystemTestToCore {
 
 
     public PaginatedResultOfDocuments getInstances(Type type, DataStage stage) {
-        return serviceCallWithClientSecret.get(String.format("%s/instances?type=%s&stage=%s", SERVICE_URL, type.getEncodedName(), stage.name()), new AuthTokens(), PaginatedResultOfDocuments.class);
+        return serviceCallWithClientSecret.get(String.format("%s/instances?type=%s&stage=%s", SERVICE_URL, type.getEncodedName(), stage.name()), new AuthTokens(),  PaginatedResultOfDocuments.class);
     }
 
     public PaginatedResultOfDocuments getInstances(Type type, int size, int from, DataStage stage){
-        return serviceCallWithClientSecret.get(String.format("%s/instances?type=%s&size=%d&from=%d&stage=%s", SERVICE_URL, type.getEncodedName(), size, from, stage.name()), new AuthTokens(), PaginatedResultOfDocuments.class);
+        return serviceCallWithClientSecret.get(String.format("%s/instances?type=%s&size=%d&from=%d&stage=%s", SERVICE_URL, type.getEncodedName(), size, from, stage.name()), new AuthTokens(),  PaginatedResultOfDocuments.class);
     }
 
     public NormalizedJsonLd getInstanceById(UUID uuid, DataStage stage) {

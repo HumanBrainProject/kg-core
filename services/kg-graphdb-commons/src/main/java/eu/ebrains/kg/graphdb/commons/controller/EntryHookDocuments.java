@@ -64,8 +64,17 @@ public class EntryHookDocuments {
 
 
     private ArangoDocumentReference getOrCreateSingleDocumentWithNamePayload(ArangoDocumentReference documentId, String name, ArangoDatabase db) {
-        logger.trace(String.format("Ensure unresolved document %s exists", name));
         ArangoCollection collection = utils.getOrCreateArangoCollection(db, documentId.getArangoCollectionReference());
+        if (!collection.documentExists(documentId.getDocumentId().toString())) {
+            //This is an indirection, since we only want to have the call to be synchronized when there is actually the need of creating the document.
+            createSingleDocumentWithNamePayload(documentId, name, db);
+        }
+        return documentId;
+    }
+
+    private synchronized ArangoDocumentReference createSingleDocumentWithNamePayload(ArangoDocumentReference documentId, String name, ArangoDatabase db) {
+        ArangoCollection collection = utils.getOrCreateArangoCollection(db, documentId.getArangoCollectionReference());
+        //We check again if the document has been created in the meantime
         if (!collection.documentExists(documentId.getDocumentId().toString())) {
             ArangoDocument newDoc = ArangoDocument.create();
             newDoc.setReference(documentId);

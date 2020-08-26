@@ -16,6 +16,8 @@
 
 package eu.ebrains.kg.metrics;
 
+import eu.ebrains.kg.commons.AuthContext;
+import eu.ebrains.kg.core.api.MethodExecution;
 import org.aspectj.lang.ProceedingJoinPoint;
 import org.aspectj.lang.annotation.Around;
 import org.aspectj.lang.annotation.Aspect;
@@ -25,8 +27,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
 
-import java.time.Duration;
 import java.time.Instant;
+import java.util.ArrayList;
 
 @Aspect
 @Component
@@ -38,6 +40,8 @@ public class MetricsAspect {
     @Autowired
     TestInformation testInformation;
 
+    @Autowired
+    AuthContext authContext;
 
     @Around("(execution(public * eu.ebrains.kg..*.*(..)) && !execution(public * eu.ebrains.kg.commons.*.*(..))) || execution(public * com.arangodb..*.*(..)))")
     public Object time(final ProceedingJoinPoint proceedingJoinPoint) throws Throwable {
@@ -49,17 +53,14 @@ public class MetricsAspect {
             } catch (Throwable throwable) {
                 throw throwable;
             } finally {
-                Instant end = Instant.now();
-                long ms = Duration.between(start, end).toMillis();
-                if (ms > 1) {
-                    logger.trace(
-                            "{},{},{}.{},{},{},{}",
-                            testInformation.getRunId(),
-                            testInformation.getExecutionNumber(),
-                            proceedingJoinPoint.getSignature().getDeclaringType().getSimpleName(),
-                            proceedingJoinPoint.getSignature().getName(),
-                            ms,
-                            start.toEpochMilli(), end.toEpochMilli());
+                if(authContext!=null && authContext.getAuthTokens()!=null && authContext.getAuthTokens().getTransactionId()!=null) {
+                    Instant end = Instant.now();
+                    MethodExecution execution = new MethodExecution();
+                    execution.setPackageName(proceedingJoinPoint.getSignature().getDeclaringType().getSimpleName());
+                    execution.setMethodName(proceedingJoinPoint.getSignature().getName());
+                    execution.setStartTime(start.toEpochMilli());
+                    execution.setEndTime(end.toEpochMilli());
+                    testInformation.getMethodExecutions().computeIfAbsent(authContext.getAuthTokens().getTransactionId(), f -> new ArrayList<>()).add(execution);
                 }
             }
             return value;

@@ -29,6 +29,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.context.request.WebRequest;
 
+import java.util.UUID;
+
 /**
  * This controller advice handles the population of the {@link AuthContext}, provides shared parameters (such as {@link PaginationParam}) and translates exceptions into http status codes.
  */
@@ -78,7 +80,7 @@ public class RestControllerAdvice {
      * Retrieves the authorization headers (user and client) and populates them in the {@link AuthContext}
      */
     @ModelAttribute
-    public void interceptAuthorizationToken(@RequestHeader(value = "Authorization", required = false) String userAuthorizationToken, @RequestHeader(value = "Client-Authorization", required = false) String clientAuthorizationToken, @RequestHeader(value = "Client-Id", required = false) String clientId, @RequestHeader(value = "Client-Secret", required = false) String clientSecret) {
+    public void interceptAuthorizationToken(@RequestHeader(value = "Authorization", required = false) String userAuthorizationToken, @RequestHeader(value = "Client-Authorization", required = false) String clientAuthorizationToken, @RequestHeader(value = "Client-Id", required = false) String clientId, @RequestHeader(value = "Client-Secret", required = false) String clientSecret, @RequestHeader(value = "Transaction-Id", required = false) UUID transactionId) {
         UserAuthToken userToken = null;
         ClientAuthToken clientToken = null;
         if (userAuthorizationToken != null) {
@@ -92,6 +94,7 @@ public class RestControllerAdvice {
 
         }
         AuthTokens authTokens = new AuthTokens(userToken, clientToken);
+        authTokens.setTransactionId(transactionId);
         authContext.setAuthTokens(authTokens);
     }
 

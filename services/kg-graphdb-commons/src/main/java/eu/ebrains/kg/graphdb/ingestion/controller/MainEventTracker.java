@@ -18,7 +18,6 @@ package eu.ebrains.kg.graphdb.ingestion.controller;
 
 import com.arangodb.ArangoCollection;
 import com.arangodb.ArangoDatabase;
-import com.arangodb.model.DocumentCreateOptions;
 import eu.ebrains.kg.commons.model.DataStage;
 import eu.ebrains.kg.commons.models.EventTracker;
 import eu.ebrains.kg.graphdb.commons.controller.ArangoDatabases;
@@ -68,7 +67,8 @@ public class MainEventTracker implements EventTracker {
         doc.put("_key", "primaryStore");
         doc.put("lastEventId", lastSeenEventId);
         doc.put("numberOfEvents", this.numberOfEventsProcessed);
-        eventTracking.insertDocument(doc, new DocumentCreateOptions().waitForSync(true).overwrite(true));
+        //FIXME allow to record the most recent event without introducing concurrency issues
+        //eventTracking.insertDocument(doc, new DocumentCreateOptions().waitForSync(true).overwrite(true));
     }
 
     private String loadLastSeenEventIdFromDB(DataStage stage) {

@@ -22,7 +22,6 @@ import eu.ebrains.kg.commons.jsonld.IndexedJsonLdDoc;
 import eu.ebrains.kg.commons.jsonld.InstanceId;
 import eu.ebrains.kg.commons.jsonld.NormalizedJsonLd;
 import eu.ebrains.kg.commons.model.*;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import java.util.Arrays;
@@ -45,7 +44,7 @@ public class CoreExtraToGraphDB {
         return Arrays.stream(serviceCall.get(String.format("%s/%s/instancesByIdentifier/%s?identifier=%s", BASE_URL, stage.name(), space.getName(), identifier), authTokens, NormalizedJsonLd[].class)).map(IndexedJsonLdDoc::from).collect(Collectors.toList());
     }
 
-    public List<String> getDocumentIdsBySpace(Space space, DataStage stage, AuthTokens authTokens) {
+    public List<String> getDocumentIdsBySpace(Space space, AuthTokens authTokens) {
         return Arrays.asList(serviceCall.get(String.format("%s/documentIds/%s", BASE_URL, space.getName()), authTokens, String[].class));
     }
 

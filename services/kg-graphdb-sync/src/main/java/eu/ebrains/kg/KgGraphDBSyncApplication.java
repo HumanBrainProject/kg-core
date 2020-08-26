@@ -16,15 +16,8 @@
 
 package eu.ebrains.kg;
 
-import io.jaegertracing.internal.JaegerTracer;
-import io.jaegertracing.internal.reporters.InMemoryReporter;
-import io.jaegertracing.internal.samplers.ConstSampler;
-import io.jaegertracing.spi.Reporter;
-import io.jaegertracing.spi.Sampler;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
-import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.scheduling.annotation.EnableAsync;
 import org.springframework.scheduling.annotation.EnableScheduling;
@@ -39,14 +32,14 @@ public class KgGraphDBSyncApplication {
 		SpringApplication.run(KgGraphDBSyncApplication.class, args);
 	}
 
-	@Bean
-	@ConditionalOnProperty(value = "opentracing.jaeger.enabled", havingValue = "false", matchIfMissing = false)
-	public io.opentracing.Tracer jaegerTracer() {
-		final Reporter reporter = new InMemoryReporter();
-		final Sampler sampler = new ConstSampler(false);
-		return new JaegerTracer.Builder("graph-db-sync-service")
-				.withReporter(reporter)
-				.withSampler(sampler)
-				.build();
-	}
+//	@Bean
+//	@ConditionalOnProperty(value = "opentracing.jaeger.enabled", havingValue = "false", matchIfMissing = false)
+//	public io.opentracing.Tracer jaegerTracer() {
+//		final Reporter reporter = new InMemoryReporter();
+//		final Sampler sampler = new ConstSampler(false);
+//		return new JaegerTracer.Builder("graph-db-sync-service")
+//				.withReporter(reporter)
+//				.withSampler(sampler)
+//				.build();
+//	}
 }

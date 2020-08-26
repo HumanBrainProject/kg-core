@@ -53,23 +53,32 @@ public class ArangoUtils {
     public ArangoCollection getOrCreateArangoCollection(ArangoDatabase db, ArangoCollectionReference c) {
         ArangoCollection collection = db.collection(c.getCollectionName());
         if (!collection.exists()) {
-            logger.debug(String.format("Creating collection %s", c.getCollectionName()));
-            db.createCollection(c.getCollectionName(), new CollectionCreateOptions().waitForSync(true).type(c.isEdge() != null && c.isEdge() ? CollectionType.EDGES : CollectionType.DOCUMENT));
-            collection.ensureHashIndex(Collections.singleton(ArangoVocabulary.COLLECTION), new HashIndexOptions());
-        }
-        collection.ensureSkiplistIndex(Collections.singletonList(JsonLdConsts.ID), new SkiplistIndexOptions());
-        if (collection.getInfo().getType() == CollectionType.EDGES) {
-            collection.ensureSkiplistIndex(Collections.singletonList(IndexedJsonLdDoc.ORIGINAL_TO), new SkiplistIndexOptions());
-        }
-        else{
-            collection.ensureSkiplistIndex(Collections.singletonList(IndexedJsonLdDoc.IDENTIFIERS+"[*]"), new SkiplistIndexOptions());
-            collection.ensureSkiplistIndex(Collections.singletonList(IndexedJsonLdDoc.EMBEDDED), new SkiplistIndexOptions());
-        }
-        if(c.equals(InternalSpace.DOCUMENT_RELATION_EDGE_COLLECTION)){
-            collection.ensureSkiplistIndex(Collections.singletonList(DocumentRelation.TARGET_ORIGINAL_DOCUMENT), new SkiplistIndexOptions());
+            return createArangoCollection(db, c);
         }
         return collection;
     }
+
+    private synchronized ArangoCollection createArangoCollection(ArangoDatabase db, ArangoCollectionReference c) {
+        ArangoCollection collection = db.collection(c.getCollectionName());
+        //We check again, if the collection has been created in the meantime
+        if (!collection.exists()) {
+            logger.debug(String.format("Creating collection %s", c.getCollectionName()));
+            db.createCollection(c.getCollectionName(), new CollectionCreateOptions().waitForSync(true).type(c.isEdge() != null && c.isEdge() ? CollectionType.EDGES : CollectionType.DOCUMENT));
+            collection.ensureHashIndex(Collections.singleton(ArangoVocabulary.COLLECTION), new HashIndexOptions());
+            collection.ensureSkiplistIndex(Collections.singletonList(JsonLdConsts.ID), new SkiplistIndexOptions());
+            if (collection.getInfo().getType() == CollectionType.EDGES) {
+                collection.ensureSkiplistIndex(Collections.singletonList(IndexedJsonLdDoc.ORIGINAL_TO), new SkiplistIndexOptions());
+            } else {
+                collection.ensureSkiplistIndex(Collections.singletonList(IndexedJsonLdDoc.IDENTIFIERS + "[*]"), new SkiplistIndexOptions());
+                collection.ensureSkiplistIndex(Collections.singletonList(IndexedJsonLdDoc.EMBEDDED), new SkiplistIndexOptions());
+            }
+            if (c.equals(InternalSpace.DOCUMENT_RELATION_EDGE_COLLECTION)) {
+                collection.ensureSkiplistIndex(Collections.singletonList(DocumentRelation.TARGET_ORIGINAL_DOCUMENT), new SkiplistIndexOptions());
+            }
+        }
+        return collection;
+    }
+
 
     public boolean isInternalCollection(ArangoCollectionReference collectionReference) {
         return collectionReference.getCollectionName().startsWith("internal");

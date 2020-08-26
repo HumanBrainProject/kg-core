@@ -56,7 +56,7 @@ public class Releases {
     @ApiOperation("Release or re-release an instance")
     @PutMapping
     public ResponseEntity<Result<Void>> releaseInstance(@RequestParam("id") UUID id, @RequestParam("revision") String revision) {
-        long startTime = new Date().getTime();
+        Date startTime = new Date();
         InstanceId instanceId = idsSvc.resolveId(DataStage.IN_PROGRESS, id);
         if (instanceId == null) {
             return ResponseEntity.notFound().build();
@@ -65,14 +65,14 @@ public class Releases {
             return ResponseEntity.status(HttpStatus.GONE).build();
         }
         releaseSvc.releaseInstance(instanceId, revision);
-        return ResponseEntity.ok(Result.<Void>ok().setDuration(new Date().getTime()-startTime));
+        return ResponseEntity.ok(Result.<Void>ok().setExecutionDetails(startTime, new Date()));
     }
 
     @ApiOperation(value = "Unrelease an instance")
     @ApiResponses(value = {@ApiResponse(code = 200, message = "The instance that has been unreleased"), @ApiResponse(code = 404, message = "Instance not found")})
     @DeleteMapping
     public ResponseEntity<Result<Void>> unreleaseInstance(@RequestParam("id") UUID id) {
-        long startTime = new Date().getTime();
+        Date startTime = new Date();
         InstanceId instanceId = idsSvc.resolveId(DataStage.IN_PROGRESS, id);
         if (instanceId == null) {
             return ResponseEntity.notFound().build();
@@ -81,7 +81,7 @@ public class Releases {
             return ResponseEntity.status(HttpStatus.GONE).build();
         }
         releaseSvc.unreleaseInstance(instanceId);
-        return ResponseEntity.ok(Result.<Void>ok().setDuration(new Date().getTime()-startTime));
+        return ResponseEntity.ok(Result.<Void>ok().setExecutionDetails(startTime, new Date()));
     }
 
     @ApiOperation(value = "Get the release status for an instance")

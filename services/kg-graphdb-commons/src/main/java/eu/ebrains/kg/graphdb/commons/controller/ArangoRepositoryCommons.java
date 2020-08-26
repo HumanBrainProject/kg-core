@@ -17,13 +17,11 @@
 package eu.ebrains.kg.graphdb.commons.controller;
 
 import com.arangodb.ArangoCursor;
-import com.arangodb.ArangoDBException;
 import com.arangodb.ArangoDatabase;
 import com.arangodb.entity.CollectionEntity;
 import com.arangodb.entity.CollectionType;
-import com.arangodb.model.AqlQueryOptions;
-import com.arangodb.model.CollectionsReadOptions;
-import com.arangodb.model.TransactionOptions;
+import com.arangodb.entity.StreamTransactionEntity;
+import com.arangodb.model.*;
 import com.google.gson.Gson;
 import eu.ebrains.kg.arango.commons.aqlBuilder.AQL;
 import eu.ebrains.kg.arango.commons.model.AQLQuery;
@@ -40,7 +38,6 @@ import eu.ebrains.kg.graphdb.commons.model.ArangoInstance;
 import eu.ebrains.kg.graphdb.ingestion.model.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
 
 import java.util.*;
@@ -81,7 +78,7 @@ public class ArangoRepositoryCommons {
         bindVars.put("@collection", collectionReference.getCollectionName());
         bindVars.put("origin", origin.getId());
         bindVars.put("target", target.getId());
-        return query(db, query, bindVars,  new AqlQueryOptions(), String.class).stream().map(s -> ArangoDocumentReference.fromArangoId(s, true)).collect(Collectors.toList());
+        return query(db, query, bindVars, new AqlQueryOptions(), String.class).stream().map(s -> ArangoDocumentReference.fromArangoId(s, true)).collect(Collectors.toList());
     }
 
     public List<ArangoEdge> findUnresolvedEdgesForIds(DataStage stage, Set<String> ids) {
@@ -93,7 +90,7 @@ public class ArangoRepositoryCommons {
                     "   RETURN doc";
             Map<String, Object> bindVars = new HashMap<>();
             bindVars.put("ids", ids);
-            return query(db, query, bindVars,  new AqlQueryOptions(), ArangoEdge.class);
+            return query(db, query, bindVars, new AqlQueryOptions(), ArangoEdge.class);
         }
         return Collections.emptyList();
     }
@@ -121,7 +118,7 @@ public class ArangoRepositoryCommons {
         query.append("FOR edge IN edges\n");
         query.append("  RETURN edge");
         bindVars.put("document", documentReference.getId());
-        return query(db, query.toString(), bindVars,  new AqlQueryOptions(), ArangoEdge.class);
+        return query(db, query.toString(), bindVars, new AqlQueryOptions(), ArangoEdge.class);
     }
 
     private <T> List<T> query(ArangoDatabase db, String query, Map<String, Object> bindVars, AqlQueryOptions options, Class<T> clazz) {
@@ -143,7 +140,7 @@ public class ArangoRepositoryCommons {
         aql.addLine(AQL.trust(String.format(String.format("FOR d IN [%s]", documentList))));
         aql.addLine(AQL.trust("FILTER d != null"));
         aql.addLine(AQL.trust("RETURN d._id"));
-        List<String> ids = databases.getByStage(stage).query(aql.build().getValue(), new HashMap<>(),  new AqlQueryOptions(), String.class).asListRemaining();
+        List<String> ids = databases.getByStage(stage).query(aql.build().getValue(), new HashMap<>(), new AqlQueryOptions(), String.class).asListRemaining();
         return instances.stream().filter(i -> returnExisting == ids.contains(i.getId().getId())).collect(Collectors.toSet());
     }
 
@@ -161,7 +158,7 @@ public class ArangoRepositoryCommons {
             bindVars.put("@collection", documentIdSpace.getCollectionName());
             bindVars.put("documentId", documentId.toString());
             bindVars.put("@relation", InternalSpace.DOCUMENT_ID_EDGE_COLLECTION.getCollectionName());
-            List<String> ids = db.query(aql, bindVars,  new AqlQueryOptions(), String.class).asListRemaining();
+            List<String> ids = db.query(aql, bindVars, new AqlQueryOptions(), String.class).asListRemaining();
             return ids.stream().filter(Objects::nonNull).map(id -> ArangoDocumentReference.fromArangoId(id, null)).collect(Collectors.toSet());
         }
         return Collections.emptySet();
@@ -176,14 +173,14 @@ public class ArangoRepositoryCommons {
             Map<String, Object> bindVars = new HashMap<>();
             bindVars.put("@edgeCollection", edgeCollection.getCollectionName());
             bindVars.put("from", from.getDocumentId());
-            List<String> documentIds = db.query(aql, bindVars,  new AqlQueryOptions(), String.class).asListRemaining();
+            List<String> documentIds = db.query(aql, bindVars, new AqlQueryOptions(), String.class).asListRemaining();
             return documentIds.stream().map(id -> ArangoDocumentReference.fromArangoId(id, true)).collect(Collectors.toList());
         }
         return Collections.emptyList();
     }
 
     public void executeTransactionalOnMeta(DataStage stage, List<DBOperation> operations) {
-        logger.debug(String.format(String.format("Executing transaction for metadata on stage %s", stage.name())));
+        logger.debug(String.format("Executing transaction for metadata on stage %s", stage.name()));
         executeTransactional(stage, databases.getMetaByStage(stage), operations);
     }
 
@@ -202,42 +199,32 @@ public class ArangoRepositoryCommons {
         }
         logger.trace("Setting up the transaction...");
         Set<ArangoCollectionReference> collections = new HashSet<>();
-        StringBuilder transactionBuilder = new StringBuilder();
-        transactionBuilder.append("function() {\n");
-        transactionBuilder.append("const db = require('@arangodb').db;\n");
+        collections.add(InternalSpace.DOCUMENT_ID_EDGE_COLLECTION);
+        ArangoCollectionReference documentIdSpaceRef = ArangoCollectionReference.fromSpace(InternalSpace.DOCUMENT_ID_SPACE);
+        collections.add(documentIdSpaceRef);
+        collections.add(ArangoCollectionReference.fromSpace(InternalSpace.UNRESOLVED_SPACE, true));
+
         List<DBOperation> distinctOperations = operations.stream().distinct().collect(Collectors.toList());
         Set<ArangoDocumentReference> deleteIds = distinctOperations.stream().filter(o -> o instanceof DeleteOperation).map(o -> ((DeleteOperation) o).getLifecycleDocumentRef()).collect(Collectors.toSet());
         Set<DeleteInstanceOperation> deleteInstanceOperations = distinctOperations.stream().filter(o -> o instanceof DeleteInstanceOperation).map(o -> (DeleteInstanceOperation) o).collect(Collectors.toSet());
         List<UpsertOperation> upserts = distinctOperations.stream().filter(o -> o instanceof UpsertOperation).map(o -> (UpsertOperation) o).filter(u -> u.getDocumentReference() != null).filter(u -> u.isOverrideIfExists() || !doesDocumentExist(stage, u.getDocumentReference())).collect(Collectors.toList());
         List<EdgeResolutionOperation> edgeResolutionOperations = distinctOperations.stream().filter(o -> o instanceof EdgeResolutionOperation).map(o -> (EdgeResolutionOperation) o).collect(Collectors.toList());
 
-        //Prepare database
-        ArangoCollectionReference documentIdSpaceRef = ArangoCollectionReference.fromSpace(InternalSpace.DOCUMENT_ID_SPACE);
-        collections.add(InternalSpace.DOCUMENT_ID_EDGE_COLLECTION);
-        collections.add(ArangoCollectionReference.fromSpace(InternalSpace.DOCUMENT_ID_SPACE));
-        collections.add(ArangoCollectionReference.fromSpace(InternalSpace.UNRESOLVED_SPACE, true));
-
         //An UPSERT is implemented as a DELETE & INSERT - we therefore need to remove all dependent resources (there can be many) for the original document ID
         Set<ArangoDocumentReference> upsertIdsForDelete = upserts.stream().filter(UpsertOperation::isAttachToOriginalDocument).map(UpsertOperation::getLifecycleDocumentId).filter(u -> !deleteIds.contains(u)).collect(Collectors.toSet());
         Set<ArangoDocumentReference> removedDocuments = new HashSet<>();
+        Map<ArangoCollectionReference, List<String>> insertedDocuments = new HashMap<>();
         upsertIdsForDelete.forEach(upsertForDelete -> {
-            removedDocuments.addAll(addRemovalOfAllDependenciesForDocumentId(db, collections, transactionBuilder, upsertForDelete, removedDocuments));
+            removedDocuments.addAll(findRemovalOfAllDependenciesForDocumentId(db, upsertForDelete, removedDocuments));
         });
         deleteIds.forEach(delete -> {
-            removedDocuments.addAll(addRemovalOfAllDependenciesForDocumentId(db, collections, transactionBuilder, delete, removedDocuments));
+            removedDocuments.addAll(findRemovalOfAllDependenciesForDocumentId(db, delete, removedDocuments));
             //When actually deleting something, we also get rid of the document-id hook-document.
             ArangoDocumentReference documentReference = documentIdSpaceRef.doc(delete.getDocumentId());
-            transactionBuilder.append("\n//Add removal of instance (explicit delete)\n");
-            if (!removedDocuments.contains(documentReference)) {
-                collections.add(documentReference.getArangoCollectionReference());
-                transactionBuilder.append(String.format("db.%s.remove(\"%s\");\n", documentReference.getArangoCollectionReference().getCollectionName(), documentReference.getDocumentId()));
-                removedDocuments.add(documentReference);
-            }
+            removedDocuments.add(documentReference);
         });
         deleteInstanceOperations.forEach(delete -> {
-            if (delete.getDocumentReference() != null && !removedDocuments.contains(delete.getDocumentReference())) {
-                collections.add(delete.getDocumentReference().getArangoCollectionReference());
-                transactionBuilder.append(String.format("db.%s.remove(\"%s\");\n", delete.getDocumentReference().getArangoCollectionReference().getCollectionName(), delete.getDocumentReference().getDocumentId()));
+            if (delete.getDocumentReference() != null) {
                 removedDocuments.add(delete.getDocumentReference());
             }
         });
@@ -245,41 +232,29 @@ public class ArangoRepositoryCommons {
             //Remove documentId link...
             ArangoDocumentReference edgeReference = edgeResolution.getUpdatedEdge().getId();
             List<ArangoDocumentReference> documentIdLinksToUnresolved = findEdgeBetweenDocuments(db, edgeReference, edgeResolution.getUnresolvedEdgeRef(), InternalSpace.DOCUMENT_ID_EDGE_COLLECTION);
-            transactionBuilder.append("\n// remove the links to unresolved\n");
-            documentIdLinksToUnresolved.stream().distinct().filter(ref -> !removedDocuments.contains(ref)).forEach(d -> {
-                collections.add(d.getArangoCollectionReference());
-                transactionBuilder.append(String.format("db.%s.remove(\"%s\");\n", d.getArangoCollectionReference().getCollectionName(), d.getDocumentId()));
-                removedDocuments.add(d);
-            });
+
+            // remove the links to unresolved
+            documentIdLinksToUnresolved.stream().distinct().filter(ref -> !removedDocuments.contains(ref)).forEach(removedDocuments::add);
 
             //... remove the edge document ...
-            if (!removedDocuments.contains(edgeResolution.getUnresolvedEdgeRef())) {
-                transactionBuilder.append("\n// remove the edge document\n");
-                collections.add(edgeResolution.getUnresolvedEdgeRef().getArangoCollectionReference());
-                transactionBuilder.append(String.format("db.%s.remove(\"%s\");\n", edgeResolution.getUnresolvedEdgeRef().getArangoCollectionReference().getCollectionName(), edgeResolution.getUnresolvedEdgeRef().getDocumentId()));
-                removedDocuments.add(edgeResolution.getUnresolvedEdgeRef());
-            }
-            //... create the new edge ...
-            ArangoCollectionReference collectionReference = edgeReference.getArangoCollectionReference();
-            transactionBuilder.append("\n// add new edge\n");
-            transactionBuilder.append(String.format("db.%s.save(%s, {overwrite: true, waitForSync: true});\n", collectionReference.getCollectionName(), new Gson().toJson(edgeResolution.getUpdatedEdge())));
-            collections.add(collectionReference);
-            //... and attach it to the document id
+            removedDocuments.add(edgeResolution.getUnresolvedEdgeRef());
 
-            transactionBuilder.append("\n// attach edge to document id\n");
-            transactionBuilder.append(String.format("db.%s.save(%s, {overwrite: true, waitForSync: true});\n", InternalSpace.DOCUMENT_ID_EDGE_COLLECTION.getCollectionName(), new Gson().toJson(entryHookDocuments.createEdgeFromHookDocument(InternalSpace.DOCUMENT_ID_EDGE_COLLECTION, edgeReference, edgeResolution.getUpdatedEdge().getOriginalDocument(), null))));
+            //... create the new edge ...
+            insertedDocuments.computeIfAbsent(edgeReference.getArangoCollectionReference(), x -> new ArrayList<>()).add(new Gson().toJson(edgeResolution.getUpdatedEdge()));
+
+            //... and attach it to the document id
+            insertedDocuments.computeIfAbsent(InternalSpace.DOCUMENT_ID_EDGE_COLLECTION, x -> new ArrayList<>()).add(new Gson().toJson(entryHookDocuments.createEdgeFromHookDocument(InternalSpace.DOCUMENT_ID_EDGE_COLLECTION, edgeReference, edgeResolution.getUpdatedEdge().getOriginalDocument(), null)));
         });
+
         Map<ArangoDocumentReference, ArangoDocumentReference> documentIdHooks = new HashMap<>();
         upserts.forEach(upsert -> {
             ArangoCollectionReference collection = upsert.getDocumentReference().getArangoCollectionReference();
-            collections.add(collection);
             ArangoDocument arangoDocument = ArangoDocument.from(upsert.getPayload());
             arangoDocument.asIndexedDoc().setCollection(arangoDocument.getId().getArangoCollectionReference().getCollectionName());
             arangoDocument.getDoc().normalizeTypes();
             arangoDocument.asIndexedDoc().updateIdentifiers();
             arangoDocument.setKeyBasedOnId();
-            transactionBuilder.append("\n// add insertion by upsert\n");
-            transactionBuilder.append(String.format("db.%s.save(%s, {overwrite: true, waitForSync: true});\n", collection.getCollectionName(), new Gson().toJson(upsert.getPayload())));
+            insertedDocuments.computeIfAbsent(collection, x->new ArrayList<>()).add(new Gson().toJson(upsert.getPayload()));
             if (upsert.isAttachToOriginalDocument()) {
                 //Attention: The following method is non-transactional. It's just the hook-document though and therefore acceptable
                 ArangoDocumentReference documentIdHook = documentIdHooks.get(upsert.getLifecycleDocumentId());
@@ -287,50 +262,33 @@ public class ArangoRepositoryCommons {
                     documentIdHook = entryHookDocuments.getOrCreateDocumentIdHookDocument(upsert.getLifecycleDocumentId(), db);
                     documentIdHooks.put(upsert.getLifecycleDocumentId(), documentIdHook);
                 }
-                transactionBuilder.append("\n// add link to original document\n");
-                transactionBuilder.append(String.format("db.%s.save(%s, {overwrite: true, waitForSync: true});\n", InternalSpace.DOCUMENT_ID_EDGE_COLLECTION.getCollectionName(), new Gson().toJson(entryHookDocuments.createEdgeFromHookDocument(InternalSpace.DOCUMENT_ID_EDGE_COLLECTION, upsert.getDocumentReference(), documentIdHook, null))));
+                insertedDocuments.computeIfAbsent(InternalSpace.DOCUMENT_ID_EDGE_COLLECTION, x->new ArrayList<>()).add(new Gson().toJson(entryHookDocuments.createEdgeFromHookDocument(InternalSpace.DOCUMENT_ID_EDGE_COLLECTION, upsert.getDocumentReference(), documentIdHook, null)));
             }
         });
-        transactionBuilder.append("}");
+
+        collections.addAll(removedDocuments.stream().map(ArangoDocumentReference::getArangoCollectionReference).collect(Collectors.toSet()));
+        collections.addAll(insertedDocuments.keySet());
+
+        //Create missing collections...
         collections.forEach(c -> {
             utils.getOrCreateArangoCollection(db, c);
         });
 
-        String transaction = transactionBuilder.toString();
-        logger.trace(transaction);
-        String[] collectionNames = collections.stream().map(ArangoCollectionReference::getCollectionName).toArray(String[]::new);
-        executeTransactionWithRetry(db, transaction, collectionNames, 0);
-    }
-
-    private final int NUMBER_OF_CONFLICT_RETRIES = 10;
-
-    private void executeTransactionWithRetry(ArangoDatabase db, String transaction, String[] collectionNames, int retry) {
+        StreamTransactionEntity tx = db.beginStreamTransaction(new StreamTransactionOptions().writeCollections(collections.stream().map(ArangoCollectionReference::getCollectionName).toArray(String[]::new)));
+        DocumentDeleteOptions deleteOptions = new DocumentDeleteOptions().streamTransactionId(tx.getId());
+        DocumentCreateOptions insertOptions = new DocumentCreateOptions().streamTransactionId(tx.getId());
         try {
-            db.transaction(transaction, String.class, new TransactionOptions().writeCollections(collectionNames).lockTimeout(retry * 30));
-        } catch (ArangoDBException ex) {
-            logger.debug(String.format("Execution of transaction has failed. \n\n TRANSACTION: %s\n\n INVOLVED WRITE COLLECTIONS: \n%s", transaction, String.join("\n- ", collectionNames)));
-            if (HttpStatus.CONFLICT.value() == ex.getResponseCode() && retry < NUMBER_OF_CONFLICT_RETRIES) {
-                retry++;
-                try {
-                    Thread.sleep(1000 * retry * retry);
-                } catch (InterruptedException ie) {
-                    //Don't do anything.
-                }
-                logger.debug(String.format("There was a conflict - %d retries left", retry));
-                executeTransactionWithRetry(db, transaction, collectionNames, retry);
-            } else {
-                throw ex;
-            }
+            removedDocuments.stream().collect(Collectors.groupingBy(ArangoDocumentReference::getArangoCollectionReference)).forEach((c,v)->db.collection(c.getCollectionName()).deleteDocuments(v.stream().map(r -> r.getDocumentId().toString()).collect(Collectors.toSet()), String.class, deleteOptions));
+            insertedDocuments.forEach((c,v)->db.collection(c.getCollectionName()).insertDocuments(v, insertOptions.overwrite(true)));
+            db.commitStreamTransaction(tx.getId());
+        } catch (Exception e) {
+            logger.debug(String.format("Execution of transaction has failed. \n\n TRANSACTION: %s\n\n", tx.getId()));
+            db.abortStreamTransaction(tx.getId());
         }
     }
 
-    private Set<ArangoDocumentReference> addRemovalOfAllDependenciesForDocumentId(ArangoDatabase db, Set<ArangoCollectionReference> collections, StringBuilder transactionBuilder, ArangoDocumentReference delete, Set<ArangoDocumentReference> skipList) {
-        transactionBuilder.append("\n// add removal of dependencies for document id\n");
-        return findArangoReferencesForDocumentId(db, delete.getDocumentId()).stream().filter(Objects::nonNull).filter(ref -> !skipList.contains(ref)).map(reference -> {
-            collections.add(reference.getArangoCollectionReference());
-            transactionBuilder.append(String.format("db.%s.remove(\"%s\");\n", reference.getArangoCollectionReference().getCollectionName(), reference.getDocumentId()));
-            return reference;
-        }).collect(Collectors.toSet());
+    private Set<ArangoDocumentReference> findRemovalOfAllDependenciesForDocumentId(ArangoDatabase db, ArangoDocumentReference delete, Set<ArangoDocumentReference> skipList) {
+        return findArangoReferencesForDocumentId(db, delete.getDocumentId()).stream().filter(Objects::nonNull).filter(ref -> !skipList.contains(ref)).collect(Collectors.toSet());
     }
 
     public Paginated<NormalizedJsonLd> queryDocuments(ArangoDatabase db, AQLQuery aqlQuery) {

@@ -65,7 +65,7 @@ public class IdRepository {
     /**
      * @return ids which have been merged newly into the persisted id
      */
-    public List<JsonLdId> upsert(DataStage stage, PersistedId id) {
+    public synchronized List<JsonLdId> upsert(DataStage stage, PersistedId id) {
         Set<UUID> mergedIds = Collections.emptySet();
         ArangoCollection coll = getOrCreateCollection(stage);
         //TODO make this transactional

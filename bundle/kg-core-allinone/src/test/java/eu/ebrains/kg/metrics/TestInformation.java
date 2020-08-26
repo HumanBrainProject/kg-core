@@ -16,7 +16,12 @@
 
 package eu.ebrains.kg.metrics;
 
+import eu.ebrains.kg.core.api.MethodExecution;
 import org.springframework.stereotype.Component;
+
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
 
 @Component
 public interface TestInformation {
@@ -24,4 +29,7 @@ public interface TestInformation {
     String getRunId();
 
     Integer getExecutionNumber();
+
+    Map<UUID, List<MethodExecution>> getMethodExecutions();
+
 }
