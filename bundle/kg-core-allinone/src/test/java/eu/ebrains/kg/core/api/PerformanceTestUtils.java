@@ -33,38 +33,72 @@ import java.time.Instant;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.concurrent.*;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 public class PerformanceTestUtils {
 
-    private final PlotlyRenderer plotter = new PlotlyRenderer();
+    private final GoogleCharts plotter = new GoogleCharts();
 
-    public enum Link{
+    public enum Link {
         PREVIOUS, NEXT;
     }
 
 
-//    public void plotMetrics(Map<String, List<MethodExecution>> metrics){
-//        plotter.addSection("Method metrics");
-//        List<PlotlyRenderer.BarTrace> traces = new ArrayList<>();
-//        PlotlyRenderer.Plot plot = new PlotlyRenderer.Plot(traces);
-//        plot.getPlotLayout().put("barmode", "stack");
-//        int row = 0;
-//        for (List<MethodExecution> value : metrics.values()) {
-//            for (int i = 0; i < value.size(); i++) {
-//                if(i==traces.size()){
-//                    traces.add(new PlotlyRenderer.BarTrace())
-//                }
-//            }
-//        }
-//
-//       metrics.values().stream().min(Comparator.comparing(MethodExecution::getStartTime))
-//
-//
-//        plot.getPlotLayout().setTitle(String.format("Run %d iterations with %d threads in %dms", numberOfIteration, threads, Duration.between(start, end).toMillis()));
-//        plotter.addPlot(plot);
-//
-//    }
+    public void plotMetrics(Map<UUID, List<MethodExecution>> metrics) {
+        plotter.addSection("Method metrics");
+        List<MethodExecution> averageExecution;
+        Function<List<MethodExecution>, Long> durationFunction = c -> {
+            MethodExecution firstExecution = c.stream().min(Comparator.comparing(MethodExecution::getStartTime)).get();
+            MethodExecution lastExecution = c.stream().max(Comparator.comparing(MethodExecution::getEndTime)).get();
+            return lastExecution.getEndTime() - firstExecution.getStartTime();
+        };
+        Comparator<List<MethodExecution>> durationComparator = Comparator.comparing(durationFunction);
+        List<MethodExecution> fastestExecution = metrics.values().stream().min(durationComparator).get();
+        List<MethodExecution> slowestExecution = metrics.values().stream().max(durationComparator).get();
+        double[] durations = metrics.values().stream().mapToDouble(durationFunction::apply).toArray();
+        double mean = new Mean().evaluate(durations);
+        double median = new Median().evaluate(durations);
+        List<MethodExecution> meanExecution = metrics.values().stream().min((a, b) -> {
+            double diffToMeanA = Math.abs(durationFunction.apply(a) - mean);
+            double diffToMeanB = Math.abs(durationFunction.apply(b) - mean);
+            return Double.compare(diffToMeanA, diffToMeanB);
+        }).get();
+        List<MethodExecution> medianExecution = metrics.values().stream().min((a, b) -> {
+            double diffToMeanA = Math.abs(durationFunction.apply(a) - median);
+            double diffToMeanB = Math.abs(durationFunction.apply(b) - median);
+            return Double.compare(diffToMeanA, diffToMeanB);
+        }).get();
+
+        List<List<MethodExecution>> relevantExecutions = Arrays.asList(fastestExecution,meanExecution, medianExecution, slowestExecution);
+        relevantExecutions.forEach(v -> {
+            List<GoogleCharts.Value> values = new ArrayList<>();
+            MethodExecution firstExecution = v.stream().min(Comparator.comparing(MethodExecution::getStartTime)).get();
+            MethodExecution lastExecution = v.stream().max(Comparator.comparing(MethodExecution::getEndTime)).get();
+
+            long duration = lastExecution.getEndTime()-firstExecution.getStartTime();
+
+            for (MethodExecution execution : v) {
+                values.add(new GoogleCharts.Value(execution.getPackageName(), String.format("%s (%s)", execution.getMethodName(), execution.getPackageName()), execution.getStartTime()-firstExecution.getStartTime(), execution.getEndTime()-firstExecution.getStartTime()));
+            }
+            plotter.addPlot(String.format("Absolute by class - Execution in %d ms", duration), values, true);
+
+        });
+
+        relevantExecutions.forEach(v -> {
+            List<GoogleCharts.Value> values = new ArrayList<>();
+            MethodExecution firstExecution = v.stream().min(Comparator.comparing(MethodExecution::getStartTime)).get();
+            MethodExecution lastExecution = v.stream().max(Comparator.comparing(MethodExecution::getEndTime)).get();
+
+            long duration = lastExecution.getEndTime()-firstExecution.getStartTime();
+
+            for (MethodExecution execution : v) {
+                values.add(new GoogleCharts.Value(String.format("%s (%s)", execution.getMethodName(), execution.getPackageName()), String.format("%s (%s)", execution.getMethodName(), execution.getPackageName()), execution.getStartTime()-firstExecution.getStartTime(), execution.getEndTime()-firstExecution.getStartTime()));
+            }
+            plotter.addPlot(String.format("Absolute - Execution in %d ms", duration), values, true);
+
+        });
+    }
 
     private static final int[] THREADS_ORDER = new int[]{1, 2, 4, 8, 16, 32};
 
@@ -72,7 +106,7 @@ public class PerformanceTestUtils {
         V call(JsonLdDoc doc);
     }
 
-    public void addSection(String title){
+    public void addSection(String title) {
         plotter.addSection(title);
     }
 
@@ -90,10 +124,10 @@ public class PerformanceTestUtils {
         List<ResponseEntity<Result<T>>> result = null;
         if (parallelize) {
             for (int i = 0; i < THREADS_ORDER.length; i++) {
-                result = runWithThreads(numberOfFields, normalize, link, numberOfIteration, i*numberOfIteration, r, THREADS_ORDER[i], authTokens);
+                result = runWithThreads(numberOfFields, normalize, link, numberOfIteration, i * numberOfIteration, r, THREADS_ORDER[i], authTokens);
             }
             for (int i = THREADS_ORDER.length - 1; i >= 0; i--) {
-                result = runWithThreads(numberOfFields, normalize, link, numberOfIteration, THREADS_ORDER.length*numberOfIteration+(THREADS_ORDER.length-i)*numberOfIteration, r, THREADS_ORDER[i], authTokens);
+                result = runWithThreads(numberOfFields, normalize, link, numberOfIteration, THREADS_ORDER.length * numberOfIteration + (THREADS_ORDER.length - i) * numberOfIteration, r, THREADS_ORDER[i], authTokens);
             }
         } else {
             result = runWithThreads(numberOfFields, normalize, link, numberOfIteration, 0, r, 1, authTokens);
@@ -101,22 +135,32 @@ public class PerformanceTestUtils {
         return result;
     }
 
+    private PlotlyRenderer.BarTrace createOffsetTrace(){
+        PlotlyRenderer.BarTrace offsetTrace = new PlotlyRenderer.BarTrace("Wait");
+        Map<String, Object> marker = new HashMap<>();
+        marker.put("color", "rgba(0,0,0,0.0)");
+        Map<String, Object> line = new HashMap<>();
+        marker.put("line", line);
+        line.put("color", "rgba(0,0,0,0.0)");
+        line.put("width", 0);
+        offsetTrace.setMarker(marker);
+        return offsetTrace;
+    }
+
+
     private <T> List<ResponseEntity<Result<T>>> runWithThreads(int numberOfFields, boolean normalize, Link link, int numberOfIteration, int idOffset, CallableWithPayload<ResponseEntity<Result<T>>> r, int threads, ThreadLocal<AuthTokens> authTokens) {
         List<ResponseEntity<Result<T>>> result;
         Instant start = Instant.now();
-        List<PlotlyRenderer.BarTrace> traces = new ArrayList<>();
-        PlotlyRenderer.Plot plot = new PlotlyRenderer.Plot(traces);
-        plot.getPlotLayout().put("barmode", "stack");
         ExecutorService executorService = Executors.newFixedThreadPool(threads);
         //When
         List<Future<ResponseEntity<Result<T>>>> futureResults = new ArrayList<>();
         for (int i = 0; i < numberOfIteration; i++) {
-            final int iteration = i+idOffset;
+            final int iteration = i + idOffset;
             futureResults.add(executorService.submit(() -> {
                 AuthTokens authToken = new AuthTokens();
                 authToken.setTransactionId(UUID.randomUUID());
                 authTokens.set(authToken);
-                return r.call(TestDataFactory.createTestData(numberOfFields, !normalize, iteration, link==null ? null : link == Link.NEXT ? iteration+1 : iteration-1));
+                return r.call(TestDataFactory.createTestData(numberOfFields, !normalize, iteration, link == null ? null : link == Link.NEXT ? iteration + 1 : iteration - 1));
             }));
         }
         try {
@@ -133,27 +177,15 @@ public class PerformanceTestUtils {
                     return null;
                 }
             }).collect(Collectors.toList());
-            PlotlyRenderer.BarTrace offsetTrace = new PlotlyRenderer.BarTrace(String.format("Wait", Duration.between(start, Instant.now()).toMillis()));
-            Map<String, Object> marker = new HashMap<>();
-            marker.put("color", "rgba(0,0,0,0.0)");
-            Map<String, Object> line = new HashMap<>();
-            marker.put("line", line);
-            line.put("color", "rgba(0,0,0,0.0)");
-            line.put("width", 0);
-            offsetTrace.setMarker(marker);
-            double[] durations = result.stream().mapToDouble(res -> Objects.requireNonNull(res.getBody()).getDurationInMs().doubleValue()).toArray();
-            PlotlyRenderer.BarTrace durationTrace = new PlotlyRenderer.BarTrace(String.format("Execute (avg: %f, median: %f)", new Mean().evaluate(durations), new Median().evaluate(durations)));
-            traces.add(offsetTrace);
-            traces.add(durationTrace);
-            for (int i = 0; i < result.size(); i++) {
-                Result<T> body = result.get(i).getBody();
-                offsetTrace.addValue(body.getStartTime() - start.toEpochMilli(), i);
-                durationTrace.addValue(body.getDurationInMs(), i);
+
+            List<GoogleCharts.Value> values = new ArrayList<>();
+            Long startTime = result.stream().min(Comparator.comparing(res -> res.getBody().getStartTime())).get().getBody().getStartTime();
+            for (ResponseEntity<Result<T>> res : result) {
+                values.add(new GoogleCharts.Value(String.valueOf(values.size()), String.valueOf(res.getStatusCode()), res.getBody().getStartTime()-startTime, res.getBody().getStartTime()-startTime+res.getBody().getDurationInMs()));
             }
-            durationTrace.reverse();
-            offsetTrace.reverse();
-            plot.getPlotLayout().setTitle(String.format("Run %d iterations with %d threads in %dms", numberOfIteration, threads, Duration.between(start, end).toMillis()));
-            plotter.addPlot(plot);
+            double[] durations = result.stream().mapToDouble(res -> Objects.requireNonNull(res.getBody()).getDurationInMs().doubleValue()).toArray();
+            plotter.addPlot(String.format("Run %d iterations with %d threads in %dms (avg: %f, median: %f)", numberOfIteration, threads, Duration.between(start, end).toMillis(), new Mean().evaluate(durations), new Median().evaluate(durations)), values, false);
+
         } catch (InterruptedException e) {
             throw new RuntimeException(e);
         }

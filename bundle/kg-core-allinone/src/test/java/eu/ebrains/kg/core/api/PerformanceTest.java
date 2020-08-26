@@ -138,6 +138,11 @@ public class PerformanceTest {
         Mockito.doReturn(metrics).when(testInformation).getMethodExecutions();
     }
 
+    @After
+    public void tearDown(){
+        utils.plotMetrics(metrics);
+    }
+
     PaginationParam EMPTY_PAGINATION = new PaginationParam();
     ResponseConfiguration DEFAULT_RESPONSE_CONFIG = new ResponseConfiguration();
     IngestConfiguration DEFAULT_INGEST_CONFIG = new IngestConfiguration().setNormalizePayload(false);

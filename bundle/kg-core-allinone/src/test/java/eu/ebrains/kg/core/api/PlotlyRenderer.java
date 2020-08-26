@@ -108,8 +108,6 @@ public class PlotlyRenderer {
         public PlotLayout getPlotLayout() {
             return plotLayout;
         }
-
-
     }
 
     public static class PlotLayout extends HashMap<String, String> {
