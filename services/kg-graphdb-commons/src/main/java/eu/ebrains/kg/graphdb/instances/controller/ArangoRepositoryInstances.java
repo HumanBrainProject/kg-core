@@ -262,7 +262,7 @@ public class ArangoRepositoryInstances {
 
     private void addSearchLabelFilter(Map<String, Object> bindVars, AQL aql, String search) {
         if (search != null && !search.isBlank()) {
-            List<String> searchLabels = Arrays.stream(search.trim().split(" ")).filter(s -> !s.isBlank()).map(s -> s.replaceAll("%", "") + "%").collect(Collectors.toList());
+            List<String> searchLabels = Arrays.stream(search.trim().split(" ")).filter(s -> !s.isBlank()).map(s -> "%" + s.replaceAll("%", "") + "%").collect(Collectors.toList());
             if (!searchLabels.isEmpty()) {
                 aql.addLine(AQL.trust("LET found = (FOR name IN typeDefinition.labelProperties FILTER "));
                 for (int i = 0; i < searchLabels.size(); i++) {
