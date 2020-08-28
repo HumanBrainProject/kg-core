@@ -17,7 +17,6 @@
 package eu.ebrains.kg.metrics;
 
 import eu.ebrains.kg.commons.AuthContext;
-import eu.ebrains.kg.core.api.MethodExecution;
 import org.aspectj.lang.ProceedingJoinPoint;
 import org.aspectj.lang.annotation.Around;
 import org.aspectj.lang.annotation.Aspect;

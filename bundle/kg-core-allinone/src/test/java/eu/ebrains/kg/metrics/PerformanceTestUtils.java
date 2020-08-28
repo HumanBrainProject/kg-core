@@ -14,11 +14,12 @@
  * limitations under the License.
  */
 
-package eu.ebrains.kg.core.api;
+package eu.ebrains.kg.metrics;
 
 import eu.ebrains.kg.commons.AuthTokens;
 import eu.ebrains.kg.commons.jsonld.JsonLdDoc;
 import eu.ebrains.kg.commons.model.Result;
+import eu.ebrains.kg.testutils.TestDataFactory;
 import org.apache.commons.math3.stat.descriptive.moment.Mean;
 import org.apache.commons.math3.stat.descriptive.rank.Median;
 import org.springframework.http.ResponseEntity;
@@ -47,7 +48,6 @@ public class PerformanceTestUtils {
 
     public void plotMetrics(Map<UUID, List<MethodExecution>> metrics) {
         plotter.addSection("Method metrics");
-        List<MethodExecution> averageExecution;
         Function<List<MethodExecution>, Long> durationFunction = c -> {
             MethodExecution firstExecution = c.stream().min(Comparator.comparing(MethodExecution::getStartTime)).get();
             MethodExecution lastExecution = c.stream().max(Comparator.comparing(MethodExecution::getEndTime)).get();
@@ -77,30 +77,51 @@ public class PerformanceTestUtils {
             MethodExecution lastExecution = v.stream().max(Comparator.comparing(MethodExecution::getEndTime)).get();
 
             long duration = lastExecution.getEndTime()-firstExecution.getStartTime();
-
+            v.sort((a,b)->{
+                int startTimeComp = a.getStartTime().compareTo(b.getStartTime());
+                if(startTimeComp==0){
+                    Long durationA = a.getEndTime()-a.getStartTime();
+                    Long durationB = b.getEndTime()-b.getStartTime();
+                    return durationB.compareTo(durationA);
+                }
+                return startTimeComp;
+            });
             for (MethodExecution execution : v) {
                 values.add(new GoogleCharts.Value(execution.getPackageName(), String.format("%s (%s)", execution.getMethodName(), execution.getPackageName()), execution.getStartTime()-firstExecution.getStartTime(), execution.getEndTime()-firstExecution.getStartTime()));
             }
-            plotter.addPlot(String.format("Absolute by class - Execution in %d ms", duration), values, true);
+            String label;
+            if(v == fastestExecution){
+                label = "Fastest";
+            }
+            else if (v==meanExecution){
+                label = "Mean";
+            }
+            else if (v==medianExecution){
+                label = "Median";
+            }
+            else {
+                label = "Slowest";
+            }
 
-        });
+            plotter.addCategory(String.format("%s execution in %d ms", label, duration));
+            plotter.addPlot("By class", values, false, true, duration);
 
-        relevantExecutions.forEach(v -> {
-            List<GoogleCharts.Value> values = new ArrayList<>();
-            MethodExecution firstExecution = v.stream().min(Comparator.comparing(MethodExecution::getStartTime)).get();
-            MethodExecution lastExecution = v.stream().max(Comparator.comparing(MethodExecution::getEndTime)).get();
-
-            long duration = lastExecution.getEndTime()-firstExecution.getStartTime();
-
+            values = new ArrayList<>();
             for (MethodExecution execution : v) {
                 values.add(new GoogleCharts.Value(String.format("%s (%s)", execution.getMethodName(), execution.getPackageName()), String.format("%s (%s)", execution.getMethodName(), execution.getPackageName()), execution.getStartTime()-firstExecution.getStartTime(), execution.getEndTime()-firstExecution.getStartTime()));
             }
-            plotter.addPlot(String.format("Absolute - Execution in %d ms", duration), values, true);
+            plotter.addPlot("By method", values, false, true, duration);
 
+            values = new ArrayList<>();
+
+            for (MethodExecution execution : v) {
+                values.add(new GoogleCharts.Value(String.valueOf(values.size()), String.format("%s (%s)", execution.getMethodName(), execution.getPackageName()), execution.getStartTime()-firstExecution.getStartTime(), execution.getEndTime()-firstExecution.getStartTime()));
+            }
+            plotter.addPlot("Waterfall", values, true,false, duration);
         });
     }
 
-    private static final int[] THREADS_ORDER = new int[]{1, 2, 4, 8, 16, 32};
+    private static final int[] THREADS_ORDER = new int[]{1, 2, 8, 32};
 
     public interface CallableWithPayload<V> {
         V call(JsonLdDoc doc);
@@ -184,7 +205,7 @@ public class PerformanceTestUtils {
                 values.add(new GoogleCharts.Value(String.valueOf(values.size()), String.valueOf(res.getStatusCode()), res.getBody().getStartTime()-startTime, res.getBody().getStartTime()-startTime+res.getBody().getDurationInMs()));
             }
             double[] durations = result.stream().mapToDouble(res -> Objects.requireNonNull(res.getBody()).getDurationInMs().doubleValue()).toArray();
-            plotter.addPlot(String.format("Run %d iterations with %d threads in %dms (avg: %f, median: %f)", numberOfIteration, threads, Duration.between(start, end).toMillis(), new Mean().evaluate(durations), new Median().evaluate(durations)), values, false);
+            plotter.addPlot(String.format("Run %d iterations with %d thread(s) in %dms (avg: %.2fms, median: %.2fms)", numberOfIteration, threads, Duration.between(start, end).toMillis(), new Mean().evaluate(durations), new Median().evaluate(durations)), values, false,false, Duration.between(start, end).toMillis());
 
         } catch (InterruptedException e) {
             throw new RuntimeException(e);

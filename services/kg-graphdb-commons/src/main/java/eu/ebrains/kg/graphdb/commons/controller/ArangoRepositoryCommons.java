@@ -180,7 +180,7 @@ public class ArangoRepositoryCommons {
     }
 
     public void executeTransactionalOnMeta(DataStage stage, List<DBOperation> operations) {
-        logger.debug(String.format("Executing transaction for metadata on stage %s", stage.name()));
+        logger.info(String.format("Executing transaction for metadata on stage %s", stage.name()));
         executeTransactional(stage, databases.getMetaByStage(stage), operations);
     }
 

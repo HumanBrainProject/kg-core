@@ -18,7 +18,9 @@ package eu.ebrains.kg.graphdb.ingestion.controller;
 
 
 import eu.ebrains.kg.arango.commons.model.ArangoDocumentReference;
+import eu.ebrains.kg.commons.jsonld.NormalizedJsonLd;
 import eu.ebrains.kg.commons.model.DataStage;
+import eu.ebrains.kg.graphdb.commons.controller.ArangoRepositoryCommons;
 import eu.ebrains.kg.graphdb.commons.model.ArangoDocument;
 import eu.ebrains.kg.graphdb.commons.model.ArangoEdge;
 import eu.ebrains.kg.graphdb.commons.model.ArangoInstance;
@@ -28,6 +30,7 @@ import eu.ebrains.kg.graphdb.ingestion.model.DeleteOperation;
 import eu.ebrains.kg.graphdb.ingestion.model.EdgeResolutionOperation;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
 
 import java.util.*;
@@ -42,10 +45,18 @@ public class MetaDataController {
     private final SemanticsController semanticsController;
 
     private final StructureTracker structureTracker;
+    private final ArangoRepositoryCommons repository;
 
-    public MetaDataController(SemanticsController semanticsController, StructureTracker structureTracker) {
+
+    public MetaDataController(SemanticsController semanticsController, StructureTracker structureTracker, ArangoRepositoryCommons repository) {
         this.semanticsController = semanticsController;
         this.structureTracker = structureTracker;
+        this.repository = repository;
+    }
+
+    @Async
+    public void handleMetaData(DataStage stage, ArangoDocumentReference rootDocumentRef, NormalizedJsonLd payload, List<ArangoInstance> arangoInstances, List<EdgeResolutionOperation> lazyIdResolutionOperations, List<UUID> mergeIds) {
+        repository.executeTransactionalOnMeta(stage, createUpsertOperations(stage, rootDocumentRef, payload.getTypes(), arangoInstances, lazyIdResolutionOperations, mergeIds));
     }
 
     public List<DBOperation> createUpsertOperations(DataStage stage, ArangoDocumentReference rootDocumentRef, List<String> types, List<ArangoInstance> arangoInstances, List<EdgeResolutionOperation> resolvedEdges, List<UUID> mergedIds) {

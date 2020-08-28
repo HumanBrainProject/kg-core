@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package eu.ebrains.kg.core.api;
+package eu.ebrains.kg.metrics;
 
 public class MethodExecution {
     private String packageName;

@@ -16,7 +16,6 @@
 
 package eu.ebrains.kg.metrics;
 
-import eu.ebrains.kg.core.api.MethodExecution;
 import org.springframework.stereotype.Component;
 
 import java.util.List;

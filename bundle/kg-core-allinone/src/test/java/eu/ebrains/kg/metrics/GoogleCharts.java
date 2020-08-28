@@ -14,13 +14,14 @@
  * limitations under the License.
  */
 
-package eu.ebrains.kg.core.api;
+package eu.ebrains.kg.metrics;
 
 import com.google.gson.Gson;
 
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 public class GoogleCharts {
@@ -32,7 +33,10 @@ public class GoogleCharts {
             "}</style><script type=\"text/javascript\">\n" +
             "      google.charts.load('current', {'packages':['timeline']});\n" +
             "      google.charts.setOnLoadCallback(drawCharts);\n" +
-            "      let drawChartFunctions = [];" +
+            "      let drawChartFunctions = [];\n" +
+            "      function toggle(plot){\n" +
+            "           let p = document.getElementById(plot);\n" +
+            "           if (p.style.display === \"none\"){p.style.display = \"block\";} else{p.style.display = \"none\"}}\n" +
             "      function drawCharts() {\n" +
             "       for(drawChartFunction of drawChartFunctions){\n" +
             "drawChartFunction();" +
@@ -50,6 +54,9 @@ public class GoogleCharts {
     }
 
 
+    public synchronized void addCategory(String title){
+        this.plots.add(String.format("<h3>%s</h3>", title));
+    }
 
     public static class Column{
         private String type;
@@ -77,10 +84,39 @@ public class GoogleCharts {
             this.start = start;
             this.end = end;
         }
+
+        public void setRow(String row) {
+            this.row = row;
+        }
+
+        public String getRow() {
+            return row;
+        }
+
+        public String getName() {
+            return name;
+        }
+
+        public Long getStart() {
+            return start;
+        }
+
+        public Long getEnd() {
+            return end;
+        }
     }
 
 
-    public synchronized void addPlot(String title, List<Value> values, boolean showRowLabels){
+    public synchronized void addPlot(String title, List<Value> values, boolean showBarLabels, boolean showRowLabels, long totalDuration){
+        if(showRowLabels) {
+            Map<String, List<Value>> byRow = values.stream().collect(Collectors.groupingBy(Value::getRow));
+            values.forEach(v -> {
+                List<Value> allValues = byRow.get(v.getRow());
+                long duration = allValues.stream().mapToLong(value -> value.getEnd() - value.getStart()).sum();
+                v.setRow(String.format("%s %dx, %dms/%.0f%%", v.getRow(), allValues.size(), duration, 100.0/(float)totalDuration*(float)duration));
+            });
+        }
+
         StringBuilder sb = new StringBuilder();
         final int plotCounter = this.plots.size();
         List<Column> columns = new ArrayList<>();
@@ -88,9 +124,10 @@ public class GoogleCharts {
         columns.add(new Column("string", "Name"));
         columns.add(new Column("number", "Start"));
         columns.add(new Column("number", "End"));
-        sb.append("<div><h3>").append(title).append("</h3><div id=\"plot").append(plotCounter).append("\" style=\"width:100%;height:50vh;\"></div></div>");
+        sb.append("<div><a onclick=\"toggle('plot").append(plotCounter).append("')\">").append(title).append("</a><div id=\"plot").append(plotCounter).append("\" style=\"width:100%;height:50vh;\"></div></div>");
         sb.append("<script>\n");
-        sb.append("drawChartFunctions.push(function() {let plot").append(plotCounter).append(" = document.getElementById('plot").append(plotCounter).append("');\n");
+        sb.append("drawChartFunctions.push(function() {");
+        sb.append("let plot").append(plotCounter).append(" = document.getElementById('plot").append(plotCounter).append("');\n");
         sb.append("let chart").append(plotCounter).append(" = new google.visualization.Timeline(plot").append(plotCounter).append(");\n");
         sb.append("let dataTable").append(plotCounter).append(" = new google.visualization.DataTable();\n");
         for (Column column : columns) {
@@ -98,8 +135,10 @@ public class GoogleCharts {
         }
         sb.append("dataTable").append(plotCounter).append(".addRows(").append(gson.toJson(values.stream().map(Value::asSimpleList).collect(Collectors.toList()))).append(");\n");
         sb.append("chart").append(plotCounter).append(".draw(dataTable").append(plotCounter).append(", {\n" +
-                "      timeline: { showBarLabels: false, showRowLabels:").append(showRowLabels).append("}\n" +
-                "    });});");
+                "      timeline: { showBarLabels: ").append(showBarLabels).append(", showRowLabels:").append(showRowLabels).append("}\n" +
+                "    });\n" +
+                "plot").append(plotCounter).append(".style.display='none';\n" );
+        sb.append("});");
         sb.append("</script>");
         this.plots.add(sb.toString());
     }
