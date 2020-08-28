@@ -156,18 +156,6 @@ public class PerformanceTestUtils {
         return result;
     }
 
-    private PlotlyRenderer.BarTrace createOffsetTrace(){
-        PlotlyRenderer.BarTrace offsetTrace = new PlotlyRenderer.BarTrace("Wait");
-        Map<String, Object> marker = new HashMap<>();
-        marker.put("color", "rgba(0,0,0,0.0)");
-        Map<String, Object> line = new HashMap<>();
-        marker.put("line", line);
-        line.put("color", "rgba(0,0,0,0.0)");
-        line.put("width", 0);
-        offsetTrace.setMarker(marker);
-        return offsetTrace;
-    }
-
 
     private <T> List<ResponseEntity<Result<T>>> runWithThreads(int numberOfFields, boolean normalize, Link link, int numberOfIteration, int idOffset, CallableWithPayload<ResponseEntity<Result<T>>> r, int threads, ThreadLocal<AuthTokens> authTokens) {
         List<ResponseEntity<Result<T>>> result;
