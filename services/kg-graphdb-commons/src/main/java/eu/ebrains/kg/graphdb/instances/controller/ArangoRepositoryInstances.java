@@ -121,7 +121,8 @@ public class ArangoRepositoryInstances {
             if (e.containsKey(EBRAINSVocabulary.META_USER)) {
                 Map<String, Object> userObj = e.getAs(EBRAINSVocabulary.META_USER, Map.class);
                 if (userObj.containsKey(JsonLdConsts.ID)) {
-                    UUID uuid = idUtils.getUUID(new JsonLdId(userObj.get(JsonLdConsts.ID).toString()));
+                    String absoluteId = userObj.get(JsonLdConsts.ID).toString();
+                    UUID uuid = idUtils.getUUID(new JsonLdId(absoluteId));
                     Result<NormalizedJsonLd> userResult = null;
                     if (uuid != null) {
                         userResult = usersById.get(uuid);
@@ -131,6 +132,7 @@ public class ArangoRepositoryInstances {
                     reducedUser.put(SchemaOrgVocabulary.NAME, user != null ? user.get(SchemaOrgVocabulary.NAME) : "Unknown");
                     reducedUser.put(SchemaOrgVocabulary.ALTERNATE_NAME, user != null ? user.get(SchemaOrgVocabulary.ALTERNATE_NAME) : "unknown");
                     reducedUser.put(SchemaOrgVocabulary.IDENTIFIER, user != null ? user.get(SchemaOrgVocabulary.IDENTIFIER) : Collections.emptyList());
+                    reducedUser.put(JsonLdConsts.ID, absoluteId);
                     e.put(EBRAINSVocabulary.META_USER, reducedUser);
                 }
             }
@@ -169,6 +171,7 @@ public class ArangoRepositoryInstances {
                                     reducedUser.put(SchemaOrgVocabulary.NAME, user != null ? user.get(SchemaOrgVocabulary.NAME) : "Unknown");
                                     reducedUser.put(SchemaOrgVocabulary.ALTERNATE_NAME, user != null ? user.get(SchemaOrgVocabulary.ALTERNATE_NAME) : "unknown");
                                     reducedUser.put(SchemaOrgVocabulary.IDENTIFIER, user != null ? user.get(SchemaOrgVocabulary.IDENTIFIER) : Collections.emptyList());
+                                    reducedUser.put(JsonLdConsts.ID, id);
                                     return reducedUser;
                                 }).collect(Collectors.toList());
                                 alternative.put(EBRAINSVocabulary.META_USER, users);
@@ -263,7 +266,7 @@ public class ArangoRepositoryInstances {
 
     private void addSearchLabelFilter(Map<String, Object> bindVars, AQL aql, String search) {
         if (search != null && !search.isBlank()) {
-            List<String> searchLabels = Arrays.stream(search.trim().split(" ")).filter(s -> !s.isBlank()).map(s -> s.replaceAll("%", "") + "%").collect(Collectors.toList());
+            List<String> searchLabels = Arrays.stream(search.trim().split(" ")).filter(s -> !s.isBlank()).map(s -> "%" + s.replaceAll("%", "") + "%").collect(Collectors.toList());
             if (!searchLabels.isEmpty()) {
                 aql.addLine(AQL.trust("LET found = (FOR name IN typeDefinition.labelProperties FILTER "));
                 for (int i = 0; i < searchLabels.size(); i++) {
@@ -408,14 +411,23 @@ public class ArangoRepositoryInstances {
             //Because Arango doesn't support indexed filtering of array in array search, we expand the (very limited) list of identifiers of the root document and state them explicitly as individual filter elements. This way, the index applies and we profit from more speed.
             NormalizedJsonLd rootDocument = db.collection(collectionReference.getCollectionName()).getDocument(id.toString(), NormalizedJsonLd.class);
             if (rootDocument != null) {
-                List<NormalizedJsonLd> result = getDocumentsByIdentifiers(rootDocument.getAllIdentifiersIncludingId(), stage, space, embedded, alternatives);
-                if (result != null) return result;
+                List<NormalizedJsonLd> result = doGetDocumentsByIdentifiers(rootDocument.getAllIdentifiersIncludingId(), stage, space);
+                if (result != null) {
+                    handleAlternativesAndEmbedded(result, stage, alternatives, embedded);
+                    return result;
+                }
             }
         }
         return Collections.emptyList();
     }
 
     public List<NormalizedJsonLd> getDocumentsByIdentifiers(Set<String> allIdentifiersIncludingId, DataStage stage, Space space, boolean embedded, boolean alternatives) {
+        List<NormalizedJsonLd> normalizedJsonLds = doGetDocumentsByIdentifiers(allIdentifiersIncludingId, stage, space);
+        handleAlternativesAndEmbedded(normalizedJsonLds, stage, alternatives, embedded);
+        return normalizedJsonLds;
+    }
+
+    private List<NormalizedJsonLd> doGetDocumentsByIdentifiers(Set<String> allIdentifiersIncludingId, DataStage stage, Space space) {
         ArangoDatabase db = databases.getByStage(stage);
         ArangoCollectionReference collectionReference = ArangoCollectionReference.fromSpace(space);
         if (!db.collection(collectionReference.getCollectionName()).exists()) {
@@ -437,7 +449,6 @@ public class ArangoRepositoryInstances {
             }
             aql.addLine(AQL.trust("RETURN doc"));
             List<NormalizedJsonLd> result = db.query(aql.build().getValue(), bindVars,  new AqlQueryOptions(), NormalizedJsonLd.class).asListRemaining();
-            handleAlternativesAndEmbedded(result, stage, alternatives, embedded);
             exposeRevision(result);
             return result;
         }
