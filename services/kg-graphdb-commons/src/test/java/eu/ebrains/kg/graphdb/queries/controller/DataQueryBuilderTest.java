@@ -32,10 +32,7 @@ import java.net.URISyntaxException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
+import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -48,11 +45,13 @@ public class DataQueryBuilderTest {
         Specification specification = new SpecificationInterpreter().readSpecification(query, null);
 
         //When
-        AQLQuery aqlQuery = new DataQueryBuilder(specification, null, null, null, Collections.singletonList(ArangoCollectionReference.fromSpace(TestObjectFactory.SIMPSONS))).build();
+        AQLQuery aqlQuery = new DataQueryBuilder(specification, null, new HashMap<>(), null, Collections.singletonList(ArangoCollectionReference.fromSpace(TestObjectFactory.SIMPSONS))).build();
 
         //Then
 
         String expected = "\n" +
+                "LET whitelist=@readAccessBySpace\n" +
+                "LET invitation=@readAccessByInvitation\n" +
                 "FOR root_doc IN 1..1 OUTBOUND DOCUMENT(@@typeCollection, @typeId) @@typeRelation\n" +
                 "\n" +
                 "FILTER root_doc != NULL\n" +
@@ -65,7 +64,7 @@ public class DataQueryBuilderTest {
                 "   \"http://schema.org/givenName\": root_doc.`http://schema.org/givenName`\n" +
                 "}";
         //Then
-        Assert.assertEquals(expected, aqlQuery.getAql());
+        Assert.assertEquals(expected, aqlQuery.getAql().build().getValue());
     }
 
     @Test
@@ -134,9 +133,50 @@ public class DataQueryBuilderTest {
                 "   \"http://schema.org/givenName\": root_doc.`http://schema.org/givenName`\n" +
                 "}";
         //Then
-        Assert.assertEquals(expected, aqlQuery.getAql());
+        Assert.assertEquals(expected, aqlQuery.getAql().build().getValue());
     }
 
+
+
+    @Test
+    public void buildHomerWithEmbeddedTraversalMissingTraversalCollection(){
+        //Given
+        NormalizedJsonLd query = TestObjectFactory.createJsonLd(TestObjectFactory.SIMPSONS, "normalizedQueries/homerWithEmbeddedTraversal.json");
+        Specification specification = new SpecificationInterpreter().readSpecification(query, null);
+
+        //When
+        List<ArangoCollectionReference> existingCollections = Collections.singletonList(ArangoCollectionReference.fromSpace(TestObjectFactory.SIMPSONS));
+        AQLQuery aqlQuery = new DataQueryBuilder(specification, null,null,  null, existingCollections).build();
+
+        //Then
+
+        String expected = "\n" +
+                "FOR root_doc IN 1..1 OUTBOUND DOCUMENT(@@typeCollection, @typeId) @@typeRelation\n" +
+                "\n" +
+                "FILTER @idRestriction == [] OR root_doc._key IN @idRestriction\n" +
+                "LET schema_org_streetaddress = FIRST((FOR schema_org_streetaddress_sort IN UNIQUE(FLATTEN(FOR schema_org_streetaddress_doc \n" +
+                "    IN [] \n" +
+                "    FILTER  \"http://schema.org/PostalAddress\" IN schema_org_streetaddress_doc.`@type`\n" +
+                "FILTER schema_org_streetaddress_doc != NULL\n" +
+                "\n" +
+                "FILTER schema_org_streetaddress_doc.`http://schema.org/streetAddress` != NULL\n" +
+                "RETURN DISTINCT schema_org_streetaddress_doc.`http://schema.org/streetAddress`\n" +
+                "))\n" +
+                "\n" +
+                "   SORT schema_org_streetaddress_sort ASC\n" +
+                "   RETURN schema_org_streetaddress_sort\n" +
+                ")\n" +
+                ")\n" +
+                "FILTER root_doc != NULL\n" +
+                "SORT schema_org_streetaddress\n" +
+                " ASC\n" +
+                "RETURN {\n" +
+                "   \"http://schema.org/givenName\": root_doc.`http://schema.org/givenName`, \n" +
+                "   \"http://schema.org/streetAddress\": schema_org_streetaddress\n" +
+                "}";
+        //Then
+        Assert.assertEquals(expected, aqlQuery.getAql().build().getValue());
+    }
 
     @Test
     public void build() throws URISyntaxException, IOException {

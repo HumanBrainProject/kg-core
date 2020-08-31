@@ -34,7 +34,7 @@ public enum SpacePermissionGroup {
     REVIEWER(CONSUMER, Functionality.READ, Functionality.SUGGEST, Functionality.INVITE_FOR_REVIEW),
     EDITOR(REVIEWER, Functionality.WRITE, Functionality.CREATE, Functionality.INVITE_FOR_SUGGESTION),
     OWNER(EDITOR, Functionality.RELEASE, Functionality.DELETE, Functionality.UNRELEASE),
-    ADMIN(OWNER, Functionality.CONFIGURE_SPACE, Functionality.CREATE_PERMISSION);
+    ADMIN(OWNER, Functionality.CREATE_PERMISSION);
 
     private final SpacePermissionGroup childPermissionGroup;
     private final String name;

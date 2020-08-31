@@ -1,27 +1,27 @@
 {
-  "https://schema.hbp.eu/graphQuery/meta": {
-    "https://schema.hbp.eu/graphQuery/alias": "simpsonsFamilyMembers",
-    "https://schema.hbp.eu/graphQuery/name": "Simpson Family Members",
-    "https://schema.hbp.eu/graphQuery/type": "https://thesimpsons.com/FamilyMember"
+  "https://core.kg.ebrains.eu/vocab/query/meta": {
+    "https://core.kg.ebrains.eu/vocab/query/alias": "simpsonsFamilyMembers",
+    "https://core.kg.ebrains.eu/vocab/query/name": "Simpson Family Members",
+    "https://core.kg.ebrains.eu/vocab/query/type": "https://thesimpsons.com/FamilyMember"
   },
-  "https://schema.hbp.eu/graphQuery/structure": [
+  "https://core.kg.ebrains.eu/vocab/query/structure": [
     {
-      "https://schema.hbp.eu/graphQuery/path": {
+      "https://core.kg.ebrains.eu/vocab/query/path": {
         "@id": "http://schema.org/givenName"
       }
     },
     {
-      "https://schema.hbp.eu/graphQuery/path": [
+      "https://core.kg.ebrains.eu/vocab/query/path": [
         {
           "@id": "http://schema.org/address",
-          "https://schema.hbp.eu/graphQuery/typeFilter": [{"@id": "http://schema.org/PostalAddress"}]
+          "https://core.kg.ebrains.eu/vocab/query/typeFilter": [{"@id": "http://schema.org/PostalAddress"}]
         },
         {
           "@id": "http://schema.org/streetAddress"
         }
       ],
-      "https://schema.hbp.eu/graphQuery/singleValue": "FIRST",
-      "https://schema.hbp.eu/graphQuery/sort": true
+      "https://core.kg.ebrains.eu/vocab/query/singleValue": "FIRST",
+      "https://core.kg.ebrains.eu/vocab/query/sort": true
     }
   ]
 }

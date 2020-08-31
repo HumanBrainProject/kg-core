@@ -222,4 +222,7 @@ public class CoreInstanceController {
         );
     }
 
+    public ScopeElement getScopeForInstance(UUID id, DataStage stage) {
+        return graphDbSvc.getScope(stage,  idsSvc.resolveId(stage, id));
+    }
 }

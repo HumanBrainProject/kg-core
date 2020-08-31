@@ -23,7 +23,6 @@ import eu.ebrains.kg.commons.jsonld.JsonLdDoc;
 import eu.ebrains.kg.commons.jsonld.NormalizedJsonLd;
 import eu.ebrains.kg.commons.model.*;
 import eu.ebrains.kg.commons.query.KgQuery;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
@@ -68,4 +67,9 @@ public class CoreInstancesToGraphDB {
     public Paginated<NormalizedJsonLd> executeQuery(KgQuery query, PaginationParam paginationParam) {
         return serviceCall.post(BASE_URL + String.format("/queries?from=%d&size=%s", paginationParam.getFrom(), paginationParam.getSize() != null ? String.valueOf(paginationParam.getSize()) : ""), query, authContext.getAuthTokens(), PaginatedDocuments.class);
     }
+
+    public ScopeElement getScope(DataStage stage, InstanceId instanceId) {
+        return serviceCall.get(BASE_URL + String.format("/%s/scopes/%s", stage.name(), instanceId.serialize()), authContext.getAuthTokens(), ScopeElement.class);
+    }
+
 }

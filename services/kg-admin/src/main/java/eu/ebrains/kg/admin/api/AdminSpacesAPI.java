@@ -17,10 +17,8 @@
 package eu.ebrains.kg.admin.api;
 
 import com.arangodb.ArangoDBException;
-import eu.ebrains.kg.admin.controller.AdminArangoRepository;
 import eu.ebrains.kg.admin.controller.AdminSpaceController;
 import eu.ebrains.kg.admin.controller.AdminUserController;
-import eu.ebrains.kg.arango.commons.model.ArangoCollectionReference;
 import eu.ebrains.kg.commons.model.Space;
 import eu.ebrains.kg.commons.model.User;
 import eu.ebrains.kg.commons.permission.SpacePermissionGroup;
@@ -39,53 +37,30 @@ import java.util.List;
 @RequestMapping("/internal/admin/spaces")
 public class AdminSpacesAPI {
 
-    private final AdminArangoRepository repository;
     private final AdminSpaceController spaceController;
     private final AdminUserController userController;
 
-    public AdminSpacesAPI(AdminArangoRepository repository, AdminSpaceController spaceController, AdminUserController userController) {
-        this.repository = repository;
+    public AdminSpacesAPI(AdminSpaceController spaceController, AdminUserController userController) {
         this.spaceController = spaceController;
         this.userController = userController;
-    }
-
-    @GetMapping("")
-    public ResponseEntity<List<Space>> getSpaces() {
-        try {
-            ArangoCollectionReference arangoCollectionReference = new ArangoCollectionReference("spaces", true);
-             return ResponseEntity.ok(repository.getEntities(arangoCollectionReference, Space.class));
-        } catch (ArangoDBException ex) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
-        }
-    }
-
-    @GetMapping("/{id}")
-    public ResponseEntity<Space> getSpace(@PathVariable("id") String id) {
-        try {
-            ArangoCollectionReference arangoCollectionReference = new ArangoCollectionReference("spaces", true);
-            return ResponseEntity.ok(repository.getEntity(arangoCollectionReference, id, Space.class));
-        } catch (ArangoDBException ex) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
-        }
-
     }
 
     @DeleteMapping("/{id}")
     public ResponseEntity<String> deleteSpace(@PathVariable("id") String id) {
         try {
             spaceController.removeSpace(new Space(id));
-            return ResponseEntity.ok(String.format("Successfully inserted the space with id %s", id));
+            return ResponseEntity.ok(String.format("Successfully removed space %s", id));
         } catch (ArangoDBException ex) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
         }
     }
 
-
     @PutMapping("/{id}")
-    public ResponseEntity<Space> addSpace(@PathVariable("id") String id) {
+    public ResponseEntity<String> addSpace(@PathVariable("id") String id, @RequestParam("autorelease") boolean autoRelease) {
         try {
-            spaceController.createSpace(new Space(id));
-            return getSpace(id);
+            Space space = new Space(id, false, autoRelease);
+            spaceController.createSpace(space, true);
+            return ResponseEntity.ok(String.format("Successfully created space %s", space));
         } catch (ArangoDBException ex) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
         }

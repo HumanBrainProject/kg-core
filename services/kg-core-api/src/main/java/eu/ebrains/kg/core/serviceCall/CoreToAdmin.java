@@ -18,6 +18,7 @@ package eu.ebrains.kg.core.serviceCall;
 
 import eu.ebrains.kg.commons.AuthContext;
 import eu.ebrains.kg.commons.ServiceCall;
+import eu.ebrains.kg.commons.model.Client;
 import eu.ebrains.kg.commons.model.Space;
 import org.springframework.stereotype.Component;
 
@@ -31,9 +32,18 @@ public class CoreToAdmin {
         this.authContext = authContext;
     }
 
-    private static final String ADMIN_ENDPOINT = "http://kg-admin/internal/admin/spaces";
+    private static final String ADMIN_ENDPOINT = "http://kg-admin/internal/admin";
 
-    public Space addSpace(String id) {
-        return serviceCall.put(String.format("%s/%s", ADMIN_ENDPOINT, id), null, authContext.getAuthTokens(), Space.class);
+    public Space addSpace(String id, boolean autoRelease) {
+        return serviceCall.put(String.format("%s/spaces/%s?autorelease=%b", ADMIN_ENDPOINT, id, autoRelease), null, authContext.getAuthTokens(), Space.class);
     }
+
+    public Space getSpace(String id) {
+        return serviceCall.get(String.format("%s/spaces/%s", ADMIN_ENDPOINT, id), authContext.getAuthTokens(), Space.class);
+    }
+
+    public Client addClient(String id){
+        return serviceCall.put(String.format("%s/clients/%s", ADMIN_ENDPOINT, id), null, authContext.getAuthTokens(), Client.class);
+    }
+
 }

@@ -17,10 +17,8 @@
 package eu.ebrains.kg.admin.api;
 
 import com.arangodb.ArangoDBException;
-import eu.ebrains.kg.admin.controller.AdminArangoRepository;
 import eu.ebrains.kg.admin.controller.AdminSpaceController;
 import eu.ebrains.kg.admin.serviceCall.AdminToAuthentication;
-import eu.ebrains.kg.arango.commons.model.ArangoCollectionReference;
 import eu.ebrains.kg.commons.model.Client;
 import io.swagger.annotations.ApiOperation;
 import org.springframework.http.HttpStatus;
@@ -34,12 +32,10 @@ import org.springframework.web.bind.annotation.*;
 @RequestMapping("/internal/admin/clients")
 public class AdminClientsAPI {
 
-    private final AdminArangoRepository repository;
     private final AdminSpaceController spaceController;
     private final AdminToAuthentication authenticationSvc;
 
-    public AdminClientsAPI(AdminArangoRepository repository, AdminSpaceController spaceController, AdminToAuthentication authenticationSvc) {
-        this.repository = repository;
+    public AdminClientsAPI(AdminSpaceController spaceController, AdminToAuthentication authenticationSvc) {
         this.spaceController = spaceController;
         this.authenticationSvc = authenticationSvc;
     }
@@ -49,28 +45,12 @@ public class AdminClientsAPI {
     @PutMapping("/{id}")
     public ResponseEntity<String> addClient(@PathVariable("id") String id) {
         try {
-            if(!id.matches("[0-9a-zA-Z\\-]*")){
-                throw new IllegalArgumentException("Was trying to register a client with an invalid id. Only alphanumeric characters and dashes are allowed");
-            }
             Client client = new Client(id);
-            //TODO prevent the registration of clients with existing spaces...
-            spaceController.createSpace(client.getSpace());
+            spaceController.createSpace(client.getSpace(), false);
             authenticationSvc.registerClient(client);
             return ResponseEntity.ok(String.format("Successfully inserted the client with id %s", id));
         } catch (ArangoDBException ex) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
-        }
-
-    }
-
-    @ApiOperation("Receive information about a registered client")
-    @GetMapping("/{id}")
-    public ResponseEntity<Client> getClient(@PathVariable("id") String id) {
-        try {
-            ArangoCollectionReference arangoCollectionReference = new ArangoCollectionReference("clients", true);
-            return ResponseEntity.ok(repository.getEntity(arangoCollectionReference, id, Client.class));
-        } catch (ArangoDBException ex) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
         }
 
     }

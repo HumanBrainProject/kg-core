@@ -1,6 +1,6 @@
 {
   "@context": {
-    "query": "https://schema.hbp.eu/graphQuery/",
+    "query": "https://core.kg.ebrains.eu/vocab/query/",
     "schema": "http://schema.org/"
   },
   "query:meta": {

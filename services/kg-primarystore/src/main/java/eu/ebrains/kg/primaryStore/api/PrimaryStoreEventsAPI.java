@@ -23,7 +23,10 @@ import eu.ebrains.kg.commons.model.Event;
 import eu.ebrains.kg.commons.model.PersistedEvent;
 import eu.ebrains.kg.commons.model.Space;
 import eu.ebrains.kg.commons.models.UserWithRoles;
-import eu.ebrains.kg.primaryStore.controller.*;
+import eu.ebrains.kg.primaryStore.controller.EventProcessor;
+import eu.ebrains.kg.primaryStore.controller.EventRepository;
+import eu.ebrains.kg.primaryStore.controller.InferenceProcessor;
+import eu.ebrains.kg.primaryStore.controller.SSEProducer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.MediaType;
@@ -45,25 +48,19 @@ public class PrimaryStoreEventsAPI {
 
     private final InferenceProcessor inferenceProcessor;
 
-    private final EventController eventController;
-
     private final SSEProducer sseProducer;
 
     private final EventRepository eventRepository;
 
     private final AuthContext authContext;
 
-    private final UserResolver userResolver;
-
     private final Logger logger = LoggerFactory.getLogger(getClass());
 
-    public PrimaryStoreEventsAPI(EventProcessor eventProcessor, EventController eventController, SSEProducer sseProducer, EventRepository eventRepository, AuthContext authContext, UserResolver userResolver, InferenceProcessor inferenceProcessor) {
+    public PrimaryStoreEventsAPI(EventProcessor eventProcessor, SSEProducer sseProducer, EventRepository eventRepository, AuthContext authContext, InferenceProcessor inferenceProcessor) {
         this.eventProcessor = eventProcessor;
-        this.eventController = eventController;
         this.sseProducer = sseProducer;
         this.eventRepository = eventRepository;
         this.authContext = authContext;
-        this.userResolver = userResolver;
         this.inferenceProcessor = inferenceProcessor;
     }
 

@@ -1,7 +1,7 @@
 {
   "@context": {
     "schema": "http://schema.org/",
-    "@vocab": "https://schema.hbp.eu/graphQuery/",
+    "@vocab": "https://core.kg.ebrains.eu/vocab/query/",
     "fieldname": {
       "@type": "@id",
       "@id": "fieldname"

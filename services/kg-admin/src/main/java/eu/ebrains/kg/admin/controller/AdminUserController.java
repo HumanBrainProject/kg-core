@@ -53,7 +53,7 @@ public class AdminUserController {
         if (instance == null) {
             authUserInfo.setId(idUtils.buildAbsoluteUrl(instanceId));
             Event event = new Event(USERS_SPACE, instanceId, authUserInfo, Event.Type.INSERT, new Date());
-            primaryStoreSvc.addUser(event);
+            primaryStoreSvc.postEvent(event, false);
             instance = graphDBSvc.getInstance(DataStage.IN_PROGRESS, USERS_SPACE, instanceId, true);
             if (instance == null) {
                 throw new RuntimeException("Failed to get user info after creation");

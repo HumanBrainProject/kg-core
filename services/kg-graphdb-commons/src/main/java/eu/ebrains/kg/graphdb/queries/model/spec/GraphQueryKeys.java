@@ -17,12 +17,13 @@
 package eu.ebrains.kg.graphdb.queries.model.spec;
 
 import eu.ebrains.kg.arango.commons.aqlBuilder.ArangoVocabulary;
-import eu.ebrains.kg.commons.semantics.vocabularies.HBPVocabulary;
+import eu.ebrains.kg.commons.semantics.vocabularies.EBRAINSVocabulary;
 
 public enum GraphQueryKeys {
 
     GRAPH_QUERY_META("meta"),
     GRAPH_QUERY_TYPE("type"),
+    GRAPH_QUERY_NAME("name"),
     GRAPH_QUERY_TYPE_FILTER("typeFilter"),
     GRAPH_QUERY_SPECIFICATION ("specification"),
     GRAPH_QUERY_PROPERTY_NAME("propertyName"),
@@ -46,9 +47,10 @@ public enum GraphQueryKeys {
     GRAPH_QUERY_FILTER_PARAM("parameter");
 
     private final String fieldName;
+    public static final String GRAPH_QUERY = EBRAINSVocabulary.NAMESPACE + "query/";
 
     GraphQueryKeys(String fieldName){
-        this.fieldName = HBPVocabulary.GRAPH_QUERY+fieldName;
+        this.fieldName = GRAPH_QUERY+fieldName;
     }
 
     public String getFieldName() {

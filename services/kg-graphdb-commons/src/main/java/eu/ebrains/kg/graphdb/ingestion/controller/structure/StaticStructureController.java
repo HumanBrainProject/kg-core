@@ -26,6 +26,7 @@ import eu.ebrains.kg.commons.jsonld.JsonLdConsts;
 import eu.ebrains.kg.commons.jsonld.JsonLdId;
 import eu.ebrains.kg.commons.jsonld.NormalizedJsonLd;
 import eu.ebrains.kg.commons.model.DataStage;
+import eu.ebrains.kg.commons.model.Space;
 import eu.ebrains.kg.commons.model.Type;
 import eu.ebrains.kg.graphdb.commons.controller.ArangoRepositoryCommons;
 import eu.ebrains.kg.graphdb.commons.model.ArangoDocument;
@@ -119,7 +120,7 @@ public class StaticStructureController {
 
         //... find space
         String collectionName = arangoDocument.getId().getArangoCollectionReference().getCollectionName();
-        MetaRepresentation spaceRepresentation = createMetaRepresentation(collectionName, ArangoCollectionReference.fromSpace(InternalSpace.SPACES_SPACE));
+        MetaRepresentation spaceRepresentation = createMetaRepresentation(new Space(collectionName).getName(), ArangoCollectionReference.fromSpace(InternalSpace.SPACES_SPACE));
         allVertices.add(spaceRepresentation);
 
 

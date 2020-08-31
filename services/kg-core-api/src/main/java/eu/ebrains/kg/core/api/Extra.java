@@ -24,11 +24,9 @@ import eu.ebrains.kg.commons.jsonld.JsonLdDoc;
 import eu.ebrains.kg.commons.jsonld.NormalizedJsonLd;
 import eu.ebrains.kg.commons.model.*;
 import eu.ebrains.kg.core.controller.CoreInferenceController;
+import eu.ebrains.kg.core.controller.CoreSpaceController;
 import eu.ebrains.kg.core.model.ExposedStage;
-import eu.ebrains.kg.core.serviceCall.CoreExtraToGraphDB;
-import eu.ebrains.kg.core.serviceCall.CoreToAuthentication;
-import eu.ebrains.kg.core.serviceCall.CoreToIds;
-import eu.ebrains.kg.core.serviceCall.CoreToJsonLd;
+import eu.ebrains.kg.core.serviceCall.*;
 import io.swagger.annotations.ApiOperation;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -51,25 +49,28 @@ public class Extra {
     private final CoreToIds idsSvc;
     private final CoreExtraToGraphDB graphDB4ExtraSvc;
     private final CoreToAuthentication authenticationSvc;
+    private final CoreSpaceController spaceController;
+    private final CoreToAdmin coreToAdmin;
 
     private final Logger logger = LoggerFactory.getLogger(getClass());
 
-    public Extra(CoreToJsonLd coreToJsonLd, AuthContext authContext, CoreInferenceController inferenceController, CoreToIds idsSvc, CoreExtraToGraphDB graphDB4ExtraSvc, CoreToAuthentication authenticationSvc) {
+    public Extra(CoreToJsonLd coreToJsonLd, AuthContext authContext, CoreInferenceController inferenceController, CoreToIds idsSvc, CoreExtraToGraphDB graphDB4ExtraSvc, CoreToAuthentication authenticationSvc, CoreSpaceController spaceController, CoreToAdmin coreToAdmin) {
         this.coreToJsonLd = coreToJsonLd;
         this.authContext = authContext;
         this.inferenceController = inferenceController;
         this.idsSvc = idsSvc;
         this.graphDB4ExtraSvc = graphDB4ExtraSvc;
         this.authenticationSvc = authenticationSvc;
+        this.spaceController = spaceController;
+        this.coreToAdmin = coreToAdmin;
     }
 
     @ApiOperation("Triggers the inference of all documents of the given space")
     @PostMapping("/extra/inference/{space}")
-    public void triggerInference(@PathVariable(value = "space") String space, @RequestParam(value = "identifier", required = false) String identifier, @RequestParam(value = "async", required = false, defaultValue = "false") boolean  async) {
-        if(async) {
+    public void triggerInference(@PathVariable(value = "space") String space, @RequestParam(value = "identifier", required = false) String identifier, @RequestParam(value = "async", required = false, defaultValue = "false") boolean async) {
+        if (async) {
             inferenceController.asyncTriggerInference(new Space(space), identifier, authContext.getAuthTokens());
-        }
-        else {
+        } else {
             inferenceController.triggerInference(new Space(space), identifier, authContext.getAuthTokens());
         }
     }
@@ -101,9 +102,22 @@ public class Extra {
 
     @ApiOperation("Retrieve user information based on a keycloak attribute (excluding detailed information such as e-mail address)")
     @GetMapping("/extra/users/byAttribute/{attribute}/{value}")
-    public ResponseEntity<List<User>> getUsersByAttribute(@PathVariable("attribute") String attribute, @PathVariable("value") String value){
+    public ResponseEntity<List<User>> getUsersByAttribute(@PathVariable("attribute") String attribute, @PathVariable("value") String value) {
         List<User> users = authenticationSvc.getUsersByAttribute(attribute, value);
         return users != null ? ResponseEntity.ok(users) : ResponseEntity.notFound().build();
     }
 
+    @ApiOperation("Register a client in EBRAINS KG")
+    @PutMapping("/extra/clients/{id}")
+    public ResponseEntity<String> addClient(@PathVariable("id") String id) {
+        coreToAdmin.addClient(id);
+        return ResponseEntity.ok(String.format("Successfully inserted the client with id %s", id));
+    }
+
+
+    @ApiOperation("Define a space")
+    @PutMapping("/{space}")
+    public Result<NormalizedJsonLd> defineSpace(@PathVariable(value = "space") String space, @RequestParam("autorelease") boolean autoRelease) {
+        return Result.ok(coreToAdmin.addSpace(space, autoRelease).toJsonLd());
+    }
 }

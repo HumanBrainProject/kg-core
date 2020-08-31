@@ -21,7 +21,6 @@ import eu.ebrains.kg.commons.jsonld.*;
 import eu.ebrains.kg.commons.model.DataStage;
 import eu.ebrains.kg.commons.model.Event;
 import eu.ebrains.kg.commons.model.Space;
-import eu.ebrains.kg.commons.model.User;
 import eu.ebrains.kg.commons.semantics.vocabularies.EBRAINSVocabulary;
 import eu.ebrains.kg.commons.semantics.vocabularies.SchemaOrgVocabulary;
 import eu.ebrains.kg.inference.serviceCall.GraphDBSvc;
@@ -111,7 +110,7 @@ public class Reconcile {
         //Find already existing instances for this document
         List<InferredJsonLdDoc> inferredInstances = graphDBSvc.getRelatedInstancesByIncomingRelation(space, id, DataStage.IN_PROGRESS, InferredJsonLdDoc.INFERENCE_OF, true).stream().map(InferredJsonLdDoc::from).collect(Collectors.toList());
         if (inferredInstances.size() > 1) {
-            throw new IllegalStateException(String.format("There are %d inferred instances for the id %s - this is not acceptable", inferredInstances.size(), id));
+            throw new IllegalStateException(String.format("There are %d inferred instances for the id %s (%s)- this is not acceptable", inferredInstances.size(), id, inferredInstances.stream().map(i -> i.asIndexed().getDocumentId().toString()).collect(Collectors.joining(", "))));
         } else if (inferredInstances.size() == 1) {
             //If there is an inferred instance available, we also should take its documents into account...
             IndexedJsonLdDoc inferredInstance = inferredInstances.get(0).asIndexed();

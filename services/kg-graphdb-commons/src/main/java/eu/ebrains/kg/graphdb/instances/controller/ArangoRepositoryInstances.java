@@ -35,7 +35,6 @@ import eu.ebrains.kg.commons.model.*;
 import eu.ebrains.kg.commons.params.ReleaseTreeScope;
 import eu.ebrains.kg.commons.query.KgQuery;
 import eu.ebrains.kg.commons.semantics.vocabularies.EBRAINSVocabulary;
-import eu.ebrains.kg.commons.semantics.vocabularies.HBPVocabulary;
 import eu.ebrains.kg.commons.semantics.vocabularies.SchemaOrgVocabulary;
 import eu.ebrains.kg.graphdb.commons.controller.ArangoDatabases;
 import eu.ebrains.kg.graphdb.commons.controller.ArangoRepositoryCommons;
@@ -43,6 +42,7 @@ import eu.ebrains.kg.graphdb.commons.controller.ArangoUtils;
 import eu.ebrains.kg.graphdb.commons.controller.PermissionsController;
 import eu.ebrains.kg.graphdb.commons.model.ArangoDocument;
 import eu.ebrains.kg.graphdb.instances.model.ArangoRelation;
+import eu.ebrains.kg.graphdb.queries.model.spec.GraphQueryKeys;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
 
@@ -346,11 +346,11 @@ public class ArangoRepositoryInstances {
             iterateThroughTypeList(Collections.singletonList(new Type(KgQuery.getKgQueryType())), bindVars, aql);
             aql.indent().addLine(AQL.trust("FOR v IN 1..1 OUTBOUND typeDefinition.type @@typeRelationCollection"));
             if (typeFilter != null && !typeFilter.isBlank()) {
-                aql.addLine(AQL.trust("FILTER v.`" + HBPVocabulary.GRAPH_QUERY_META + "`.`" + HBPVocabulary.GRAPH_QUERY_ROOT_TYPE + "` == @typeFilter"));
+                aql.addLine(AQL.trust("FILTER v.`" + GraphQueryKeys.GRAPH_QUERY_META.getFieldName() + "`.`" + GraphQueryKeys.GRAPH_QUERY_TYPE.getFieldName() + "` == @typeFilter"));
                 bindVars.put("typeFilter", typeFilter);
             }
             if (search != null && !search.isBlank()) {
-                aql.addLine(AQL.trust("FILTER LIKE(v.`" + HBPVocabulary.GRAPH_QUERY_META + "`.`" + HBPVocabulary.GRAPH_QUERY_NAME + "`, @search, true)"));
+                aql.addLine(AQL.trust("FILTER LIKE(v.`" + GraphQueryKeys.GRAPH_QUERY_META.getFieldName() + "`.`" + GraphQueryKeys.GRAPH_QUERY_NAME.getFieldName() + "`, @search, true)"));
                 bindVars.put("search", "%" + search + "%");
             }
             aql.addPagination(paginationParam);

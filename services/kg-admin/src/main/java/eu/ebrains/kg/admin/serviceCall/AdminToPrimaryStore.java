@@ -18,20 +18,30 @@ package eu.ebrains.kg.admin.serviceCall;
 
 import eu.ebrains.kg.commons.AuthContext;
 import eu.ebrains.kg.commons.ServiceCall;
+import eu.ebrains.kg.commons.jsonld.InstanceId;
 import eu.ebrains.kg.commons.model.Event;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
+
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
 
 @Component
 public class AdminToPrimaryStore {
-    @Autowired
-    ServiceCall serviceCall;
 
-    @Autowired
-    AuthContext authContext;
+    private final ServiceCall serviceCall;
 
-    public void addUser(Event event) {
-        serviceCall.post("http://kg-primarystore/internal/primaryStore/events", event, authContext.getAuthTokens(), Void.class);
+    private final AuthContext authContext;
+
+    public AdminToPrimaryStore(ServiceCall serviceCall, AuthContext authContext) {
+        this.serviceCall = serviceCall;
+        this.authContext = authContext;
     }
 
+    private final static String EVENTS_ENDPOINT = "http://kg-primarystore/internal/primaryStore/events";
+
+    public List<InstanceId> postEvent(Event event, boolean deferInference) {
+        InstanceId[] result = serviceCall.post(String.format("%s?deferInference=%b", EVENTS_ENDPOINT, deferInference), event, authContext.getAuthTokens(), InstanceId[].class);
+        return result!=null ? Arrays.asList(result) : Collections.emptyList();
+    }
 }

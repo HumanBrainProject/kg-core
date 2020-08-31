@@ -110,10 +110,10 @@ public abstract class AbstractServiceCall {
             case SERVICE_UNAVAILABLE:
                 throw new ServiceNotAvailableException(String.format("Service %s not available", e.getRequest().getURI().getHost()));
             case FORBIDDEN:
-                logger.error("Was not allowed to execute service request");
+                logger.error(String.format("Was not allowed to execute service request to %s", e.getRequest().getURI()));
                 throw new ForbiddenException(e.getResponseBodyAsString());
             case UNAUTHORIZED:
-                logger.error("Was not authorized to execute service request");
+                logger.error(String.format("Was not authorized to execute service request to %s", e.getRequest().getURI()));
                 throw new UnauthorizedException(e.getResponseBodyAsString());
             case NOT_FOUND:
                 return null;

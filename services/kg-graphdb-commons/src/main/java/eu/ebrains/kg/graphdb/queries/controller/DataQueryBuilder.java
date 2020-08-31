@@ -246,7 +246,13 @@ public class DataQueryBuilder {
             if (ensureOrder) {
                 aql.add(trust(", ${aliasDoc}_e"));
             }
-            aql.addLine(trust(" IN 1..1 ${direction} ${parentAliasDoc} `${edgeCollection}`"));
+            if(traverseExists(traverse)) {
+                aql.addLine(trust(" IN 1..1 ${direction} ${parentAliasDoc} `${edgeCollection}`"));
+            }
+            else{
+                //TODO if the collection doesn't exist, the query could be simplified a lot - so there is quite some potential for optimization.
+                aql.addLine(trust(" IN [] "));
+            }
             if(whiteListFilter!=null) {
                 aql.indent().addDocumentFilterWithWhitelistFilter(alias.getArangoDocName());
             }

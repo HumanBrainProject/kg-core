@@ -24,11 +24,13 @@ import eu.ebrains.kg.commons.model.DataStage;
 import eu.ebrains.kg.commons.model.Space;
 import eu.ebrains.kg.commons.models.UserWithRoles;
 import eu.ebrains.kg.commons.permission.Functionality;
-import eu.ebrains.kg.commons.permission.FunctionalityInstance;
 import eu.ebrains.kg.commons.permissions.controller.PermissionSvc;
 import org.springframework.stereotype.Component;
 
-import java.util.*;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 @Component
@@ -44,11 +46,10 @@ public class PermissionsController {
 
     public Map<String, Object> whitelistFilter(UserWithRoles userWithRoles, DataStage stage) {
         Functionality readFunctionality = getReadFunctionality(stage);
-        List<FunctionalityInstance> readFunctionalities = userWithRoles.getPermissions().stream().filter(f -> f.getFunctionality() == readFunctionality).collect(Collectors.toList());
-        if (!permissions.hasGlobalPermission(readFunctionality, readFunctionalities)){
+        if (!permissions.hasGlobalPermission(userWithRoles, readFunctionality)){
             //We only need to filter if there is no "global" read available...
             Map<String, Object> bindVars = new HashMap<>();
-            Set<Space> spacesWithReadPermission = permissions.getSpacesForPermission(userWithRoles.getPermissions(), readFunctionality);
+            Set<Space> spacesWithReadPermission = permissions.getSpacesForPermission(userWithRoles, readFunctionality);
             Set<InstanceId> instancesWithReadPermissions = permissions.getInstancesWithExplicitPermission(userWithRoles.getPermissions(), readFunctionality);
             bindVars.put(AQL.READ_ACCESS_BY_SPACE, spacesWithReadPermission != null ? spacesWithReadPermission.stream().map(s -> ArangoCollectionReference.fromSpace(s).getCollectionName()).collect(Collectors.toList()) : Collections.emptyList());
             bindVars.put(AQL.READ_ACCESS_BY_INVITATION, instancesWithReadPermissions != null ? instancesWithReadPermissions.stream().map(i -> idUtils.buildAbsoluteUrl(i.getUuid()).getId()).collect(Collectors.toList()): Collections.emptyList());

@@ -22,17 +22,12 @@ public class HBPVocabulary {
     public static final String NAMESPACE = "https://schema.hbp.eu/";
     public static final String CLIENT_NAMESPACE = NAMESPACE + "client/";
     public static final String SHORT_NAME = NAMESPACE + "shortName";
-    public static final String GRAPH_QUERY = NAMESPACE + "graphQuery/";
-    public static final String GRAPH_QUERY_META = GRAPH_QUERY + "meta";
-    public static final String GRAPH_QUERY_NAME = GRAPH_QUERY + "name";
-    public static final String GRAPH_QUERY_ROOT_TYPE = GRAPH_QUERY + "type";
     public static final String RELATIVE_URL_OF_INTERNAL_LINK = NAMESPACE + "relativeUrl";
 
     // FOR LINKING
     public static final String LINKING_INSTANCE_TYPE = NAMESPACE + "LinkingInstance";
     public static final String LINKING_INSTANCE_FROM = LINKING_INSTANCE_TYPE.toLowerCase() + "/from";
     public static final String LINKING_INSTANCE_TO = LINKING_INSTANCE_TYPE.toLowerCase() + "/to";
-
 
     // FOR PROVENANCE
     private static final String PROVENANCE = NAMESPACE + "provenance/";
@@ -43,7 +38,6 @@ public class HBPVocabulary {
     public static final String PROVENANCE_IMMEDIATE_INDEX = PROVENANCE + "immediateIndex";
     public static final String PROVENANCE_CREATED_BY = PROVENANCE + "createdBy";
 
-
     // FOR RELEASING
     public static final String RELEASE_TYPE = HBPVocabulary.NAMESPACE + "Release";
     public static final String RELEASE_INSTANCE = RELEASE_TYPE.toLowerCase() + "/instance";
@@ -53,7 +47,6 @@ public class HBPVocabulary {
     public static final String RELEASE_FIRST_DATE = RELEASE_TYPE.toLowerCase() + "/firstReleaseAt";
     public static final String RELEASE_LAST_BY = RELEASE_TYPE.toLowerCase() + "/lastReleaseBy";
     public static final String RELEASE_FIRST_BY = RELEASE_TYPE.toLowerCase() + "/firstReleaseBy";
-
 
     //FOR INFERENCE
     public final static String INFERENCE_TYPE = HBPVocabulary.NAMESPACE + "Inference";
@@ -68,12 +61,9 @@ public class HBPVocabulary {
     public final static String INFERENCE_ALTERNATIVES_USERIDS = INFERENCE_ALTERNATIVES.toLowerCase() + "/userIds";
     public final static String INFERENCE_ALTERNATIVES_SELECTED = INFERENCE_ALTERNATIVES.toLowerCase() + "/selected";
 
-
     //FOR SPATIAL
     public static final String SPATIAL_TYPE = HBPVocabulary.NAMESPACE + "SpatialAnchoring";
-
     public static final String SPATIAL_NAMESPACE = SPATIAL_TYPE.toLowerCase() + "/";
-
 
     public static final String SPATIAL_FORMAT = SPATIAL_NAMESPACE + "format";
     public static final String SPATIAL_COORDINATES = SPATIAL_NAMESPACE + "coordinates";

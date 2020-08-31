@@ -47,7 +47,7 @@ public class SpaceControllerTest {
 
     @Test
     public void testSpaceCreation() {
-        spaceController.createSpace(new Space("fooBar"));
+        spaceController.createSpace(new Space("fooBar"), true);
     }
 
     @Test

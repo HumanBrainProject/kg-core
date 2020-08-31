@@ -135,6 +135,14 @@ public class Instances {
         return instanceById != null ? ResponseEntity.ok(Result.ok(instanceById).setExecutionDetails(startTime, new Date())) : ResponseEntity.notFound().build();
     }
 
+    @ApiOperation(value = "Get the scope for the instance by its KG-internal ID")
+    @GetMapping("/instances/{id}/scope")
+    public ResponseEntity<Result<ScopeElement>> getInstanceScope(@PathVariable("id") UUID id, @RequestParam("stage") ExposedStage stage) {
+        Date startTime = new Date();
+        ScopeElement scope = instanceController.getScopeForInstance(id, stage.getStage());
+        return scope != null ? ResponseEntity.ok(Result.ok(scope).setExecutionDetails(startTime, new Date())) : ResponseEntity.notFound().build();
+    }
+
     @ApiOperation(value = "Returns a list of instances according to their types")
     @GetMapping("/instances")
     public PaginatedResult<NormalizedJsonLd> getInstances(@RequestParam("stage") ExposedStage stage, @RequestParam("type") String type, @RequestParam(value = "searchByLabel", required = false) String searchByLabel, ResponseConfiguration responseConfiguration, PaginationParam paginationParam) {
