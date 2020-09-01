@@ -42,7 +42,6 @@ public class GraphDBScopesAPI {
         this.authContext = authContext;
     }
 
-
     @GetMapping("/{space}/{id}")
     public ScopeElement getScopeForInstance(@PathVariable("space") String space, @PathVariable("id") UUID id){
        return this.scopesController.getScopeForInstance(new Space(space), id);

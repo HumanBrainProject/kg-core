@@ -16,18 +16,23 @@
 
 package eu.ebrains.kg.jsonld.api;
 
-import eu.ebrains.kg.commons.ServiceCall;
+import com.apicatalog.jsonld.JsonLd;
+import com.apicatalog.jsonld.api.JsonLdError;
+import com.apicatalog.jsonld.document.JsonDocument;
+import com.google.gson.Gson;
 import eu.ebrains.kg.commons.jsonld.JsonLdConsts;
 import eu.ebrains.kg.commons.jsonld.JsonLdDoc;
 import eu.ebrains.kg.commons.jsonld.NormalizedJsonLd;
 import eu.ebrains.kg.commons.semantics.vocabularies.EBRAINSVocabulary;
-import eu.ebrains.kg.jsonld.controller.JsonLDJS;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.reactive.function.client.WebClientResponseException;
 
+import javax.json.Json;
+import javax.json.JsonArray;
+import javax.json.JsonObject;
 import java.util.Collection;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -36,11 +41,6 @@ import java.util.Map;
 public class JsonLdAPI {
 
     private final Logger logger = LoggerFactory.getLogger(getClass());
-    private final JsonLDJS jsonLDJS;
-
-    public JsonLdAPI(JsonLDJS jsonLDJS) {
-        this.jsonLDJS = jsonLDJS;
-    }
 
     private final static String NULL_PLACEHOLDER = EBRAINSVocabulary.NAMESPACE + "jsonld/nullvalue";
 
@@ -76,6 +76,10 @@ public class JsonLdAPI {
         }
     }
 
+    private final static Gson GSON = new Gson();
+    private final static JsonDocument EMPTY_DOCUMENT = JsonDocument.of(Json.createObjectBuilder().build());
+
+
     @PostMapping
     public NormalizedJsonLd normalize(@RequestBody JsonLdDoc payload, @RequestParam(value = "keepNullValues", required = false, defaultValue = "true") boolean keepNullValues) {
         logger.debug("Received payload to be normalized");
@@ -83,9 +87,13 @@ public class JsonLdAPI {
             //The JSON-LD library we're using removes null values - we therefore have to do a little hack and set a placeholder for all null values which we replace with null later on again.
             addNullValuesPlaceholder(payload);
         }
+        JsonObject build = Json.createObjectBuilder(payload).build();
         Object originalContext = payload.get(JsonLdConsts.CONTEXT);
         try {
-            NormalizedJsonLd normalized = this.jsonLDJS.normalize(payload).join();
+            JsonArray expanded = JsonLd.expand(JsonDocument.of(build)).get();
+            JsonObject compacted = JsonLd.compact(JsonDocument.of(expanded), EMPTY_DOCUMENT).get();
+            //TODO Optimize - can't we transform the compacted structure directly to a map without taking the way via the string serialization?
+            NormalizedJsonLd normalized = new NormalizedJsonLd(GSON.fromJson(compacted.toString(), LinkedHashMap.class));
             if (originalContext != null) {
                 normalized.put(JsonLdConsts.CONTEXT, originalContext);
             }
@@ -93,8 +101,9 @@ public class JsonLdAPI {
                 removeNullValuesPlaceholder(normalized);
             }
             return flattenLists(normalized, null, null);
-        } catch (WebClientResponseException ex) {
-            return ServiceCall.handleWebClientResponseException(ex, logger);
+        } catch (JsonLdError ex) {
+            logger.error("Was not able to handle payload", ex);
+            throw new RuntimeException(ex);
         }
     }
 

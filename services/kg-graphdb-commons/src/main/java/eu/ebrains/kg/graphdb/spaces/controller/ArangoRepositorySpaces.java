@@ -55,7 +55,7 @@ public class ArangoRepositorySpaces {
         ArangoDatabase db = databases.getMetaByStage(stage);
         ArangoCollectionReference spaceCollection = ArangoCollectionReference.fromSpace(InternalSpace.SPACES_SPACE);
         if (db.collection(spaceCollection.getCollectionName()).exists()) {
-            AQLQuery spaceQuery = createSpaceQuery(null, space.getName());
+            AQLQuery spaceQuery = createSpaceQuery(null, space.getName(), db);
             Paginated<NormalizedJsonLd> normalizedJsonLds = arangoRepositoryCommons.queryDocuments(db, spaceQuery);
             if (normalizedJsonLds.getData().size() == 0) {
                 return null;
@@ -72,14 +72,15 @@ public class ArangoRepositorySpaces {
         ArangoDatabase db = databases.getMetaByStage(stage);
         ArangoCollectionReference spaceCollection = ArangoCollectionReference.fromSpace(InternalSpace.SPACES_SPACE);
         if (db.collection(spaceCollection.getCollectionName()).exists()) {
-            AQLQuery spaceQuery = createSpaceQuery(pagination, null);
+            AQLQuery spaceQuery = createSpaceQuery(pagination, null, db);
             return arangoRepositoryCommons.queryDocuments(db, spaceQuery);
         }
         return new Paginated<>(Collections.emptyList(), 0, 0, 0);
     }
 
 
-    private AQLQuery createSpaceQuery(PaginationParam param, String filterBySpace) {
+    private AQLQuery createSpaceQuery(PaginationParam param, String filterBySpace, ArangoDatabase db) {
+        ArangoCollectionReference extensionSpace = ArangoCollectionReference.fromSpace(new Space(EBRAINSVocabulary.META_SPACE), true);
         AQL aql = new AQL();
         Map<String, Object> bindVars = new HashMap<>();
         aql.addLine(AQL.trust("FOR space IN @@spaceCollection"));
@@ -89,19 +90,24 @@ public class ArangoRepositorySpaces {
             bindVars.put("schemaorgname", SchemaOrgVocabulary.NAME);
             bindVars.put("filterName", filterBySpace);
         }
-        aql.addLine(AQL.trust("LET overrides = ("));
-        aql.addLine(AQL.trust("FOR o IN 1..1 INBOUND space @extensionRef"));
-        aql.addLine(AQL.trust("LET att = (FOR a IN ATTRIBUTES(o)"));
-        aql.addLine(AQL.trust("FILTER LIKE(a, @filter)"));
-        aql.addLine(AQL.trust("RETURN {"));
-        aql.addLine(AQL.trust("name: a,"));
-        aql.addLine(AQL.trust("value: o[a]"));
-        aql.addLine(AQL.trust("})"));
-        aql.addLine(AQL.trust("RETURN ZIP(att[*].name, att[*].value))"));
+        if (db.collection(extensionSpace.getCollectionName()).exists()) {
+            aql.addLine(AQL.trust("LET overrides = ("));
+            aql.addLine(AQL.trust("FOR o IN 1..1 INBOUND space @extensionRef"));
+            aql.addLine(AQL.trust("LET att = (FOR a IN ATTRIBUTES(o)"));
+            aql.addLine(AQL.trust("FILTER LIKE(a, @filter)"));
+            aql.addLine(AQL.trust("RETURN {"));
+            aql.addLine(AQL.trust("name: a,"));
+            aql.addLine(AQL.trust("value: o[a]"));
+            aql.addLine(AQL.trust("})"));
+            aql.addLine(AQL.trust("RETURN ZIP(att[*].name, att[*].value))"));
+            bindVars.put("extensionRef", extensionSpace.getCollectionName());
+            bindVars.put("filter", EBRAINSVocabulary.META_SPACE + "/%");
+        }
+        else{
+            aql.addLine(AQL.trust("LET overrides = []"));
+        }
         aql.addLine(AQL.trust("RETURN MERGE(PUSH(overrides, space))"));
         bindVars.put("@spaceCollection", ArangoCollectionReference.fromSpace(InternalSpace.SPACES_SPACE).getCollectionName());
-        bindVars.put("extensionRef", ArangoCollectionReference.fromSpace(new Space(EBRAINSVocabulary.META_SPACE), true).getCollectionName());
-        bindVars.put("filter", EBRAINSVocabulary.META_SPACE + "/%");
         return new AQLQuery(aql, bindVars);
     }
 

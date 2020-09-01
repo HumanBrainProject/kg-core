@@ -31,6 +31,10 @@ public class ScopesController {
     private final Logger logger = LoggerFactory.getLogger(getClass());
 
     public ScopeElement getScopeForInstance(Space space, UUID id){
+        //get scope relevant clients
+
+
+
         //fetch all relevant queries
 
         //simplify queries
