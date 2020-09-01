@@ -1,18 +1,18 @@
 {
-  "https://schema.hbp.eu/graphQuery/meta": {
-    "https://schema.hbp.eu/graphQuery/alias": "simpsonsFamilyMembers",
-    "https://schema.hbp.eu/graphQuery/name": "Simpson Family Members",
-    "https://schema.hbp.eu/graphQuery/type": "https://thesimpsons.com/FamilyMember"
+  "https://core.kg.ebrains.eu/vocab/query/meta": {
+    "https://core.kg.ebrains.eu/vocab/query/alias": "simpsonsFamilyMembers",
+    "https://core.kg.ebrains.eu/vocab/query/name": "Simpson Family Members",
+    "https://core.kg.ebrains.eu/vocab/query/type": "https://thesimpsons.com/FamilyMember"
   },
-  "https://schema.hbp.eu/graphQuery/structure": [
+  "https://core.kg.ebrains.eu/vocab/query/structure": [
     {
-      "https://schema.hbp.eu/graphQuery/path": {
+      "https://core.kg.ebrains.eu/vocab/query/path": {
         "@id": "http://schema.org/givenName"
       },
-      "https://schema.hbp.eu/graphQuery/filter": {
-        "https://schema.hbp.eu/graphQuery/op": "EQUALS",
-        "https://schema.hbp.eu/graphQuery/parameter": "givenName",
-        "https://schema.hbp.eu/graphQuery/value": "Homer"
+      "https://core.kg.ebrains.eu/vocab/query/filter": {
+        "https://core.kg.ebrains.eu/vocab/query/op": "EQUALS",
+        "https://core.kg.ebrains.eu/vocab/query/parameter": "givenName",
+        "https://core.kg.ebrains.eu/vocab/query/value": "Homer"
       }
     }
   ]

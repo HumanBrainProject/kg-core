@@ -41,11 +41,11 @@ public class CoreQueryController {
     }
 
     public ResponseEntity<Result<NormalizedJsonLd>> createNewQuery(NormalizedJsonLd query, UUID queryId, Space space){
-        return instanceController.createNewInstance(query, queryId, space.getName(), true, false, false, true, false, null);
+        return instanceController.createNewInstance(query, queryId, space.getName(), new ResponseConfiguration(), new IngestConfiguration().setNormalizePayload(false), null);
     }
 
     public ResponseEntity<Result<NormalizedJsonLd>> updateQuery(NormalizedJsonLd query, InstanceId instanceId){
-        return instanceController.contributeToInstance(query, instanceId, false, true, false, false, true, false, null);
+        return instanceController.contributeToInstance(query, instanceId, false, new ResponseConfiguration(), new IngestConfiguration().setNormalizePayload(false), null);
     }
 
     public Paginated<NormalizedJsonLd> listQueries(String search, PaginationParam paginationParam){

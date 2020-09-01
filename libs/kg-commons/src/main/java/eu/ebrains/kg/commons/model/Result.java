@@ -16,11 +16,17 @@
 
 package eu.ebrains.kg.commons.model;
 
+import java.util.Date;
+import java.util.UUID;
+
 public class Result<T> {
 
     protected T data;
     protected String message;
     protected Error error;
+    protected Long startTime;
+    protected Long durationInMs;
+    protected UUID transactionId;
 
     public static class Error{
         private int code;
@@ -43,14 +49,15 @@ public class Result<T> {
         }
     }
 
+    public static <T> Result<T> ok(){
+        return ok(null, null);
+    }
+
     public static <T> Result<T> ok(T data) {
         return ok(data, null);
     }
 
     public static <T> Result<T> ok(T data, String message) {
-        if(data==null){
-            return null;
-        }
         Result<T> result = new Result<>();
         result.data = data;
         if (message != null) {
@@ -79,5 +86,19 @@ public class Result<T> {
 
     public String getMessage() {
         return message;
+    }
+
+    public Result<T> setExecutionDetails(Date startTime, Date endTime){
+        this.startTime = startTime.getTime();
+        this.durationInMs = endTime.getTime() - this.startTime;
+        return this;
+    }
+
+    public Long getStartTime() {
+        return startTime;
+    }
+
+    public Long getDurationInMs() {
+        return durationInMs;
     }
 }

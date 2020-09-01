@@ -62,29 +62,40 @@ public class CoreInstanceController {
         this.primaryStoreSvc = primaryStoreSvc;
     }
 
-    public  ResponseEntity<Result<NormalizedJsonLd>> createNewInstance(JsonLdDoc jsonLdDoc, UUID id, String space, boolean returnPayload, boolean returnPermissions, boolean returnAlternatives, boolean returnEmbedded, boolean deferInference, ExternalEventInformation externalEventInformation){
-        NormalizedJsonLd normalizedJsonLd = jsonLdSvc.toNormalizedJsonLd(jsonLdDoc);
+    public ResponseEntity<Result<NormalizedJsonLd>> createNewInstance(JsonLdDoc jsonLdDoc, UUID id, String space, ResponseConfiguration responseConfiguration, IngestConfiguration ingestConfiguration, ExternalEventInformation externalEventInformation) {
+        NormalizedJsonLd normalizedJsonLd;
+        if (ingestConfiguration.isNormalizePayload()) {
+            normalizedJsonLd = jsonLdSvc.toNormalizedJsonLd(jsonLdDoc);
+        } else {
+            normalizedJsonLd = new NormalizedJsonLd(jsonLdDoc);
+        }
         Space s = new Space(space);
         List<InstanceId> instanceIdsInSameSpace = idsSvc.resolveIds(DataStage.IN_PROGRESS, new IdWithAlternatives(id, s, normalizedJsonLd.getAllIdentifiersIncludingId()), false).stream().filter(i -> s.equals(i.getSpace())).collect(Collectors.toList());
         //Were only interested in those instance ids in the same space. Since merging is not done cross-space, we want to allow instances being created with the same identifiers across spaces.
         if (!instanceIdsInSameSpace.isEmpty()) {
             return ResponseEntity.status(HttpStatus.CONFLICT).body(Result.nok(HttpStatus.CONFLICT.value(), String.format("The id and/or the payload you're providing are pointing to the instance(s) %s. Please do a PATCH instead", instanceIdsInSameSpace.stream().map(i -> i.getUuid().toString()).distinct().collect(Collectors.joining(", ")))));
         }
-        normalizedJsonLd.setFieldUpdateTimes(normalizedJsonLd.keySet().stream().collect(Collectors.toMap(k -> k, k -> externalEventInformation!=null && externalEventInformation.getExternalEventTime()!=null ? externalEventInformation.getExternalEventTime() : ZonedDateTime.now())));
+        normalizedJsonLd.setFieldUpdateTimes(normalizedJsonLd.keySet().stream().collect(Collectors.toMap(k -> k, k -> externalEventInformation != null && externalEventInformation.getExternalEventTime() != null ? externalEventInformation.getExternalEventTime() : ZonedDateTime.now())));
         Event upsertEvent = createUpsertEvent(id, externalEventInformation, normalizedJsonLd, s);
-        List<InstanceId> ids = primaryStoreSvc.postEvent(upsertEvent, deferInference, authContext.getAuthTokens());
-        return handleIngestionResponse(returnPayload, ids, returnEmbedded, returnAlternatives, returnPermissions);
+        List<InstanceId> ids = primaryStoreSvc.postEvent(upsertEvent, ingestConfiguration.isDeferInference(), authContext.getAuthTokens());
+        return handleIngestionResponse(responseConfiguration, ids);
     }
 
-    public ResponseEntity<Result<NormalizedJsonLd>> contributeToInstance(JsonLdDoc jsonLdDoc, InstanceId instanceId, boolean removeNonDeclaredProperties, boolean returnPayload, boolean returnPermissions, boolean returnAlternatives, boolean returnEmbedded, boolean deferInference, ExternalEventInformation externalEventInformation){
-        NormalizedJsonLd normalizedJsonLd = jsonLdSvc.toNormalizedJsonLd(jsonLdDoc);
-        normalizedJsonLd = patchInstance(instanceId, normalizedJsonLd, removeNonDeclaredProperties, externalEventInformation!=null ? externalEventInformation.getExternalEventTime() : null);
+    public ResponseEntity<Result<NormalizedJsonLd>> contributeToInstance(JsonLdDoc jsonLdDoc, InstanceId instanceId, boolean removeNonDeclaredProperties, ResponseConfiguration responseConfiguration, IngestConfiguration ingestConfiguration, ExternalEventInformation externalEventInformation) {
+        NormalizedJsonLd normalizedJsonLd;
+        if (ingestConfiguration.isNormalizePayload()) {
+            normalizedJsonLd = jsonLdSvc.toNormalizedJsonLd(jsonLdDoc);
+        } else {
+            normalizedJsonLd = new NormalizedJsonLd(jsonLdDoc);
+        }
+        normalizedJsonLd = patchInstance(instanceId, normalizedJsonLd, removeNonDeclaredProperties, externalEventInformation != null ? externalEventInformation.getExternalEventTime() : null);
         Event upsertEvent = createUpsertEvent(instanceId.getUuid(), externalEventInformation, normalizedJsonLd, instanceId.getSpace());
-        List<InstanceId> ids = primaryStoreSvc.postEvent(upsertEvent, deferInference, authContext.getAuthTokens());
-        return handleIngestionResponse(returnPayload, ids, returnEmbedded, returnAlternatives, returnPermissions);
+        List<InstanceId> ids = primaryStoreSvc.postEvent(upsertEvent, ingestConfiguration.isDeferInference(), authContext.getAuthTokens());
+        ResponseEntity<Result<NormalizedJsonLd>> resultResponseEntity = handleIngestionResponse(responseConfiguration, ids);
+        return resultResponseEntity;
     }
 
-    public List<InstanceId> deleteInstance(InstanceId instanceId, ExternalEventInformation externalEventInformation){
+    public List<InstanceId> deleteInstance(InstanceId instanceId, ExternalEventInformation externalEventInformation) {
         Event deleteEvent = Event.createDeleteEvent(instanceId.getSpace(), instanceId.getUuid(), idUtils.buildAbsoluteUrl(instanceId.getUuid()));
         handleExternalEventInformation(externalEventInformation, deleteEvent);
         return primaryStoreSvc.postEvent(deleteEvent, false, authContext.getAuthTokens());
@@ -113,7 +124,7 @@ public class CoreInstanceController {
         NormalizedJsonLd instance = graphDbSvc.getInstance(DataStage.NATIVE, nativeId, true, false);
         if (instance == null) {
             Map<String, ZonedDateTime> updateTimes = new HashMap<>();
-            normalizedJsonLd.keySet().forEach(k -> updateTimes.put(k, eventDateTime!=null ? eventDateTime : ZonedDateTime.now()));
+            normalizedJsonLd.keySet().forEach(k -> updateTimes.put(k, eventDateTime != null ? eventDateTime : ZonedDateTime.now()));
             normalizedJsonLd.setFieldUpdateTimes(updateTimes);
             return normalizedJsonLd;
         } else {
@@ -126,7 +137,7 @@ public class CoreInstanceController {
                     updateTimes.remove(k);
                     instance.remove(k);
                 } else {
-                    updateTimes.put(k, eventDateTime!=null ? eventDateTime : ZonedDateTime.now());
+                    updateTimes.put(k, eventDateTime != null ? eventDateTime : ZonedDateTime.now());
                     instance.put(k, value);
                 }
             });
@@ -142,31 +153,31 @@ public class CoreInstanceController {
         }
     }
 
-    public Map<UUID, Result<NormalizedJsonLd>> getInstancesByIds(List<UUID> ids, DataStage stage, boolean embedded, boolean alternatives, boolean permissions) {
+    public Map<UUID, Result<NormalizedJsonLd>> getInstancesByIds(List<UUID> ids, DataStage stage, ResponseConfiguration responseConfiguration) {
         Map<UUID, Result<NormalizedJsonLd>> result = new HashMap<>();
         List<InstanceId> idsAfterResolution = idsSvc.resolveIdsByUUID(stage, ids, true);
         idsAfterResolution.stream().filter(instanceId -> !instanceId.isDeprecated()).filter(InstanceId::isUnresolved).forEach(id -> result.put(id.getUuid(), Result.nok(HttpStatus.NOT_FOUND.value(), HttpStatus.NOT_FOUND.getReasonPhrase())));
-        Map<UUID, Result<NormalizedJsonLd>> instancesByIds = graphDbSvc.getInstancesByIds(stage, idsAfterResolution.stream().filter(i -> !i.isUnresolved() && !i.isDeprecated()).collect(Collectors.toList()), embedded, alternatives);
+        Map<UUID, Result<NormalizedJsonLd>> instancesByIds = graphDbSvc.getInstancesByIds(stage, idsAfterResolution.stream().filter(i -> !i.isUnresolved() && !i.isDeprecated()).collect(Collectors.toList()), responseConfiguration.isReturnEmbedded(), responseConfiguration.isReturnAlternatives());
         result.putAll(instancesByIds);
-        if (permissions) {
+        if (responseConfiguration.isReturnPermissions()) {
             enrichWithPermissionInformation(stage, instancesByIds.values());
         }
         return result;
     }
 
-    public Paginated<NormalizedJsonLd> getInstances(DataStage stage, Type type, String searchByLabel, boolean embedded, boolean alternatives, boolean permissions, PaginationParam paginationParam) {
-        Paginated<NormalizedJsonLd> instancesByType = graphDbSvc.getInstancesByType(stage, type, paginationParam, searchByLabel, embedded, alternatives);
-        if (permissions) {
+    public Paginated<NormalizedJsonLd> getInstances(DataStage stage, Type type, String searchByLabel, ResponseConfiguration responseConfiguration, PaginationParam paginationParam) {
+        Paginated<NormalizedJsonLd> instancesByType = graphDbSvc.getInstancesByType(stage, type, paginationParam, searchByLabel, responseConfiguration.isReturnEmbedded(), responseConfiguration.isReturnAlternatives());
+        if (responseConfiguration.isReturnPermissions()) {
             enrichWithPermissionInformation(stage, instancesByType.getData().stream().map(i -> Result.ok(i)).collect(Collectors.toList()));
         }
         return instancesByType;
     }
 
-    public ResponseEntity<Result<NormalizedJsonLd>> handleIngestionResponse(boolean returnPayload, List<InstanceId> instanceIds, boolean returnEmbedded, boolean returnAlternatives, boolean returnPermissions) {
+    public ResponseEntity<Result<NormalizedJsonLd>> handleIngestionResponse(ResponseConfiguration responseConfiguration, List<InstanceId> instanceIds) {
         Result<NormalizedJsonLd> result;
-        if (returnPayload) {
-            Map<UUID, Result<NormalizedJsonLd>> instancesByIds = graphDbSvc.getInstancesByIds(DataStage.IN_PROGRESS, instanceIds, returnEmbedded, returnAlternatives);
-            if (returnPermissions) {
+        if (responseConfiguration.isReturnPayload()) {
+            Map<UUID, Result<NormalizedJsonLd>> instancesByIds = graphDbSvc.getInstancesByIds(DataStage.IN_PROGRESS, instanceIds, responseConfiguration.isReturnEmbedded(), responseConfiguration.isReturnAlternatives());
+            if (responseConfiguration.isReturnPermissions()) {
                 enrichWithPermissionInformation(DataStage.IN_PROGRESS, instancesByIds.values());
             }
             result = AmbiguousResult.ok(instancesByIds.values().stream().map(Result::getData).collect(Collectors.toList()));
@@ -180,16 +191,22 @@ public class CoreInstanceController {
         return result instanceof AmbiguousResult ? ResponseEntity.status(HttpStatus.CONFLICT).body(result) : ResponseEntity.ok(result);
     }
 
-    public NormalizedJsonLd getInstanceById(UUID id, DataStage stage, boolean embedded, boolean alternatives, boolean permissions) {
+    public NormalizedJsonLd getInstanceById(UUID id, DataStage stage, ResponseConfiguration responseConfiguration) {
         InstanceId instanceId = idsSvc.resolveId(stage, id);
-        if(instanceId==null || instanceId.isDeprecated()){
+        if (instanceId == null || instanceId.isDeprecated()) {
             return null;
         }
-        NormalizedJsonLd instance = graphDbSvc.getInstance(stage, instanceId, embedded, alternatives);
-        if (permissions && instance != null) {
-            enrichWithPermissionInformation(stage, Collections.singletonList(Result.ok(instance)));
+        if (responseConfiguration.isReturnPayload()) {
+            NormalizedJsonLd instance = graphDbSvc.getInstance(stage, instanceId, responseConfiguration.isReturnEmbedded(), responseConfiguration.isReturnAlternatives());
+            if (responseConfiguration.isReturnPermissions() && instance != null) {
+                enrichWithPermissionInformation(stage, Collections.singletonList(Result.ok(instance)));
+            }
+            return instance;
+        } else {
+            NormalizedJsonLd idPayload = new NormalizedJsonLd();
+            idPayload.setId(idUtils.buildAbsoluteUrl(instanceId.getUuid()));
+            return idPayload;
         }
-        return instance;
     }
 
     private void enrichWithPermissionInformation(DataStage stage, Collection<Result<NormalizedJsonLd>> documents) {
@@ -205,4 +222,7 @@ public class CoreInstanceController {
         );
     }
 
+    public ScopeElement getScopeForInstance(UUID id, DataStage stage) {
+        return graphDbSvc.getScope(stage,  idsSvc.resolveId(stage, id));
+    }
 }

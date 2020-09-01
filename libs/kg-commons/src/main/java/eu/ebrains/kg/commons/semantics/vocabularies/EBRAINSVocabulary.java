@@ -59,8 +59,9 @@ public class EBRAINSVocabulary {
     public static final String META_LAST_RELEASED_BY = META+"lastReleasedBy";
     public static final String META_FIRST_RELEASED_AT = META+"firstReleasedAt";
     public static final String META_FIRST_RELEASED_BY = META+"firstReleasedBy";
-
     public static final String META_SPACE = META + "space";
+    public static final String META_CLIENT_SPACE = META_SPACE + "/clientSpace";
+    public static final String META_AUTORELEASE_SPACE = META_SPACE + "/autorelease";
 
     public static final String META_PERMISSIONS = META + "permissions";
     public final static String META_PROPERTYUPDATES = META+"propertyUpdates";
@@ -68,6 +69,7 @@ public class EBRAINSVocabulary {
     public static final String META_PROPERTY_DEFINITION_TYPE = META+"PropertyDefinition";
     public static final String META_PROPERTY_IN_TYPE_DEFINITION_TYPE = META+"PropertyInTypeDefinition";
     public final static String META_TYPEDEFINITION_TYPE = META+"TypeDefinition";
+    public final static String META_SPACEDEFINITION_TYPE = META+"SpaceDefinition";
     public final static String META_CLIENTCONFIGURATION_TYPE = META+"ClientConfiguration";
 
 

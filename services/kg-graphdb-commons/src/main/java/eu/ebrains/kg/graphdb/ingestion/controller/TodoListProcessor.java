@@ -166,7 +166,7 @@ public class TodoListProcessor {
             //We don't need to resolve links in NATIVE and neither do META structures... it is sufficient if we do this in IN_PROGRESS and RELEASED
             lazyIdResolutionOperations = dataController.createResolutionsForPreviouslyUnresolved(stage, rootDocumentRef, payload.getAllIdentifiersIncludingId());
             repository.executeTransactional(stage, lazyIdResolutionOperations);
-            repository.executeTransactionalOnMeta(stage, metaDataController.createUpsertOperations(stage, rootDocumentRef, payload.getTypes(), arangoInstances, lazyIdResolutionOperations, mergeIds));
+            metaDataController.handleMetaData(stage, rootDocumentRef, payload, arangoInstances, lazyIdResolutionOperations, mergeIds);
         }
         return rootDocumentRef;
     }

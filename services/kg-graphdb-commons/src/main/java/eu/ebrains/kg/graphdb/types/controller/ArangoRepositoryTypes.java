@@ -17,6 +17,7 @@
 package eu.ebrains.kg.graphdb.types.controller;
 
 import com.arangodb.ArangoDatabase;
+import com.arangodb.model.AqlQueryOptions;
 import eu.ebrains.kg.arango.commons.aqlBuilder.AQL;
 import eu.ebrains.kg.arango.commons.aqlBuilder.ArangoVocabulary;
 import eu.ebrains.kg.arango.commons.model.AQLQuery;
@@ -77,14 +78,14 @@ public class ArangoRepositoryTypes {
     public List<NormalizedJsonLd> getTypes(String client, DataStage stage, List<Type> types, boolean withProperties) {
         ArangoDatabase db = databases.getMetaByStage(stage);
         AQLQuery typeStructureQuery = createTypeStructureQuery(db, client, types, null, null, withProperties, null);
-        return db.query(typeStructureQuery.getAql().build().getValue(), typeStructureQuery.getBindVars(), ArangoRepositoryCommons.EMPTY_QUERY_OPTIONS, NormalizedJsonLd.class).asListRemaining();
+        return db.query(typeStructureQuery.getAql().build().getValue(), typeStructureQuery.getBindVars(),  new AqlQueryOptions(), NormalizedJsonLd.class).asListRemaining();
 
     }
 
     public List<NormalizedJsonLd> getTypesForSpace(String client, DataStage stage, Space space, List<Type> types, boolean withProperties) {
         ArangoDatabase db = databases.getMetaByStage(stage);
         AQLQuery typeStructureQuery = createTypeStructureQuery(db, client, types, null, space,  withProperties, null);
-        return db.query(typeStructureQuery.getAql().build().getValue(), typeStructureQuery.getBindVars(), ArangoRepositoryCommons.EMPTY_QUERY_OPTIONS, NormalizedJsonLd.class).asListRemaining();
+        return db.query(typeStructureQuery.getAql().build().getValue(), typeStructureQuery.getBindVars(),  new AqlQueryOptions(), NormalizedJsonLd.class).asListRemaining();
     }
 
     private void ensureTypeStructureCollections(ArangoDatabase db, boolean withProperties){

@@ -21,7 +21,6 @@ import eu.ebrains.kg.commons.ServiceCall;
 import eu.ebrains.kg.commons.model.Client;
 import eu.ebrains.kg.commons.model.User;
 import eu.ebrains.kg.commons.permission.Role;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import java.net.URLEncoder;
@@ -33,11 +32,15 @@ import java.util.List;
 public class AdminToAuthentication {
 
     public static final String SPACE = "http://kg-authentication/internal/authentication/";
-    @Autowired
-    ServiceCall serviceCall;
 
-    @Autowired
-    AuthContext authContext;
+    private final ServiceCall serviceCall;
+
+    private final AuthContext authContext;
+
+    public AdminToAuthentication(ServiceCall serviceCall, AuthContext authContext) {
+        this.serviceCall = serviceCall;
+        this.authContext = authContext;
+    }
 
     public User getUser() {
         return serviceCall.get(SPACE + "users/me", authContext.getAuthTokens(), User.class);

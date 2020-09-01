@@ -34,6 +34,10 @@ public class IdUtils {
 
     private final Logger logger = LoggerFactory.getLogger(getClass());
 
+    public static UUID createMetaRepresentationUUID(String name){
+        return UUID.nameUUIDFromBytes(("metaRepresentation" + name).getBytes(StandardCharsets.UTF_8));
+    }
+
     public IdUtils(@Value("${eu.ebrains.kg.namespace}") String namespace) {
         this.namespace = namespace != null ? namespace.toLowerCase() : null;
     }

@@ -16,7 +16,11 @@
 
 package eu.ebrains.kg.commons.model;
 
+import eu.ebrains.kg.commons.jsonld.JsonLdConsts;
+import eu.ebrains.kg.commons.jsonld.NormalizedJsonLd;
 import eu.ebrains.kg.commons.permission.Functionality;
+import eu.ebrains.kg.commons.semantics.vocabularies.EBRAINSVocabulary;
+import eu.ebrains.kg.commons.semantics.vocabularies.SchemaOrgVocabulary;
 
 import java.util.Objects;
 import java.util.Set;
@@ -24,17 +28,26 @@ import java.util.Set;
 public class Space {
 
     private String name;
+    private boolean clientSpace;
+    private boolean autoRelease;
     private Set<Functionality> permissions;
 
     public Space() {
+        this(null);
     }
 
-    public Space(String name) {
+    public Space(String name){
+        this(name, false, false);
+    }
+
+    public Space(String name, boolean clientSpace, boolean autoRelease) {
         setName(name);
+        setClientSpace(clientSpace);
+        setAutoRelease(autoRelease);
     }
 
     protected String normalizeName(String name) {
-        return name.replaceAll("_", "-");
+        return name!=null ? name.replaceAll("_", "-") : null;
     }
 
     public void setName(String name) {
@@ -43,6 +56,14 @@ public class Space {
 
     public String getName() {
         return name;
+    }
+
+    public boolean isClientSpace() {
+        return clientSpace;
+    }
+
+    public void setClientSpace(boolean clientSpace) {
+        this.clientSpace = clientSpace;
     }
 
     @Override
@@ -65,5 +86,38 @@ public class Space {
     public void setPermissions(Set<Functionality> permissions) {
         this.permissions = permissions;
     }
+
+
+    public NormalizedJsonLd toJsonLd() {
+        NormalizedJsonLd payload = new NormalizedJsonLd();
+        payload.put(JsonLdConsts.TYPE, EBRAINSVocabulary.META_SPACEDEFINITION_TYPE);
+        payload.setId(EBRAINSVocabulary.createIdForStructureDefinition("spaces", getName()));
+        payload.put(SchemaOrgVocabulary.NAME, getName());
+        payload.put(SchemaOrgVocabulary.IDENTIFIER, getName());
+        payload.put(EBRAINSVocabulary.META_SPACE, getName());
+        payload.put(EBRAINSVocabulary.META_CLIENT_SPACE, isClientSpace());
+        payload.put(EBRAINSVocabulary.META_AUTORELEASE_SPACE, isAutoRelease());
+        return payload;
+    }
+
+    public boolean isAutoRelease() {
+        return autoRelease;
+    }
+
+    public void setAutoRelease(boolean autoRelease) {
+        this.autoRelease = autoRelease;
+    }
+
+    public static Space fromJsonLd(NormalizedJsonLd payload) {
+        if (payload != null && payload.getTypes().contains(EBRAINSVocabulary.META_SPACEDEFINITION_TYPE)) {
+            Space space = new Space();
+            space.setName(payload.getAs(SchemaOrgVocabulary.NAME, String.class));
+            space.setClientSpace(payload.getAs(EBRAINSVocabulary.META_CLIENT_SPACE, Boolean.class, false));
+            space.setAutoRelease(payload.getAs(EBRAINSVocabulary.META_AUTORELEASE_SPACE, Boolean.class, false));
+            return space;
+        }
+        return null;
+    }
+
 }
 

@@ -22,9 +22,9 @@ import eu.ebrains.kg.commons.model.DataStage;
 import eu.ebrains.kg.commons.model.Paginated;
 import eu.ebrains.kg.commons.model.PaginationParam;
 import eu.ebrains.kg.commons.model.Space;
+import eu.ebrains.kg.commons.permissions.controller.PermissionSvc;
 import eu.ebrains.kg.commons.semantics.vocabularies.EBRAINSVocabulary;
 import eu.ebrains.kg.graphdb.spaces.controller.ArangoRepositorySpaces;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -34,16 +34,28 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/internal/graphdb/{stage}")
 public class GraphDBSpacesAPI {
 
-    @Autowired
-    AuthContext authContext;
+    private final AuthContext authContext;
 
-    @Autowired
-    ArangoRepositorySpaces repositorySpaces;
+    private final ArangoRepositorySpaces repositorySpaces;
 
-    @GetMapping("/spaces/{name}")
-    public NormalizedJsonLd getSpace(@PathVariable("stage") DataStage stage, @PathVariable("name") String space, PaginationParam paginationParam) {
+    private final PermissionSvc permissionSvc;
+
+    public GraphDBSpacesAPI(AuthContext authContext, ArangoRepositorySpaces repositorySpaces, PermissionSvc permissionSvc) {
+        this.authContext = authContext;
+        this.repositorySpaces = repositorySpaces;
+        this.permissionSvc = permissionSvc;
+    }
+
+    @GetMapping("/spaces/{space}")
+    public NormalizedJsonLd getSpace(@PathVariable("stage") DataStage stage, @PathVariable("space") String space) {
         return repositorySpaces.getSpace(new Space(space), stage);
     }
+
+//    @PutMapping("/spaces/{space}")
+//    public NormalizedJsonLd defineSpace(@RequestBody NormalizedJsonLd payload, @PathVariable("stage") DataStage stage, @PathVariable("space") String space) {
+//        permissionSvc.hasPermission(authContext.getUserWithRoles(), Functionality.CREATE_SPACE, new Space(space));
+//        return repositorySpaces.defineSpace(new Space(space), payload, stage);
+//    }
 
     @GetMapping("/spaces")
     public Paginated<NormalizedJsonLd> getSpaces(@PathVariable("stage") DataStage stage, PaginationParam paginationParam) {

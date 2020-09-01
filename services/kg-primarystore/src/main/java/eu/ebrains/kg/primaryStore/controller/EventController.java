@@ -25,7 +25,6 @@ import eu.ebrains.kg.commons.jsonld.NormalizedJsonLd;
 import eu.ebrains.kg.commons.model.*;
 import eu.ebrains.kg.commons.models.UserWithRoles;
 import eu.ebrains.kg.commons.permission.Functionality;
-import eu.ebrains.kg.commons.permission.FunctionalityInstance;
 import eu.ebrains.kg.commons.permissions.controller.PermissionSvc;
 import eu.ebrains.kg.commons.semantics.vocabularies.EBRAINSVocabulary;
 import eu.ebrains.kg.primaryStore.serviceCall.PrimaryStoreToGraphDB;
@@ -61,34 +60,44 @@ public class EventController {
         this.graphDBSvc = graphDBSvc;
     }
 
-    private void checkPermission(AuthTokens authTokens, PersistedEvent event, DataStage stage, Event.Type type, Space space, UUID uuid, List<FunctionalityInstance> permissions) {
+    private boolean isEventOfType(PersistedEvent event, String type) {
+        return event.getData() != null && event.getData().getTypes() != null ? event.getData().getTypes().contains(type) : false;
+    }
+
+    private void checkPermission(AuthTokens authTokens, PersistedEvent event, DataStage stage, Event.Type type, Space space, UUID uuid, UserWithRoles userWithRoles) {
         boolean hasPermission = false;
+        List<String> semantics = event.getData() != null && event.getData().getTypes() != null ? event.getData().getTypes() : Collections.emptyList();
+        Functionality functionality;
         switch (type) {
             case DELETE:
-                hasPermission = permissionSvc.hasPermission(Functionality.DELETE, space, uuid, permissions);
+                functionality = Functionality.withSemanticsForOperation(semantics, type, Functionality.DELETE);
+                hasPermission = permissionSvc.hasPermission(userWithRoles, functionality, space, uuid);
                 break;
             case INSERT:
                 NormalizedJsonLd sp = graphDBSvc.getSpace(space, stage, authTokens);
                 if (sp == null) {
                     //The space doesn't exist - this means the user has to have space creation rights to execute this insertion.
-                    if (!permissionSvc.hasPermission(Functionality.CREATE_SPACE, space, permissions)) {
+                    boolean spaceCreationPermission = permissionSvc.hasPermission(userWithRoles, Functionality.CREATE_SPACE, space);
+                    if (!spaceCreationPermission) {
                         throw new ForbiddenException(String.format("The creation of this instance involves the creation of the non-existing space %s - you don't have the according rights to do so!", space.getName()));
                     }
                 }
-                hasPermission = permissionSvc.hasPermission(Functionality.CREATE, space, uuid, permissions);
+                functionality = Functionality.withSemanticsForOperation(semantics, type, Functionality.CREATE);
+                hasPermission = permissionSvc.hasPermission(userWithRoles, functionality, space, uuid);
                 break;
             case UPDATE:
-                hasPermission = permissionSvc.hasPermission(Functionality.WRITE, space, uuid, permissions);
-                if (!hasPermission) {
-                    hasPermission = permissionSvc.hasPermission(Functionality.SUGGEST, space, uuid, permissions);
+                functionality = Functionality.withSemanticsForOperation(semantics, type, Functionality.WRITE);
+                hasPermission = permissionSvc.hasPermission(userWithRoles, functionality, space, uuid);
+                if (!hasPermission && functionality == Functionality.WRITE) {
+                    hasPermission = permissionSvc.hasPermission(userWithRoles, Functionality.SUGGEST, space, uuid);
                     event.setSuggestion(true);
                 }
                 break;
             case RELEASE:
-                hasPermission = permissionSvc.hasPermission(Functionality.RELEASE, space, uuid, permissions);
+                hasPermission = permissionSvc.hasPermission(userWithRoles, Functionality.withSemanticsForOperation(semantics, type, Functionality.RELEASE), space, uuid);
                 break;
             case UNRELEASE:
-                hasPermission = permissionSvc.hasPermission(Functionality.UNRELEASE, space, uuid, permissions);
+                hasPermission = permissionSvc.hasPermission(userWithRoles, Functionality.withSemanticsForOperation(semantics, type, Functionality.UNRELEASE), space, uuid);
                 break;
         }
         if (!hasPermission) {
@@ -99,7 +108,8 @@ public class EventController {
     public PersistedEvent persistEvent(AuthTokens authTokens, Event event, DataStage dataStage, UserWithRoles userWithRoles, User resolvedUser) {
         PersistedEvent persistedEvent = new PersistedEvent(event, dataStage, resolvedUser);
         ensureInternalIdInPayload(userWithRoles, persistedEvent);
-        checkPermission(authTokens, persistedEvent, dataStage, event.getType(), event.getSpace(), event.getDocumentId(), userWithRoles != null ? userWithRoles.getPermissions() : Collections.emptyList());
+
+        checkPermission(authTokens, persistedEvent, dataStage, event.getType(), event.getSpace(), event.getDocumentId(), userWithRoles);
         if (persistedEvent.getType() == Event.Type.DELETE) {
             idsSvc.deprecateInstance(persistedEvent.getDocumentId(), authTokens);
         } else {

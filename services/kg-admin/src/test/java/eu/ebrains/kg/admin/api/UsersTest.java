@@ -18,7 +18,6 @@ package eu.ebrains.kg.admin.api;
 
 import com.google.gson.Gson;
 import com.netflix.discovery.EurekaClient;
-import eu.ebrains.kg.admin.controller.AdminArangoRepository;
 import eu.ebrains.kg.admin.controller.AdminUserController;
 import eu.ebrains.kg.admin.serviceCall.AdminToAuthentication;
 import eu.ebrains.kg.admin.serviceCall.AdminToGraphDB;
@@ -48,9 +47,6 @@ public class UsersTest {
     AdminUsersAPI users;
 
     SpringDockerComposeRunner dockerComposeRunner;
-
-    @Autowired
-    AdminArangoRepository repository;
 
     @Autowired
     IdUtils idUtils;

@@ -17,6 +17,11 @@
 package eu.ebrains.kg.admin.controller;
 
 import eu.ebrains.kg.admin.serviceCall.AdminToAuthentication;
+import eu.ebrains.kg.admin.serviceCall.AdminToPrimaryStore;
+import eu.ebrains.kg.arango.commons.model.InternalSpace;
+import eu.ebrains.kg.commons.jsonld.InstanceId;
+import eu.ebrains.kg.commons.jsonld.NormalizedJsonLd;
+import eu.ebrains.kg.commons.model.Event;
 import eu.ebrains.kg.commons.model.Space;
 import eu.ebrains.kg.commons.model.User;
 import eu.ebrains.kg.commons.permission.FunctionalityInstance;
@@ -24,17 +29,19 @@ import eu.ebrains.kg.commons.permission.Role;
 import eu.ebrains.kg.commons.permission.SpacePermissionGroup;
 import org.springframework.stereotype.Component;
 
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 @Component
 public class AdminSpaceController {
-    private final AdminArangoRepository repository;
+    private final AdminToPrimaryStore adminToPrimaryStore;
     private final AdminToAuthentication authenticationSvc;
 
-    public AdminSpaceController(AdminArangoRepository repository, AdminToAuthentication authenticationSvc) {
-        this.repository = repository;
+    public AdminSpaceController(AdminToPrimaryStore adminToPrimaryStore, AdminToAuthentication authenticationSvc) {
+        this.adminToPrimaryStore = adminToPrimaryStore;
         this.authenticationSvc = authenticationSvc;
     }
 
@@ -47,9 +54,11 @@ public class AdminSpaceController {
         return collector;
     }
 
-    public void createSpace(Space space) {
+    public InstanceId createSpace(Space space, boolean global) {
         List<Role> roles = findRoleInGroup(space, SpacePermissionGroup.ADMIN, new ArrayList<>());
+        List<InstanceId> instanceIds = defineSpace(space, global);
         authenticationSvc.createRoles(roles);
+        return instanceIds.size()==1 ? instanceIds.get(0) : null;
     }
 
     public void removeSpace(Space space) {
@@ -62,6 +71,11 @@ public class AdminSpaceController {
 
     public void addUserToSpace(String nativeUserId, Space space, SpacePermissionGroup permissionGroup) {
         authenticationSvc.addUserToRole(permissionGroup.toRole(space).getName(), nativeUserId);
+    }
+
+    public  List<InstanceId> defineSpace(Space space, boolean global) {
+        NormalizedJsonLd payload = space.toJsonLd();
+        return adminToPrimaryStore.postEvent(Event.createUpsertEvent(global ? InternalSpace.GLOBAL_SPEC : space, UUID.nameUUIDFromBytes(payload.getId().getId().getBytes(StandardCharsets.UTF_8)), Event.Type.INSERT, payload), false);
     }
 
 }

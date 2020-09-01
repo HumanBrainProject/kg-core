@@ -24,9 +24,10 @@ import eu.ebrains.kg.commons.models.UserWithRoles;
 import eu.ebrains.kg.commons.permission.Functionality;
 import eu.ebrains.kg.commons.permission.FunctionalityInstance;
 import eu.ebrains.kg.commons.semantics.vocabularies.EBRAINSVocabulary;
-import eu.ebrains.kg.commons.semantics.vocabularies.SchemaOrgVocabulary;
+import eu.ebrains.kg.core.controller.CoreSpaceController;
 import eu.ebrains.kg.core.model.ExposedStage;
 import eu.ebrains.kg.core.serviceCall.CoreSpacesToGraphDB;
+import eu.ebrains.kg.core.serviceCall.CoreToAdmin;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -36,44 +37,39 @@ import java.util.stream.Collectors;
  * The spaces API provides information about existing KG spaces
  */
 @RestController
-@RequestMapping(Version.API+"/spaces")
+@RequestMapping(Version.API + "/spaces")
 public class Spaces {
 
     private final CoreSpacesToGraphDB graphDbSvc;
-
+    private CoreSpaceController spaceController;
     private final AuthContext authContext;
+    private final CoreToAdmin coreToAdmin;
 
-    public Spaces(CoreSpacesToGraphDB graphDbSvc, AuthContext authContext) {
+    public Spaces(CoreSpacesToGraphDB graphDbSvc, AuthContext authContext, CoreSpaceController spaceController, CoreToAdmin coreToAdmin) {
         this.graphDbSvc = graphDbSvc;
         this.authContext = authContext;
+        this.spaceController = spaceController;
+        this.coreToAdmin = coreToAdmin;
     }
 
-    @GetMapping("{name}")
-    public Result<NormalizedJsonLd> getSpace(@RequestParam("stage") ExposedStage stage, @PathVariable("name") String space, @RequestParam(value = "permissions", defaultValue = "false") boolean permissions) {
-        NormalizedJsonLd sp = graphDbSvc.getSpace(new Space(space), stage.getStage());
-        if (sp != null && permissions) {
-            UserWithRoles userWithRoles = authContext.getUserWithRoles();
-            String spaceIdentifier = sp.getAs(SchemaOrgVocabulary.IDENTIFIER, String.class, null);
-            if (spaceIdentifier != null) {
-                List<Functionality> applyingFunctionalities = userWithRoles.getPermissions().stream().filter(f -> (f.getFunctionality().getStage() == null || f.getFunctionality().getStage() == stage.getStage()) && f.getFunctionality().getFunctionalityGroup() == Functionality.FunctionalityGroup.INSTANCE && f.appliesTo(new Space(spaceIdentifier), null)).map(FunctionalityInstance::getFunctionality).collect(Collectors.toList());
-                sp.put(EBRAINSVocabulary.META_PERMISSIONS, applyingFunctionalities);
-            }
+    @GetMapping("{space}")
+    public Result<NormalizedJsonLd> getSpace(@RequestParam("stage") ExposedStage stage, @PathVariable("space") String space, @RequestParam(value = "permissions", defaultValue = "false") boolean permissions) {
+        NormalizedJsonLd s = spaceController.getSpace(stage, space, permissions);
+        if(s!=null){
+            s.removeAllInternalProperties();
         }
-        return Result.ok(sp);
+        return Result.ok(s);
     }
-
 
     @GetMapping
     public PaginatedResult<NormalizedJsonLd> getSpaces(@RequestParam("stage") ExposedStage stage, PaginationParam paginationParam, @RequestParam(value = "permissions", defaultValue = "false") boolean permissions) {
         Paginated<NormalizedJsonLd> spaces = graphDbSvc.getSpaces(stage.getStage(), paginationParam);
+        spaces.getData().forEach(NormalizedJsonLd::removeAllInternalProperties);
         if (permissions) {
             UserWithRoles userWithRoles = authContext.getUserWithRoles();
-            spaces.getData().stream().forEach(space -> {
-                String spaceIdentifier = space.getAs(SchemaOrgVocabulary.IDENTIFIER, String.class, null);
-                if (spaceIdentifier != null) {
-                    List<Functionality> applyingFunctionalities = userWithRoles.getPermissions().stream().filter(f -> (f.getFunctionality().getStage() == null || f.getFunctionality().getStage() == stage.getStage()) && f.getFunctionality().getFunctionalityGroup() == Functionality.FunctionalityGroup.INSTANCE && f.appliesTo(new Space(spaceIdentifier), null)).map(FunctionalityInstance::getFunctionality).collect(Collectors.toList());
-                    space.put(EBRAINSVocabulary.META_PERMISSIONS, applyingFunctionalities);
-                }
+            spaces.getData().forEach(space -> {
+                List<Functionality> applyingFunctionalities = userWithRoles.getPermissions().stream().filter(f -> (f.getFunctionality().getStage() == null || f.getFunctionality().getStage() == stage.getStage()) && f.getFunctionality().getFunctionalityGroup() == Functionality.FunctionalityGroup.INSTANCE && f.appliesTo(Space.fromJsonLd(space), null)).map(FunctionalityInstance::getFunctionality).collect(Collectors.toList());
+                space.put(EBRAINSVocabulary.META_PERMISSIONS, applyingFunctionalities);
             });
         }
         return PaginatedResult.ok(spaces);

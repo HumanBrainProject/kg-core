@@ -22,7 +22,9 @@ import eu.ebrains.kg.commons.jsonld.IndexedJsonLdDoc;
 import eu.ebrains.kg.commons.jsonld.JsonLdDoc;
 import eu.ebrains.kg.commons.jsonld.JsonLdId;
 import eu.ebrains.kg.commons.jsonld.NormalizedJsonLd;
+import eu.ebrains.kg.commons.model.IngestConfiguration;
 import eu.ebrains.kg.commons.model.PaginationParam;
+import eu.ebrains.kg.commons.model.ResponseConfiguration;
 import eu.ebrains.kg.commons.model.Result;
 import eu.ebrains.kg.commons.semantics.vocabularies.SchemaOrgVocabulary;
 import eu.ebrains.kg.core.model.ExposedStage;
@@ -66,7 +68,10 @@ public class ConsistencyCheckTest {
         new SpringDockerComposeRunner(discoveryClient, Arrays.asList("arango"), "kg-ids", "kg-jsonld", "kg-primarystore", "kg-authentication", "kg-indexing", "kg-graphdb-sync").start();
     }
 
-        PaginationParam EMPTY_PAGINATION = new PaginationParam();
+    PaginationParam EMPTY_PAGINATION = new PaginationParam();
+    ResponseConfiguration DEFAULT_RESPONSE_CONFIG = new ResponseConfiguration();
+    IngestConfiguration DEFAULT_INGEST_CONFIG = new IngestConfiguration();
+
     int createInstances = 10;
     String type = "http://schema.org/Test";
 
@@ -77,7 +82,7 @@ public class ConsistencyCheckTest {
             JsonLdDoc doc = new JsonLdDoc();
             doc.addTypes(type);
             doc.addProperty("http://schema.hbp.eu/foo", "instance" + i);
-            ResponseEntity<Result<NormalizedJsonLd>> document = instances.createNewInstance(doc, "foo", false, false, false, false, false, null);
+            ResponseEntity<Result<NormalizedJsonLd>> document = instances.createNewInstance(doc, "foo", DEFAULT_RESPONSE_CONFIG, DEFAULT_INGEST_CONFIG, null);
             JsonLdId id = document.getBody().getData().getId();
             System.out.println(String.format("Created instance %s", id.getId()));
         }
@@ -90,7 +95,7 @@ public class ConsistencyCheckTest {
     }
 
     private List<NormalizedJsonLd> getAllInstancesFromInProgress(ExposedStage stage){
-        return this.instances.getInstances(stage, type, null, false, false, false, EMPTY_PAGINATION).getData();
+        return this.instances.getInstances(stage, type, null, new ResponseConfiguration().setReturnAlternatives(false).setReturnPermissions(false).setReturnEmbedded(false), EMPTY_PAGINATION).getData();
     }
 
     @Test
@@ -103,7 +108,7 @@ public class ConsistencyCheckTest {
                 JsonLdDoc doc = new JsonLdDoc();
                 doc.addTypes(type);
                 doc.addProperty("http://schema.hbp.eu/foo", "updatedValue" + updated);
-                this.instances.contributeToInstancePartialReplacement(doc, idUtils.getUUID(instance.getId()), false, false,  false, false, false, false, null);
+                this.instances.contributeToInstancePartialReplacement(doc, idUtils.getUUID(instance.getId()), false, DEFAULT_RESPONSE_CONFIG, DEFAULT_INGEST_CONFIG, null);
                 updated++;
             }
         }
@@ -150,7 +155,7 @@ public class ConsistencyCheckTest {
             if (updated < createInstances * updateRatio) {
                 JsonLdDoc doc = new JsonLdDoc();
                 doc.addProperty("http://schema.hbp.eu/foo", "valueWithoutType" + updated);
-                this.instances.contributeToInstancePartialReplacement(doc, idUtils.getUUID(instance.getId()), true, false, false, false, false, false, null);
+                this.instances.contributeToInstancePartialReplacement(doc, idUtils.getUUID(instance.getId()), true,  DEFAULT_RESPONSE_CONFIG, DEFAULT_INGEST_CONFIG, null);
                 updated++;
             }
         }

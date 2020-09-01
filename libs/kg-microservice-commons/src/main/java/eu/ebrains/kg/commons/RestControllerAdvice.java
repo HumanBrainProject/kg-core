@@ -17,7 +17,9 @@
 package eu.ebrains.kg.commons;
 
 import eu.ebrains.kg.commons.exception.*;
+import eu.ebrains.kg.commons.model.IngestConfiguration;
 import eu.ebrains.kg.commons.model.PaginationParam;
+import eu.ebrains.kg.commons.model.ResponseConfiguration;
 import eu.ebrains.kg.commons.permission.ClientAuthToken;
 import eu.ebrains.kg.commons.permission.UserAuthToken;
 import org.slf4j.Logger;
@@ -26,6 +28,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.context.request.WebRequest;
+
+import java.util.UUID;
 
 /**
  * This controller advice handles the population of the {@link AuthContext}, provides shared parameters (such as {@link PaginationParam}) and translates exceptions into http status codes.
@@ -40,6 +44,26 @@ public class RestControllerAdvice {
     public RestControllerAdvice(AuthContext authContext) {
         this.authContext = authContext;
     }
+
+    @ModelAttribute
+    public IngestConfiguration ingestConfiguration(@RequestParam(value = "deferInference", required = false, defaultValue = "false") boolean deferInference, @RequestParam(value = "normalizePayload", required = false, defaultValue = "true") boolean normalizePayload){
+        IngestConfiguration ingestConfiguration = new IngestConfiguration();
+        ingestConfiguration.setDeferInference(deferInference);
+        ingestConfiguration.setNormalizePayload(normalizePayload);
+        return ingestConfiguration;
+    }
+
+
+    @ModelAttribute
+    public ResponseConfiguration responseConfiguration(@RequestParam(value = "returnPayload", required = false, defaultValue = "true") boolean returnPayload, @RequestParam(value = "returnPermissions", required = false, defaultValue = "false") boolean returnPermissions, @RequestParam(value = "returnAlternatives", required = false, defaultValue = "false") boolean returnAlternatives, @RequestParam(value = "returnEmbedded", required = false, defaultValue = "true") boolean returnEmbedded){
+        ResponseConfiguration responseConfiguration = new ResponseConfiguration();
+        responseConfiguration.setReturnAlternatives(returnAlternatives);
+        responseConfiguration.setReturnEmbedded(returnEmbedded);
+        responseConfiguration.setReturnPayload(returnPayload);
+        responseConfiguration.setReturnPermissions(returnPermissions);
+        return responseConfiguration;
+    }
+
 
     /**
      * Defines the model attribute of the pagination parameters used in several queries.
@@ -56,7 +80,7 @@ public class RestControllerAdvice {
      * Retrieves the authorization headers (user and client) and populates them in the {@link AuthContext}
      */
     @ModelAttribute
-    public void interceptAuthorizationToken(@RequestHeader(value = "Authorization", required = false) String userAuthorizationToken, @RequestHeader(value = "Client-Authorization", required = false) String clientAuthorizationToken, @RequestHeader(value = "Client-Id", required = false) String clientId, @RequestHeader(value = "Client-Secret", required = false) String clientSecret) {
+    public void interceptAuthorizationToken(@RequestHeader(value = "Authorization", required = false) String userAuthorizationToken, @RequestHeader(value = "Client-Authorization", required = false) String clientAuthorizationToken, @RequestHeader(value = "Client-Id", required = false) String clientId, @RequestHeader(value = "Client-Secret", required = false) String clientSecret, @RequestHeader(value = "Transaction-Id", required = false) UUID transactionId) {
         UserAuthToken userToken = null;
         ClientAuthToken clientToken = null;
         if (userAuthorizationToken != null) {
@@ -70,6 +94,7 @@ public class RestControllerAdvice {
 
         }
         AuthTokens authTokens = new AuthTokens(userToken, clientToken);
+        authTokens.setTransactionId(transactionId);
         authContext.setAuthTokens(authTokens);
     }
 

@@ -2,7 +2,7 @@
   "@context": {
     "schema": "http://schema.org/",
     "brainviewer": "https://schema.hbp.eu/brainviewer/",
-    "@vocab": "https://schema.hbp.eu/graphQuery/",
+    "@vocab": "https://core.kg.ebrains.eu/vocab/query/",
     "release": "https://schema.hbp.eu/release/",
     "searchUi": "https://schema.hbp.eu/searchUi/",
     "cscs": "https://schema.hbp.eu/cscs/",

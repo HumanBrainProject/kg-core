@@ -20,16 +20,17 @@ import com.arangodb.ArangoDatabase;
 import eu.ebrains.kg.arango.commons.aqlBuilder.AQL;
 import eu.ebrains.kg.arango.commons.model.AQLQuery;
 import eu.ebrains.kg.arango.commons.model.ArangoCollectionReference;
-import eu.ebrains.kg.arango.commons.model.ArangoDocumentReference;
 import eu.ebrains.kg.arango.commons.model.InternalSpace;
+import eu.ebrains.kg.commons.exception.AmbiguousException;
 import eu.ebrains.kg.commons.jsonld.NormalizedJsonLd;
 import eu.ebrains.kg.commons.model.DataStage;
 import eu.ebrains.kg.commons.model.Paginated;
 import eu.ebrains.kg.commons.model.PaginationParam;
 import eu.ebrains.kg.commons.model.Space;
+import eu.ebrains.kg.commons.semantics.vocabularies.EBRAINSVocabulary;
+import eu.ebrains.kg.commons.semantics.vocabularies.SchemaOrgVocabulary;
 import eu.ebrains.kg.graphdb.commons.controller.ArangoDatabases;
 import eu.ebrains.kg.graphdb.commons.controller.ArangoRepositoryCommons;
-import eu.ebrains.kg.graphdb.ingestion.controller.structure.StaticStructureController;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
@@ -50,13 +51,19 @@ public class ArangoRepositorySpaces {
         this.arangoRepositoryCommons = arangoRepositoryCommons;
     }
 
-    public NormalizedJsonLd getSpace(Space space, DataStage stage){
+    public NormalizedJsonLd getSpace(Space space, DataStage stage) {
         ArangoDatabase db = databases.getMetaByStage(stage);
         ArangoCollectionReference spaceCollection = ArangoCollectionReference.fromSpace(InternalSpace.SPACES_SPACE);
-        if(db.collection(spaceCollection.getCollectionName()).exists()){
-            ArangoDocumentReference spaceDocumentReference = StaticStructureController.createDocumentRefForMetaRepresentation(space.getName(), spaceCollection);
-            NormalizedJsonLd document = db.collection(spaceCollection.getCollectionName()).getDocument(spaceDocumentReference.getDocumentId().toString(), NormalizedJsonLd.class);
-            return document != null ? document.removeAllInternalProperties() : null;
+        if (db.collection(spaceCollection.getCollectionName()).exists()) {
+            AQLQuery spaceQuery = createSpaceQuery(null, space.getName());
+            Paginated<NormalizedJsonLd> normalizedJsonLds = arangoRepositoryCommons.queryDocuments(db, spaceQuery);
+            if (normalizedJsonLds.getData().size() == 0) {
+                return null;
+            } else if (normalizedJsonLds.getData().size() == 1) {
+                return normalizedJsonLds.getData().get(0);
+            } else {
+                throw new AmbiguousException("Found too many instances for this name");
+            }
         }
         return null;
     }
@@ -64,20 +71,37 @@ public class ArangoRepositorySpaces {
     public Paginated<NormalizedJsonLd> getSpaces(DataStage stage, PaginationParam pagination) {
         ArangoDatabase db = databases.getMetaByStage(stage);
         ArangoCollectionReference spaceCollection = ArangoCollectionReference.fromSpace(InternalSpace.SPACES_SPACE);
-        if(db.collection(spaceCollection.getCollectionName()).exists()) {
-            AQLQuery spaceQuery = createSpaceQuery(pagination);
-            return arangoRepositoryCommons.queryDocuments(db, spaceQuery, NormalizedJsonLd::removeAllInternalProperties);
+        if (db.collection(spaceCollection.getCollectionName()).exists()) {
+            AQLQuery spaceQuery = createSpaceQuery(pagination, null);
+            return arangoRepositoryCommons.queryDocuments(db, spaceQuery);
         }
         return new Paginated<>(Collections.emptyList(), 0, 0, 0);
     }
 
-    private AQLQuery createSpaceQuery(PaginationParam param){
+
+    private AQLQuery createSpaceQuery(PaginationParam param, String filterBySpace) {
         AQL aql = new AQL();
+        Map<String, Object> bindVars = new HashMap<>();
         aql.addLine(AQL.trust("FOR space IN @@spaceCollection"));
         aql.addPagination(param);
-        aql.addLine(AQL.trust("    RETURN space"));
-        Map<String, Object> bindVars = new HashMap<>();
+        if (filterBySpace != null) {
+            aql.addLine(AQL.trust("FILTER space.@schemaorgname == @filterName"));
+            bindVars.put("schemaorgname", SchemaOrgVocabulary.NAME);
+            bindVars.put("filterName", filterBySpace);
+        }
+        aql.addLine(AQL.trust("LET overrides = ("));
+        aql.addLine(AQL.trust("FOR o IN 1..1 INBOUND space @extensionRef"));
+        aql.addLine(AQL.trust("LET att = (FOR a IN ATTRIBUTES(o)"));
+        aql.addLine(AQL.trust("FILTER LIKE(a, @filter)"));
+        aql.addLine(AQL.trust("RETURN {"));
+        aql.addLine(AQL.trust("name: a,"));
+        aql.addLine(AQL.trust("value: o[a]"));
+        aql.addLine(AQL.trust("})"));
+        aql.addLine(AQL.trust("RETURN ZIP(att[*].name, att[*].value))"));
+        aql.addLine(AQL.trust("RETURN MERGE(PUSH(overrides, space))"));
         bindVars.put("@spaceCollection", ArangoCollectionReference.fromSpace(InternalSpace.SPACES_SPACE).getCollectionName());
+        bindVars.put("extensionRef", ArangoCollectionReference.fromSpace(new Space(EBRAINSVocabulary.META_SPACE), true).getCollectionName());
+        bindVars.put("filter", EBRAINSVocabulary.META_SPACE + "/%");
         return new AQLQuery(aql, bindVars);
     }
 

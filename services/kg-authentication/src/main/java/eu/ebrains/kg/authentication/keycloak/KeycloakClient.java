@@ -121,10 +121,12 @@ public class KeycloakClient {
         }
         try {
             try {
+                boolean initialCreation = false;
                 if (getClient() == null) {
                     createDefaultClient();
+                    initialCreation = true;
                 }
-                configureDefaultClient();
+                configureDefaultClient(initialCreation);
             } catch (ForbiddenException e) {
                 throw new UnauthorizedException(String.format("Your keycloak user is not allowed to read clients of realm %s", config.getRealm()));
             }
@@ -133,7 +135,7 @@ public class KeycloakClient {
         }
     }
 
-    private void configureDefaultClient() {
+    private void configureDefaultClient(boolean initialConfig) {
         try {
             ClientRepresentation clientRepresentation = new ClientRepresentation();
             clientRepresentation.setClientId(config.getClientId());
@@ -144,7 +146,9 @@ public class KeycloakClient {
             Map<String, String> attributes = new HashMap<>();
             attributes.put("access.token.lifespan", "1800");
             clientRepresentation.setAttributes(attributes);
-            clientRepresentation.setRedirectUris(Arrays.asList(getRedirectUri(), "http://localhost*"));
+            if(initialConfig){
+                clientRepresentation.setRedirectUris(Arrays.asList(getRedirectUri(), "http://localhost*"));
+            }
             getClientResource().update(clientRepresentation);
             Functionality.getGlobalFunctionality().forEach(f -> createRoleForClient(new FunctionalityInstance(f, null, null).toRole()));
             Arrays.stream(GlobalPermissionGroup.values()).forEach(p -> createRoleForClient(p.toRole()));

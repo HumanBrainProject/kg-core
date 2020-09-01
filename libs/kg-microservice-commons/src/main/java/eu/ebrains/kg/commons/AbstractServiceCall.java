@@ -44,59 +44,64 @@ public abstract class AbstractServiceCall {
         this.loadBalancedWebClient = loadBalancedWebClient;
     }
 
-    public <T> T get(String uri, AuthTokens authContext, Class<T> returnType) {
+    public <T> T get(String uri, AuthTokens authTokens, Class<T> returnType) {
         logger.trace("Sending a get");
-        return executeRequest(loadBalancedWebClient.build().get().uri(uri),  MediaType.APPLICATION_JSON, authContext, returnType);
+        return executeRequest(loadBalancedWebClient.build().get().uri(uri),  MediaType.APPLICATION_JSON, authTokens, returnType);
     }
 
-    public <T> T get(String uri, MediaType mediaType, AuthTokens authContext, Class<T> returnType) {
+    public <T> T get(String uri, MediaType mediaType, AuthTokens authTokens, Class<T> returnType) {
         logger.trace("Sending a get");
-        return executeRequest(loadBalancedWebClient.build().get().uri(uri), mediaType, authContext, returnType);
+        return executeRequest(loadBalancedWebClient.build().get().uri(uri), mediaType, authTokens, returnType);
     }
 
-    public <T> T post(String uri, Object payload, AuthTokens authContext, Class<T> returnType) {
+    public <T> T post(String uri, Object payload, AuthTokens authTokens, Class<T> returnType) {
         logger.trace("Sending a post");
-        return executeRequest(loadBalancedWebClient.build().post().uri(uri).contentType(MediaType.APPLICATION_JSON).body(payload == null ? BodyInserters.empty() : BodyInserters.fromObject(payload)), MediaType.APPLICATION_JSON, authContext, returnType);
+        return executeRequest(loadBalancedWebClient.build().post().uri(uri).contentType(MediaType.APPLICATION_JSON).body(payload == null ? BodyInserters.empty() : BodyInserters.fromObject(payload)), MediaType.APPLICATION_JSON, authTokens, returnType);
     }
 
-    public <T> T put(String uri, Object payload, AuthTokens authContext, Class<T> returnType) {
+    public <T> T put(String uri, Object payload, AuthTokens authTokens, Class<T> returnType) {
         logger.trace("Sending a put");
-        return executeRequest(loadBalancedWebClient.build().put().uri(uri).contentType(MediaType.APPLICATION_JSON).body(payload == null ? BodyInserters.empty() : BodyInserters.fromObject(payload)), MediaType.APPLICATION_JSON, authContext, returnType);
+        return executeRequest(loadBalancedWebClient.build().put().uri(uri).contentType(MediaType.APPLICATION_JSON).body(payload == null ? BodyInserters.empty() : BodyInserters.fromObject(payload)), MediaType.APPLICATION_JSON, authTokens, returnType);
     }
 
 
-    public <T> T patch(String uri, Object payload, AuthTokens authContext, Class<T> returnType) {
+    public <T> T patch(String uri, Object payload, AuthTokens authTokens, Class<T> returnType) {
         logger.trace("Sending a put");
-        return executeRequest(loadBalancedWebClient.build().patch().uri(uri).contentType(MediaType.APPLICATION_JSON).body(payload == null ? BodyInserters.empty() : BodyInserters.fromObject(payload)), MediaType.APPLICATION_JSON, authContext, returnType);
+        return executeRequest(loadBalancedWebClient.build().patch().uri(uri).contentType(MediaType.APPLICATION_JSON).body(payload == null ? BodyInserters.empty() : BodyInserters.fromObject(payload)), MediaType.APPLICATION_JSON, authTokens, returnType);
     }
 
-    public <T> T delete(String uri, AuthTokens authContext, Class<T> returnType) {
+    public <T> T delete(String uri, AuthTokens authTokens, Class<T> returnType) {
         logger.trace("Sending a post");
-        return executeRequest(loadBalancedWebClient.build().delete().uri(uri), MediaType.APPLICATION_JSON, authContext, returnType);
+        return executeRequest(loadBalancedWebClient.build().delete().uri(uri), MediaType.APPLICATION_JSON, authTokens, returnType);
     }
 
-    private <T> T executeRequest(WebClient.RequestHeadersSpec<?> spec, MediaType mediaType, AuthTokens authContext, Class<T> returnType) {
+    private <T> T executeRequest(WebClient.RequestHeadersSpec<?> spec, MediaType mediaType, AuthTokens authTokens,  Class<T> returnType) {
         try {
-            return sendRequest(spec, mediaType, authContext, returnType);
+            return sendRequest(spec, mediaType, authTokens, returnType);
         } catch (WebClientResponseException e) {
             return handleWebClientResponseException(e, logger);
         }
     }
 
-    protected <T> T sendRequest(WebClient.RequestHeadersSpec<?> spec, MediaType mediaType, AuthTokens authContext, Class<T> returnType) {
+    protected <T> T sendRequest(WebClient.RequestHeadersSpec<?> spec, MediaType mediaType, AuthTokens authTokens, Class<T> returnType) {
         WebClient.RequestHeadersSpec<?> request = spec.accept(mediaType);
-        UUID requestUUID = UUID.randomUUID();
         long launch = new Date().getTime();
-        logger.debug(String.format("Sending service request %s", requestUUID));
-        if (authContext != null && authContext.getUserAuthToken() != null) {
-            request = request.headers(h -> h.put(HttpHeaders.AUTHORIZATION, Collections.singletonList(authContext.getUserAuthToken().getBearerToken())));
+        UUID transactionId = authTokens != null ? authTokens.getTransactionId() : null;
+        if(transactionId==null){
+            transactionId = UUID.randomUUID();
         }
-        if(authContext != null && authContext.getClientAuthToken() != null){
-            request = request.headers(h -> h.put("Client-Authorization", Collections.singletonList(authContext.getClientAuthToken().getBearerToken())));
+        logger.debug(String.format("Sending service request %s", transactionId.toString()));
+        if (authTokens != null && authTokens.getUserAuthToken() != null) {
+            request = request.headers(h -> h.put(HttpHeaders.AUTHORIZATION, Collections.singletonList(authTokens.getUserAuthToken().getBearerToken())));
         }
+        if(authTokens != null && authTokens.getClientAuthToken() != null){
+            request = request.headers(h -> h.put("Client-Authorization", Collections.singletonList(authTokens.getClientAuthToken().getBearerToken())));
+        }
+        final UUID finalTransactionId = transactionId;
+        request = request.headers(h -> h.put("Transaction-Id", Collections.singletonList(finalTransactionId.toString())));
         WebClient.ResponseSpec retrieve = request.retrieve();
         T result = retrieve.bodyToMono(returnType).block();
-        logger.debug(String.format("Received result of request %s in %dms", requestUUID.toString(), new Date().getTime()-launch));
+        logger.debug(String.format("Received result of request %s in %dms", transactionId.toString(), new Date().getTime()-launch));
         return result;
     }
 
@@ -105,10 +110,10 @@ public abstract class AbstractServiceCall {
             case SERVICE_UNAVAILABLE:
                 throw new ServiceNotAvailableException(String.format("Service %s not available", e.getRequest().getURI().getHost()));
             case FORBIDDEN:
-                logger.error("Was not allowed to execute service request");
+                logger.error(String.format("Was not allowed to execute service request to %s", e.getRequest().getURI()));
                 throw new ForbiddenException(e.getResponseBodyAsString());
             case UNAUTHORIZED:
-                logger.error("Was not authorized to execute service request");
+                logger.error(String.format("Was not authorized to execute service request to %s", e.getRequest().getURI()));
                 throw new UnauthorizedException(e.getResponseBodyAsString());
             case NOT_FOUND:
                 return null;

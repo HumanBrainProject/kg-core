@@ -46,8 +46,8 @@ public class CoreToPrimaryStore {
         serviceCall.post(String.format("http://kg-primarystore/internal/primaryStore/events/inference/%s/%s", space.getName(), id), null, authTokens, String.class);
     }
 
-    public void inferDeferred(AuthTokens authTokens) {
-        serviceCall.post("http://kg-primarystore/internal/internal/primaryStore/inference/deferred", null, authTokens, String.class);
+    public void inferDeferred(AuthTokens authTokens, Space space, boolean synchronous) {
+        serviceCall.post(String.format("http://kg-primarystore/internal/primaryStore/events/inference/deferred/%s?sync=%b", space.getName(), synchronous), null, authTokens, String.class);
     }
 
 }

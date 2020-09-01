@@ -62,7 +62,7 @@ public class CoreInferenceController {
     public void triggerInference(Space space, String identifier, AuthTokens authTokens) {
         List<UUID> uuids;
         if (identifier == null) {
-            uuids = graphSvc.getDocumentIdsBySpace(space, DataStage.NATIVE, authTokens).stream().map(UUID::fromString).collect(Collectors.toList());
+            uuids = graphSvc.getDocumentIdsBySpace(space, authTokens).stream().map(UUID::fromString).collect(Collectors.toList());
         } else {
             uuids = graphSvc.getRelatedInstancesByIdentifiers(space, identifier, DataStage.NATIVE, authTokens).stream().map(IndexedJsonLdDoc::getDocumentId).collect(Collectors.toList());
             if (uuids.isEmpty()) {
@@ -112,7 +112,7 @@ public class CoreInferenceController {
         return uuid;
     }
 
-    public void triggerDeferredInference(AuthTokens authTokens) {
-        primaryStoreSvc.inferDeferred(authTokens);
+    public void triggerDeferredInference(AuthTokens authTokens, Space space, boolean synchronous) {
+        primaryStoreSvc.inferDeferred(authTokens, space, synchronous);
     }
 }
