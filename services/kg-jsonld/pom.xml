@@ -37,6 +37,11 @@
             <artifactId>titanium-json-ld</artifactId>
             <version>0.8.4</version>
         </dependency>
+        <dependency>
+            <groupId>org.glassfish</groupId>
+            <artifactId>jakarta.json</artifactId>
+            <version>1.1.6</version>
+        </dependency>
     </dependencies>
 
 </project>

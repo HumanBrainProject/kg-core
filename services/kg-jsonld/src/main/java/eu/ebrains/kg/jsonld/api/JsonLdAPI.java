@@ -36,6 +36,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
+@SuppressWarnings({"unchecked", "rawtypes"})
 @RestController
 @RequestMapping("/internal/jsonld")
 public class JsonLdAPI {
@@ -88,15 +89,11 @@ public class JsonLdAPI {
             addNullValuesPlaceholder(payload);
         }
         JsonObject build = Json.createObjectBuilder(payload).build();
-        Object originalContext = payload.get(JsonLdConsts.CONTEXT);
         try {
             JsonArray expanded = JsonLd.expand(JsonDocument.of(build)).get();
             JsonObject compacted = JsonLd.compact(JsonDocument.of(expanded), EMPTY_DOCUMENT).get();
             //TODO Optimize - can't we transform the compacted structure directly to a map without taking the way via the string serialization?
             NormalizedJsonLd normalized = new NormalizedJsonLd(GSON.fromJson(compacted.toString(), LinkedHashMap.class));
-            if (originalContext != null) {
-                normalized.put(JsonLdConsts.CONTEXT, originalContext);
-            }
             if (keepNullValues) {
                 removeNullValuesPlaceholder(normalized);
             }
