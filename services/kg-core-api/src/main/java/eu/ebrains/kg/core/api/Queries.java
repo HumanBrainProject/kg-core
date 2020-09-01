@@ -28,7 +28,6 @@ import eu.ebrains.kg.core.model.ExposedStage;
 import eu.ebrains.kg.core.serviceCall.CoreToIds;
 import eu.ebrains.kg.core.serviceCall.CoreToJsonLd;
 import io.swagger.annotations.ApiOperation;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -41,17 +40,20 @@ import java.util.UUID;
 @RequestMapping(Version.API+"/queries")
 public class Queries {
 
-    @Autowired
-    IdUtils idUtils;
+    private final IdUtils idUtils;
 
-    @Autowired
-    CoreQueryController queryController;
+    private final CoreQueryController queryController;
 
-    @Autowired
-    CoreToJsonLd jsonLdSvc;
+    private final CoreToJsonLd jsonLdSvc;
 
-    @Autowired
-    CoreToIds idsSvc;
+    private final CoreToIds idsSvc;
+
+    public Queries(IdUtils idUtils, CoreQueryController queryController, CoreToJsonLd jsonLdSvc, CoreToIds idsSvc) {
+        this.idUtils = idUtils;
+        this.queryController = queryController;
+        this.jsonLdSvc = jsonLdSvc;
+        this.idsSvc = idsSvc;
+    }
 
     @ApiOperation(value = "List the queries which have been registered for the given root type")
     @GetMapping

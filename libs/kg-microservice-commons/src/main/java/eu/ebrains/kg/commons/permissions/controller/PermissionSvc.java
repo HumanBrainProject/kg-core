@@ -48,7 +48,7 @@ public class PermissionSvc {
     }
 
     private boolean isServiceAccountForClientSpace(UserWithRoles userWithRoles, Space space){
-        return userWithRoles != null && userWithRoles.getClientId().equals(space.getName()) && userWithRoles.getUser()!=null && userWithRoles.getUser().isServiceAccountForClient(userWithRoles.getClientId()) && checkFunctionalities(Functionality.IS_CLIENT, space, null, userWithRoles.getPermissions());
+        return userWithRoles != null && space != null && userWithRoles.getClientId() != null && userWithRoles.getClientId().equals(space.getName()) && userWithRoles.getUser()!=null && userWithRoles.getUser().isServiceAccountForClient(userWithRoles.getClientId()) && checkFunctionalities(Functionality.IS_CLIENT, space, null, userWithRoles.getPermissions());
 
     }
 
