@@ -71,7 +71,7 @@ public class GraphDBInstancesAPI {
 
     @GetMapping("queriesByType")
     public Paginated<NormalizedJsonLd> getQueriesByType(@PathVariable("stage") DataStage stage, @RequestParam(value = "searchByLabel", required = false) String searchByLabel, @RequestParam(value = "returnAlternatives", required = false, defaultValue = "false") boolean returnAlternatives, @RequestParam(value = "returnEmbedded", required = false, defaultValue = "false") boolean returnEmbedded, PaginationParam paginationParam, @RequestParam("rootType") String rootType) {
-        return repository.getQueriesByRootType(stage, paginationParam, searchByLabel, returnEmbedded, returnAlternatives, rootType);
+        return repository.getQueriesByRootType(stage, paginationParam, searchByLabel, returnEmbedded, returnAlternatives, rootType == null ? null : URLDecoder.decode(rootType, StandardCharsets.UTF_8));
     }
 
     @PostMapping("instancesByIds")
@@ -109,11 +109,11 @@ public class GraphDBInstancesAPI {
     @PostMapping("instances/{space}/{id}/suggestedLinksForProperty")
     public SuggestionResult getSuggestedLinksForProperty(@RequestBody(required = false) NormalizedJsonLd payload, @PathVariable("stage") DataStage stage, @PathVariable("space") String space, @PathVariable("id") UUID id, @RequestParam(value = "property") String propertyName, @RequestParam(value = "type", required = false) String type, @RequestParam(value = "search", required = false) String search, PaginationParam paginationParam) {
         if (payload == null) {
-            //TODO Load from database (assume unchanged payload)
-            payload = new NormalizedJsonLd();
+            payload = repository.getInstance(stage, new Space(space), id, true, true, false);
         }
         SuggestionResult suggestionResult = new SuggestionResult();
-        Paginated<NormalizedJsonLd> targetTypesForProperty = typeRepository.getTargetTypesForProperty(authContext.getUserWithRoles().getClientId(), stage, propertyName, true, null);
+        ArangoRepositoryTypes.TargetsForProperties properties = new ArangoRepositoryTypes.TargetsForProperties(propertyName, payload.getTypes());
+        Paginated<NormalizedJsonLd> targetTypesForProperty = typeRepository.getTargetTypesForProperty(authContext.getUserWithRoles().getClientId(), stage, properties, true, null);
         List<Type> typesWithLabelInfo = extractExtendedTypeInformationFromPayload(targetTypesForProperty.getData());
         if(type != null && !type.isBlank()){
             typesWithLabelInfo = typesWithLabelInfo.stream().filter(t -> type.equals(t.getName())).collect(Collectors.toList());

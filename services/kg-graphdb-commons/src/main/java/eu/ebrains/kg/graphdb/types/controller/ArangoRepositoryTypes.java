@@ -57,7 +57,7 @@ public class ArangoRepositoryTypes {
         this.arangoUtils = arangoUtils;
     }
 
-    public Paginated<NormalizedJsonLd> getTargetTypesForProperty(String client, DataStage stage, String targetTypesForProperty, boolean withProperties, PaginationParam pagination) {
+    public Paginated<NormalizedJsonLd> getTargetTypesForProperty(String client, DataStage stage, TargetsForProperties targetTypesForProperty, boolean withProperties, PaginationParam pagination) {
         ArangoDatabase db = databases.getMetaByStage(stage);
         AQLQuery typeStructureQuery = createTypeStructureQuery(db, client, null, targetTypesForProperty, null, withProperties, pagination);
         return arangoRepositoryCommons.queryDocuments(db, typeStructureQuery);
@@ -106,7 +106,25 @@ public class ArangoRepositoryTypes {
         });
     }
 
-    private AQLQuery createTypeStructureQuery(ArangoDatabase db, String client, List<Type> types, String targetTypesForProperty, Space space, boolean withProperties, PaginationParam paginationParam) {
+    public static class TargetsForProperties{
+        private final String propertyName;
+        private final List<String> originalTypes;
+
+        public TargetsForProperties(String propertyName, List<String> originalTypes) {
+            this.propertyName = propertyName;
+            this.originalTypes = originalTypes;
+        }
+
+        public String getPropertyName() {
+            return propertyName;
+        }
+
+        public List<String> getOriginalTypes() {
+            return originalTypes;
+        }
+    }
+
+    private AQLQuery createTypeStructureQuery(ArangoDatabase db, String client, List<Type> types, TargetsForProperties targetTypesForProperty, Space space, boolean withProperties, PaginationParam paginationParam) {
         ensureTypeStructureCollections(db, withProperties);
         Map<String, Object> bindVars = new HashMap<>();
         AQL aql = new AQL();
@@ -132,12 +150,16 @@ public class ArangoRepositoryTypes {
         bindVars.put("clientName", ArangoCollectionReference.fromSpace(new Client(client).getSpace()).getCollectionName());
         bindVars.put("globalSpace", ArangoCollectionReference.fromSpace(InternalSpace.GLOBAL_SPEC).getCollectionName());
         bindVars.put("space", space == null ? null : space.getName());
-        if(targetTypesForProperty!=null && !targetTypesForProperty.isBlank()){
+        if(targetTypesForProperty!=null && !targetTypesForProperty.getPropertyName().isBlank()){
             aql.addComment("We're interested in the target types of a property. We query the list of types matching.");
             aql.addLine(AQL.trust("LET rootProperty = DOCUMENT(@propertyId)"));
-            ArangoDocumentReference propRef = StaticStructureController.createDocumentRefForMetaRepresentation(targetTypesForProperty, ArangoCollectionReference.fromSpace(InternalSpace.PROPERTIES_SPACE));
+            ArangoDocumentReference propRef = StaticStructureController.createDocumentRefForMetaRepresentation(targetTypesForProperty.getPropertyName(), ArangoCollectionReference.fromSpace(InternalSpace.PROPERTIES_SPACE));
             bindVars.put("propertyId", propRef.getId());
-            aql.addLine(AQL.trust("FOR type IN 1..1 OUTBOUND rootProperty "+InternalSpace.PROPERTY_TO_TYPE_EDGE_COLLECTION.getCollectionName()));
+            aql.addLine(AQL.trust("FOR originalType, originalTypeToRootProperty IN 1..1 INBOUND rootProperty "+InternalSpace.TYPE_TO_PROPERTY_EDGE_COLLECTION.getCollectionName()));
+            aql.indent().addLine(AQL.trust("FILTER DOCUMENT(originalType._to).`"+SchemaOrgVocabulary.IDENTIFIER+"` IN @originalTypeFilter"));
+            bindVars.put("originalTypeFilter", targetTypesForProperty.getOriginalTypes());
+            aql.addLine(AQL.trust("FOR targetTypeForRootProperty IN 1..1 OUTBOUND originalTypeToRootProperty "+InternalSpace.PROPERTY_TO_TYPE_EDGE_COLLECTION.getCollectionName()));
+            aql.indent().addLine(AQL.trust("LET type = DOCUMENT(targetTypeForRootProperty._to)"));
         }
         else if (types == null || types.isEmpty()) {
             if (space != null) {
