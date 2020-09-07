@@ -26,8 +26,8 @@ import eu.ebrains.kg.commons.models.UserWithRoles;
 import eu.ebrains.kg.commons.query.KgQuery;
 import eu.ebrains.kg.docker.SpringDockerComposeRunner;
 import eu.ebrains.kg.graphdb.ingestion.controller.TodoListProcessor;
-import eu.ebrains.kg.test.TestToIds;
 import eu.ebrains.kg.test.TestObjectFactory;
+import eu.ebrains.kg.test.TestToIds;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -77,7 +77,7 @@ public class QueryControllerTest {
 
         //When
         KgQuery kgQuery = new KgQuery(TestObjectFactory.createJsonLd(space, "normalizedQueries/simpsonsFamilyNames.json"), stage);
-        Paginated<NormalizedJsonLd> queryResult = queryController.query(userWithRoles, kgQuery, null, null);
+        Paginated<NormalizedJsonLd> queryResult = queryController.query(userWithRoles, kgQuery, null, null, false);
 
         //Then
         Assert.assertEquals(1, queryResult.getSize());
@@ -95,9 +95,9 @@ public class QueryControllerTest {
         KgQuery kgQuery = new KgQuery(TestObjectFactory.createJsonLd(space, "normalizedQueries/simpsonsFamilyNames.json"), stage);
 
         //When
-        Paginated<NormalizedJsonLd> queryResultA = queryController.query(userWithRoles, kgQuery, new PaginationParam().setSize(1L), null);
-        Paginated<NormalizedJsonLd> queryResultB = queryController.query(userWithRoles, kgQuery, new PaginationParam().setSize(1L).setFrom(1), null);
-        Paginated<NormalizedJsonLd> queryResultC = queryController.query(userWithRoles, kgQuery, new PaginationParam().setSize(2L).setFrom(0), null);
+        Paginated<NormalizedJsonLd> queryResultA = queryController.query(userWithRoles, kgQuery, new PaginationParam().setSize(1L), null, false);
+        Paginated<NormalizedJsonLd> queryResultB = queryController.query(userWithRoles, kgQuery, new PaginationParam().setSize(1L).setFrom(1), null, false);
+        Paginated<NormalizedJsonLd> queryResultC = queryController.query(userWithRoles, kgQuery, new PaginationParam().setSize(2L).setFrom(0), null, false);
 
 
         //Then
@@ -123,7 +123,7 @@ public class QueryControllerTest {
         KgQuery kgQuery = new KgQuery(TestObjectFactory.createJsonLd(space, "normalizedQueries/homerWithEmbeddedTraversal.json"), stage);
 
         //When
-        Paginated<NormalizedJsonLd> queryResult = queryController.query(userWithRoles, kgQuery, null, null);
+        Paginated<NormalizedJsonLd> queryResult = queryController.query(userWithRoles, kgQuery, null, null, false);
 
         //Then
         Assert.assertEquals(1, queryResult.getSize());
@@ -141,7 +141,7 @@ public class QueryControllerTest {
         KgQuery kgQuery = new KgQuery(TestObjectFactory.createJsonLd("simpsons/normalizedQueries/multiLevelQuery.json"), stage);
 
         //When
-        Paginated<NormalizedJsonLd> queryResult = queryController.query(userWithRoles, kgQuery, null, null);
+        Paginated<NormalizedJsonLd> queryResult = queryController.query(userWithRoles, kgQuery, null, null, false);
 
         //Then
         Assert.assertEquals(3, queryResult.getSize());
@@ -168,7 +168,7 @@ public class QueryControllerTest {
         KgQuery kgQuery = new KgQuery(TestObjectFactory.createJsonLd("simpsons/normalizedQueries/multiLevelQueryNestedWithConcat.json"), stage);
 
         //When
-        Paginated<NormalizedJsonLd> queryResult = queryController.query(userWithRoles, kgQuery, null, null);
+        Paginated<NormalizedJsonLd> queryResult = queryController.query(userWithRoles, kgQuery, null, null, false);
 
         //Then
         Assert.assertEquals(3, queryResult.getSize());
@@ -193,10 +193,10 @@ public class QueryControllerTest {
 
         //When
         filterValues.put("givenName", "Marge");
-        Paginated<NormalizedJsonLd> queryResultWithMargeFilter = queryController.query(userWithRoles, kgQuery, null, filterValues);
+        Paginated<NormalizedJsonLd> queryResultWithMargeFilter = queryController.query(userWithRoles, kgQuery, null, filterValues, false);
         filterValues.put("givenName", "Homer");
-        Paginated<NormalizedJsonLd> queryResultWithHomerFilter = queryController.query(userWithRoles, kgQuery, null, filterValues);
-        Paginated<NormalizedJsonLd> queryResultWithoutFilter = queryController.query(userWithRoles, kgQuery, null, null);
+        Paginated<NormalizedJsonLd> queryResultWithHomerFilter = queryController.query(userWithRoles, kgQuery, null, filterValues, false);
+        Paginated<NormalizedJsonLd> queryResultWithoutFilter = queryController.query(userWithRoles, kgQuery, null, null, false);
 
         //Then
         Assert.assertEquals(1, queryResultWithMargeFilter.getSize());
@@ -216,10 +216,10 @@ public class QueryControllerTest {
 
         //When
         filterValues.put("givenName", "Marge");
-        Paginated<NormalizedJsonLd> queryResultWithMargeFilter = queryController.query(userWithRoles, kgQuery,  null, filterValues);
+        Paginated<NormalizedJsonLd> queryResultWithMargeFilter = queryController.query(userWithRoles, kgQuery,  null, filterValues, false);
         filterValues.put("givenName", "Homer");
-        Paginated<NormalizedJsonLd> queryResultWithHomerFilter = queryController.query(userWithRoles, kgQuery, null, filterValues);
-        Paginated<NormalizedJsonLd> queryResultWithoutFilter = queryController.query(userWithRoles, kgQuery,  null, null);
+        Paginated<NormalizedJsonLd> queryResultWithHomerFilter = queryController.query(userWithRoles, kgQuery, null, filterValues, false);
+        Paginated<NormalizedJsonLd> queryResultWithoutFilter = queryController.query(userWithRoles, kgQuery,  null, null, false);
 
         //Then
         Assert.assertEquals(1, queryResultWithMargeFilter.getSize());
@@ -240,7 +240,7 @@ public class QueryControllerTest {
         KgQuery kgQuery = new KgQuery(TestObjectFactory.createJsonLd("simpsons/normalizedQueries/multiLevelQueryWithStaticAndNestedTypeFilter.json"), stage);
 
         //When
-        Paginated<NormalizedJsonLd> queryResult = queryController.query(userWithRoles, kgQuery, null, null);
+        Paginated<NormalizedJsonLd> queryResult = queryController.query(userWithRoles, kgQuery, null, null, false);
 
         //Then
         Assert.assertEquals("We only expect Homer to appear due to the static filter", 1, queryResult.getSize());

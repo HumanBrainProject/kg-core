@@ -45,20 +45,20 @@ public class GraphDBTypesAPI {
 
     @GetMapping("/types")
     public Paginated<NormalizedJsonLd> getTypes(@PathVariable("stage") DataStage stage, @RequestParam(value = "space", required = false) String space, PaginationParam paginationParam) {
-        return getTypes(stage, space, false, paginationParam);
+        return getTypes(stage, space, false, false, paginationParam);
     }
 
-    private Paginated<NormalizedJsonLd> getTypes(DataStage stage, String space, boolean withProperties, PaginationParam paginationParam) {
+    private Paginated<NormalizedJsonLd> getTypes(DataStage stage, String space, boolean withProperties, boolean withCount, PaginationParam paginationParam) {
         if (space != null && !space.isEmpty()) {
-            return repositoryTypes.getTypesForSpace(authContext.getUserWithRoles().getClientId(), stage, new Space(space), withProperties, paginationParam);
+            return repositoryTypes.getTypesForSpace(authContext.getUserWithRoles().getClientId(), stage, new Space(space), withProperties, withCount, paginationParam);
         } else {
-            return repositoryTypes.getAllTypes(authContext.getUserWithRoles().getClientId(), stage, withProperties, paginationParam);
+            return repositoryTypes.getAllTypes(authContext.getUserWithRoles().getClientId(), stage, withProperties, withCount, paginationParam);
         }
     }
 
     @GetMapping("/typesWithProperties")
-    public Paginated<NormalizedJsonLd> getTypesWithProperties(@PathVariable("stage") DataStage stage, @RequestParam(value = "space", required = false) String space, PaginationParam paginationParam) {
-        Paginated<NormalizedJsonLd> types = getTypes(stage, space, true, paginationParam);
+    public Paginated<NormalizedJsonLd> getTypesWithProperties(@PathVariable("stage") DataStage stage, @RequestParam(value = "space", required = false) String space, @RequestParam(value = "withCounts", required = false, defaultValue = "true") boolean withCounts, PaginationParam paginationParam) {
+        Paginated<NormalizedJsonLd> types = getTypes(stage, space, true, withCounts, paginationParam);
         types.getData().forEach(this::promoteLabelFields);
         return types;
     }
@@ -71,12 +71,12 @@ public class GraphDBTypesAPI {
 
     @PostMapping("/typesByName")
     public Map<String, Result<NormalizedJsonLd>> getTypesByName(@RequestBody List<String> types, @PathVariable("stage") DataStage stage, @RequestParam(value = "space", required = false) String space) {
-        return getTypesByName(types, stage, space, false);
+        return getTypesByName(types, stage, space, false, true);
     }
 
     @PostMapping("/typesWithPropertiesByName")
-    public Map<String, Result<NormalizedJsonLd>> getTypesWithPropertiesByName(@RequestBody List<String> types, @PathVariable("stage") DataStage stage, @RequestParam(value = "space", required = false) String space) {
-        Map<String, Result<NormalizedJsonLd>> typesByName = getTypesByName(types, stage, space, true);
+    public Map<String, Result<NormalizedJsonLd>> getTypesWithPropertiesByName(@RequestBody List<String> types, @PathVariable("stage") DataStage stage, @RequestParam(value = "withCounts", required = false, defaultValue = "true") boolean withCounts, @RequestParam(value = "space", required = false) String space) {
+        Map<String, Result<NormalizedJsonLd>> typesByName = getTypesByName(types, stage, space, true, withCounts);
         typesByName.forEach((k, v) -> {
             if(v.getData() != null) {
                 promoteLabelFields(v.getData());
@@ -85,13 +85,13 @@ public class GraphDBTypesAPI {
         return typesByName;
     }
 
-    private Map<String, Result<NormalizedJsonLd>> getTypesByName(List<String> types, DataStage stage, String space, boolean withProperties) {
+    private Map<String, Result<NormalizedJsonLd>> getTypesByName(List<String> types, DataStage stage, String space, boolean withProperties, boolean withCounts) {
         List<Type> typeList = types.stream().map(Type::new).collect(Collectors.toList());
         List<NormalizedJsonLd> typeObjects;
         if (space != null && !space.isBlank()) {
-            typeObjects = repositoryTypes.getTypesForSpace(authContext.getUserWithRoles().getClientId(), stage, new Space(space), typeList, withProperties);
+            typeObjects = repositoryTypes.getTypesForSpace(authContext.getUserWithRoles().getClientId(), stage, new Space(space), typeList, withProperties, withCounts);
         } else {
-            typeObjects = repositoryTypes.getTypes(authContext.getUserWithRoles().getClientId(), stage, typeList, withProperties);
+            typeObjects = repositoryTypes.getTypes(authContext.getUserWithRoles().getClientId(), stage, typeList, withProperties, withCounts);
         }
         Map<String, Result<NormalizedJsonLd>> type2Map = typeObjects.stream().map(NormalizedJsonLd::removeAllInternalProperties).collect(Collectors.toMap(JsonLdDoc::getPrimaryIdentifier, Result::ok));
         for (String type : types) {

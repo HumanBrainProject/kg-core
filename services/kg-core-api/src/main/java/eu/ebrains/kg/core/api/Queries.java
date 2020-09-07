@@ -16,7 +16,6 @@
 
 package eu.ebrains.kg.core.api;
 
-import eu.ebrains.kg.commons.IdUtils;
 import eu.ebrains.kg.commons.Version;
 import eu.ebrains.kg.commons.jsonld.InstanceId;
 import eu.ebrains.kg.commons.jsonld.JsonLdDoc;
@@ -40,7 +39,6 @@ import java.util.UUID;
 @RequestMapping(Version.API+"/queries")
 public class Queries {
 
-    private final IdUtils idUtils;
 
     private final CoreQueryController queryController;
 
@@ -48,8 +46,7 @@ public class Queries {
 
     private final CoreToIds idsSvc;
 
-    public Queries(IdUtils idUtils, CoreQueryController queryController, CoreToJsonLd jsonLdSvc, CoreToIds idsSvc) {
-        this.idUtils = idUtils;
+    public Queries(CoreQueryController queryController, CoreToJsonLd jsonLdSvc, CoreToIds idsSvc) {
         this.queryController = queryController;
         this.jsonLdSvc = jsonLdSvc;
         this.idsSvc = idsSvc;
@@ -79,10 +76,10 @@ public class Queries {
         return Result.ok(kgQuery.getPayload());
     }
 
-    @ApiOperation(value = "TO BE IMPLEMENTED: Removes a query specification")
+    @ApiOperation(value = "Removes a query specification")
     @DeleteMapping("/{queryId}")
-    public void removeQuery(@PathVariable("queryId") UUID queryId) {
-//    queryController.deleteQuery()
+    public void removeQuery(@PathVariable("queryId") UUID queryId, @RequestParam("space") String space) {
+        queryController.deleteQuery(new InstanceId(queryId, new Space(space)));
     }
 
     @ApiOperation(value = "Save a query specification")

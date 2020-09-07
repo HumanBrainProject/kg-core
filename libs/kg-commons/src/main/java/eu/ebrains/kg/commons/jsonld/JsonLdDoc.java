@@ -138,6 +138,9 @@ public class JsonLdDoc extends TreeMap<String, Object> {
                 return (T) new NormalizedJsonLd((Map)o);
             }
         }
+        if(clazz == UUID.class && o instanceof String){
+            return (T)UUID.fromString((String)o);
+        }
         if (clazz.isInstance(o)) {
             return (T) o;
         } else {

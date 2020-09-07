@@ -25,6 +25,7 @@ import eu.ebrains.kg.arango.commons.model.ArangoCollectionReference;
 import eu.ebrains.kg.commons.AuthContext;
 import eu.ebrains.kg.commons.IdUtils;
 import eu.ebrains.kg.commons.jsonld.NormalizedJsonLd;
+import eu.ebrains.kg.commons.model.EntityId;
 import eu.ebrains.kg.commons.model.Paginated;
 import eu.ebrains.kg.commons.model.PaginationParam;
 import eu.ebrains.kg.commons.models.UserWithRoles;
@@ -68,12 +69,15 @@ public class QueryController {
     }
 
 
-    public Paginated<NormalizedJsonLd> query(UserWithRoles userWithRoles, KgQuery query, PaginationParam paginationParam, Map<String, String> filterValues) {
+    public Paginated<NormalizedJsonLd> query(UserWithRoles userWithRoles, KgQuery query, PaginationParam paginationParam, Map<String, String> filterValues, boolean scopeMode) {
         ArangoDatabase database = arangoDatabases.getByStage(query.getStage());
         Specification specification = specificationInterpreter.readSpecification(query.getPayload(), null);
+        if(scopeMode){
+            specification = new SpecificationToScopeQueryAdapter(specification).translate();
+        }
         Map<String, Object> whitelistFilter = permissionsController.whitelistFilter(userWithRoles, query.getStage());
         AQLQuery aql = new DataQueryBuilder(specification, paginationParam, whitelistFilter, filterValues, database.getCollections().stream().map(c -> new ArangoCollectionReference(c.getName(), c.getType() == CollectionType.EDGES)).collect(Collectors.toList())).build();
-        aql.addBindVar("idRestriction", query.getIdRestrictions() == null ? Collections.emptyList() : query.getIdRestrictions());
+        aql.addBindVar("idRestriction", query.getIdRestrictions() == null ? Collections.emptyList() : query.getIdRestrictions().stream().map(EntityId::getId).collect(Collectors.toList()));
         try {
             return arangoRepositoryCommons.queryDocuments(database, aql);
         } catch (ArangoDBException ex) {

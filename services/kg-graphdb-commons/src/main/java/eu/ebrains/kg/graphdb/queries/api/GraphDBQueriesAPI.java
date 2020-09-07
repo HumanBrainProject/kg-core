@@ -50,7 +50,7 @@ public class GraphDBQueriesAPI {
     public Paginated<NormalizedJsonLd> executeQuery(@RequestBody KgQuery query, PaginationParam paginationParam){
         UserWithRoles userWithRoles = authContext.getUserWithRoles();
         checkPermissionForQueryExecution(userWithRoles);
-        return queryController.query(userWithRoles, query, paginationParam, null);
+        return queryController.query(userWithRoles, query, paginationParam, null, false);
     }
 
     private void checkPermissionForQueryExecution(UserWithRoles userWithRoles){

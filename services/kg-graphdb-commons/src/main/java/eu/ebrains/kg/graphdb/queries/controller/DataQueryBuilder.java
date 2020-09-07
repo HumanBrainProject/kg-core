@@ -62,7 +62,7 @@ public class DataQueryBuilder {
             q.addDocumentFilterWithWhitelistFilter(rootAlias.getArangoDocName());
         }
 
-        q.addLine(trust("FILTER @idRestriction == [] OR ${rootFieldName}_doc._key IN @idRestriction"));
+        q.addLine(trust("FILTER TO_ARRAY(@idRestriction) == [] OR ${rootFieldName}_doc._key IN TO_ARRAY(@idRestriction)"));
 
         q.add(new MergeBuilder(rootAlias, specification.getProperties()).getMergedFields());
 

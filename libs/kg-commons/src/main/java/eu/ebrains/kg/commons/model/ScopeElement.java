@@ -22,11 +22,27 @@ import java.util.UUID;
 public class ScopeElement {
 
     private UUID id;
+    private String label;
+    private transient String internalId;
+    private List<String> types;
     private List<ScopeElement> children;
 
-    public ScopeElement(UUID id, List<ScopeElement> children) {
+    public ScopeElement() {
+    }
+
+    public ScopeElement(UUID id, List<String> types, List<ScopeElement> children, String internalId) {
         this.id = id;
         this.children = children;
+        this.types = types;
+        this.internalId = internalId;
+    }
+
+    public String getInternalId() {
+        return internalId;
+    }
+
+    public List<String> getTypes() {
+        return types;
     }
 
     public UUID getId() {
@@ -35,6 +51,14 @@ public class ScopeElement {
 
     public List<ScopeElement> getChildren() {
         return children;
+    }
+
+    public String getLabel() {
+        return label;
+    }
+
+    public void setLabel(String label) {
+        this.label = label;
     }
 }
 

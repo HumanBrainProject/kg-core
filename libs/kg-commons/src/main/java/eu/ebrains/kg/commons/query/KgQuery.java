@@ -21,13 +21,13 @@ import eu.ebrains.kg.commons.model.DataStage;
 import eu.ebrains.kg.commons.model.EntityId;
 import eu.ebrains.kg.commons.semantics.vocabularies.EBRAINSVocabulary;
 
-import java.util.Set;
+import java.util.List;
 
 public class KgQuery {
 
     private NormalizedJsonLd payload;
     private DataStage stage;
-    private Set<EntityId> idRestrictions;
+    private List<EntityId> idRestrictions;
 
     public KgQuery() {
     }
@@ -55,11 +55,11 @@ public class KgQuery {
         return this;
     }
 
-    public Set<EntityId> getIdRestrictions() {
+    public List<EntityId> getIdRestrictions() {
         return idRestrictions;
     }
 
-    public KgQuery setIdRestrictions(Set<EntityId> idRestrictions) {
+    public KgQuery setIdRestrictions(List<EntityId> idRestrictions) {
         this.idRestrictions = idRestrictions;
         return this;
     }

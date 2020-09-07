@@ -24,6 +24,7 @@ import eu.ebrains.kg.core.serviceCall.CoreInstancesToGraphDB;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
 
+import java.util.List;
 import java.util.UUID;
 /**
  * The query controller contains the orchestration logic for the query operations
@@ -63,5 +64,9 @@ public class CoreQueryController {
 
     public Paginated<NormalizedJsonLd> executeQuery(KgQuery query, PaginationParam paginationParam){
         return graphDB4InstancesSvc.executeQuery(query, paginationParam);
+    }
+
+    public List<InstanceId> deleteQuery(InstanceId instanceId){
+        return instanceController.deleteInstance(instanceId, null);
     }
 }

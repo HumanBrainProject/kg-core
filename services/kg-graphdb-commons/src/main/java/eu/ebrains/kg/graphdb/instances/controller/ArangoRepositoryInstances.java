@@ -197,7 +197,7 @@ public class ArangoRepositoryInstances {
         }
         aql.addLine(AQL.trust("}"));
         Map<UUID, Result<NormalizedJsonLd>> result = new HashMap<>();
-        List<NormalizedJsonLd> results = db.query(aql.build().getValue(), bindVars,  new AqlQueryOptions(), NormalizedJsonLd.class).asListRemaining().stream().filter(Objects::nonNull).collect(Collectors.toList());
+        List<NormalizedJsonLd> results = db.query(aql.build().getValue(), bindVars, new AqlQueryOptions(), NormalizedJsonLd.class).asListRemaining().stream().filter(Objects::nonNull).collect(Collectors.toList());
         List<NormalizedJsonLd> normalizedJsonLds = new ArrayList<>();
         if (!results.isEmpty()) {
             // The response object is always just a single dictionary
@@ -396,7 +396,7 @@ public class ArangoRepositoryInstances {
             bindVars.put("@relation", relationColl.getCollectionName());
             bindVars.put("@space", documentSpace.getCollectionName());
             bindVars.put("id", useOriginalTo ? idUtils.buildAbsoluteUrl(id).getId() : space.getName() + "/" + id);
-            List<NormalizedJsonLd> result = db.query(aql, bindVars,  new AqlQueryOptions(), NormalizedJsonLd.class).asListRemaining();
+            List<NormalizedJsonLd> result = db.query(aql, bindVars, new AqlQueryOptions(), NormalizedJsonLd.class).asListRemaining();
             handleAlternativesAndEmbedded(result, stage, alternatives, embedded);
             exposeRevision(result);
             return result;
@@ -448,7 +448,7 @@ public class ArangoRepositoryInstances {
                 identifierCnt++;
             }
             aql.addLine(AQL.trust("RETURN doc"));
-            List<NormalizedJsonLd> result = db.query(aql.build().getValue(), bindVars,  new AqlQueryOptions(), NormalizedJsonLd.class).asListRemaining();
+            List<NormalizedJsonLd> result = db.query(aql.build().getValue(), bindVars, new AqlQueryOptions(), NormalizedJsonLd.class).asListRemaining();
             exposeRevision(result);
             return result;
         }
@@ -485,7 +485,7 @@ public class ArangoRepositoryInstances {
         bindVars.put("@space", collectionReference.getCollectionName());
         bindVars.put("@releaseStatusCollection", releaseStatusCollection.getCollectionName());
         bindVars.put("id", id);
-        List<String> data = db.query(aql, bindVars,  new AqlQueryOptions(), String.class).asListRemaining();
+        List<String> data = db.query(aql, bindVars, new AqlQueryOptions(), String.class).asListRemaining();
         if (data.isEmpty()) {
             return ReleaseStatus.UNRELEASED;
         } else {
@@ -531,7 +531,7 @@ public class ArangoRepositoryInstances {
         bindVars.put("idlist", ids);
         ArangoDatabase database = databases.getByStage(stage);
         arangoUtils.getOrCreateArangoCollection(database, InternalSpace.DOCUMENT_ID_EDGE_COLLECTION);
-        return database.query(aql.build().getValue(), bindVars,  new AqlQueryOptions(), NormalizedJsonLd[].class).asListRemaining();
+        return database.query(aql.build().getValue(), bindVars, new AqlQueryOptions(), NormalizedJsonLd[].class).asListRemaining();
     }
 
     void mergeEmbeddedDocuments(NormalizedJsonLd originalDocument, Map<String, NormalizedJsonLd> embeddedById) {
@@ -569,6 +569,47 @@ public class ArangoRepositoryInstances {
         if (temporaryCollection != null) {
             temporaryCollection.add(value);
         }
+    }
+
+    public Map<UUID, String> getLabelsForInstances(DataStage stage, Set<InstanceId> ids, List<Type> types) {
+        if (types == null) {
+            throw new IllegalArgumentException("No types are defined - please make sure you provide the list of types");
+        }
+        Map<String, Object> bindVars = new HashMap<>();
+        AQL aql = new AQL();
+        aql.addLine(AQL.trust("LET types = {"));
+        List<Type> reducedListOfTypes = types.stream().filter(t -> t.getLabelProperties() != null && !t.getLabelProperties().isEmpty()).collect(Collectors.toList());
+
+        for (int i = 0; i < reducedListOfTypes.size(); i++) {
+            Type type = reducedListOfTypes.get(i);
+            aql.addLine(AQL.trust("\"" + AQL.preventAqlInjection(type.getName()).getValue() + "\": @labelProperties" + i));
+            bindVars.put("labelProperties" + i, type.getLabelProperties());
+            if (i < reducedListOfTypes.size() - 1) {
+                aql.add(AQL.trust(","));
+            }
+        }
+        aql.addLine(AQL.trust("}"));
+
+        aql.addLine(AQL.trust("RETURN MERGE(FOR id IN @ids"));
+        bindVars.put("ids", ids.stream().map(InstanceId::serialize).collect(Collectors.toSet()));
+        aql.indent().addLine(AQL.trust("LET doc = DOCUMENT(id)"));
+        aql.addLine(AQL.trust("FILTER doc != null"));
+        aql.addLine(AQL.trust("LET labelProps = FLATTEN(FOR t IN doc.`" + JsonLdConsts.TYPE + "` LET p = types[t] SORT p asc RETURN DISTINCT p)"));
+        aql.addLine(AQL.trust("LET label = CONCAT_SEPARATOR(\" \", (FOR p IN labelProps FILTER doc[p]!=null AND doc[p]!=[] RETURN doc[p]))"));
+        aql.addLine(AQL.trust("RETURN {[ id ] : label})"));
+
+        List<JsonLdDoc> results = databases.getByStage(stage).query(aql.build().getValue(), bindVars, new AqlQueryOptions(), JsonLdDoc.class).asListRemaining();
+        if (results.size() == 1) {
+            JsonLdDoc map = results.get(0);
+            Map<UUID, String> result = new HashMap<>();
+            map.keySet().stream().filter(Objects::nonNull).forEach(k -> {
+                UUID uuid = InstanceId.deserialize(k).getUuid();
+                result.put(uuid, map.getAs(k, String.class));
+            });
+            return result;
+        }
+        return Collections.emptyMap();
+
     }
 
 }

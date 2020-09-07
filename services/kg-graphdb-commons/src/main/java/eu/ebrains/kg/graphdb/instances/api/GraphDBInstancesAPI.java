@@ -24,8 +24,6 @@ import eu.ebrains.kg.commons.jsonld.JsonLdId;
 import eu.ebrains.kg.commons.jsonld.NormalizedJsonLd;
 import eu.ebrains.kg.commons.model.*;
 import eu.ebrains.kg.commons.params.ReleaseTreeScope;
-import eu.ebrains.kg.commons.semantics.vocabularies.EBRAINSVocabulary;
-import eu.ebrains.kg.commons.semantics.vocabularies.SchemaOrgVocabulary;
 import eu.ebrains.kg.graphdb.instances.controller.ArangoRepositoryInstances;
 import eu.ebrains.kg.graphdb.instances.model.ArangoRelation;
 import eu.ebrains.kg.graphdb.types.controller.ArangoRepositoryTypes;
@@ -64,7 +62,7 @@ public class GraphDBInstancesAPI {
         List<Type> types = Collections.singletonList(new Type(type));
         if(searchByLabel!=null && !searchByLabel.isBlank()){
             //Since we're searching by label, we need to reflect on the type -> we therefore have to resolve the type in the database first...
-            types = extractExtendedTypeInformationFromPayload(typeRepository.getTypes(authContext.getUserWithRoles().getClientId(), stage, types, true));
+            types = ArangoRepositoryTypes.extractExtendedTypeInformationFromPayload(typeRepository.getTypes(authContext.getUserWithRoles().getClientId(), stage, types, true, false));
         }
         return repository.getDocumentsByTypes(stage, types, paginationParam, searchByLabel, returnEmbedded, returnAlternatives);
     }
@@ -79,6 +77,14 @@ public class GraphDBInstancesAPI {
         List<InstanceId> instanceIds = ids.stream().map(InstanceId::deserialize).filter(Objects::nonNull).collect(Collectors.toList());
         return repository.getDocumentsByIdList(stage, instanceIds, returnEmbedded, returnAlternatives);
   }
+
+    @PostMapping("instancesByIds/labels")
+    public Map<UUID, String> getLabels(@RequestBody List<String> ids, @PathVariable("stage") DataStage stage) {
+        Set<InstanceId> instanceIds = ids.stream().map(InstanceId::deserialize).filter(Objects::nonNull).collect(Collectors.toSet());
+        Set<Type> types = getInstancesByIds(ids, stage, false, false).values().stream().map(Result::getData).map(JsonLdDoc::getTypes).flatMap(Collection::stream).distinct().map(Type::new).collect(Collectors.toSet());
+        List<Type> extendedTypes = ArangoRepositoryTypes.extractExtendedTypeInformationFromPayload(typeRepository.getTypes(authContext.getUserWithRoles().getClientId(), stage, types, true, false));
+        return repository.getLabelsForInstances(stage, instanceIds, extendedTypes);
+    }
 
   @GetMapping("instancesByIdentifier/{space}")
   public List<NormalizedJsonLd> getInstancesByIdentifier(@RequestParam("identifier") String identifier, @PathVariable("space") String space, @PathVariable("stage") DataStage stage) {
@@ -113,8 +119,8 @@ public class GraphDBInstancesAPI {
         }
         SuggestionResult suggestionResult = new SuggestionResult();
         ArangoRepositoryTypes.TargetsForProperties properties = new ArangoRepositoryTypes.TargetsForProperties(propertyName, payload.getTypes());
-        Paginated<NormalizedJsonLd> targetTypesForProperty = typeRepository.getTargetTypesForProperty(authContext.getUserWithRoles().getClientId(), stage, properties, true, null);
-        List<Type> typesWithLabelInfo = extractExtendedTypeInformationFromPayload(targetTypesForProperty.getData());
+        Paginated<NormalizedJsonLd> targetTypesForProperty = typeRepository.getTargetTypesForProperty(authContext.getUserWithRoles().getClientId(), stage, properties, true, false,null);
+        List<Type> typesWithLabelInfo = ArangoRepositoryTypes.extractExtendedTypeInformationFromPayload(targetTypesForProperty.getData());
         if(type != null && !type.isBlank()){
             typesWithLabelInfo = typesWithLabelInfo.stream().filter(t -> type.equals(t.getName())).collect(Collectors.toList());
         }
@@ -123,19 +129,6 @@ public class GraphDBInstancesAPI {
         Paginated<SuggestedLink> documentsByTypes = repository.getSuggestionsByTypes(stage, typesWithLabelInfo, paginationParam, search, existingLinks);
         suggestionResult.setSuggestions(documentsByTypes);
         return suggestionResult;
-    }
-
-
-    private List<Type> extractExtendedTypeInformationFromPayload(List<NormalizedJsonLd> payload){
-        return payload.stream().map(t -> {
-            //TODO this can probably be solved in a more optimized way - we don't need all properties but only the labels...
-            Type targetType = new Type(t.getPrimaryIdentifier());
-            List<NormalizedJsonLd> properties = t.getAsListOf(EBRAINSVocabulary.META_PROPERTIES, NormalizedJsonLd.class);
-            List<String> labelProperties = properties.stream().filter(p -> p.getAs(EBRAINSVocabulary.META_LABELPROPERTY, Boolean.class, false)).map(p -> p.getAs(SchemaOrgVocabulary.IDENTIFIER, String.class)).collect(Collectors.toList());
-            t.remove(EBRAINSVocabulary.META_PROPERTIES);
-            targetType.setLabelProperties(labelProperties);
-            return targetType;
-        }).collect(Collectors.toList());
     }
 
 
