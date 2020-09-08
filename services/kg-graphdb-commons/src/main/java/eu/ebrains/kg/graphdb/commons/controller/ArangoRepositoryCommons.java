@@ -228,6 +228,7 @@ public class ArangoRepositoryCommons {
                 removedDocuments.add(delete.getDocumentReference());
             }
         });
+        Map<ArangoDocumentReference, ArangoDocument> edgeResolutionDependencies = new HashMap<>();
         edgeResolutionOperations.forEach(edgeResolution -> {
             //Remove documentId link...
             ArangoDocumentReference edgeReference = edgeResolution.getUpdatedEdge().getId();
@@ -244,6 +245,18 @@ public class ArangoRepositoryCommons {
 
             //... and attach it to the document id
             insertedDocuments.computeIfAbsent(InternalSpace.DOCUMENT_ID_EDGE_COLLECTION, x -> new ArrayList<>()).add(new Gson().toJson(entryHookDocuments.createEdgeFromHookDocument(InternalSpace.DOCUMENT_ID_EDGE_COLLECTION, edgeReference, edgeResolution.getUpdatedEdge().getOriginalDocument(), null)));
+
+            //... finally, update the payload of the related document to the resolved id
+            ArangoDocument originalDocument = edgeResolutionDependencies.get(edgeResolution.getUpdatedEdge().getOriginalDocument());
+            if(originalDocument==null){
+                originalDocument = getDocument(stage, edgeResolution.getUpdatedEdge().getOriginalDocument());
+                edgeResolutionDependencies.put(edgeResolution.getUpdatedEdge().getOriginalDocument(), originalDocument);
+            }
+            if(originalDocument!=null){
+                originalDocument.applyResolvedEdges(Collections.singleton(edgeResolution.getUpdatedEdge()));
+            }
+//            removedDocuments.add(edgeResolution.getUpdatedEdge().getOriginalDocument());
+//            insertedDocuments.computeIfAbsent(edgeResolution.getUpdatedEdge().getOriginalDocument().getArangoCollectionReference(), x -> new ArrayList<>()).add(new Gson().toJson(originalDocument.getDoc()));
         });
 
         Map<ArangoDocumentReference, ArangoDocumentReference> documentIdHooks = new HashMap<>();
@@ -267,6 +280,7 @@ public class ArangoRepositoryCommons {
         });
 
         collections.addAll(removedDocuments.stream().map(ArangoDocumentReference::getArangoCollectionReference).collect(Collectors.toSet()));
+        collections.addAll(edgeResolutionDependencies.values().stream().map(d -> d.getOriginalDocument().getArangoCollectionReference()).collect(Collectors.toSet()));
         collections.addAll(insertedDocuments.keySet());
 
         //Create missing collections...
@@ -277,8 +291,11 @@ public class ArangoRepositoryCommons {
         StreamTransactionEntity tx = db.beginStreamTransaction(new StreamTransactionOptions().writeCollections(collections.stream().map(ArangoCollectionReference::getCollectionName).toArray(String[]::new)));
         DocumentDeleteOptions deleteOptions = new DocumentDeleteOptions().streamTransactionId(tx.getId());
         DocumentCreateOptions insertOptions = new DocumentCreateOptions().streamTransactionId(tx.getId());
+        DocumentUpdateOptions updateOptions = new DocumentUpdateOptions().streamTransactionId(tx.getId());
+
         try {
             removedDocuments.stream().collect(Collectors.groupingBy(ArangoDocumentReference::getArangoCollectionReference)).forEach((c,v)->db.collection(c.getCollectionName()).deleteDocuments(v.stream().map(r -> r.getDocumentId().toString()).collect(Collectors.toSet()), String.class, deleteOptions));
+            edgeResolutionDependencies.values().stream().collect(Collectors.groupingBy(i -> i.getId().getArangoCollectionReference())).forEach((c, v) -> db.collection(c.getCollectionName()).updateDocuments(v.stream().map(doc -> new Gson().toJson(doc.getDoc())).collect(Collectors.toList()), updateOptions));
             insertedDocuments.forEach((c,v)->db.collection(c.getCollectionName()).insertDocuments(v, insertOptions.overwrite(true)));
             db.commitStreamTransaction(tx.getId());
         } catch (Exception e) {

@@ -52,6 +52,15 @@ public class ArangoEdge implements ArangoInstance {
     @SerializedName("_id")
     private String id;
 
+    private transient JsonLdId resolvedTargetId;
+
+    public JsonLdId getResolvedTargetId() {
+        return resolvedTargetId;
+    }
+
+    public void setResolvedTargetId(JsonLdId resolvedTargetId) {
+        this.resolvedTargetId = resolvedTargetId;
+    }
 
     public ArangoDocumentReference getTo() {
         return to != null ? ArangoDocumentReference.fromArangoId(to, false) : null;

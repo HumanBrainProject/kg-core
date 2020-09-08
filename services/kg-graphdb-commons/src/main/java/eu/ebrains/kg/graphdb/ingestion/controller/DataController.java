@@ -82,7 +82,8 @@ public class DataController {
             defineChangedReleaseStatusIfApplicable(rootDocumentRef, operations);
         }
         //Resolve all edges with to == null
-        resolveEdges(stage, arangoInstances.stream().filter(i -> i instanceof ArangoEdge).map(i -> (ArangoEdge) i).filter(i -> i.getTo() == null).collect(Collectors.toList()));
+        Set<ArangoEdge> resolvedEdges = resolveEdges(stage, arangoInstances.stream().filter(i -> i instanceof ArangoEdge).map(i -> (ArangoEdge) i).filter(i -> i.getTo() == null).collect(Collectors.toSet()));
+        arangoInstances.stream().filter(i -> i instanceof ArangoDocument).map(i -> (ArangoDocument)i).forEach(d -> d.applyResolvedEdges(resolvedEdges));
         operations.addAll(createDBUpsertOperations(rootDocumentRef, arangoInstances));
         return operations;
     }
@@ -103,6 +104,7 @@ public class DataController {
             //Relocate the edge to the correct edge collection (according to the property label)
             ArangoCollectionReference propertyEdgeCollection = ArangoCollectionReference.fromSpace(new Space(arangoEdge.getOriginalLabel()), true);
             arangoEdge.redefineId(propertyEdgeCollection.doc(arangoEdge.getKey()));
+            arangoEdge.setResolvedTargetId(idUtils.buildAbsoluteUrl(rootDocumentRef.getDocumentId()));
             result.add(new EdgeResolutionOperation(oldEdgeRef, arangoEdge));
         }
         return result;
@@ -164,7 +166,7 @@ public class DataController {
     }
 
 
-    private void resolveEdges(DataStage stage, List<ArangoEdge> edges) {
+    private Set<ArangoEdge> resolveEdges(DataStage stage, Set<ArangoEdge> edges) {
         logger.trace("Resolve edges");
         Map<JsonLdId, UUID> edgeToRequestId = new HashMap<>();
         List<IdWithAlternatives> ids = edges.stream().map(e -> {
@@ -173,6 +175,9 @@ public class DataController {
             return new IdWithAlternatives().setId(requestId).setAlternatives(Collections.singleton(e.getOriginalTo().getId()));
         }).collect(Collectors.toList());
         List<JsonLdIdMapping> resolvedIds = idLookupSvc.resolveIds(stage, ids);
+        Set<ArangoEdge> resolvedEdges = new HashSet<>();
+        Set<JsonLdId> resolvedJsonLdIds = new HashSet<>();
+
         for (ArangoEdge edge : edges) {
             ArangoDocumentReference unknownTarget = ArangoDocumentReference.fromArangoId("unknown/" + UUID.nameUUIDFromBytes("unknown".getBytes(StandardCharsets.UTF_8)).toString(), false);
             if (stage == DataStage.NATIVE || isEdgeOf(edge.getId(), InternalSpace.INFERENCE_OF_SPACE, new Space(EBRAINSVocabulary.META_USER))) {
@@ -191,6 +196,10 @@ public class DataController {
                     } else {
                         logger.debug(String.format("I have resolved the id %s to %s - redirecting the edge", edge.getOriginalTo().getId(), resolvedId.getId()));
                         edge.setTo(ArangoCollectionReference.fromSpace(jsonLdIdMapping.getSpace()).doc(uuid));
+                        edge.setResolvedTargetId(resolvedId);
+                        if(resolvedJsonLdIds.add(resolvedId)) {
+                            resolvedEdges.add(edge);
+                        }
                     }
                 } else {
                     logger.info("Was not able to resolve link -> we postpone it.");
@@ -201,6 +210,7 @@ public class DataController {
             }
         }
         logger.trace("Edges resolved");
+        return resolvedEdges;
     }
 
 

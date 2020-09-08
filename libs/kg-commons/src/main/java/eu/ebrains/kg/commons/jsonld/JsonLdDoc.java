@@ -89,13 +89,17 @@ public class JsonLdDoc extends TreeMap<String, Object> {
         return id!=null ? new JsonLdId(id) : null;
     }
 
-    public <T> List<T> getAsListOf(String key, Class<T> clazz){
+    public <T> List<T> getAsListOf(String key, Class<T> clazz) {
+        return getAsListOf(key, clazz, false);
+    }
+
+    public <T> List<T> getAsListOf(String key, Class<T> clazz, boolean skipWrongTypes){
         Object o = get(key);
         if(o instanceof Collection){
-            return ((Collection<?>)o).stream().map(i -> castType(clazz, i)).collect(Collectors.toList());
+            return ((Collection<?>)o).stream().map(i -> castType(clazz, i, !skipWrongTypes)).filter(Objects::nonNull).collect(Collectors.toList());
         }
         else{
-            T singleInstance = castType(clazz, o);
+            T singleInstance = castType(clazz, o, !skipWrongTypes);
             if(singleInstance!=null){
                 return Collections.singletonList(singleInstance);
             }
@@ -106,20 +110,15 @@ public class JsonLdDoc extends TreeMap<String, Object> {
     }
 
     public <T> T getAs(String key, Class<T> clazz, T fallback){
-        try{
-            T value = getAs(key, clazz);
-            return value != null ? value : fallback;
-        }
-        catch(IllegalArgumentException e){
-            return fallback;
-        }
+        T value = castType(clazz, get(key), false);
+        return value != null ? value : fallback;
     }
 
     public <T> T getAs(String key, Class<T> clazz) {
-        return castType(clazz, get(key));
+        return castType(clazz, get(key), true);
     }
 
-    private <T> T castType(Class<T> clazz, Object o) {
+    private <T> T castType(Class<T> clazz, Object o, boolean throwException) {
         if (o == null) {
             return null;
         }
@@ -129,7 +128,15 @@ public class JsonLdDoc extends TreeMap<String, Object> {
             }
             if(clazz == JsonLdId.class){
                 Object id = ((Map) o).get(JsonLdConsts.ID);
-                return id instanceof String ? (T)new JsonLdId((String) id) : null;
+                try {
+                    return id instanceof String ? (T) new JsonLdId((String) id) : null;
+                }
+                catch (IllegalArgumentException e){
+                    if(throwException){
+                        throw e;
+                    }
+                    return null;
+                }
             }
             if(clazz == JsonLdDoc.class){
                 return (T)new JsonLdDoc((Map)o);
@@ -138,13 +145,26 @@ public class JsonLdDoc extends TreeMap<String, Object> {
                 return (T) new NormalizedJsonLd((Map)o);
             }
         }
+        if(o instanceof Collection){
+            if(((Collection<?>)o).isEmpty()){
+                return null;
+            }
+            else if(((Collection<?>)o).size()==1) {
+                return castType(clazz, ((Collection<?>) o).iterator().next(), throwException);
+            }
+        }
         if(clazz == UUID.class && o instanceof String){
             return (T)UUID.fromString((String)o);
         }
         if (clazz.isInstance(o)) {
             return (T) o;
         } else {
-            throw new IllegalArgumentException(String.format("Wrong type casting - was expecting %s but got %s", clazz.getName(), o.getClass().getName()));
+            if(throwException) {
+                throw new IllegalArgumentException(String.format("Wrong type casting - was expecting %s but got %s", clazz.getName(), o.getClass().getName()));
+            }
+            else{
+                return null;
+            }
         }
     }
 

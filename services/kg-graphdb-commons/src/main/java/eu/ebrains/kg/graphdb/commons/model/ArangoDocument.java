@@ -19,7 +19,13 @@ package eu.ebrains.kg.graphdb.commons.model;
 import eu.ebrains.kg.arango.commons.aqlBuilder.ArangoVocabulary;
 import eu.ebrains.kg.arango.commons.model.ArangoDocumentReference;
 import eu.ebrains.kg.commons.jsonld.IndexedJsonLdDoc;
+import eu.ebrains.kg.commons.jsonld.JsonLdId;
 import eu.ebrains.kg.commons.jsonld.NormalizedJsonLd;
+
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * An arango document is a JSON-LD with specific properties:
@@ -88,5 +94,19 @@ public class ArangoDocument implements ArangoInstance {
         indexedDoc.getDoc().put(IndexedJsonLdDoc.ORIGINAL_DOCUMENT, originalDocument.getId());
     }
 
+    public void applyResolvedEdges(Set<ArangoEdge> resolvedEdges){
+        Map<String, JsonLdId> oldToNew = resolvedEdges.stream().collect(Collectors.toMap(k->k.getOriginalTo().getId(), ArangoEdge::getResolvedTargetId));
+        NormalizedJsonLd doc = indexedDoc.getDoc();
+        for (String key : doc.keySet()) {
+            List<JsonLdId> jsonldIds = doc.getAsListOf(key, JsonLdId.class, true);
+            if(!jsonldIds.isEmpty()){
+                List<JsonLdId> newJsonLds = jsonldIds.stream().map(jsonLdId -> {
+                    JsonLdId newValue = oldToNew.get(jsonLdId.getId());
+                    return newValue != null ? newValue : jsonLdId;
+                }).collect(Collectors.toList());
+                doc.put(key, newJsonLds);
+            }
+        }
+    }
 
 }
