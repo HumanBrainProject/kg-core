@@ -64,7 +64,6 @@ public class Spaces {
     @GetMapping
     public PaginatedResult<NormalizedJsonLd> getSpaces(@RequestParam("stage") ExposedStage stage, PaginationParam paginationParam, @RequestParam(value = "permissions", defaultValue = "false") boolean permissions) {
         Paginated<NormalizedJsonLd> spaces = graphDbSvc.getSpaces(stage.getStage(), paginationParam);
-        spaces.getData().forEach(NormalizedJsonLd::removeAllInternalProperties);
         if (permissions) {
             UserWithRoles userWithRoles = authContext.getUserWithRoles();
             spaces.getData().forEach(space -> {
@@ -72,6 +71,7 @@ public class Spaces {
                 space.put(EBRAINSVocabulary.META_PERMISSIONS, applyingFunctionalities);
             });
         }
+        spaces.getData().forEach(NormalizedJsonLd::removeAllInternalProperties);
         return PaginatedResult.ok(spaces);
     }
 

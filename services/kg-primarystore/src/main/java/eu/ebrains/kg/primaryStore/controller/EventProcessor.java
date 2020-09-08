@@ -137,9 +137,7 @@ public class EventProcessor {
 
     public List<PersistedEvent> autoRelease(List<PersistedEvent> events, UserWithRoles userWithRoles, AuthTokens authTokens){
         events.forEach(e -> {
-            //TODO evaluate by space configuration
-            boolean autorelease = false;
-            if(autorelease){
+            if(e.getSpace().isAutoRelease()){
                 postEvent(userWithRoles, authTokens, new Event(e.getSpace(), e.getDocumentId(), new NormalizedJsonLd(e.getData()).removeAllInternalProperties().removeAllFieldsFromNamespace(EBRAINSVocabulary.META), Event.Type.RELEASE, new Date()), false);
             }
         });

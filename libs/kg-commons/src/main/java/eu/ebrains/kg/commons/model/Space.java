@@ -109,7 +109,7 @@ public class Space {
     }
 
     public static Space fromJsonLd(NormalizedJsonLd payload) {
-        if (payload != null && payload.getTypes().contains(EBRAINSVocabulary.META_SPACEDEFINITION_TYPE)) {
+        if (payload != null) {
             Space space = new Space();
             space.setName(payload.getAs(SchemaOrgVocabulary.NAME, String.class));
             space.setClientSpace(payload.getAs(EBRAINSVocabulary.META_CLIENT_SPACE, Boolean.class, false));

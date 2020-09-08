@@ -209,14 +209,20 @@ public class ArangoRepositoryTypes {
         aql.indent().addLine(AQL.trust("FILTER IS_SAME_COLLECTION(@globalSpace, g._id)"));
         aql.addLine(AQL.trust("RETURN UNSET(g, propertiesToRemoveForOverrides)"));
         aql.outdent().addLine(AQL.trust(")"));
-
+        aql.addComment("Now, we're investigating the edge which contextualizes the type in a specific space (since we keep the information on this granularity). This means, we first query the numbers for every space-type combination and aggregate them later for the global view.");
+        aql.addLine(AQL.trust("LET spaces = [{\"" + EBRAINSVocabulary.META_SPACES + "\": (FOR space, space2type IN 1..1 INBOUND type @@spaceToType"));
+        bindVars.put("@spaceToType", InternalSpace.SPACE_TO_TYPE_EDGE_COLLECTION.getCollectionName());
+        bindVars.put("space", space == null ? null : space.getName());
+        aql.addLine(AQL.trust("FILTER @space == null OR space.`" + SchemaOrgVocabulary.IDENTIFIER + "`==@space"));
+        aql.addNewline();
+        if(!withProperties){
+            //If we don't ask for properties, we only want the space information back
+            aql.addLine(AQL.trust(" RETURN {"));
+            aql.addLine(AQL.trust("\"" + EBRAINSVocabulary.META_SPACE + "\": space.`" + SchemaOrgVocabulary.IDENTIFIER + "`"));
+            aql.addLine(AQL.trust("  })"));
+            aql.addLine(AQL.trust("}]"));
+        }
         if (withProperties) {
-            aql.addComment("Now, we're investigating the edge which contextualizes the type in a specific space (since we keep the information on this granularity). This means, we first query the numbers for every space-type combination and aggregate them later for the global view.");
-            aql.addLine(AQL.trust("LET spaces = [{\"" + EBRAINSVocabulary.META_SPACES + "\": (FOR space, space2type IN 1..1 INBOUND type @@spaceToType"));
-            bindVars.put("@spaceToType", InternalSpace.SPACE_TO_TYPE_EDGE_COLLECTION.getCollectionName());
-            bindVars.put("space", space == null ? null : space.getName());
-            aql.addLine(AQL.trust("FILTER @space == null OR space.`" + SchemaOrgVocabulary.IDENTIFIER + "`==@space"));
-            aql.addNewline();
             aql.indent();
             aql.addComment("We want to know about the properties existing for this type in this space...");
             aql.addLine(AQL.trust("LET properties = (FOR spaceType2property, spaceType2propertyEdge IN 1..1 OUTBOUND space2type @@typeToProperty"));
@@ -383,12 +389,12 @@ public class ArangoRepositoryTypes {
         if (types == null || types.isEmpty()) {
             aql.addPagination(paginationParam);
         }
-        aql.addLine(AQL.trust("RETURN DISTINCT MERGE(UNION([UNSET(type, propertiesToRemove)], globalTypeDef, clientSpecific"));
+        aql.addLine(AQL.trust("RETURN DISTINCT MERGE(UNION([UNSET(type, propertiesToRemove)], globalTypeDef, clientSpecific, spaces"));
         if (withCount) {
             aql.add(AQL.trust(", globalOccurrences"));
         }
         if (withProperties) {
-            aql.add(AQL.trust(", globalProperties, spaces"));
+            aql.add(AQL.trust(", globalProperties"));
         }
         aql.add(AQL.trust("))"));
         logger.info(aql.buildSimpleDebugQuery(bindVars));
