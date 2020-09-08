@@ -332,7 +332,7 @@ public class ArangoRepositoryInstances {
             Map<String, Object> bindVars = new HashMap<>();
             AQL aql = new AQL();
             iterateThroughTypeList(typesWithLabelInfo, bindVars, aql);
-            Map<String, Object> whitelistFilter = permissionsController.whitelistFilter(authContext.getUserWithRoles(), stage);
+            Map<String, Object> whitelistFilter = permissionsController.whitelistFilterForReadInstances(authContext.getUserWithRoles(), stage);
             if (whitelistFilter != null) {
                 aql.specifyWhitelist();
                 bindVars.putAll(whitelistFilter);

@@ -30,7 +30,7 @@ import java.util.stream.Collectors;
  * Example: Space-administrator inherits the permissions of Space-Curator etc...
  */
 public enum SpacePermissionGroup {
-    CONSUMER(null, Functionality.READ_RELEASED, Functionality.EXECUTE_QUERY, Functionality.CREATE_QUERY, Functionality.READ_QUERY, Functionality.DELETE_QUERY),
+    CONSUMER(null, Functionality.READ_RELEASED, Functionality.EXECUTE_QUERY, Functionality.CREATE_QUERY, Functionality.READ_QUERY, Functionality.DELETE_QUERY, Functionality.READ_SPACE),
     REVIEWER(CONSUMER, Functionality.READ, Functionality.SUGGEST, Functionality.INVITE_FOR_REVIEW),
     EDITOR(REVIEWER, Functionality.WRITE, Functionality.CREATE, Functionality.INVITE_FOR_SUGGESTION),
     OWNER(EDITOR, Functionality.RELEASE, Functionality.DELETE, Functionality.UNRELEASE),

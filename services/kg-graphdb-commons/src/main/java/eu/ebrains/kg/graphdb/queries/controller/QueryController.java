@@ -75,7 +75,7 @@ public class QueryController {
         if(scopeMode){
             specification = new SpecificationToScopeQueryAdapter(specification).translate();
         }
-        Map<String, Object> whitelistFilter = permissionsController.whitelistFilter(userWithRoles, query.getStage());
+        Map<String, Object> whitelistFilter = permissionsController.whitelistFilterForReadInstances(userWithRoles, query.getStage());
         AQLQuery aql = new DataQueryBuilder(specification, paginationParam, whitelistFilter, filterValues, database.getCollections().stream().map(c -> new ArangoCollectionReference(c.getName(), c.getType() == CollectionType.EDGES)).collect(Collectors.toList())).build();
         aql.addBindVar("idRestriction", query.getIdRestrictions() == null ? Collections.emptyList() : query.getIdRestrictions().stream().map(EntityId::getId).collect(Collectors.toList()));
         try {

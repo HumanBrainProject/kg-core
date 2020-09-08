@@ -21,16 +21,21 @@ import eu.ebrains.kg.arango.commons.aqlBuilder.AQL;
 import eu.ebrains.kg.arango.commons.model.AQLQuery;
 import eu.ebrains.kg.arango.commons.model.ArangoCollectionReference;
 import eu.ebrains.kg.arango.commons.model.InternalSpace;
+import eu.ebrains.kg.commons.AuthContext;
 import eu.ebrains.kg.commons.exception.AmbiguousException;
+import eu.ebrains.kg.commons.exception.ForbiddenException;
 import eu.ebrains.kg.commons.jsonld.NormalizedJsonLd;
 import eu.ebrains.kg.commons.model.DataStage;
 import eu.ebrains.kg.commons.model.Paginated;
 import eu.ebrains.kg.commons.model.PaginationParam;
 import eu.ebrains.kg.commons.model.Space;
+import eu.ebrains.kg.commons.permission.Functionality;
+import eu.ebrains.kg.commons.permissions.controller.PermissionSvc;
 import eu.ebrains.kg.commons.semantics.vocabularies.EBRAINSVocabulary;
 import eu.ebrains.kg.commons.semantics.vocabularies.SchemaOrgVocabulary;
 import eu.ebrains.kg.graphdb.commons.controller.ArangoDatabases;
 import eu.ebrains.kg.graphdb.commons.controller.ArangoRepositoryCommons;
+import eu.ebrains.kg.graphdb.commons.controller.PermissionsController;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
@@ -38,20 +43,31 @@ import org.springframework.stereotype.Component;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 @Component
 public class ArangoRepositorySpaces {
 
     private final ArangoDatabases databases;
+    private final PermissionSvc permissionSvc;
+    private final PermissionsController permissionsController;
+    private final AuthContext authContext;
     private final ArangoRepositoryCommons arangoRepositoryCommons;
     private final Logger logger = LoggerFactory.getLogger(getClass());
 
-    public ArangoRepositorySpaces(ArangoDatabases databases, ArangoRepositoryCommons arangoRepositoryCommons) {
+    public ArangoRepositorySpaces(ArangoDatabases databases, PermissionSvc permissionSvc, PermissionsController permissionsController, AuthContext authContext, ArangoRepositoryCommons arangoRepositoryCommons) {
         this.databases = databases;
+        this.permissionSvc = permissionSvc;
+        this.permissionsController = permissionsController;
+        this.authContext = authContext;
         this.arangoRepositoryCommons = arangoRepositoryCommons;
     }
 
     public NormalizedJsonLd getSpace(Space space, DataStage stage) {
+        if (!permissionSvc.hasPermission(authContext.getUserWithRoles(), Functionality.READ_SPACE, space)){
+            throw new ForbiddenException(String.format("You don't have the right to read the space %s", space.getName()));
+        }
         ArangoDatabase db = databases.getMetaByStage(stage);
         ArangoCollectionReference spaceCollection = ArangoCollectionReference.fromSpace(InternalSpace.SPACES_SPACE);
         if (db.collection(spaceCollection.getCollectionName()).exists()) {
@@ -80,11 +96,17 @@ public class ArangoRepositorySpaces {
 
 
     private AQLQuery createSpaceQuery(PaginationParam param, String filterBySpace, ArangoDatabase db) {
+        Set<Space> whitelistedSpaces = permissionsController.whitelistedSpaceReads(authContext.getUserWithRoles());
         ArangoCollectionReference extensionSpace = ArangoCollectionReference.fromSpace(new Space(EBRAINSVocabulary.META_SPACE), true);
         AQL aql = new AQL();
         Map<String, Object> bindVars = new HashMap<>();
         aql.addLine(AQL.trust("FOR space IN @@spaceCollection"));
         aql.addPagination(param);
+        if(whitelistedSpaces!=null){
+            aql.addLine(AQL.trust("FILTER space.@schemaorgname IN @whitelistedSpaces"));
+            bindVars.put("whitelistedSpaces", whitelistedSpaces.stream().map(Space::getName).collect(Collectors.toSet()));
+            bindVars.put("schemaorgname", SchemaOrgVocabulary.NAME);
+        }
         if (filterBySpace != null) {
             aql.addLine(AQL.trust("FILTER space.@schemaorgname == @filterName"));
             bindVars.put("schemaorgname", SchemaOrgVocabulary.NAME);

@@ -107,4 +107,5 @@ public class PermissionSvc {
         return permissions.stream().filter(f -> f.getFunctionality().equals(functionality)).map(FunctionalityInstance::getInstanceId).filter(Objects::nonNull).collect(Collectors.toSet());
     }
 
+
 }

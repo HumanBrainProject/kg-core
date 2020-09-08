@@ -24,13 +24,11 @@ import eu.ebrains.kg.commons.model.DataStage;
 import eu.ebrains.kg.commons.model.Space;
 import eu.ebrains.kg.commons.models.UserWithRoles;
 import eu.ebrains.kg.commons.permission.Functionality;
+import eu.ebrains.kg.commons.permission.FunctionalityInstance;
 import eu.ebrains.kg.commons.permissions.controller.PermissionSvc;
 import org.springframework.stereotype.Component;
 
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Component
@@ -44,7 +42,16 @@ public class PermissionsController {
         this.idUtils = idUtils;
     }
 
-    public Map<String, Object> whitelistFilter(UserWithRoles userWithRoles, DataStage stage) {
+    public Set<Space> whitelistedSpaceReads(UserWithRoles userWithRoles){
+        Functionality functionality = Functionality.READ_SPACE;
+        if(!permissions.hasGlobalPermission(userWithRoles, functionality)){
+            //We only need to filter if there is no "global" read available...
+            return userWithRoles.getPermissions().stream().filter(p -> p.getFunctionality() == functionality).map(FunctionalityInstance::getSpace).filter(Objects::nonNull).collect(Collectors.toSet());
+        }
+        return null;
+    }
+    
+    public Map<String, Object> whitelistFilterForReadInstances(UserWithRoles userWithRoles, DataStage stage) {
         Functionality readFunctionality = getReadFunctionality(stage);
         if (!permissions.hasGlobalPermission(userWithRoles, readFunctionality)){
             //We only need to filter if there is no "global" read available...

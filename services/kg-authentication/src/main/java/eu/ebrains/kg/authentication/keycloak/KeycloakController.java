@@ -172,7 +172,6 @@ public class KeycloakController {
     public List<Role> getNonExistingRoles(List<Role> roles) {
         List<String> existingRoles = keycloakClient.getClientResource().roles().list().stream().map(RoleRepresentation::getName).collect(Collectors.toList());
         return roles.stream().filter(r -> !existingRoles.contains(r.getName())).collect(Collectors.toList());
-
     }
 
     public List<User> getUsersInRole(String role) {
