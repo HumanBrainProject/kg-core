@@ -20,8 +20,6 @@ import eu.ebrains.kg.commons.AuthContext;
 import eu.ebrains.kg.commons.jsonld.JsonLdDoc;
 import eu.ebrains.kg.commons.jsonld.NormalizedJsonLd;
 import eu.ebrains.kg.commons.model.*;
-import eu.ebrains.kg.commons.semantics.vocabularies.EBRAINSVocabulary;
-import eu.ebrains.kg.commons.semantics.vocabularies.SchemaOrgVocabulary;
 import eu.ebrains.kg.graphdb.types.controller.ArangoRepositoryTypes;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
@@ -58,15 +56,7 @@ public class GraphDBTypesAPI {
 
     @GetMapping("/typesWithProperties")
     public Paginated<NormalizedJsonLd> getTypesWithProperties(@PathVariable("stage") DataStage stage, @RequestParam(value = "space", required = false) String space, @RequestParam(value = "withCounts", required = false, defaultValue = "true") boolean withCounts, PaginationParam paginationParam) {
-        Paginated<NormalizedJsonLd> types = getTypes(stage, space, true, withCounts, paginationParam);
-        types.getData().forEach(this::promoteLabelFields);
-        return types;
-    }
-
-    private void promoteLabelFields(NormalizedJsonLd normalizedJsonLd) {
-        List<Map> properties = normalizedJsonLd.getAsListOf(EBRAINSVocabulary.META_PROPERTIES, Map.class);
-        List<Object> labelFieldNames = properties.stream().filter(m -> new NormalizedJsonLd(m).getAs(EBRAINSVocabulary.META_LABELPROPERTY, Boolean.class, false)).map(m -> m.get(SchemaOrgVocabulary.IDENTIFIER)).collect(Collectors.toList());
-        normalizedJsonLd.put(EBRAINSVocabulary.META_LABELPROPERTIES, labelFieldNames);
+        return getTypes(stage, space, true, withCounts, paginationParam);
     }
 
     @PostMapping("/typesByName")
@@ -76,13 +66,7 @@ public class GraphDBTypesAPI {
 
     @PostMapping("/typesWithPropertiesByName")
     public Map<String, Result<NormalizedJsonLd>> getTypesWithPropertiesByName(@RequestBody List<String> types, @PathVariable("stage") DataStage stage, @RequestParam(value = "withCounts", required = false, defaultValue = "true") boolean withCounts, @RequestParam(value = "space", required = false) String space) {
-        Map<String, Result<NormalizedJsonLd>> typesByName = getTypesByName(types, stage, space, true, withCounts);
-        typesByName.forEach((k, v) -> {
-            if(v.getData() != null) {
-                promoteLabelFields(v.getData());
-            }
-        });
-        return typesByName;
+        return getTypesByName(types, stage, space, true, withCounts);
     }
 
     private Map<String, Result<NormalizedJsonLd>> getTypesByName(List<String> types, DataStage stage, String space, boolean withProperties, boolean withCounts) {

@@ -62,10 +62,7 @@ public class ArangoRepositoryTypes {
         return payload.stream().map(t -> {
             //TODO this can probably be solved in a more optimized way - we don't need all properties but only the labels...
             Type targetType = new Type(t.getPrimaryIdentifier());
-            List<NormalizedJsonLd> properties = t.getAsListOf(EBRAINSVocabulary.META_PROPERTIES, NormalizedJsonLd.class);
-            List<String> labelProperties = properties.stream().filter(p -> p.getAs(EBRAINSVocabulary.META_LABELPROPERTY, Boolean.class, false)).map(p -> p.getAs(SchemaOrgVocabulary.IDENTIFIER, String.class)).collect(Collectors.toList());
-            t.remove(EBRAINSVocabulary.META_PROPERTIES);
-            targetType.setLabelProperties(labelProperties);
+            targetType.setLabelProperty(t.getAs(EBRAINSVocabulary.META_TYPE_LABEL_PROPERTY, String.class));
             return targetType;
         }).collect(Collectors.toList());
     }
@@ -87,6 +84,10 @@ public class ArangoRepositoryTypes {
         ArangoDatabase db = databases.getMetaByStage(stage);
         AQLQuery typeStructureQuery = createTypeStructureQuery(db, client, null, null, space, withProperties, withCount, pagination);
         return arangoRepositoryCommons.queryDocuments(db, typeStructureQuery);
+    }
+
+    public List<Type> getTypeInformation(String client, DataStage stage, Collection<Type> types){
+        return getTypes(client, stage, types, false, false).stream().map(Type::fromPayload).collect(Collectors.toList());
     }
 
     public List<NormalizedJsonLd> getTypes(String client, DataStage stage, Collection<Type> types, boolean withProperties, boolean withCount) {

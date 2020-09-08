@@ -245,10 +245,8 @@ public class ArangoRepositoryInstances {
         aql.indent().addLine(AQL.trust("FOR v IN 1..1 OUTBOUND typeDefinition.type @@typeRelationCollection"));
         aql.addLine(AQL.trust("FILTER v." + ArangoVocabulary.KEY + " NOT IN @excludeIds"));
         bindVars.put("excludeIds", excludeIds);
-        aql.addLine(AQL.trust("LET attributes = ( FOR name IN typeDefinition.labelProperties"));
-        aql.addLine(AQL.trust("RETURN {name: name, value: v[name]} )"));
-        addSearchLabelFilter(bindVars, aql, search);
-        aql.addLine(AQL.trust("LET attWithMeta = APPEND(attributes, [{name: \"" + JsonLdConsts.ID + "\", value: v.`" + JsonLdConsts.ID + "`}, {name: \"" + EBRAINSVocabulary.LABEL + "\", value: CONCAT_SEPARATOR(\" \", (FOR name IN typeDefinition.labelProperties RETURN v[name]))},  {name: \"" + EBRAINSVocabulary.META_TYPE + "\", value: typeDefinition.typeName}, {name: \"" + EBRAINSVocabulary.META_SPACE + "\", value: v.`" + EBRAINSVocabulary.META_SPACE + "`}])"));
+        addSearchFilter(bindVars, aql, search);
+        aql.addLine(AQL.trust("LET attWithMeta = [{name: \"" + JsonLdConsts.ID + "\", value: v.`" + JsonLdConsts.ID + "`}, {name: \"" + EBRAINSVocabulary.LABEL + "\", value: v[typeDefinition.labelProperty]},  {name: \"" + EBRAINSVocabulary.META_TYPE + "\", value: typeDefinition.typeName}, {name: \"" + EBRAINSVocabulary.META_SPACE + "\", value: v.`" + EBRAINSVocabulary.META_SPACE + "`}]"));
         aql.addPagination(paginationParam);
         aql.addLine(AQL.trust("RETURN ZIP(attWithMeta[*].name, attWithMeta[*].value)"));
         bindVars.put("@typeRelationCollection", InternalCollections.TYPE_EDGE_COLLECTION.getCollectionName());
@@ -264,20 +262,21 @@ public class ArangoRepositoryInstances {
         return new Paginated<>(links, normalizedJsonLdPaginated.getTotalResults(), normalizedJsonLdPaginated.getSize(), normalizedJsonLdPaginated.getFrom());
     }
 
-    private void addSearchLabelFilter(Map<String, Object> bindVars, AQL aql, String search) {
+    private void addSearchFilter(Map<String, Object> bindVars, AQL aql, String search) {
         if (search != null && !search.isBlank()) {
-            List<String> searchLabels = Arrays.stream(search.trim().split(" ")).filter(s -> !s.isBlank()).map(s -> "%" + s.replaceAll("%", "") + "%").collect(Collectors.toList());
-            if (!searchLabels.isEmpty()) {
-                aql.addLine(AQL.trust("LET found = (FOR name IN typeDefinition.labelProperties FILTER "));
-                for (int i = 0; i < searchLabels.size(); i++) {
+            List<String> searchTerms = Arrays.stream(search.trim().split(" ")).filter(s -> !s.isBlank()).map(s -> "%" + s.replaceAll("%", "") + "%").collect(Collectors.toList());
+            if (!searchTerms.isEmpty()) {
+                //TODO Search also for searchable properties - not only the label and id property
+                aql.addLine(AQL.trust("LET found = (FOR name IN [typeDefinition.labelProperty, \""+ArangoVocabulary.KEY+"\"] FILTER "));
+                for (int i = 0; i < searchTerms.size(); i++) {
                     aql.addLine(AQL.trust("LIKE(v[name], @search" + i + ", true) "));
-                    if (i < searchLabels.size() - 1) {
-                        aql.add(AQL.trust("OR "));
+                    if (i < searchTerms.size() - 1) {
+                        aql.add(AQL.trust("AND "));
                     }
-                    bindVars.put("search" + i, searchLabels.get(i));
+                    bindVars.put("search" + i, searchTerms.get(i));
                 }
                 aql.addLine(AQL.trust("RETURN name) "));
-                aql.addLine(AQL.trust("FILTER LENGTH(found)>=" + searchLabels.size()));
+                aql.addLine(AQL.trust("FILTER LENGTH(found)>=1"));
             }
         }
     }
@@ -287,9 +286,9 @@ public class ArangoRepositoryInstances {
         ArangoCollectionReference typeCollection = ArangoCollectionReference.fromSpace(InternalCollections.TYPE_SPACE);
         bindVars.put("@typeCollection", typeCollection.getCollectionName());
         for (int i = 0; i < types.size(); i++) {
-            aql.addLine(AQL.trust(" {typeName: @typeName" + i + ", type: DOCUMENT(@@typeCollection, @documentId" + i + "), labelProperties: @labelProperties" + i + "}"));
+            aql.addLine(AQL.trust(" {typeName: @typeName" + i + ", type: DOCUMENT(@@typeCollection, @documentId" + i + "), labelProperty: @labelProperty" + i + "}"));
             bindVars.put("documentId" + i, typeCollection.docWithStableId(types.get(i).getName()).getDocumentId().toString());
-            bindVars.put("labelProperties" + i, types.get(i).getLabelProperties());
+            bindVars.put("labelProperty" + i, types.get(i).getLabelProperty());
             bindVars.put("typeName" + i, types.get(i).getName());
             if (i < types.size() - 1) {
                 aql.add(AQL.trust(","));
@@ -325,7 +324,7 @@ public class ArangoRepositoryInstances {
             if (whitelistFilter != null) {
                 aql.addDocumentFilterWithWhitelistFilter(AQL.trust("v"));
             }
-            addSearchLabelFilter(bindVars, aql, search);
+            addSearchFilter(bindVars, aql, search);
             aql.addPagination(paginationParam);
             aql.addLine(AQL.trust("RETURN v"));
             bindVars.put("@typeRelationCollection", InternalCollections.TYPE_EDGE_COLLECTION.getCollectionName());
@@ -578,12 +577,11 @@ public class ArangoRepositoryInstances {
         Map<String, Object> bindVars = new HashMap<>();
         AQL aql = new AQL();
         aql.addLine(AQL.trust("LET types = {"));
-        List<Type> reducedListOfTypes = types.stream().filter(t -> t.getLabelProperties() != null && !t.getLabelProperties().isEmpty()).collect(Collectors.toList());
-
+        List<Type> reducedListOfTypes = types.stream().filter(t -> t.getLabelProperty() != null).collect(Collectors.toList());
         for (int i = 0; i < reducedListOfTypes.size(); i++) {
             Type type = reducedListOfTypes.get(i);
-            aql.addLine(AQL.trust("\"" + AQL.preventAqlInjection(type.getName()).getValue() + "\": @labelProperties" + i));
-            bindVars.put("labelProperties" + i, type.getLabelProperties());
+            aql.addLine(AQL.trust("\"" + AQL.preventAqlInjection(type.getName()).getValue() + "\": @labelProperty" + i));
+            bindVars.put("labelProperty" + i, type.getLabelProperty());
             if (i < reducedListOfTypes.size() - 1) {
                 aql.add(AQL.trust(","));
             }
@@ -594,8 +592,8 @@ public class ArangoRepositoryInstances {
         bindVars.put("ids", ids.stream().map(InstanceId::serialize).collect(Collectors.toSet()));
         aql.indent().addLine(AQL.trust("LET doc = DOCUMENT(id)"));
         aql.addLine(AQL.trust("FILTER doc != null"));
-        aql.addLine(AQL.trust("LET labelProps = FLATTEN(FOR t IN doc.`" + JsonLdConsts.TYPE + "` LET p = types[t] SORT p asc RETURN DISTINCT p)"));
-        aql.addLine(AQL.trust("LET label = CONCAT_SEPARATOR(\" \", (FOR p IN labelProps FILTER doc[p]!=null AND doc[p]!=[] RETURN doc[p]))"));
+        aql.addLine(AQL.trust("LET labelProperty = FIRST(NOT_NULL(FOR t IN doc.`" + JsonLdConsts.TYPE + "` LET p = types[t] FILTER p!=NULL SORT p asc RETURN p))"));
+        aql.addLine(AQL.trust("LET label = doc[labelProperty]"));
         aql.addLine(AQL.trust("RETURN {[ id ] : label})"));
 
         List<JsonLdDoc> results = databases.getByStage(stage).query(aql.build().getValue(), bindVars, new AqlQueryOptions(), JsonLdDoc.class).asListRemaining();

@@ -62,7 +62,7 @@ public class GraphDBInstancesAPI {
         List<Type> types = Collections.singletonList(new Type(type));
         if(searchByLabel!=null && !searchByLabel.isBlank()){
             //Since we're searching by label, we need to reflect on the type -> we therefore have to resolve the type in the database first...
-            types = ArangoRepositoryTypes.extractExtendedTypeInformationFromPayload(typeRepository.getTypes(authContext.getUserWithRoles().getClientId(), stage, types, true, false));
+            types = typeRepository.getTypeInformation(authContext.getUserWithRoles().getClientId(), stage, types);
         }
         return repository.getDocumentsByTypes(stage, types, paginationParam, searchByLabel, returnEmbedded, returnAlternatives);
     }
@@ -82,7 +82,7 @@ public class GraphDBInstancesAPI {
     public Map<UUID, String> getLabels(@RequestBody List<String> ids, @PathVariable("stage") DataStage stage) {
         Set<InstanceId> instanceIds = ids.stream().map(InstanceId::deserialize).filter(Objects::nonNull).collect(Collectors.toSet());
         Set<Type> types = getInstancesByIds(ids, stage, false, false).values().stream().map(Result::getData).map(JsonLdDoc::getTypes).flatMap(Collection::stream).distinct().map(Type::new).collect(Collectors.toSet());
-        List<Type> extendedTypes = ArangoRepositoryTypes.extractExtendedTypeInformationFromPayload(typeRepository.getTypes(authContext.getUserWithRoles().getClientId(), stage, types, true, false));
+        List<Type> extendedTypes = typeRepository.getTypeInformation(authContext.getUserWithRoles().getClientId(), stage, types);
         return repository.getLabelsForInstances(stage, instanceIds, extendedTypes);
     }
 
@@ -102,7 +102,7 @@ public class GraphDBInstancesAPI {
     }
 
     @GetMapping("instances/{space}/{id}/relatedByOutgoingRelation")
-    public List<NormalizedJsonLd> getDocumentWithOutgoingRelatedInstances(@RequestParam("space") String space, @PathVariable("id") UUID id, @PathVariable("stage") DataStage stage, @RequestParam("relation") String relation, @RequestParam(value = "returnEmbedded", required = false, defaultValue = "false") boolean returnEmbedded, @RequestParam(value = "returnAlternatives", required = false, defaultValue = "false") boolean returnAlternatives) {
+    public List<NormalizedJsonLd> getDocumentWithOutgoingRelatedInstances(@PathVariable("space") String space, @PathVariable("id") UUID id, @PathVariable("stage") DataStage stage, @RequestParam("relation") String relation, @RequestParam(value = "returnEmbedded", required = false, defaultValue = "false") boolean returnEmbedded, @RequestParam(value = "returnAlternatives", required = false, defaultValue = "false") boolean returnAlternatives) {
         return repository.getDocumentsByOutgoingRelation(stage, new Space(space), id, new ArangoRelation(URLDecoder.decode(relation, StandardCharsets.UTF_8)), returnEmbedded, returnAlternatives);
     }
 
@@ -119,7 +119,7 @@ public class GraphDBInstancesAPI {
         }
         SuggestionResult suggestionResult = new SuggestionResult();
         ArangoRepositoryTypes.TargetsForProperties properties = new ArangoRepositoryTypes.TargetsForProperties(propertyName, payload.getTypes());
-        Paginated<NormalizedJsonLd> targetTypesForProperty = typeRepository.getTargetTypesForProperty(authContext.getUserWithRoles().getClientId(), stage, properties, true, false,null);
+        Paginated<NormalizedJsonLd> targetTypesForProperty = typeRepository.getTargetTypesForProperty(authContext.getUserWithRoles().getClientId(), stage, properties, false, false,null);
         List<Type> typesWithLabelInfo = ArangoRepositoryTypes.extractExtendedTypeInformationFromPayload(targetTypesForProperty.getData());
         if(type != null && !type.isBlank()){
             typesWithLabelInfo = typesWithLabelInfo.stream().filter(t -> type.equals(t.getName())).collect(Collectors.toList());

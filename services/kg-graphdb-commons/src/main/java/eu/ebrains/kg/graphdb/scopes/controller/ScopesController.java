@@ -85,7 +85,7 @@ public class ScopesController {
         final Map<String, Set<ScopeElement>> typeToUUID = new HashMap<>();
         ScopeElement element = data.stream().map(d -> handleSubElement(d, typeToUUID)).findFirst().orElse(null);
         if(fetchLabels) {
-            List<Type> affectedTypes = ArangoRepositoryTypes.extractExtendedTypeInformationFromPayload(typesRepo.getTypes(authContext.getUserWithRoles().getClientId(), stage, typeToUUID.keySet().stream().map(Type::new).collect(Collectors.toList()), true, true));
+            List<Type> affectedTypes = typesRepo.getTypeInformation(authContext.getUserWithRoles().getClientId(), stage, typeToUUID.keySet().stream().map(Type::new).collect(Collectors.toList()));
             Set<InstanceId> instances = typeToUUID.values().stream().flatMap(Collection::stream).map(s -> InstanceId.deserialize(s.getInternalId())).collect(Collectors.toSet());
             Map<UUID, String> labelsForInstances = instancesRepo.getLabelsForInstances(stage, instances, affectedTypes);
             typeToUUID.values().stream().distinct().parallel().flatMap(Collection::stream).forEach(e -> {

@@ -16,29 +16,30 @@
 
 package eu.ebrains.kg.commons.model;
 
+import eu.ebrains.kg.commons.jsonld.NormalizedJsonLd;
+import eu.ebrains.kg.commons.semantics.vocabularies.EBRAINSVocabulary;
+
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URLDecoder;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
-import java.util.List;
 
 public class Type {
-    private String name;
-    private List<String> labelProperties;
 
-    public List<String> getLabelProperties() {
-        return labelProperties;
+    private String name;
+    private String labelProperty;
+
+    public String getLabelProperty() {
+        return labelProperty;
     }
 
-    public void setLabelProperties(List<String> labelProperties) {
-        this.labelProperties = labelProperties;
+    public void setLabelProperty(String labelProperty) {
+        this.labelProperty = labelProperty;
     }
 
     public Type() {
-
     }
-
 
     public Type(String name) {
         this.name = URLDecoder.decode(name, StandardCharsets.UTF_8);
@@ -48,27 +49,33 @@ public class Type {
         return name;
     }
 
-    public String getEncodedName(){
+    public String getEncodedName() {
         return URLEncoder.encode(getName(), StandardCharsets.UTF_8);
     }
 
     @Override
     public boolean equals(Object obj) {
-        Type that =  (Type)obj;
+        Type that = (Type) obj;
         return this.name.equals(that.getName());
     }
 
-    public static String labelFromName(String fullyQualifiedName){
-        if(fullyQualifiedName!=null) {
+    public static Type fromPayload(NormalizedJsonLd payload) {
+        Type targetType = new Type(payload.getPrimaryIdentifier());
+        targetType.setLabelProperty(payload.getAs(EBRAINSVocabulary.META_TYPE_LABEL_PROPERTY, String.class));
+        return targetType;
+    }
+
+    public static String labelFromName(String fullyQualifiedName) {
+        if (fullyQualifiedName != null) {
             if (fullyQualifiedName.startsWith("@")) {
                 return fullyQualifiedName.replace("@", "");
             }
-            if(fullyQualifiedName.lastIndexOf("#")>-1){
-                return fullyQualifiedName.substring(fullyQualifiedName.lastIndexOf("#")+1);
+            if (fullyQualifiedName.lastIndexOf("#") > -1) {
+                return fullyQualifiedName.substring(fullyQualifiedName.lastIndexOf("#") + 1);
             }
             try {
                 URI uri = new URI(fullyQualifiedName);
-                return uri.getPath()!=null ? uri.getPath().substring(uri.getPath().lastIndexOf('/') + 1) : null;
+                return uri.getPath() != null ? uri.getPath().substring(uri.getPath().lastIndexOf('/') + 1) : null;
             } catch (URISyntaxException e) {
                 return fullyQualifiedName;
             }

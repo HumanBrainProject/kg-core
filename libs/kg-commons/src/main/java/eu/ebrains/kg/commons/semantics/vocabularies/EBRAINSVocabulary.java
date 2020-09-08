@@ -53,8 +53,7 @@ public class EBRAINSVocabulary {
     public static final String META_VALUE = META+"value";
     public static final String META_REVISION = META+"revision";
     public static final String META_TYPE = META+"type";
-    public static final String META_LABELPROPERTY = META+"property/label";
-    public static final String META_LABELPROPERTIES = META+"labelProperties";
+    public static final String META_TYPE_LABEL_PROPERTY = META_TYPE+"/labelProperty";
     public static final String META_LAST_RELEASED_AT = META+"lastReleasedAt";
     public static final String META_LAST_RELEASED_BY = META+"lastReleasedBy";
     public static final String META_FIRST_RELEASED_AT = META+"firstReleasedAt";
