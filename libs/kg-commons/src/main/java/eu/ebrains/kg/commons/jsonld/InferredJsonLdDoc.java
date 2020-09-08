@@ -18,8 +18,8 @@ package eu.ebrains.kg.commons.jsonld;
 
 import eu.ebrains.kg.commons.semantics.vocabularies.EBRAINSVocabulary;
 
-import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 public class InferredJsonLdDoc {
@@ -53,11 +53,7 @@ public class InferredJsonLdDoc {
     }
 
     public List<JsonLdId> getInferenceOf(){
-        List list = indexedJsonLdDoc.getDoc().getAs(INFERENCE_OF, List.class);
-        if(list!=null){
-            return (List<JsonLdId>)list.stream().map(r -> new JsonLdId((String)r)).collect(Collectors.toList());
-        }
-        return Collections.emptyList();
+        return indexedJsonLdDoc.getDoc().getAsListOf(INFERENCE_OF, String.class).stream().filter(Objects::nonNull).map(JsonLdId::new).collect(Collectors.toList());
     }
 
     public void setInferenceOf(List<String> jsonLdIds){
