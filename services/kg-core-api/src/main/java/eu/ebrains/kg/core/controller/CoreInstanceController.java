@@ -153,12 +153,26 @@ public class CoreInstanceController {
         }
     }
 
-    public Map<UUID, Result<NormalizedJsonLd>> getInstancesByIds(List<UUID> ids, DataStage stage, ResponseConfiguration responseConfiguration) {
-        Map<UUID, Result<NormalizedJsonLd>> result = new HashMap<>();
-        List<InstanceId> idsAfterResolution = idsSvc.resolveIdsByUUID(stage, ids, true);
-        idsAfterResolution.stream().filter(instanceId -> !instanceId.isDeprecated()).filter(InstanceId::isUnresolved).forEach(id -> result.put(id.getUuid(), Result.nok(HttpStatus.NOT_FOUND.value(), HttpStatus.NOT_FOUND.getReasonPhrase())));
+    public Map<String, Result<NormalizedJsonLd>> getInstancesByIds(List<String> ids, DataStage stage, ResponseConfiguration responseConfiguration) {
+        Map<String, Result<NormalizedJsonLd>> result = new HashMap<>();
+        List<UUID> validUUIDs = ids.stream().map(id -> {
+            try {
+                return UUID.fromString(id);
+            } catch (IllegalArgumentException e) {
+                return null;
+            }
+        }).filter(Objects::nonNull).collect(Collectors.toList());
+
+
+        List<InstanceId> idsAfterResolution = idsSvc.resolveIdsByUUID(stage, validUUIDs, true);
+        idsAfterResolution.stream().filter(instanceId -> !instanceId.isDeprecated()).filter(InstanceId::isUnresolved).forEach(id -> result.put(id.getUuid().toString(), Result.nok(HttpStatus.NOT_FOUND.value(), HttpStatus.NOT_FOUND.getReasonPhrase())));
         Map<UUID, Result<NormalizedJsonLd>> instancesByIds = graphDbSvc.getInstancesByIds(stage, idsAfterResolution.stream().filter(i -> !i.isUnresolved() && !i.isDeprecated()).collect(Collectors.toList()), responseConfiguration.isReturnEmbedded(), responseConfiguration.isReturnAlternatives());
-        result.putAll(instancesByIds);
+        instancesByIds.forEach((k,v) -> result.put(k.toString(), v));
+        for (String id : ids) {
+            if(!result.containsKey(id)){
+                result.put(id, Result.nok(HttpStatus.BAD_REQUEST.value(), "Please provide UUIDs only!"));
+            }
+        }
         if (responseConfiguration.isReturnPermissions()) {
             enrichWithPermissionInformation(stage, instancesByIds.values());
         }

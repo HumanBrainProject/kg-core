@@ -30,9 +30,13 @@ import eu.ebrains.kg.arango.commons.model.ArangoDocumentReference;
 import eu.ebrains.kg.arango.commons.model.InternalSpace;
 import eu.ebrains.kg.commons.AuthContext;
 import eu.ebrains.kg.commons.IdUtils;
+import eu.ebrains.kg.commons.exception.ForbiddenException;
 import eu.ebrains.kg.commons.jsonld.*;
 import eu.ebrains.kg.commons.model.*;
+import eu.ebrains.kg.commons.models.UserWithRoles;
 import eu.ebrains.kg.commons.params.ReleaseTreeScope;
+import eu.ebrains.kg.commons.permission.Functionality;
+import eu.ebrains.kg.commons.permissions.controller.PermissionSvc;
 import eu.ebrains.kg.commons.query.KgQuery;
 import eu.ebrains.kg.commons.semantics.vocabularies.EBRAINSVocabulary;
 import eu.ebrains.kg.commons.semantics.vocabularies.SchemaOrgVocabulary;
@@ -54,6 +58,7 @@ public class ArangoRepositoryInstances {
 
     private final ArangoRepositoryCommons arangoRepositoryCommons;
     private final PermissionsController permissionsController;
+    private final PermissionSvc permissionSvc;
     private final AuthContext authContext;
     private final ArangoUtils arangoUtils;
 
@@ -61,16 +66,20 @@ public class ArangoRepositoryInstances {
 
     private final IdUtils idUtils;
 
-    public ArangoRepositoryInstances(ArangoRepositoryCommons arangoRepositoryCommons, ArangoDatabases databases, IdUtils idUtils, PermissionsController permissionsController, AuthContext authContext, ArangoUtils arangoUtils) {
+    public ArangoRepositoryInstances(ArangoRepositoryCommons arangoRepositoryCommons, PermissionsController permissionsController, PermissionSvc permissionSvc, AuthContext authContext, ArangoUtils arangoUtils, ArangoDatabases databases, IdUtils idUtils) {
         this.arangoRepositoryCommons = arangoRepositoryCommons;
-        this.databases = databases;
         this.permissionsController = permissionsController;
+        this.permissionSvc = permissionSvc;
         this.authContext = authContext;
-        this.idUtils = idUtils;
         this.arangoUtils = arangoUtils;
+        this.databases = databases;
+        this.idUtils = idUtils;
     }
 
     public NormalizedJsonLd getInstance(DataStage stage, Space space, UUID id, boolean embedded, boolean removeInternalProperties, boolean alternatives) {
+        if (!permissionSvc.hasPermission(authContext.getUserWithRoles(), Functionality.READ, space, id)) {
+            throw new ForbiddenException(String.format("You don't have read rights on the instance with the id %s", id));
+        }
         ArangoDocument document = arangoRepositoryCommons.getDocument(stage, ArangoCollectionReference.fromSpace(space).doc(id));
         if (document == null) {
             return null;
@@ -181,7 +190,7 @@ public class ArangoRepositoryInstances {
                 }));
     }
 
-    public Map<UUID, Result<NormalizedJsonLd>> getDocumentsByReferenceList(DataStage stage, List<ArangoDocumentReference> documentReferences, boolean embedded, boolean alternatives) {
+    private Map<UUID, Result<NormalizedJsonLd>> getDocumentsByReferenceList(DataStage stage, List<ArangoDocumentReference> documentReferences, boolean embedded, boolean alternatives) {
         ArangoDatabase db = databases.getByStage(stage);
         AQL aql = new AQL().addLine(AQL.trust("RETURN {"));
         int counter = 0;
@@ -231,7 +240,15 @@ public class ArangoRepositoryInstances {
     }
 
     public Map<UUID, Result<NormalizedJsonLd>> getDocumentsByIdList(DataStage stage, List<InstanceId> instanceIds, boolean embedded, boolean alternatives) {
-        return getDocumentsByReferenceList(stage, instanceIds.stream().map(ArangoDocumentReference::fromInstanceId).collect(Collectors.toList()), embedded, alternatives);
+        UserWithRoles userWithRoles = authContext.getUserWithRoles();
+        Map<InstanceId, Boolean> hasPermissions = instanceIds.stream().collect(Collectors.toMap(i -> i, i -> permissionSvc.hasPermission(userWithRoles, Functionality.READ, i.getSpace(), i.getUuid())));
+        List<InstanceId> instanceIdsWithAccess = hasPermissions.keySet().stream().filter(hasPermissions::get).collect(Collectors.toList());
+        List<InstanceId> instanceIdsWithoutAccess = hasPermissions.keySet().stream().filter(i -> !hasPermissions.get(i)).collect(Collectors.toList());
+        Map<UUID, Result<NormalizedJsonLd>> documentsByReferenceList = getDocumentsByReferenceList(stage, instanceIdsWithAccess.stream().map(ArangoDocumentReference::fromInstanceId).collect(Collectors.toList()), embedded, alternatives);
+        instanceIdsWithoutAccess.forEach(i -> {
+            documentsByReferenceList.put(i.getUuid(), Result.nok(HttpStatus.FORBIDDEN.value(), String.format("You don't have rights to read id %s", i.getUuid())));
+        });
+        return documentsByReferenceList;
     }
 
     public Paginated<SuggestedLink> getSuggestionsByTypes(DataStage stage, List<Type> types, PaginationParam paginationParam, String search, List<UUID> excludeIds) {
@@ -267,7 +284,7 @@ public class ArangoRepositoryInstances {
             List<String> searchTerms = Arrays.stream(search.trim().split(" ")).filter(s -> !s.isBlank()).map(s -> "%" + s.replaceAll("%", "") + "%").collect(Collectors.toList());
             if (!searchTerms.isEmpty()) {
                 //TODO Search also for searchable properties - not only the label and id property
-                aql.addLine(AQL.trust("LET found = (FOR name IN [typeDefinition.labelProperty, \""+ArangoVocabulary.KEY+"\"] FILTER "));
+                aql.addLine(AQL.trust("LET found = (FOR name IN [typeDefinition.labelProperty, \"" + ArangoVocabulary.KEY + "\"] FILTER "));
                 for (int i = 0; i < searchTerms.size(); i++) {
                     aql.addLine(AQL.trust("LIKE(v[name], @search" + i + ", true) "));
                     if (i < searchTerms.size() - 1) {
