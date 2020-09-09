@@ -125,7 +125,7 @@ public class GraphDBInstancesAPI {
             typesWithLabelInfo = typesWithLabelInfo.stream().filter(t -> type.equals(t.getName())).collect(Collectors.toList());
         }
         suggestionResult.setTypes(targetTypesForProperty.getData().stream().collect(Collectors.toMap(JsonLdDoc::getPrimaryIdentifier, t -> t)));
-        List<UUID> existingLinks = payload.getAsListOf(propertyName, JsonLdId.class).stream().map(idUtils::getUUID).filter(Objects::nonNull).collect(Collectors.toList());
+        List<UUID> existingLinks = payload.getAsListOf(propertyName, JsonLdId.class, true).stream().map(idUtils::getUUID).filter(Objects::nonNull).collect(Collectors.toList());
         Paginated<SuggestedLink> documentsByTypes = repository.getSuggestionsByTypes(stage, typesWithLabelInfo, paginationParam, search, existingLinks);
         suggestionResult.setSuggestions(documentsByTypes);
         return suggestionResult;
