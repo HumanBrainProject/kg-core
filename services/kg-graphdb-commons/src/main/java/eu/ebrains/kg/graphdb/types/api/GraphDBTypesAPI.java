@@ -61,7 +61,7 @@ public class GraphDBTypesAPI {
 
     @PostMapping("/typesByName")
     public Map<String, Result<NormalizedJsonLd>> getTypesByName(@RequestBody List<String> types, @PathVariable("stage") DataStage stage, @RequestParam(value = "space", required = false) String space) {
-        return getTypesByName(types, stage, space, false, true);
+        return getTypesByName(types, stage, space, false, false);
     }
 
     @PostMapping("/typesWithPropertiesByName")
