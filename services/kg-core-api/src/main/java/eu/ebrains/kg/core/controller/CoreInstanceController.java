@@ -170,7 +170,7 @@ public class CoreInstanceController {
         instancesByIds.forEach((k,v) -> result.put(k.toString(), v));
         for (String id : ids) {
             if(!result.containsKey(id)){
-                result.put(id, Result.nok(HttpStatus.NOT_FOUND.value(), String.format("Unresolvable: %s", id)));
+                result.put(id, Result.nok(HttpStatus.NOT_FOUND.value(), id));
             }
         }
         if (responseConfiguration.isReturnPermissions()) {
