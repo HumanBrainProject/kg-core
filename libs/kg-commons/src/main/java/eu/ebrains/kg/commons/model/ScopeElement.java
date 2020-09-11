@@ -18,6 +18,8 @@ package eu.ebrains.kg.commons.model;
 
 import java.util.List;
 import java.util.UUID;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 public class ScopeElement {
 
@@ -59,6 +61,29 @@ public class ScopeElement {
 
     public void setLabel(String label) {
         this.label = label;
+    }
+
+
+    public void merge(ScopeElement el){
+        if(getLabel()==null && el.getLabel()!=null) {
+            setLabel(el.getLabel());
+        }
+        if(getId()==null && el.getId()!=null){
+            this.id = el.getId();
+        }
+        if(getInternalId()==null && el.getInternalId()!=null){
+            this.internalId = el.getInternalId();
+        }
+        if(el.getTypes()!=null && !el.getTypes().isEmpty()){
+            this.types = this.types == null ? el.getTypes() : Stream.concat(this.types.stream(), el.getTypes().stream()).distinct().collect(Collectors.toList());
+        }
+        if(el.getChildren()!=null && !el.getChildren().isEmpty()){
+            this.children = this.children == null ? el.getChildren() : Stream.concat(this.children.stream(), el.getChildren().stream()).collect(Collectors.toList());
+        }
+    }
+
+    public void setChildren(List<ScopeElement> children) {
+        this.children = children;
     }
 }
 

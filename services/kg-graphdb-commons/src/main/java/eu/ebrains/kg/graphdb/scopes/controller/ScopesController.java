@@ -81,6 +81,31 @@ public class ScopesController {
         return element;
     }
 
+    private List<ScopeElement> mergeInstancesOnSameLevel(List<ScopeElement> element){
+        if(element!=null && !element.isEmpty()) {
+            Map<UUID, List<ScopeElement>> groupedById = element.stream().collect(Collectors.groupingBy(ScopeElement::getId));
+            List<ScopeElement> result = new ArrayList<>();
+            groupedById.values().forEach(c -> {
+                if (!c.isEmpty()) {
+                    ScopeElement current = null;
+                    if (c.size() == 1) {
+                        current = c.get(0);
+                    } else {
+                        ScopeElement merged = new ScopeElement();
+                        c.forEach(merged::merge);
+                        current = merged;
+                    }
+                    if (current != null) {
+                        result.add(current);
+                        current.setChildren(mergeInstancesOnSameLevel(current.getChildren()));
+                    }
+                }
+            });
+            return result;
+        }
+        return null;
+    }
+
     private ScopeElement translateResultToScope(List<NormalizedJsonLd> data, DataStage stage, boolean fetchLabels){
         final Map<String, Set<ScopeElement>> typeToUUID = new HashMap<>();
         ScopeElement element = data.stream().map(d -> handleSubElement(d, typeToUUID)).findFirst().orElse(null);
@@ -97,7 +122,10 @@ public class ScopesController {
                 }
             });
         }
-        return element;
+        if(element==null){
+            return null;
+        }
+        return mergeInstancesOnSameLevel(Collections.singletonList(element)).get(0);
     }
 
 
