@@ -58,9 +58,6 @@ public class ConsistencyCheckTest {
     IdUtils idUtils;
 
     @Autowired
-    Releases releases;
-
-    @Autowired
     Types types;
 
     @Before
@@ -122,7 +119,7 @@ public class ConsistencyCheckTest {
         int released = 0;
         for (NormalizedJsonLd instance : getAllInstancesFromInProgress(ExposedStage.IN_PROGRESS)) {
             if (released < createInstances * releaseRatio) {
-                this.releases.releaseInstance(idUtils.getUUID(instance.getId()), IndexedJsonLdDoc.from(instance).getRevision());
+                this.instances.releaseInstance(idUtils.getUUID(instance.getId()), IndexedJsonLdDoc.from(instance).getRevision());
                 released++;
             }
         }

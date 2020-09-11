@@ -29,6 +29,8 @@ import eu.ebrains.kg.core.model.ExposedStage;
 import eu.ebrains.kg.core.serviceCall.CoreToIds;
 import eu.ebrains.kg.core.serviceCall.CoreToRelease;
 import io.swagger.annotations.ApiOperation;
+import io.swagger.annotations.ApiResponse;
+import io.swagger.annotations.ApiResponses;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
@@ -195,5 +197,67 @@ public class Instances {
             instanceController.deleteInstance(instanceId, externalEventInformation);
             return ResponseEntity.ok(Result.<Void>ok().setExecutionDetails(startTime, new Date()));
         }
+    }
+
+
+    //RELEASE instances
+    @ApiOperation("Release or re-release an instance")
+    @PutMapping("/instances/{id}/release")
+    public ResponseEntity<Result<Void>> releaseInstance(@PathVariable("id") UUID id, @RequestParam(value = "revision", required = false) String revision) {
+        Date startTime = new Date();
+        InstanceId instanceId = idsSvc.resolveId(DataStage.IN_PROGRESS, id);
+        if (instanceId == null) {
+            return ResponseEntity.notFound().build();
+        }
+        else if(instanceId.isDeprecated()){
+            return ResponseEntity.status(HttpStatus.GONE).build();
+        }
+        releaseSvc.releaseInstance(instanceId, revision);
+        return ResponseEntity.ok(Result.<Void>ok().setExecutionDetails(startTime, new Date()));
+    }
+
+    @ApiOperation(value = "Unrelease an instance")
+    @ApiResponses(value = {@ApiResponse(code = 200, message = "The instance that has been unreleased"), @ApiResponse(code = 404, message = "Instance not found")})
+    @DeleteMapping("/instances/{id}/release")
+    public ResponseEntity<Result<Void>> unreleaseInstance(@PathVariable("id") UUID id) {
+        Date startTime = new Date();
+        InstanceId instanceId = idsSvc.resolveId(DataStage.IN_PROGRESS, id);
+        if (instanceId == null) {
+            return ResponseEntity.notFound().build();
+        }
+        else if(instanceId.isDeprecated()){
+            return ResponseEntity.status(HttpStatus.GONE).build();
+        }
+        releaseSvc.unreleaseInstance(instanceId);
+        return ResponseEntity.ok(Result.<Void>ok().setExecutionDetails(startTime, new Date()));
+    }
+
+    @ApiOperation(value = "Get the release status for an instance")
+    @ApiResponses(value = {
+            @ApiResponse(code = 200, message = "The release status of the instance"),
+            @ApiResponse(code = 404, message = "Instance not found")})
+    @GetMapping(value = "/instances/{id}/release/status")
+    public ResponseEntity<Result<ReleaseStatus>> getReleaseStatus(@PathVariable("id") UUID id, @RequestParam("releaseTreeScope") ReleaseTreeScope releaseTreeScope) {
+        InstanceId instanceId = idsSvc.resolveId(DataStage.IN_PROGRESS, id);
+        if (instanceId == null) {
+            return ResponseEntity.notFound().build();
+        }
+        else if(instanceId.isDeprecated()){
+            return ResponseEntity.status(HttpStatus.GONE).build();
+        }
+        ReleaseStatus releaseStatus = releaseSvc.getReleaseStatus(instanceId, releaseTreeScope);
+        return ResponseEntity.ok(Result.ok(releaseStatus));
+    }
+
+    @ApiOperation(value = "Get the release status for multiple instances")
+    @ApiResponses(value = {
+            @ApiResponse(code = 200, message = "The release status of the instance"),
+            @ApiResponse(code = 404, message = "Instance not found")})
+    @PostMapping(value = "/instancesByIds/release/status")
+    public Result<Map<UUID, Result<ReleaseStatus>>> getReleasesStatusByIds(@RequestBody List<UUID> listOfIds, @RequestParam("releaseTreeScope") ReleaseTreeScope releaseTreeScope) {
+        List<InstanceId> instanceIds = idsSvc.resolveIdsByUUID(DataStage.IN_PROGRESS, listOfIds, false);
+        return Result.ok(instanceIds.stream().filter(instanceId -> !instanceId.isDeprecated()).collect(Collectors.toMap(InstanceId::getUuid, instanceId ->
+                Result.ok(releaseSvc.getReleaseStatus(instanceId, releaseTreeScope))
+        )));
     }
 }

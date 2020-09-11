@@ -41,7 +41,7 @@ import java.util.concurrent.TimeUnit;
 public class ReleaseSystemTest extends AbstractSystemTest {
 
     @Autowired
-    private Releases releases;
+    private Instances instances;
 
     @Autowired
     private IdUtils idUtils;
@@ -57,7 +57,7 @@ public class ReleaseSystemTest extends AbstractSystemTest {
         for (int i = 0; i < allInstancesFromInProgress.size(); i++) {
             Mockito.doReturn(i).when(testInformation).getExecutionNumber();
             IndexedJsonLdDoc from = IndexedJsonLdDoc.from(allInstancesFromInProgress.get(i));
-            ResponseEntity<Result<Void>> resultResponseEntity = releases.releaseInstance(idUtils.getUUID(allInstancesFromInProgress.get(i).getId()), from.getRevision());
+            ResponseEntity<Result<Void>> resultResponseEntity = instances.releaseInstance(idUtils.getUUID(allInstancesFromInProgress.get(i).getId()), from.getRevision());
             System.out.printf("Result %d: %d ms%n", i, resultResponseEntity.getBody().getDurationInMs());
         }
         System.out.printf("Total time for %d releases: %d ms%n", batchInsertion, new Date().getTime() - startTime);
@@ -76,7 +76,7 @@ public class ReleaseSystemTest extends AbstractSystemTest {
             int finalI = i;
             executorService.execute(() -> {
                 IndexedJsonLdDoc from = IndexedJsonLdDoc.from(allInstancesFromInProgress.get(finalI));
-                ResponseEntity<Result<Void>> resultResponseEntity = releases.releaseInstance(idUtils.getUUID(allInstancesFromInProgress.get(finalI).getId()), from.getRevision());
+                ResponseEntity<Result<Void>> resultResponseEntity = instances.releaseInstance(idUtils.getUUID(allInstancesFromInProgress.get(finalI).getId()), from.getRevision());
                 System.out.printf("Result %d: %d ms%n", finalI, resultResponseEntity.getBody().getDurationInMs());
             });
         }
@@ -102,7 +102,7 @@ public class ReleaseSystemTest extends AbstractSystemTest {
         for (int i = 0; i < l.size(); i++) {
             JsonLdId id = l.get(i).getBody().getData().getId();
             IndexedJsonLdDoc from = IndexedJsonLdDoc.from(l.get(i).getBody().getData());
-            ResponseEntity<Result<Void>> resultResponseEntity = releases.releaseInstance(idUtils.getUUID(id), from.getRevision());
+            ResponseEntity<Result<Void>> resultResponseEntity = instances.releaseInstance(idUtils.getUUID(id), from.getRevision());
             System.out.println(String.format("Result %d: %d ms", i, resultResponseEntity.getBody().getDurationInMs()));
         }
         System.out.println(String.format("Total time for %d releases: %d ms", batchInsertion, new Date().getTime() - startTime));
@@ -117,7 +117,7 @@ public class ReleaseSystemTest extends AbstractSystemTest {
         long startTime = new Date().getTime();
         for (int i = 0; i < allInstancesFromInProgress.size(); i++) {
             Mockito.doReturn(i).when(testInformation).getExecutionNumber();
-            ResponseEntity<Result<Void>> resultResponseEntity = releases.unreleaseInstance(idUtils.getUUID(allInstancesFromInProgress.get(i).getId()));
+            ResponseEntity<Result<Void>> resultResponseEntity = instances.unreleaseInstance(idUtils.getUUID(allInstancesFromInProgress.get(i).getId()));
             System.out.println(String.format("Result %d: %d ms", i, resultResponseEntity.getBody().getDurationInMs()));
         }
         System.out.println(String.format("Total time for %d unreleases: %d ms", batchInsertion, new Date().getTime() - startTime));

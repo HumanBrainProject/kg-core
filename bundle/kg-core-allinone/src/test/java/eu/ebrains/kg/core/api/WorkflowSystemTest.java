@@ -40,7 +40,7 @@ import static org.junit.Assert.*;
 public class WorkflowSystemTest extends AbstractSystemTest {
 
     @Autowired
-    private Releases releases;
+    private Instances instances;
 
     @Autowired
     private IdUtils idUtils;
@@ -55,19 +55,19 @@ public class WorkflowSystemTest extends AbstractSystemTest {
         IndexedJsonLdDoc from = IndexedJsonLdDoc.from(instance.getBody().getData());
 
         //When
-        releases.releaseInstance(idUtils.getUUID(id), from.getRevision());
-        ResponseEntity<Result<ReleaseStatus>> releaseStatus = releases.getReleaseStatus(idUtils.getUUID(id), ReleaseTreeScope.TOP_INSTANCE_ONLY);
+        instances.releaseInstance(idUtils.getUUID(id), from.getRevision());
+        ResponseEntity<Result<ReleaseStatus>> releaseStatus = instances.getReleaseStatus(idUtils.getUUID(id), ReleaseTreeScope.TOP_INSTANCE_ONLY);
 
         //Then
         assertEquals(ReleaseStatus.RELEASED.getReleaseStatus(), releaseStatus.getBody().getData().getReleaseStatus());
 
-        releases.unreleaseInstance(idUtils.getUUID(id));
-        ResponseEntity<Result<ReleaseStatus>> releaseStatusAfterUnrelease = releases.getReleaseStatus(idUtils.getUUID(id), ReleaseTreeScope.TOP_INSTANCE_ONLY);
+        instances.unreleaseInstance(idUtils.getUUID(id));
+        ResponseEntity<Result<ReleaseStatus>> releaseStatusAfterUnrelease = instances.getReleaseStatus(idUtils.getUUID(id), ReleaseTreeScope.TOP_INSTANCE_ONLY);
 
         assertEquals(ReleaseStatus.UNRELEASED.getReleaseStatus(), releaseStatusAfterUnrelease.getBody().getData().getReleaseStatus());
 
-        releases.releaseInstance(idUtils.getUUID(id), from.getRevision());
-        ResponseEntity<Result<ReleaseStatus>> releaseStatusRerelease = releases.getReleaseStatus(idUtils.getUUID(id), ReleaseTreeScope.TOP_INSTANCE_ONLY);
+        instances.releaseInstance(idUtils.getUUID(id), from.getRevision());
+        ResponseEntity<Result<ReleaseStatus>> releaseStatusRerelease = instances.getReleaseStatus(idUtils.getUUID(id), ReleaseTreeScope.TOP_INSTANCE_ONLY);
         assertEquals(ReleaseStatus.RELEASED.getReleaseStatus(), releaseStatusRerelease.getBody().getData().getReleaseStatus());
     }
 
@@ -127,16 +127,16 @@ public class WorkflowSystemTest extends AbstractSystemTest {
 
         //When
         //Release
-        releases.releaseInstance(idUtils.getUUID(id), from.getRevision());
-        ResponseEntity<Result<ReleaseStatus>> releaseStatus = releases.getReleaseStatus(idUtils.getUUID(id), ReleaseTreeScope.TOP_INSTANCE_ONLY);
+        instances.releaseInstance(idUtils.getUUID(id), from.getRevision());
+        ResponseEntity<Result<ReleaseStatus>> releaseStatus = instances.getReleaseStatus(idUtils.getUUID(id), ReleaseTreeScope.TOP_INSTANCE_ONLY);
 
         //Then
         assertEquals(ReleaseStatus.RELEASED.getReleaseStatus(), releaseStatus.getBody().getData().getReleaseStatus());
 
         //When
         //Unrelease
-        releases.unreleaseInstance(idUtils.getUUID(id));
-        ResponseEntity<Result<ReleaseStatus>> releaseStatusAfterUnrelease = releases.getReleaseStatus(idUtils.getUUID(id), ReleaseTreeScope.TOP_INSTANCE_ONLY);
+        instances.unreleaseInstance(idUtils.getUUID(id));
+        ResponseEntity<Result<ReleaseStatus>> releaseStatusAfterUnrelease = instances.getReleaseStatus(idUtils.getUUID(id), ReleaseTreeScope.TOP_INSTANCE_ONLY);
 
         //Then
         assertEquals(ReleaseStatus.UNRELEASED.getReleaseStatus(), releaseStatusAfterUnrelease.getBody().getData().getReleaseStatus());
