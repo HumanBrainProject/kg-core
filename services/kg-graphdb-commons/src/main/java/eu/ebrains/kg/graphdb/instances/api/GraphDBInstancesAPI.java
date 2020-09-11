@@ -106,6 +106,11 @@ public class GraphDBInstancesAPI {
         return repository.getDocumentsByOutgoingRelation(stage, new Space(space), id, new ArangoRelation(URLDecoder.decode(relation, StandardCharsets.UTF_8)), returnEmbedded, returnAlternatives);
     }
 
+    @GetMapping("instances/{space}/{id}/neighbors")
+    public GraphEntity getNeighbors(@PathVariable("space") String space, @PathVariable("id") UUID id, @PathVariable("stage") DataStage stage) {
+        return repository.getNeighbors(stage, new Space(space), id);
+    }
+
     @GetMapping("instances/{space}/{id}/releaseStatus")
     public ReleaseStatus getReleaseStatus(@PathVariable("space") String space, @PathVariable("id") UUID id, @RequestParam("releaseTreeScope") ReleaseTreeScope treeScope) {
         return repository.getReleaseStatus(new Space(space), id, treeScope);

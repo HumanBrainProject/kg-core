@@ -21,15 +21,16 @@ import com.arangodb.ArangoDatabase;
 import com.arangodb.entity.CollectionType;
 import com.arangodb.model.AqlQueryOptions;
 import com.arangodb.model.CollectionCreateOptions;
+import com.arangodb.model.CollectionsReadOptions;
 import eu.ebrains.kg.arango.commons.aqlBuilder.AQL;
 import eu.ebrains.kg.arango.commons.aqlBuilder.ArangoVocabulary;
-import eu.ebrains.kg.arango.commons.conventions.InternalCollections;
 import eu.ebrains.kg.arango.commons.model.AQLQuery;
 import eu.ebrains.kg.arango.commons.model.ArangoCollectionReference;
 import eu.ebrains.kg.arango.commons.model.ArangoDocumentReference;
 import eu.ebrains.kg.arango.commons.model.InternalSpace;
 import eu.ebrains.kg.commons.AuthContext;
 import eu.ebrains.kg.commons.IdUtils;
+import eu.ebrains.kg.commons.exception.AmbiguousException;
 import eu.ebrains.kg.commons.exception.ForbiddenException;
 import eu.ebrains.kg.commons.jsonld.*;
 import eu.ebrains.kg.commons.model.*;
@@ -266,7 +267,7 @@ public class ArangoRepositoryInstances {
         aql.addLine(AQL.trust("LET attWithMeta = [{name: \"" + JsonLdConsts.ID + "\", value: v.`" + JsonLdConsts.ID + "`}, {name: \"" + EBRAINSVocabulary.LABEL + "\", value: v[typeDefinition.labelProperty]},  {name: \"" + EBRAINSVocabulary.META_TYPE + "\", value: typeDefinition.typeName}, {name: \"" + EBRAINSVocabulary.META_SPACE + "\", value: v.`" + EBRAINSVocabulary.META_SPACE + "`}]"));
         aql.addPagination(paginationParam);
         aql.addLine(AQL.trust("RETURN ZIP(attWithMeta[*].name, attWithMeta[*].value)"));
-        bindVars.put("@typeRelationCollection", InternalCollections.TYPE_EDGE_COLLECTION.getCollectionName());
+        bindVars.put("@typeRelationCollection", InternalSpace.TYPE_EDGE_COLLECTION.getCollectionName());
         Paginated<NormalizedJsonLd> normalizedJsonLdPaginated = arangoRepositoryCommons.queryDocuments(databases.getByStage(stage), new AQLQuery(aql, bindVars));
         List<SuggestedLink> links = normalizedJsonLdPaginated.getData().stream().map(payload -> {
             SuggestedLink link = new SuggestedLink();
@@ -300,7 +301,7 @@ public class ArangoRepositoryInstances {
 
     private void iterateThroughTypeList(List<Type> types, Map<String, Object> bindVars, AQL aql) {
         aql.addLine(AQL.trust("FOR typeDefinition IN ["));
-        ArangoCollectionReference typeCollection = ArangoCollectionReference.fromSpace(InternalCollections.TYPE_SPACE);
+        ArangoCollectionReference typeCollection = ArangoCollectionReference.fromSpace(InternalSpace.TYPE_SPACE);
         bindVars.put("@typeCollection", typeCollection.getCollectionName());
         for (int i = 0; i < types.size(); i++) {
             aql.addLine(AQL.trust(" {typeName: @typeName" + i + ", type: DOCUMENT(@@typeCollection, @documentId" + i + "), labelProperty: @labelProperty" + i + "}"));
@@ -328,7 +329,7 @@ public class ArangoRepositoryInstances {
     public Paginated<NormalizedJsonLd> getDocumentsByTypes(DataStage stage, List<Type> typesWithLabelInfo, PaginationParam paginationParam, String search, boolean embedded, boolean alternatives) {
         //TODO find label field for type (and client) and filter by search if set.
         ArangoDatabase database = databases.getByStage(stage);
-        if (database.collection(InternalCollections.TYPE_EDGE_COLLECTION.getCollectionName()).exists()) {
+        if (database.collection(InternalSpace.TYPE_EDGE_COLLECTION.getCollectionName()).exists()) {
             Map<String, Object> bindVars = new HashMap<>();
             AQL aql = new AQL();
             iterateThroughTypeList(typesWithLabelInfo, bindVars, aql);
@@ -344,7 +345,7 @@ public class ArangoRepositoryInstances {
             addSearchFilter(bindVars, aql, search);
             aql.addPagination(paginationParam);
             aql.addLine(AQL.trust("RETURN v"));
-            bindVars.put("@typeRelationCollection", InternalCollections.TYPE_EDGE_COLLECTION.getCollectionName());
+            bindVars.put("@typeRelationCollection", InternalSpace.TYPE_EDGE_COLLECTION.getCollectionName());
             Paginated<NormalizedJsonLd> normalizedJsonLdPaginated = arangoRepositoryCommons.queryDocuments(database, new AQLQuery(aql, bindVars));
             handleAlternativesAndEmbedded(normalizedJsonLdPaginated.getData(), stage, alternatives, embedded);
             exposeRevision(normalizedJsonLdPaginated.getData());
@@ -356,7 +357,7 @@ public class ArangoRepositoryInstances {
 
     public Paginated<NormalizedJsonLd> getQueriesByRootType(DataStage stage, PaginationParam paginationParam, String search, boolean embedded, boolean alternatives, String typeFilter) {
         ArangoDatabase database = databases.getByStage(stage);
-        if (database.collection(InternalCollections.TYPE_EDGE_COLLECTION.getCollectionName()).exists()) {
+        if (database.collection(InternalSpace.TYPE_EDGE_COLLECTION.getCollectionName()).exists()) {
             Map<String, Object> bindVars = new HashMap<>();
             AQL aql = new AQL();
             iterateThroughTypeList(Collections.singletonList(new Type(KgQuery.getKgQueryType())), bindVars, aql);
@@ -371,7 +372,7 @@ public class ArangoRepositoryInstances {
             }
             aql.addPagination(paginationParam);
             aql.addLine(AQL.trust("RETURN v"));
-            bindVars.put("@typeRelationCollection", InternalCollections.TYPE_EDGE_COLLECTION.getCollectionName());
+            bindVars.put("@typeRelationCollection", InternalSpace.TYPE_EDGE_COLLECTION.getCollectionName());
             Paginated<NormalizedJsonLd> normalizedJsonLdPaginated = arangoRepositoryCommons.queryDocuments(database, new AQLQuery(aql, bindVars));
             handleAlternativesAndEmbedded(normalizedJsonLdPaginated.getData(), stage, alternatives, embedded);
             exposeRevision(normalizedJsonLdPaginated.getData());
@@ -384,6 +385,48 @@ public class ArangoRepositoryInstances {
 
     public List<NormalizedJsonLd> getDocumentsByIncomingRelation(DataStage stage, Space space, UUID id, ArangoRelation relation, boolean useOriginalTo, boolean embedded, boolean alternatives) {
         return getDocumentsByRelation(stage, space, id, relation, true, useOriginalTo, embedded, alternatives);
+    }
+
+    public GraphEntity getNeighbors(DataStage stage, Space space, UUID id){
+        AQL aql = new AQL();
+        Map<String, Object> bindVars = new HashMap<>();
+        ArangoDatabase db = databases.getByStage(stage);
+        Set<String> edgeCollections = db.getCollections(new CollectionsReadOptions().excludeSystem(true)).stream().filter(c ->
+                //We're only interested in edges
+                c.getType() == CollectionType.EDGES &&
+                //We want to exclude meta properties
+                !c.getName().startsWith(ArangoCollectionReference.fromSpace(new Space(EBRAINSVocabulary.META), true).getCollectionName()) &&
+                //And we want to exclude the internal ones...
+                !InternalSpace.INTERNAL_NON_META_EDGES.contains(new ArangoCollectionReference(c.getName(), true))
+        ).map(c -> AQL.preventAqlInjection(c.getName()).getValue()).collect(Collectors.toSet());
+
+        //The edges are injection-safe since they have been checked beforehand - so we can trust these values.
+        String edges = String.join(", ", edgeCollections);
+
+        //For now, we're hardcoding the number of investigated levels for simplicity. this could be done differently if we want to make it parametrized
+        aql.addLine(AQL.trust("LET doc = DOCUMENT(@id)"));
+        bindVars.put("id", String.format("%s/%s", ArangoCollectionReference.fromSpace(space).getCollectionName(), id));
+
+        //TODO use dynamic name label
+        aql.addLine(AQL.trust("LET inbnd = (FOR inbnd IN 1..1 INBOUND doc "+edges));
+        aql.addLine(AQL.trust("    RETURN { \"id\": inbnd._key, \"name\": inbnd.`http://schema.org/name`, \"types\": inbnd.`@type`, \"space\": inbnd.`"+EBRAINSVocabulary.META_SPACE+"`})"));
+        aql.addLine(AQL.trust("LET outbnd = (FOR outbnd IN 1..1 OUTBOUND doc " + edges));
+        aql.addLine(AQL.trust("    LET outbnd2 = (FOR outbnd2 IN 1..1 OUTBOUND outbnd " + edges));
+        aql.addLine(AQL.trust( "    RETURN {\"id\": outbnd2._key, \"name\": outbnd2.`http://schema.org/name`, \"types\": outbnd2.`@type`, \"space\": outbnd2.`"+EBRAINSVocabulary.META_SPACE+"`})"));
+        aql.addLine(AQL.trust(     "    RETURN {\"id\": outbnd._key,  \"name\": outbnd.`http://schema.org/name`, \"outbound\": outbnd2, \"types\": outbnd.`@type`, \"space\": outbnd.`"+EBRAINSVocabulary.META_SPACE+"` })"));
+        aql.addLine(AQL.trust("RETURN {\"id\": doc._key, \"name\": doc.`http://schema.org/name`, \"inbound\" : inbnd, \"outbound\": outbnd, \"types\": doc.`@type`, \"space\": doc.`"+EBRAINSVocabulary.META_SPACE+"` }"));
+
+        List<GraphEntity> graphEntities = db.query(aql.build().getValue(), bindVars, new AqlQueryOptions(), GraphEntity.class).asListRemaining();
+        if(graphEntities.isEmpty()){
+            return null;
+        }
+        else if (graphEntities.size()==1){
+            return graphEntities.get(0);
+        }
+        else{
+            throw new AmbiguousException(String.format("Did find multiple instances for the id %s", id));
+        }
+
     }
 
     public List<NormalizedJsonLd> getDocumentsByOutgoingRelation(DataStage stage, Space space, UUID id, ArangoRelation relation, boolean embedded, boolean alternatives) {

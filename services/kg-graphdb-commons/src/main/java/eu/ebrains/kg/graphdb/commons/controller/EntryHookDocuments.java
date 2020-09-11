@@ -18,7 +18,6 @@ package eu.ebrains.kg.graphdb.commons.controller;
 
 import com.arangodb.ArangoCollection;
 import com.arangodb.ArangoDatabase;
-import eu.ebrains.kg.arango.commons.conventions.InternalCollections;
 import eu.ebrains.kg.arango.commons.model.ArangoCollectionReference;
 import eu.ebrains.kg.arango.commons.model.ArangoDocumentReference;
 import eu.ebrains.kg.arango.commons.model.InternalSpace;
@@ -55,7 +54,7 @@ public class EntryHookDocuments {
     }
 
     public ArangoDocumentReference getOrCreateTypeHookDocument(DataStage stage, String type) {
-        return getOrCreateSingleDocumentWithNamePayload(ArangoCollectionReference.fromSpace(InternalCollections.TYPE_SPACE).docWithStableId(type), type, databases.getByStage(stage));
+        return getOrCreateSingleDocumentWithNamePayload(ArangoCollectionReference.fromSpace(InternalSpace.TYPE_SPACE).docWithStableId(type), type, databases.getByStage(stage));
     }
 
     public ArangoDocumentReference getOrCreateReleaseStatusHookDocument(boolean doRelease) {

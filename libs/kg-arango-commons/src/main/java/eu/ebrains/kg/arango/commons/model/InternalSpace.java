@@ -19,7 +19,11 @@ package eu.ebrains.kg.arango.commons.model;
 import eu.ebrains.kg.commons.jsonld.InferredJsonLdDoc;
 import eu.ebrains.kg.commons.model.Space;
 
+import java.util.Arrays;
+import java.util.Collection;
+
 public class InternalSpace extends Space {
+
 
     public static final Space GLOBAL_SPEC = new Space("global_spec");
 
@@ -46,9 +50,14 @@ public class InternalSpace extends Space {
     public static final Space TYPES_SPACE = new Space("types");
     public static final Space USERS_SPACE = new Space("users");
     public static final Space ALTERNATIVES_SPACE = new Space("alternatives");
+    public static final ArangoCollectionReference TYPE_EDGE_COLLECTION = new ArangoCollectionReference("internaltype", true);
+    public static final InternalSpace TYPE_SPACE = new InternalSpace("types");
 
     public InternalSpace() {
     }
+
+    public static final Collection<ArangoCollectionReference> INTERNAL_NON_META_EDGES = Arrays.asList(DOCUMENT_ID_EDGE_COLLECTION, ArangoCollectionReference.fromSpace(INFERENCE_OF_SPACE), RELEASE_STATUS_EDGE_COLLECTION, TYPE_EDGE_COLLECTION, ArangoCollectionReference.fromSpace(UNRESOLVED_SPACE));
+
 
     public InternalSpace(String name) {
         super(name);

@@ -239,4 +239,8 @@ public class CoreInstanceController {
     public ScopeElement getScopeForInstance(UUID id, DataStage stage) {
         return graphDbSvc.getScope(stage,  idsSvc.resolveId(stage, id));
     }
+
+    public GraphEntity getNeighbors(UUID id, DataStage stage) {
+        return graphDbSvc.getNeighbors(stage,  idsSvc.resolveId(stage, id));
+    }
 }

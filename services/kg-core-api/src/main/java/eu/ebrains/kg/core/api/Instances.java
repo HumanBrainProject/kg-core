@@ -143,6 +143,15 @@ public class Instances {
         return scope != null ? ResponseEntity.ok(Result.ok(scope).setExecutionDetails(startTime, new Date())) : ResponseEntity.notFound().build();
     }
 
+    @ApiOperation(value = "Get the neighborhood for the instance by its KG-internal ID")
+    @GetMapping("/instances/{id}/neighbors")
+    public ResponseEntity<Result<GraphEntity>> getNeighbors(@PathVariable("id") UUID id, @RequestParam("stage") ExposedStage stage) {
+        Date startTime = new Date();
+        GraphEntity scope = instanceController.getNeighbors(id, stage.getStage());
+        return scope != null ? ResponseEntity.ok(Result.ok(scope).setExecutionDetails(startTime, new Date())) : ResponseEntity.notFound().build();
+    }
+
+
     @ApiOperation(value = "Returns a list of instances according to their types")
     @GetMapping("/instances")
     public PaginatedResult<NormalizedJsonLd> getInstances(@RequestParam("stage") ExposedStage stage, @RequestParam("type") String type, @RequestParam(value = "searchByLabel", required = false) String searchByLabel, ResponseConfiguration responseConfiguration, PaginationParam paginationParam) {

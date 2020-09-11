@@ -17,7 +17,6 @@
 package eu.ebrains.kg.graphdb.ingestion.controller;
 
 
-import eu.ebrains.kg.arango.commons.conventions.InternalCollections;
 import eu.ebrains.kg.arango.commons.model.ArangoCollectionReference;
 import eu.ebrains.kg.arango.commons.model.ArangoDocumentReference;
 import eu.ebrains.kg.arango.commons.model.InternalSpace;
@@ -118,8 +117,8 @@ public class DataController {
             if (arangoInstance instanceof ArangoDocument) {
                 ArangoDocument arangoDocument = (ArangoDocument) arangoInstance;
                 operations.addAll(arangoDocument.getDoc().getTypes().stream().map(t -> {
-                    ArangoEdge edge = entryHookDocuments.createEdgeFromHookDocument(InternalCollections.TYPE_EDGE_COLLECTION, arangoDocument.getId(), entryHookDocuments.getOrCreateTypeHookDocument(stage, t), null);
-                    return new UpsertOperation(rootDocumentRef, edge.dumpPayload(), new ArangoDocumentReference(InternalCollections.TYPE_EDGE_COLLECTION, edge.getKey()));
+                    ArangoEdge edge = entryHookDocuments.createEdgeFromHookDocument(InternalSpace.TYPE_EDGE_COLLECTION, arangoDocument.getId(), entryHookDocuments.getOrCreateTypeHookDocument(stage, t), null);
+                    return new UpsertOperation(rootDocumentRef, edge.dumpPayload(), new ArangoDocumentReference(InternalSpace.TYPE_EDGE_COLLECTION, edge.getKey()));
                 }).collect(Collectors.toList()));
             }
         }

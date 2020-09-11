@@ -72,4 +72,8 @@ public class CoreInstancesToGraphDB {
         return serviceCall.get(BASE_URL + String.format("/%s/scopes/%s", stage.name(), instanceId.serialize()), authContext.getAuthTokens(), ScopeElement.class);
     }
 
+    public GraphEntity getNeighbors(DataStage stage, InstanceId instanceId) {
+        return serviceCall.get(BASE_URL + String.format("/%s/instances/%s/neighbors", stage.name(), instanceId.serialize()), authContext.getAuthTokens(), GraphEntity.class);
+    }
+
 }

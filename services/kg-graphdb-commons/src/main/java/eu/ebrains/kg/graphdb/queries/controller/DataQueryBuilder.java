@@ -17,9 +17,9 @@
 package eu.ebrains.kg.graphdb.queries.controller;
 
 import eu.ebrains.kg.arango.commons.aqlBuilder.*;
-import eu.ebrains.kg.arango.commons.conventions.InternalCollections;
 import eu.ebrains.kg.arango.commons.model.AQLQuery;
 import eu.ebrains.kg.arango.commons.model.ArangoCollectionReference;
+import eu.ebrains.kg.arango.commons.model.InternalSpace;
 import eu.ebrains.kg.commons.model.PaginationParam;
 import eu.ebrains.kg.graphdb.queries.model.fieldFilter.PropertyFilter;
 import eu.ebrains.kg.graphdb.queries.model.spec.SpecProperty;
@@ -99,9 +99,9 @@ public class DataQueryBuilder {
             this.bindVars.putAll(whiteListFilter);
         }
         this.q.addLine(trust("FOR ${rootFieldName}_doc IN 1..1 OUTBOUND DOCUMENT(@@typeCollection, @typeId) @@typeRelation"));
-        ArangoCollectionReference collectionReference = ArangoCollectionReference.fromSpace(InternalCollections.TYPE_SPACE);
+        ArangoCollectionReference collectionReference = ArangoCollectionReference.fromSpace(InternalSpace.TYPE_SPACE);
         this.bindVars.put("@typeCollection", collectionReference.getCollectionName());
-        this.bindVars.put("@typeRelation", InternalCollections.TYPE_EDGE_COLLECTION.getCollectionName());
+        this.bindVars.put("@typeRelation", InternalSpace.TYPE_EDGE_COLLECTION.getCollectionName());
         this.bindVars.put("typeId", collectionReference.docWithStableId(this.specification.getRootType().getName()).getDocumentId().toString());
         this.q.addLine(trust(""));
     }
