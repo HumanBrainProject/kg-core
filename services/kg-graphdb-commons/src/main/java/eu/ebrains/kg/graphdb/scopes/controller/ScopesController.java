@@ -16,6 +16,7 @@
 
 package eu.ebrains.kg.graphdb.scopes.controller;
 
+import eu.ebrains.kg.arango.commons.aqlBuilder.ArangoVocabulary;
 import eu.ebrains.kg.commons.AuthContext;
 import eu.ebrains.kg.commons.IdUtils;
 import eu.ebrains.kg.commons.jsonld.InstanceId;
@@ -64,7 +65,8 @@ public class ScopesController {
         Stream<NormalizedJsonLd> typeQueries = instance.getTypes().stream().map(type -> graphDBInstancesAPI.getQueriesByType(stage, null, false, false, null, type)
                 .getData()).flatMap(Collection::stream);
         List<NormalizedJsonLd> results = typeQueries.map(q -> queryController.query(authContext.getUserWithRoles(), new KgQuery(q, stage).setIdRestrictions(Collections.singletonList(new EntityId(id.toString()))), null, null, true).getData()).flatMap(Collection::stream).collect(Collectors.toList());
-        return translateResultToScope(results, stage, fetchLabels);
+
+        return translateResultToScope(results, stage, fetchLabels, instance);
     }
 
     private ScopeElement handleSubElement(NormalizedJsonLd data, Map<String, Set<ScopeElement>> typeToUUID){
@@ -106,9 +108,16 @@ public class ScopesController {
         return null;
     }
 
-    private ScopeElement translateResultToScope(List<NormalizedJsonLd> data, DataStage stage, boolean fetchLabels){
+    private ScopeElement translateResultToScope(List<NormalizedJsonLd> data, DataStage stage, boolean fetchLabels, NormalizedJsonLd instance){
         final Map<String, Set<ScopeElement>> typeToUUID = new HashMap<>();
-        ScopeElement element = data.stream().map(d -> handleSubElement(d, typeToUUID)).findFirst().orElse(null);
+        ScopeElement element;
+        if(data == null || data.isEmpty()){
+            element = new ScopeElement(idUtils.getUUID(instance.getId()), instance.getTypes(), null, instance.getAs(ArangoVocabulary.ID, String.class));
+            instance.getTypes().forEach(t -> typeToUUID.computeIfAbsent(t, x -> new HashSet<>()).add(element));
+        }
+        else {
+            element = data.stream().map(d -> handleSubElement(d, typeToUUID)).findFirst().orElse(null);
+        }
         if(fetchLabels) {
             List<Type> affectedTypes = typesRepo.getTypeInformation(authContext.getUserWithRoles().getClientId(), stage, typeToUUID.keySet().stream().map(Type::new).collect(Collectors.toList()));
             Set<InstanceId> instances = typeToUUID.values().stream().flatMap(Collection::stream).map(s -> InstanceId.deserialize(s.getInternalId())).collect(Collectors.toSet());
