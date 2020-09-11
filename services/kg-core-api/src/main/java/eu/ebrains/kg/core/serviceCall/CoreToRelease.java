@@ -36,7 +36,7 @@ public class CoreToRelease {
     private static final String RELEASE_ENDPOINT = "http://kg-releasing/internal/releases/";
 
     public void releaseInstance(InstanceId instanceId, String revision) {
-        serviceCall.put(String.format("%s%s?rev=%s", RELEASE_ENDPOINT, instanceId.serialize(), revision), null, authContext.getAuthTokens(), Void.class);
+        serviceCall.put(String.format("%s%s%s", RELEASE_ENDPOINT, instanceId.serialize(), revision != null ? String.format("?rev=%s", revision) : ""), null, authContext.getAuthTokens(), Void.class);
     }
 
     public void unreleaseInstance(InstanceId instanceId) {

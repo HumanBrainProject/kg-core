@@ -35,7 +35,7 @@ public class ReleaseAPI {
     Release release;
 
     @PutMapping("/{space}/{id}")
-    public void releaseInstance(@PathVariable("space") String space, @PathVariable("id") UUID id, @RequestParam("rev") String revision){
+    public void releaseInstance(@PathVariable("space") String space, @PathVariable("id") UUID id, @RequestParam(value = "rev", required = false) String revision){
         release.release(new Space(space), id, revision);
     }
 

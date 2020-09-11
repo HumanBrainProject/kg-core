@@ -46,7 +46,8 @@ public class Release {
         IndexedJsonLdDoc jsonLdDoc = getInstance(DataStage.IN_PROGRESS, space, id);
         if (jsonLdDoc == null) {
             throw new IllegalArgumentException(String.format("Instance %s/%s not found", space.getName(), id));
-        } else if (jsonLdDoc.hasRevision(revision)) {
+        } else if (revision!=null && jsonLdDoc.hasRevision(revision)) {
+            //Revision is optional -> if not provided, we just continue with the releasing process.
             throw new IllegalArgumentException("Incorrect revision provided");
         }
         releasePrimaryStoreSvc.pushToStore(new Event(space, id, jsonLdDoc.getDoc(), Event.Type.RELEASE, new Date()));
