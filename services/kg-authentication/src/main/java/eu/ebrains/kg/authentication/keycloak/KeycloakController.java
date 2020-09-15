@@ -45,6 +45,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
+import org.springframework.web.reactive.function.BodyInserters;
 import org.springframework.web.reactive.function.client.WebClient;
 
 import javax.annotation.PostConstruct;
@@ -98,6 +99,20 @@ public class KeycloakController {
     public String getTokenEndpoint() {
         return openIdConfig.getTokenEndpoint();
     }
+
+    public String authenticate(String clientId, String clientSecret) {
+        String combinedKey = clientId + "_" + clientSecret;
+        Map<?, ?> result = WebClient.builder().build().post().uri(openIdConfig.getTokenEndpoint()).body(BodyInserters.fromFormData("grant_type", "client_credentials").with("client_id", clientId).with("client_secret", clientSecret)).retrieve().bodyToMono(Map.class).block();
+        if (result != null) {
+            Object access_token = result.get("access_token");
+            if (access_token != null) {
+                String token = access_token.toString();
+                return token;
+            }
+        }
+        return null;
+    }
+
 
     private ClientRepresentation findClient(String clientName) {
         List<ClientRepresentation> clients = keycloakClient.getRealmResource().clients().findByClientId(clientName);
@@ -220,7 +235,6 @@ public class KeycloakController {
     }
 
 
-
     @Cacheable(value = "usersByAttribute")
     public List<User> getUsersByAttribute(String attribute, String value) {
         return keycloakUsers.getAllUsers().stream().filter(user -> {
@@ -274,17 +288,16 @@ public class KeycloakController {
 
     Map<String, Claim> getInfo(String token) {
         String bareToken = token.substring("Bearer ".length());
-        try{
+        try {
             return jwtVerifier.verify(bareToken).getClaims();
-        }
-        catch (JWTVerificationException ex){
+        } catch (JWTVerificationException ex) {
             throw new UnauthorizedException(ex);
         }
     }
 
     private Algorithm getAlgorithmFromKeycloakConfig(String publicKey) {
         try {
-            logger.debug(String.format("Validation by public RSA key (%s) of keycloak host %s",  publicKey, config.getIssuer()));
+            logger.debug(String.format("Validation by public RSA key (%s) of keycloak host %s", publicKey, config.getIssuer()));
             byte[] buffer = Base64.getDecoder().decode(publicKey);
             KeyFactory keyFactory = KeyFactory.getInstance("RSA");
             X509EncodedKeySpec keySpec = new X509EncodedKeySpec(buffer);

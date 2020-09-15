@@ -59,6 +59,8 @@ public class AuthenticationUsersAPI {
         return keycloakController.getTokenEndpoint();
     }
 
+
+
     @GetMapping(value = "/me", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<User> getMyUserInfo() {
         Map<String, Claim> userProfile = keycloakController.getUserProfile();

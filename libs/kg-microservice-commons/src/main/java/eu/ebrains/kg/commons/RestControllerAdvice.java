@@ -22,6 +22,7 @@ import eu.ebrains.kg.commons.model.PaginationParam;
 import eu.ebrains.kg.commons.model.ResponseConfiguration;
 import eu.ebrains.kg.commons.permission.ClientAuthToken;
 import eu.ebrains.kg.commons.permission.UserAuthToken;
+import eu.ebrains.kg.commons.serviceCall.ToAuthentication;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
@@ -41,8 +42,11 @@ public class RestControllerAdvice {
 
     private final AuthContext authContext;
 
-    public RestControllerAdvice(AuthContext authContext) {
+    private final ToAuthentication toAuthentication;
+
+    public RestControllerAdvice(AuthContext authContext, ToAuthentication toAuthentication) {
         this.authContext = authContext;
+        this.toAuthentication = toAuthentication;
     }
 
     @ModelAttribute
@@ -80,7 +84,7 @@ public class RestControllerAdvice {
      * Retrieves the authorization headers (user and client) and populates them in the {@link AuthContext}
      */
     @ModelAttribute
-    public void interceptAuthorizationToken(@RequestHeader(value = "Authorization", required = false) String userAuthorizationToken, @RequestHeader(value = "Client-Authorization", required = false) String clientAuthorizationToken, @RequestHeader(value = "Client-Id", required = false) String clientId, @RequestHeader(value = "Client-Secret", required = false) String clientSecret, @RequestHeader(value = "Transaction-Id", required = false) UUID transactionId) {
+    public void interceptAuthorizationToken(@RequestHeader(value = "Authorization", required = false) String userAuthorizationToken, @RequestHeader(value = "Client-Authorization", required = false) String clientAuthorizationToken, @RequestHeader(value = "Client-Id", required = false) String clientId, @RequestHeader(value = "Client-Secret", required = false) String clientSecret, @RequestHeader(value = "Client-ServiceAccount-Secret", required = false) String clientServiceAccountSecret, @RequestHeader(value = "Transaction-Id", required = false) UUID transactionId) {
         UserAuthToken userToken = null;
         ClientAuthToken clientToken = null;
         if (userAuthorizationToken != null) {
@@ -90,8 +94,14 @@ public class RestControllerAdvice {
             clientToken = new ClientAuthToken(clientAuthorizationToken);
         }
         else if(clientId!=null && clientSecret!=null){
-            //TODO fetch client token from auth
-
+            String token = toAuthentication.fetchToken(clientId, clientSecret);
+            if(token!=null){
+                clientToken = new ClientAuthToken(token);
+                //A special treatment for service accounts - we ask for the client secret in the user authentication to ensure
+                if(clientServiceAccountSecret!=null && clientServiceAccountSecret.equals(clientSecret)){
+                    userToken = new UserAuthToken(token);
+                }
+            }
         }
         AuthTokens authTokens = new AuthTokens(userToken, clientToken);
         authTokens.setTransactionId(transactionId);
