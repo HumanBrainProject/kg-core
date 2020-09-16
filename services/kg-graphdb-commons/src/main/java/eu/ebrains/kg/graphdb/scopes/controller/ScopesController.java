@@ -24,6 +24,7 @@ import eu.ebrains.kg.commons.jsonld.JsonLdId;
 import eu.ebrains.kg.commons.jsonld.NormalizedJsonLd;
 import eu.ebrains.kg.commons.model.*;
 import eu.ebrains.kg.commons.query.KgQuery;
+import eu.ebrains.kg.commons.semantics.vocabularies.EBRAINSVocabulary;
 import eu.ebrains.kg.graphdb.instances.api.GraphDBInstancesAPI;
 import eu.ebrains.kg.graphdb.instances.controller.ArangoRepositoryInstances;
 import eu.ebrains.kg.graphdb.queries.controller.QueryController;
@@ -76,7 +77,7 @@ public class ScopesController {
                 data.getAsListOf(k, NormalizedJsonLd.class).stream().map(d -> handleSubElement(d, typeToUUID)).collect(Collectors.toList())
         ).flatMap(Collection::stream).collect(Collectors.toList());
         List<String> type = data.getAsListOf("type", String.class);
-        ScopeElement element = new ScopeElement(uuid, type, children.isEmpty() ? null : children, data.getAs("internalId", String.class));
+        ScopeElement element = new ScopeElement(uuid, type, children.isEmpty() ? null : children, data.getAs("internalId", String.class), data.getAs("space", String.class));
         type.forEach(t -> {
             typeToUUID.computeIfAbsent(t, x -> new HashSet<>()).add(element);
         });
@@ -112,7 +113,7 @@ public class ScopesController {
         final Map<String, Set<ScopeElement>> typeToUUID = new HashMap<>();
         ScopeElement element;
         if(data == null || data.isEmpty()){
-            element = new ScopeElement(idUtils.getUUID(instance.getId()), instance.getTypes(), null, instance.getAs(ArangoVocabulary.ID, String.class));
+            element = new ScopeElement(idUtils.getUUID(instance.getId()), instance.getTypes(), null, instance.getAs(ArangoVocabulary.ID, String.class), instance.getAs(EBRAINSVocabulary.META_SPACE, String.class));
             instance.getTypes().forEach(t -> typeToUUID.computeIfAbsent(t, x -> new HashSet<>()).add(element));
         }
         else {
