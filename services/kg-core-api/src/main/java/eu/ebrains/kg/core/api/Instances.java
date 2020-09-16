@@ -139,9 +139,9 @@ public class Instances {
 
     @ApiOperation(value = "Get the scope for the instance by its KG-internal ID")
     @GetMapping("/instances/{id}/scope")
-    public ResponseEntity<Result<ScopeElement>> getInstanceScope(@PathVariable("id") UUID id, @RequestParam("stage") ExposedStage stage) {
+    public ResponseEntity<Result<ScopeElement>> getInstanceScope(@PathVariable("id") UUID id, @RequestParam("stage") ExposedStage stage, @RequestParam(value = "returnPermissions", required = false, defaultValue = "false") boolean returnPermissions) {
         Date startTime = new Date();
-        ScopeElement scope = instanceController.getScopeForInstance(id, stage.getStage());
+        ScopeElement scope = instanceController.getScopeForInstance(id, stage.getStage(), returnPermissions);
         return scope != null ? ResponseEntity.ok(Result.ok(scope).setExecutionDetails(startTime, new Date())) : ResponseEntity.notFound().build();
     }
 

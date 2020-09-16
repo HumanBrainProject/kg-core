@@ -236,8 +236,20 @@ public class CoreInstanceController {
         );
     }
 
-    public ScopeElement getScopeForInstance(UUID id, DataStage stage) {
-        return graphDbSvc.getScope(stage,  idsSvc.resolveId(stage, id));
+    private void enrichWithPermissionInformation(DataStage stage, ScopeElement scopeElement, List<FunctionalityInstance> permissions) {
+        Space sp = scopeElement.getSpace() != null ? new Space(scopeElement.getSpace()) : null;
+        scopeElement.setPermissions(permissions.stream().filter(p -> Functionality.FunctionalityGroup.INSTANCE == p.getFunctionality().getFunctionalityGroup() && stage != null && stage == p.getFunctionality().getStage()).filter(p -> p.appliesTo(sp, scopeElement.getId())).map(FunctionalityInstance::getFunctionality).collect(Collectors.toSet()));
+        if(scopeElement.getChildren()!=null){
+            scopeElement.getChildren().forEach(c -> enrichWithPermissionInformation(stage, c, permissions));
+        }
+    }
+
+    public ScopeElement getScopeForInstance(UUID id, DataStage stage, boolean returnPermissions) {
+        ScopeElement scope = graphDbSvc.getScope(stage, idsSvc.resolveId(stage, id));
+        if(returnPermissions){
+            enrichWithPermissionInformation(stage, scope, authContext.getUserWithRoles().getPermissions());
+        }
+        return scope;
     }
 
     public GraphEntity getNeighbors(UUID id, DataStage stage) {

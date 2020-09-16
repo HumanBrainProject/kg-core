@@ -16,7 +16,10 @@
 
 package eu.ebrains.kg.commons.model;
 
+import eu.ebrains.kg.commons.permission.Functionality;
+
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -25,18 +28,21 @@ public class ScopeElement {
 
     private UUID id;
     private String label;
+    private String space;
     private transient String internalId;
     private List<String> types;
     private List<ScopeElement> children;
+    private Set<Functionality> permissions;
 
     public ScopeElement() {
     }
 
-    public ScopeElement(UUID id, List<String> types, List<ScopeElement> children, String internalId) {
+    public ScopeElement(UUID id, List<String> types, List<ScopeElement> children, String internalId, String space) {
         this.id = id;
         this.children = children;
         this.types = types;
         this.internalId = internalId;
+        this.space = space;
     }
 
     public String getInternalId() {
@@ -63,6 +69,9 @@ public class ScopeElement {
         this.label = label;
     }
 
+    public String getSpace() {
+        return space;
+    }
 
     public void merge(ScopeElement el){
         if(getLabel()==null && el.getLabel()!=null) {
@@ -74,6 +83,9 @@ public class ScopeElement {
         if(getInternalId()==null && el.getInternalId()!=null){
             this.internalId = el.getInternalId();
         }
+        if(getSpace()==null && el.getSpace()!=null){
+            this.space = el.getSpace();
+        }
         if(el.getTypes()!=null && !el.getTypes().isEmpty()){
             this.types = this.types == null ? el.getTypes() : Stream.concat(this.types.stream(), el.getTypes().stream()).distinct().collect(Collectors.toList());
         }
@@ -82,8 +94,17 @@ public class ScopeElement {
         }
     }
 
+    public Set<Functionality> getPermissions() {
+        return permissions;
+    }
+
+    public void setPermissions(Set<Functionality> permissions) {
+        this.permissions = permissions;
+    }
+
     public void setChildren(List<ScopeElement> children) {
         this.children = children;
     }
+
 }
 

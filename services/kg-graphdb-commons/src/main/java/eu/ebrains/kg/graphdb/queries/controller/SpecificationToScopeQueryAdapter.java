@@ -18,6 +18,7 @@ package eu.ebrains.kg.graphdb.queries.controller;
 
 import eu.ebrains.kg.arango.commons.aqlBuilder.ArangoVocabulary;
 import eu.ebrains.kg.commons.jsonld.JsonLdConsts;
+import eu.ebrains.kg.commons.semantics.vocabularies.EBRAINSVocabulary;
 import eu.ebrains.kg.graphdb.queries.model.spec.SpecProperty;
 import eu.ebrains.kg.graphdb.queries.model.spec.SpecTraverse;
 import eu.ebrains.kg.graphdb.queries.model.spec.Specification;
@@ -46,6 +47,7 @@ public class SpecificationToScopeQueryAdapter {
                     traversalProperty.property.add(idProperty());
                     traversalProperty.property.add(typeProperty());
                     traversalProperty.property.add(internalIdProperty());
+                    traversalProperty.property.add(spaceProperty());
                     traversalSubProperties.add(traversalProperty);
                     traversalSubProperties = traversalProperty.property;
                 }
@@ -65,6 +67,7 @@ public class SpecificationToScopeQueryAdapter {
         root.add(idProperty());
         root.add(typeProperty());
         root.add(internalIdProperty());
+        root.add(spaceProperty());
         originalSpec.getProperties().stream().map(this::handleProperty).forEach(root::addAll);
         return new Specification(root, originalSpec.getDocumentFilter(), originalSpec.getRootType());
     }
@@ -79,5 +82,7 @@ public class SpecificationToScopeQueryAdapter {
     private SpecProperty typeProperty(){
         return new SpecProperty("type", null, Collections.singletonList(new SpecTraverse(JsonLdConsts.TYPE, false, null)), null, false, false, false, false, null, SpecProperty.SingleItemStrategy.FIRST);
     }
-
+    private SpecProperty spaceProperty(){
+        return new SpecProperty("space", null, Collections.singletonList(new SpecTraverse(EBRAINSVocabulary.META_SPACE, false, null)), null, false, false, false, false, null, SpecProperty.SingleItemStrategy.FIRST);
+    }
 }
