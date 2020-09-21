@@ -16,40 +16,38 @@
 
 package eu.ebrains.kg.graphdb.commons.model;
 
-import com.google.gson.annotations.SerializedName;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import eu.ebrains.kg.arango.commons.aqlBuilder.ArangoVocabulary;
 import eu.ebrains.kg.arango.commons.model.ArangoDocumentReference;
-import eu.ebrains.kg.commons.TypeUtils;
 import eu.ebrains.kg.commons.jsonld.IndexedJsonLdDoc;
 import eu.ebrains.kg.commons.jsonld.JsonLdId;
-import eu.ebrains.kg.commons.jsonld.NormalizedJsonLd;
 
 import java.util.UUID;
 
 public class ArangoEdge implements ArangoInstance {
 
-    @SerializedName("_orderNumber")
+    @JsonProperty("_orderNumber")
     private Integer orderNumber;
 
-    @SerializedName(IndexedJsonLdDoc.ORIGINAL_TO)
+    @JsonProperty(IndexedJsonLdDoc.ORIGINAL_TO)
     private String originalTo;
 
-    @SerializedName(IndexedJsonLdDoc.ORIGINAL_DOCUMENT)
+    @JsonProperty(IndexedJsonLdDoc.ORIGINAL_DOCUMENT)
     private String originalDocument;
 
-    @SerializedName("_originalLabel")
+    @JsonProperty("_originalLabel")
     private String originalLabel;
 
-    @SerializedName(ArangoVocabulary.TO)
+    @JsonProperty(ArangoVocabulary.TO)
     private String to;
 
-    @SerializedName(ArangoVocabulary.FROM)
+    @JsonProperty(ArangoVocabulary.FROM)
     private String from;
 
-    @SerializedName(ArangoVocabulary.KEY)
+    @JsonProperty(ArangoVocabulary.KEY)
     private String key;
 
-    @SerializedName("_id")
+    @JsonProperty(ArangoVocabulary.ID)
     private String id;
 
     private transient JsonLdId resolvedTargetId;
@@ -70,6 +68,7 @@ public class ArangoEdge implements ArangoInstance {
         this.to = to != null ? to.getId() : null;
     }
 
+
     public ArangoDocumentReference getFrom() {
         return from != null ? ArangoDocumentReference.fromArangoId(from, false) : null;
     }
@@ -78,10 +77,10 @@ public class ArangoEdge implements ArangoInstance {
         this.from = from != null ? from.getId() : null;
     }
 
-    @Override
-    public NormalizedJsonLd dumpPayload() {
-        return TypeUtils.translate(this, NormalizedJsonLd.class);
-    }
+//    @Override
+//    public NormalizedJsonLd dumpPayload() {
+//        return TypeUtils.translate(this, NormalizedJsonLd.class);
+//    }
 
     public UUID getKey() {
         return key != null ? UUID.fromString(key) : null;
@@ -90,6 +89,7 @@ public class ArangoEdge implements ArangoInstance {
     private void setKey(UUID key) {
         this.key = key != null ? key.toString() : null;
     }
+
 
     public JsonLdId getOriginalTo(){
         return this.originalTo != null ? new JsonLdId(this.originalTo) : null;
@@ -131,5 +131,10 @@ public class ArangoEdge implements ArangoInstance {
     @Override
     public ArangoDocumentReference getId() {
         return ArangoDocumentReference.fromArangoId(id, true);
+    }
+
+    @Override
+    public Object getPayload() {
+        return this;
     }
 }

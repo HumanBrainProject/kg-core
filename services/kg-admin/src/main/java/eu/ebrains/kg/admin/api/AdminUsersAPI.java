@@ -16,9 +16,9 @@
 
 package eu.ebrains.kg.admin.api;
 
-import com.google.gson.Gson;
 import eu.ebrains.kg.admin.controller.AdminUserController;
 import eu.ebrains.kg.admin.serviceCall.AdminToAuthentication;
+import eu.ebrains.kg.commons.JsonAdapter;
 import eu.ebrains.kg.commons.model.User;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -38,12 +38,12 @@ public class AdminUsersAPI {
 
     private final AdminUserController userController;
 
-    private final Gson gson;
+    private final JsonAdapter jsonAdapter;
 
-    public AdminUsersAPI(AdminToAuthentication authenticationSvc, AdminUserController userController, Gson gson) {
+    public AdminUsersAPI(AdminToAuthentication authenticationSvc, AdminUserController userController, JsonAdapter jsonAdapter) {
         this.authenticationSvc = authenticationSvc;
         this.userController = userController;
-        this.gson = gson;
+        this.jsonAdapter = jsonAdapter;
     }
 
     @GetMapping(value = "/me", produces = MediaType.APPLICATION_JSON_VALUE)
@@ -52,7 +52,7 @@ public class AdminUsersAPI {
         if (authUserInfo.getNativeId() != null) {
             return ResponseEntity.ok(userController.getOrCreateUserInfo(authUserInfo));
         } else {
-            throw new RuntimeException(String.format("Was receiving an invalid payload from authentication: %s", gson.toJson(authUserInfo)));
+            throw new RuntimeException(String.format("Was receiving an invalid payload from authentication: %s", jsonAdapter.toJson(authUserInfo)));
         }
     }
 

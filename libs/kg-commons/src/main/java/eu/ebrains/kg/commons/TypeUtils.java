@@ -16,17 +16,16 @@
 
 package eu.ebrains.kg.commons;
 
-import com.google.gson.Gson;
-
-
 public class TypeUtils {
 
-    private static final Gson gson = new Gson();
+    private final JsonAdapter jsonAdapter;
 
-    public static <T> T translate(Object o, Class<T> clazz){
-        return gson.fromJson(gson.toJson(o), clazz);
+    public TypeUtils(JsonAdapter jsonAdapter){
+        this.jsonAdapter = jsonAdapter;
     }
 
-
+    public <T> T translate(Object o, Class<T> clazz){
+        return jsonAdapter.fromJson(jsonAdapter.toJson(o), clazz);
+    }
 
 }

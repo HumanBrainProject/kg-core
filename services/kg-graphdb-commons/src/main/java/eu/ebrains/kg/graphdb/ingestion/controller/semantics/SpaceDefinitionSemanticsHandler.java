@@ -20,6 +20,7 @@ import eu.ebrains.kg.arango.commons.model.ArangoCollectionReference;
 import eu.ebrains.kg.arango.commons.model.ArangoDocumentReference;
 import eu.ebrains.kg.arango.commons.model.InternalSpace;
 import eu.ebrains.kg.commons.IdUtils;
+import eu.ebrains.kg.commons.TypeUtils;
 import eu.ebrains.kg.commons.model.DataStage;
 import eu.ebrains.kg.commons.model.Space;
 import eu.ebrains.kg.commons.semantics.vocabularies.EBRAINSVocabulary;
@@ -37,13 +38,14 @@ public class SpaceDefinitionSemanticsHandler extends SemanticsHandler {
 
     final IdUtils idUtils;
 
-    public SpaceDefinitionSemanticsHandler(IdUtils idUtils) {
+    public SpaceDefinitionSemanticsHandler(TypeUtils typeUtils, IdUtils idUtils) {
+        super(typeUtils);
         this.idUtils = idUtils;
     }
 
     @Override
     public List<DBOperation> createUpsertOperations(DataStage stage, ArangoDocumentReference rootDocumentReference, ArangoDocument document) {
-        if(document.getDoc().getTypes()!=null && document.getDoc().getTypes().contains(EBRAINSVocabulary.META_SPACEDEFINITION_TYPE)){
+        if(document.getDoc().types()!=null && document.getDoc().types().contains(EBRAINSVocabulary.META_SPACEDEFINITION_TYPE)){
             String spaceReference = document.getDoc().getAs(SchemaOrgVocabulary.NAME, String.class);
             ArangoDocumentReference targetSpace = StaticStructureController.createDocumentRefForMetaRepresentation(spaceReference, ArangoCollectionReference.fromSpace(InternalSpace.SPACES_SPACE));
             return handleOverrideReference(rootDocumentReference, document, null, targetSpace, ArangoCollectionReference.fromSpace(new Space(EBRAINSVocabulary.META_SPACE), true));

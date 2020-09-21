@@ -14,13 +14,12 @@
  * limitations under the License.
  */
 
-package eu.ebrains.kg.core.api;
+package eu.ebrains.kg.core.api.instances.load;
 
 import eu.ebrains.kg.commons.IdUtils;
 import eu.ebrains.kg.commons.jsonld.NormalizedJsonLd;
 import eu.ebrains.kg.commons.model.Result;
 import eu.ebrains.kg.core.model.ExposedStage;
-import eu.ebrains.kg.testutils.AbstractSystemTest;
 import org.junit.Test;
 import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -32,7 +31,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
-public class DeleteSystemTest extends AbstractSystemTest {
+public class DeleteSystemTest extends AbstractInstancesLoadTest {
 
     @Autowired
     private IdUtils idUtils;
@@ -45,7 +44,7 @@ public class DeleteSystemTest extends AbstractSystemTest {
         //When
         for (int i = 0; i < allInstancesFromInProgress.size(); i++) {
             Mockito.doReturn(i).when(testInformation).getExecutionNumber();
-            ResponseEntity<Result<Void>> resultResponseEntity = instances.deleteInstance(idUtils.getUUID(allInstancesFromInProgress.get(i).getId()), null);
+            ResponseEntity<Result<Void>> resultResponseEntity = instances.deleteInstance(idUtils.getUUID(allInstancesFromInProgress.get(i).id()), null);
             System.out.printf("Result %d: %d ms%n", i, resultResponseEntity.getBody().getDurationInMs());
         }
     }
@@ -61,7 +60,7 @@ public class DeleteSystemTest extends AbstractSystemTest {
         for (int i = 0; i < allInstancesFromInProgress.size(); i++) {
             int finalI = i;
             executorService.execute(() -> {
-                ResponseEntity<Result<Void>> resultResponseEntity = instances.deleteInstance(idUtils.getUUID(allInstancesFromInProgress.get(finalI).getId()), null);
+                ResponseEntity<Result<Void>> resultResponseEntity = instances.deleteInstance(idUtils.getUUID(allInstancesFromInProgress.get(finalI).id()), null);
                 System.out.printf("Result %d: %d ms%n", finalI, resultResponseEntity.getBody().getDurationInMs());
             });
         }

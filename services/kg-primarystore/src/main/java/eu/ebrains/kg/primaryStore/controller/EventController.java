@@ -33,7 +33,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
-import java.nio.charset.StandardCharsets;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Collections;
@@ -61,12 +60,12 @@ public class EventController {
     }
 
     private boolean isEventOfType(PersistedEvent event, String type) {
-        return event.getData() != null && event.getData().getTypes() != null ? event.getData().getTypes().contains(type) : false;
+        return event.getData() != null && event.getData().types() != null ? event.getData().types().contains(type) : false;
     }
 
     private void checkPermission(AuthTokens authTokens, PersistedEvent event, DataStage stage, Event.Type type, Space space, UUID uuid, UserWithRoles userWithRoles) {
         boolean hasPermission = false;
-        List<String> semantics = event.getData() != null && event.getData().getTypes() != null ? event.getData().getTypes() : Collections.emptyList();
+        List<String> semantics = event.getData() != null && event.getData().types() != null ? event.getData().types() : Collections.emptyList();
         Functionality functionality;
         switch (type) {
             case DELETE:
@@ -113,12 +112,15 @@ public class EventController {
         if (persistedEvent.getType() == Event.Type.DELETE) {
             idsSvc.deprecateInstance(persistedEvent.getDocumentId(), authTokens);
         } else {
-            if (dataStage == DataStage.IN_PROGRESS) {
-                ensureMergeOfIdentifiers(authTokens, persistedEvent, dataStage);
-                List<JsonLdId> mergedIds = idsSvc.upsert(dataStage, new IdWithAlternatives(persistedEvent.getDocumentId(), persistedEvent.getSpace(), persistedEvent.getData().getIdentifiers()), authTokens);
-                if (mergedIds != null) {
-                    persistedEvent.setMergedIds(mergedIds);
-                }
+            switch (dataStage){
+                case IN_PROGRESS:
+                case RELEASED:
+                    ensureMergeOfIdentifiers(authTokens, persistedEvent, dataStage);
+                    List<JsonLdId> mergedIds = idsSvc.upsert(dataStage, new IdWithAlternatives(persistedEvent.getDocumentId(), persistedEvent.getSpace(), persistedEvent.getData().identifiers()), authTokens);
+                    if (mergedIds != null) {
+                        persistedEvent.setMergedIds(mergedIds);
+                    }
+                    break;
             }
             addMetaInformationToData(dataStage, persistedEvent);
         }
@@ -128,7 +130,7 @@ public class EventController {
 
     private void ensureInternalIdInPayload(UserWithRoles user, PersistedEvent persistedEvent) {
         if (persistedEvent.getData() != null) {
-            JsonLdId idFromPayload = persistedEvent.getData().getId();
+            JsonLdId idFromPayload = persistedEvent.getData().id();
             if (idFromPayload != null) {
                 //Save the original id as an "identifier"
                 persistedEvent.getData().addIdentifiers(idFromPayload.getId());
@@ -136,14 +138,15 @@ public class EventController {
             persistedEvent.getData().setId(idUtils.buildAbsoluteUrl(persistedEvent.getDocumentId()));
             //In the native space, we store the document separately for every user - this means the documents are actual contributions to an instance.
             if (persistedEvent.getDataStage() == DataStage.NATIVE) {
-                persistedEvent.setInstance(persistedEvent.getSpace(), UUID.nameUUIDFromBytes(String.format("%s-%s", persistedEvent.getDocumentId(), persistedEvent.getUser() != null ? persistedEvent.getUser().getNativeId() : user.getUser().getNativeId()).getBytes(StandardCharsets.UTF_8)));
+                UUID userSpecificUUID = idUtils.getDocumentIdForUserAndInstance(persistedEvent.getUser() != null ? persistedEvent.getUser().getNativeId() : user.getUser().getNativeId(), persistedEvent.getDocumentId());
+                persistedEvent.setInstance(persistedEvent.getSpace(), userSpecificUUID);
             }
         }
     }
 
     private void ensureMergeOfIdentifiers(AuthTokens authTokens, PersistedEvent persistedEvent, DataStage dataStage) {
         //If we're in the inProgress stage, we look up if there are merges needed
-        Set<JsonLdId> resolvedIds = idsSvc.resolveIds(dataStage, persistedEvent.getDocumentId(), persistedEvent.getData().getIdentifiers(), persistedEvent.getSpace(), authTokens);
+        Set<JsonLdId> resolvedIds = idsSvc.resolveIds(dataStage, persistedEvent.getDocumentId(), persistedEvent.getData().identifiers(), persistedEvent.getSpace(), authTokens);
         if (resolvedIds != null && !resolvedIds.isEmpty()) {
             if (resolvedIds.size() > 1) {
                 logger.debug("Found an ambiguous id - this means a new instance id will be created and the ids will be merged...");

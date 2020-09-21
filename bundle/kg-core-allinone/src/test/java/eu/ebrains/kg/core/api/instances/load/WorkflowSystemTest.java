@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package eu.ebrains.kg.core.api;
+package eu.ebrains.kg.core.api.instances.load;
 
 import eu.ebrains.kg.commons.IdUtils;
 import eu.ebrains.kg.commons.jsonld.IndexedJsonLdDoc;
@@ -24,8 +24,8 @@ import eu.ebrains.kg.commons.jsonld.NormalizedJsonLd;
 import eu.ebrains.kg.commons.model.ReleaseStatus;
 import eu.ebrains.kg.commons.model.Result;
 import eu.ebrains.kg.commons.params.ReleaseTreeScope;
+import eu.ebrains.kg.core.api.Instances;
 import eu.ebrains.kg.core.model.ExposedStage;
-import eu.ebrains.kg.testutils.AbstractSystemTest;
 import eu.ebrains.kg.testutils.TestDataFactory;
 import org.junit.Ignore;
 import org.junit.Test;
@@ -37,7 +37,7 @@ import java.io.IOException;
 
 import static org.junit.Assert.*;
 
-public class WorkflowSystemTest extends AbstractSystemTest {
+public class WorkflowSystemTest extends AbstractInstancesLoadTest {
 
     @Autowired
     private Instances instances;
@@ -51,7 +51,7 @@ public class WorkflowSystemTest extends AbstractSystemTest {
         //Given
         JsonLdDoc payload = TestDataFactory.createTestData(smallPayload, true, 0, null);
         ResponseEntity<Result<NormalizedJsonLd>> instance = instances.createNewInstance(payload, "test", DEFAULT_RESPONSE_CONFIG, DEFAULT_INGEST_CONFIG, null);
-        JsonLdId id = instance.getBody().getData().getId();
+        JsonLdId id = instance.getBody().getData().id();
         IndexedJsonLdDoc from = IndexedJsonLdDoc.from(instance.getBody().getData());
 
         //When
@@ -76,7 +76,7 @@ public class WorkflowSystemTest extends AbstractSystemTest {
         //Given
         JsonLdDoc payload = TestDataFactory.createTestData(smallPayload, true, 0, null);
         ResponseEntity<Result<NormalizedJsonLd>> instance = instances.createNewInstance(payload, "test", DEFAULT_RESPONSE_CONFIG, DEFAULT_INGEST_CONFIG, null);
-        JsonLdId id = instance.getBody().getData().getId();
+        JsonLdId id = instance.getBody().getData().id();
 
         //When
         ResponseEntity<Result<Void>> resultResponseEntity = instances.deleteInstance(idUtils.getUUID(id), null);
@@ -96,7 +96,7 @@ public class WorkflowSystemTest extends AbstractSystemTest {
         JsonLdDoc payload = TestDataFactory.createTestData(smallPayload, true, 0, null);
 
         ResponseEntity<Result<NormalizedJsonLd>> instance = instances.createNewInstance(payload, "test", DEFAULT_RESPONSE_CONFIG, DEFAULT_INGEST_CONFIG, null);
-        JsonLdId id = instance.getBody().getData().getId();
+        JsonLdId id = instance.getBody().getData().id();
 
         //When
         JsonLdDoc doc = new JsonLdDoc();
@@ -113,7 +113,7 @@ public class WorkflowSystemTest extends AbstractSystemTest {
         //Given
         JsonLdDoc payload = TestDataFactory.createTestData(smallPayload, true, 0, null);
         ResponseEntity<Result<NormalizedJsonLd>> instance = instances.createNewInstance(payload, "test", DEFAULT_RESPONSE_CONFIG, DEFAULT_INGEST_CONFIG, null);
-        JsonLdId id = instance.getBody().getData().getId();
+        JsonLdId id = instance.getBody().getData().id();
         IndexedJsonLdDoc from = IndexedJsonLdDoc.from(instance.getBody().getData());
 
         //When

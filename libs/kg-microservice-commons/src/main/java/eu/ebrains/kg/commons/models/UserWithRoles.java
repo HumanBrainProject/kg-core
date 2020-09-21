@@ -36,7 +36,7 @@ public class UserWithRoles {
     List<String> permissions;
     String clientId;
 
-    private final Logger logger = LoggerFactory.getLogger(getClass());
+    private transient final Logger logger = LoggerFactory.getLogger(getClass());
 
     public UserWithRoles() {
     }

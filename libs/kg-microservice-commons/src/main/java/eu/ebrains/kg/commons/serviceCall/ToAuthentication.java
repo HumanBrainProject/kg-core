@@ -21,6 +21,7 @@ import eu.ebrains.kg.commons.IdUtils;
 import eu.ebrains.kg.commons.ServiceCall;
 import eu.ebrains.kg.commons.model.User;
 import eu.ebrains.kg.commons.models.UserWithRoles;
+import eu.ebrains.kg.commons.permission.ClientAuthToken;
 import org.springframework.stereotype.Component;
 
 /**
@@ -50,7 +51,7 @@ public class ToAuthentication {
         return serviceCall.get(SPACE+ String.format("users/profiles/%s", userId), authContext.getAuthTokens(), User.class);
     }
 
-    public String fetchToken(String clientId, String clientSecret) {
-        return serviceCall.post(SPACE+ String.format("clients/%s/token", clientId), clientSecret, authContext.getAuthTokens(), String.class);
+    public ClientAuthToken fetchToken(String clientId, String clientSecret) {
+        return serviceCall.post(SPACE+ String.format("clients/%s/token", clientId), clientSecret, authContext.getAuthTokens(), ClientAuthToken.class);
     }
 }

@@ -14,15 +14,14 @@
  * limitations under the License.
  */
 
-package eu.ebrains.kg.core.api;
+package eu.ebrains.kg.core.api.instances.load;
 
 import eu.ebrains.kg.metrics.PerformanceTestUtils;
-import eu.ebrains.kg.testutils.AbstractSystemTest;
 import org.junit.Test;
 
 import java.io.IOException;
 
-public class InsertSystemTest extends AbstractSystemTest {
+public class InsertSystemTest extends AbstractInstancesLoadTest {
 
     @Test
     public void testInsertSmallNoLink() throws IOException {

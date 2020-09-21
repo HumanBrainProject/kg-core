@@ -20,8 +20,7 @@ import com.datastax.oss.driver.api.core.uuid.Uuids;
 import eu.ebrains.kg.commons.jsonld.JsonLdDoc;
 import eu.ebrains.kg.nexusv0.controller.BulkImport;
 import eu.ebrains.kg.nexusv0.controller.NexusV0Importer;
-import io.swagger.annotations.Api;
-import io.swagger.annotations.ApiOperation;
+import io.swagger.v3.oas.annotations.Operation;
 import org.apache.commons.codec.DecoderException;
 import org.apache.tomcat.util.http.fileupload.IOUtils;
 import org.slf4j.Logger;
@@ -37,7 +36,6 @@ import java.util.UUID;
 
 @RestController
 @RequestMapping("/nexus/v0")
-@Api(value = "/nexus/v0")
 public class NexusV0 {
 
     private final NexusV0Importer nexusV0Importer;
@@ -55,14 +53,14 @@ public class NexusV0 {
     private final Logger logger = LoggerFactory.getLogger(getClass());
 
 
-    @ApiOperation("Index the creation of a new instance")
+    @Operation(summary = "Index the creation of a new instance")
     @PostMapping(value = "/{org}/{domain}/{schema}/{version}/{id}", consumes = {JsonLdDoc.APPLICATION_JSON, JsonLdDoc.APPLICATION_LD_JSON})
     public Void addInstance(@RequestBody JsonLdDoc payload, @PathVariable("org") String organization, @PathVariable("domain") String domain, @PathVariable("schema") String schema, @PathVariable("version") String schemaVersion, @PathVariable("id") String id, @RequestParam(value = "authorId", required = false) String authorId, @RequestParam(value = "eventDateTime", required = false) String timestamp) {
         nexusV0Importer.insertOrUpdateEvent(payload, organization, domain, schema, schemaVersion, timestamp, authorId, id, false, nexusEndpoint);
         return null;
     }
 
-    @ApiOperation("Index the update of an existing instance in a specific revision")
+    @Operation(summary = "Index the update of an existing instance in a specific revision")
     @PutMapping(value = "/{org}/{domain}/{schema}/{version}/{id}/{rev}", consumes = {JsonLdDoc.APPLICATION_JSON, JsonLdDoc.APPLICATION_LD_JSON})
     public Void updateInstance(@RequestBody JsonLdDoc payload, @PathVariable("org") String organization, @PathVariable("domain") String domain, @PathVariable("schema") String schema, @PathVariable("version") String schemaVersion, @PathVariable("id") String id, @PathVariable("rev") Integer rev, @RequestParam(value = "authorId", required = false) String authorId, @RequestParam(value = "eventDateTime", required = false) String timestamp) {
         nexusV0Importer.insertOrUpdateEvent(payload, organization, domain, schema, schemaVersion, timestamp, authorId, id, false, nexusEndpoint);
@@ -70,7 +68,7 @@ public class NexusV0 {
     }
 
 
-    @ApiOperation("Index the deletion of an existing instance")
+    @Operation(summary = "Index the deletion of an existing instance")
     @DeleteMapping(value = "/{org}/{domain}/{schema}/{version}/{id}")
     public Void deleteInstance(@PathVariable("org") String organization, @PathVariable("domain") String domain, @PathVariable("schema") String schema, @PathVariable("version") String schemaVersion, @PathVariable("id") String id, @RequestParam(value = "rev", required = false) Integer rev, @RequestParam(value = "authorId", required = false) String authorId, @RequestParam(value = "eventDateTime", required = false) String timestamp) {
         nexusV0Importer.deleteInstance(organization, domain, schema, schemaVersion, id, rev, authorId, timestamp, nexusEndpoint);
@@ -107,7 +105,7 @@ public class NexusV0 {
         bulk.reduceEvents(file.getInputStream(), response.getOutputStream(), differentNexusEndpoint == null ? nexusEndpoint : differentNexusEndpoint);
     }
 
-    @ApiOperation("Index the creation of a new instance")
+    @Operation(summary = "Index the creation of a new instance")
     @PostMapping("/bulk/import")
     public Void bulkImport(@RequestParam("file") MultipartFile file, @RequestParam(value = "nexusEndpoint", required = false) String differentNexusEndpoint) throws IOException {
         File tempfile = File.createTempFile("bulk", "");

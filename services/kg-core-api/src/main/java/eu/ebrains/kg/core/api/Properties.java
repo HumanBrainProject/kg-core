@@ -27,8 +27,8 @@ import eu.ebrains.kg.commons.model.Result;
 import eu.ebrains.kg.commons.model.Space;
 import eu.ebrains.kg.commons.semantics.vocabularies.EBRAINSVocabulary;
 import eu.ebrains.kg.core.serviceCall.CoreToPrimaryStore;
-import io.swagger.annotations.ApiOperation;
-import io.swagger.annotations.ApiParam;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -36,7 +36,6 @@ import org.springframework.web.bind.annotation.*;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.UUID;
-import java.util.stream.Stream;
 
 /**
  * The property API allows to add meta information about semantic properties either globally or by type for the requesting client.
@@ -53,9 +52,9 @@ public class Properties {
         this.authContext = authContext;
     }
 
-    @ApiOperation(value = "Upload a property specification either globally or on a type level for the requesting client")
+    @Operation(summary = "Upload a property specification either globally or on a type level for the requesting client")
     @PutMapping("/properties")
-    public ResponseEntity<Result<Void>> defineProperty(@RequestBody NormalizedJsonLd payload, @ApiParam("By default, the specification is only valid for the current client. If this flag is set to true (and the client/user combination has the permission), the specification is applied for all clients (unless they have defined something by themselves)")  @RequestParam(value = "global", required = false) boolean global) {
+    public ResponseEntity<Result<Void>> defineProperty(@RequestBody NormalizedJsonLd payload, @Parameter(description = "By default, the specification is only valid for the current client. If this flag is set to true (and the client/user combination has the permission), the specification is applied for all clients (unless they have defined something by themselves)")  @RequestParam(value = "global", required = false) boolean global) {
         if(!payload.containsKey(EBRAINSVocabulary.META_PROPERTY)) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Result.nok(HttpStatus.BAD_REQUEST.value(), String.format("Property \"%s\" should be specified.", EBRAINSVocabulary.META_PROPERTY)));
         }
@@ -87,7 +86,7 @@ public class Properties {
         } else {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Result.nok(HttpStatus.BAD_REQUEST.value(), String.format("Only one \"%s\" is allowed.", JsonLdConsts.TYPE)));
         }
-        primaryStoreSvc.postEvent(Event.createUpsertEvent(targetSpace, UUID.nameUUIDFromBytes(payload.getId().getId().getBytes(StandardCharsets.UTF_8)), Event.Type.INSERT, payload), false, authContext.getAuthTokens());
+        primaryStoreSvc.postEvent(Event.createUpsertEvent(targetSpace, UUID.nameUUIDFromBytes(payload.id().getId().getBytes(StandardCharsets.UTF_8)), Event.Type.INSERT, payload), false, authContext.getAuthTokens());
         return ResponseEntity.status(HttpStatus.OK).build();
     }
 }

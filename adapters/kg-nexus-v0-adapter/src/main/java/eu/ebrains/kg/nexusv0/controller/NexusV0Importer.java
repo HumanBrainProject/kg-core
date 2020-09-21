@@ -16,8 +16,8 @@
 
 package eu.ebrains.kg.nexusv0.controller;
 
-import com.google.gson.Gson;
 import eu.ebrains.kg.commons.IdUtils;
+import eu.ebrains.kg.commons.JsonAdapter;
 import eu.ebrains.kg.commons.exception.AmbiguousException;
 import eu.ebrains.kg.commons.exception.InstanceNotFoundException;
 import eu.ebrains.kg.commons.jsonld.JsonLdConsts;
@@ -45,15 +45,15 @@ public class NexusV0Importer {
 
     private final PayloadNormalizer payloadNormalizer;
 
-    private final Gson gson;
+    private final JsonAdapter jsonAdapter;
 
     private final IdUtils idUtils;
 
     private final CoreSvc coreSvc;
 
-    public NexusV0Importer(PayloadNormalizer payloadNormalizer, Gson gson, IdUtils idUtils, CoreSvc coreSvc) {
+    public NexusV0Importer(PayloadNormalizer payloadNormalizer, JsonAdapter jsonAdapter, IdUtils idUtils, CoreSvc coreSvc) {
         this.payloadNormalizer = payloadNormalizer;
-        this.gson = gson;
+        this.jsonAdapter = jsonAdapter;
         this.idUtils = idUtils;
         this.coreSvc = coreSvc;
     }
@@ -78,7 +78,7 @@ public class NexusV0Importer {
         if (instanceByIdentifier != null && instanceByIdentifier.getData() != null) {
             if (instanceByIdentifier.getData().size() == 1) {
                 NormalizedJsonLd normalizedJsonLd = instanceByIdentifier.getData().get(0);
-                UUID uuid = idUtils.getUUID(normalizedJsonLd.getId());
+                UUID uuid = idUtils.getUUID(normalizedJsonLd.id());
                 String revision = normalizedJsonLd.getAs(EBRAINSVocabulary.META_REVISION, String.class);
                 logger.info(String.format("Releasing instance %s in revision %s", uuid, revision));
                 coreSvc.releaseInstance(uuid, revision);
@@ -103,7 +103,7 @@ public class NexusV0Importer {
             normalizedJsonLdDoc = payloadNormalizer.normalizePayload(payload, organization, domain, schema, version, id, nexusEndpoint);
             logger.debug(String.format("Successfully normalized the payload for instance id %s/%s/%s/%s/%s", organization, domain, schema, version, id));
         } catch (Exception e) {
-            logger.error(String.format("Was not able to normalize the received payload for instance id %s/%s/%s/%s/%s:\n\n%s", organization, domain, schema, version, id, gson.toJson(payload)), e);
+            logger.error(String.format("Was not able to normalize the received payload for instance id %s/%s/%s/%s/%s:\n\n%s", organization, domain, schema, version, id, jsonAdapter.toJson(payload)), e);
             throw e;
         }
         if (PayloadNormalizer.isInferred(organization)) {
@@ -112,13 +112,13 @@ public class NexusV0Importer {
             inferredPayload.put(JsonLdConsts.ID, normalizedJsonLdDoc.get(JsonLdConsts.ID));
             inferredPayload.put(SchemaOrgVocabulary.IDENTIFIER, normalizedJsonLdDoc.get(SchemaOrgVocabulary.IDENTIFIER));
             normalizedJsonLdDoc = inferredPayload;
-        } else if (normalizedJsonLdDoc.getTypes().contains(RELEASING_TYPE)) {
+        } else if (normalizedJsonLdDoc.types().contains(RELEASING_TYPE)) {
             Object releaseInstance = normalizedJsonLdDoc.get("https://schema.hbp.eu/release/instance");
             if (releaseInstance instanceof Map && ((Map) releaseInstance).containsKey(JsonLdConsts.ID)) {
                 releaseInstance(new JsonLdId((new NormalizedJsonLd((Map) releaseInstance).getAs(JsonLdConsts.ID, String.class))), deferInference, nexusEndpoint);
             }
         }
-        Result<List<NormalizedJsonLd>> instancesByIdentifiers = coreSvc.getInstancesByIdentifiers(normalizedJsonLdDoc.getAllIdentifiersIncludingId());
+        Result<List<NormalizedJsonLd>> instancesByIdentifiers = coreSvc.getInstancesByIdentifiers(normalizedJsonLdDoc.allIdentifiersIncludingId());
         if (instancesByIdentifiers.getData() != null && !instancesByIdentifiers.getData().isEmpty()) {
             //The document already exists... we need to check if it exists in the current space...
             NormalizedJsonLd existingInstanceInSpace = null;
@@ -130,7 +130,7 @@ public class NexusV0Importer {
                 }
             }
             if (existingInstanceInSpace != null) {
-                UUID uuidForContribution = idUtils.getUUID(existingInstanceInSpace.getId());
+                UUID uuidForContribution = idUtils.getUUID(existingInstanceInSpace.id());
                 coreSvc.replaceContribution(normalizedJsonLdDoc, uuidForContribution, userId, eventTime, deferInference);
                 //We're done after replacing the contribution
                 return;
@@ -148,16 +148,16 @@ public class NexusV0Importer {
         if (instanceByIdentifier != null && instanceByIdentifier.getData() != null) {
 
             instanceByIdentifier.getData().forEach(instance -> {
-                if (instance.getTypes().contains(RELEASING_TYPE)) {
+                if (instance.types().contains(RELEASING_TYPE)) {
                     //It was a releasing instance - we unrelease the linked element...
                     JsonLdId releasedInstance = instance.getAs("https://schema.hbp.eu/release/instance", JsonLdId.class);
                     Result<List<NormalizedJsonLd>> releasedInstances = coreSvc.getInstancesByIdentifiers(Collections.singleton(releasedInstance.getId()));
                     if (releasedInstances != null && releasedInstances.getData() != null) {
-                        releasedInstances.getData().forEach(r -> coreSvc.unreleaseInstance(idUtils.getUUID(r.getId())));
+                        releasedInstances.getData().forEach(r -> coreSvc.unreleaseInstance(idUtils.getUUID(r.id())));
                     }
                 }
                 //The delete for Nexus is actually a replacement with an empty payload (it's a revert of the contribution in fact)...
-                Result<NormalizedJsonLd> resultingDocument = coreSvc.replaceContribution(new JsonLdDoc(), idUtils.getUUID(instance.getId()), userId, eventTime, false);
+                Result<NormalizedJsonLd> resultingDocument = coreSvc.replaceContribution(new JsonLdDoc(), idUtils.getUUID(instance.id()), userId, eventTime, false);
             });
         }
     }

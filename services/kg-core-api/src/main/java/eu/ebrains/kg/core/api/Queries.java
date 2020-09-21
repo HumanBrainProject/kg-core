@@ -26,7 +26,8 @@ import eu.ebrains.kg.core.controller.CoreQueryController;
 import eu.ebrains.kg.core.model.ExposedStage;
 import eu.ebrains.kg.core.serviceCall.CoreToIds;
 import eu.ebrains.kg.core.serviceCall.CoreToJsonLd;
-import io.swagger.annotations.ApiOperation;
+import io.swagger.v3.oas.annotations.Operation;
+import org.springdoc.api.annotations.ParameterObject;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -52,9 +53,9 @@ public class Queries {
         this.idsSvc = idsSvc;
     }
 
-    @ApiOperation(value = "List the queries which have been registered for the given root type")
+    @Operation(summary = "List the queries which have been registered for the given root type")
     @GetMapping
-    public PaginatedResult<NormalizedJsonLd> listQueriesPerRootType(PaginationParam paginationParam, @RequestParam(value = "type", required = false) String rootType, @RequestParam(value = "search", required = false) String search) {
+    public PaginatedResult<NormalizedJsonLd> listQueriesPerRootType(@ParameterObject PaginationParam paginationParam, @RequestParam(value = "type", required = false) String rootType, @RequestParam(value = "search", required = false) String search) {
         if(rootType != null){
             return PaginatedResult.ok(queryController.listQueriesPerRootType(search, new Type(rootType), paginationParam));
         } else {
@@ -62,27 +63,27 @@ public class Queries {
         }
     }
 
-    @ApiOperation(value = "Execute the query in the payload in test mode (e.g. for execution before saving with the KG QueryBuilder)")
+    @Operation(summary = "Execute the query in the payload in test mode (e.g. for execution before saving with the KG QueryBuilder)")
     @PostMapping
-    public PaginatedResult<NormalizedJsonLd> testQuery(@RequestBody JsonLdDoc query,  PaginationParam paginationParam, @RequestParam("stage") ExposedStage stage) {
+    public PaginatedResult<NormalizedJsonLd> testQuery(@RequestBody JsonLdDoc query, @ParameterObject PaginationParam paginationParam, @RequestParam("stage") ExposedStage stage) {
         NormalizedJsonLd normalizedJsonLd = jsonLdSvc.toNormalizedJsonLd(query);
         return PaginatedResult.ok(queryController.executeQuery(new KgQuery(normalizedJsonLd, stage.getStage()), paginationParam));
     }
 
-    @ApiOperation(value = "Get the query specification with the given query id in a specific space (note that query ids are unique per space only)")
+    @Operation(summary = "Get the query specification with the given query id in a specific space (note that query ids are unique per space only)")
     @GetMapping("/{queryId}")
     public Result<NormalizedJsonLd> getQuerySpecification(@PathVariable("queryId") UUID queryId, @RequestParam("space") String space) {
         KgQuery kgQuery = queryController.fetchQueryById(queryId, new Space(space), DataStage.IN_PROGRESS);
         return Result.ok(kgQuery.getPayload());
     }
 
-    @ApiOperation(value = "Removes a query specification")
+    @Operation(summary = "Removes a query specification")
     @DeleteMapping("/{queryId}")
     public void removeQuery(@PathVariable("queryId") UUID queryId, @RequestParam("space") String space) {
         queryController.deleteQuery(new InstanceId(queryId, new Space(space)));
     }
 
-    @ApiOperation(value = "Save a query specification")
+    @Operation(summary = "Save a query specification")
     @PutMapping("/{queryId}")
     public ResponseEntity<Result<NormalizedJsonLd>> saveQuery(@RequestBody JsonLdDoc query, @PathVariable(value = "queryId") UUID queryId, @RequestParam("space") String space) {
         NormalizedJsonLd normalizedJsonLd = jsonLdSvc.toNormalizedJsonLd(query);
@@ -95,14 +96,14 @@ public class Queries {
         return queryController.createNewQuery(normalizedJsonLd, queryId, querySpace);
     }
 
-    @ApiOperation(value = "Execute a stored query to receive the instances")
+    @Operation(summary = "Execute a stored query to receive the instances")
     @GetMapping("/{queryId}/instances")
-    public PaginatedResult<NormalizedJsonLd> executeQueryById(@PathVariable("queryId") UUID queryId, PaginationParam paginationParam,@RequestParam("space") String space, @RequestParam("stage") ExposedStage stage) {
+    public PaginatedResult<NormalizedJsonLd> executeQueryById(@PathVariable("queryId") UUID queryId, @ParameterObject PaginationParam paginationParam,@RequestParam("space") String space, @RequestParam("stage") ExposedStage stage) {
         KgQuery query = queryController.fetchQueryById(queryId, new Space(space), stage.getStage());
         return PaginatedResult.ok(queryController.executeQuery(query, paginationParam));
     }
 
-    @ApiOperation(value = "TO BE IMPLEMENTED: Returns the meta information of a query specification")
+    @Operation(summary = "TO BE IMPLEMENTED: Returns the meta information of a query specification")
     @GetMapping("/{queryId}/meta")
     public Result<NormalizedJsonLd> getMetaInformation(@PathVariable("queryId") String queryId) {
         return null;

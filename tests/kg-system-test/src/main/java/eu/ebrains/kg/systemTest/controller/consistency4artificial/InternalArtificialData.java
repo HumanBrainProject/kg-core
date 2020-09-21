@@ -55,7 +55,7 @@ public class InternalArtificialData {
             normalizedJsonLd.addTypes(createType(groupName));
             normalizedJsonLd.put(createProperty(groupName), groupName + i);
             Result<NormalizedJsonLd> createdDocument = coreSvc.createInstance(normalizedJsonLd, new Space("testA"), null, null, false, false);
-            group.add(createdDocument.getData().getId());
+            group.add(createdDocument.getData().id());
         }
         return group;
     }

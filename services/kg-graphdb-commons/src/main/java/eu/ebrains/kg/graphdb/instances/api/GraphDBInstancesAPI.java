@@ -81,7 +81,7 @@ public class GraphDBInstancesAPI {
     @PostMapping("instancesByIds/labels")
     public Map<UUID, String> getLabels(@RequestBody List<String> ids, @PathVariable("stage") DataStage stage) {
         Set<InstanceId> instanceIds = ids.stream().map(InstanceId::deserialize).filter(Objects::nonNull).collect(Collectors.toSet());
-        Set<Type> types = getInstancesByIds(ids, stage, false, false).values().stream().map(Result::getData).map(JsonLdDoc::getTypes).flatMap(Collection::stream).distinct().map(Type::new).collect(Collectors.toSet());
+        Set<Type> types = getInstancesByIds(ids, stage, false, false).values().stream().map(Result::getData).map(JsonLdDoc::types).flatMap(Collection::stream).distinct().map(Type::new).collect(Collectors.toSet());
         List<Type> extendedTypes = typeRepository.getTypeInformation(authContext.getUserWithRoles().getClientId(), stage, types);
         return repository.getLabelsForInstances(stage, instanceIds, extendedTypes);
     }
@@ -123,13 +123,13 @@ public class GraphDBInstancesAPI {
             payload = repository.getInstance(stage, new Space(space), id, true, true, false);
         }
         SuggestionResult suggestionResult = new SuggestionResult();
-        ArangoRepositoryTypes.TargetsForProperties properties = new ArangoRepositoryTypes.TargetsForProperties(propertyName, payload.getTypes());
+        ArangoRepositoryTypes.TargetsForProperties properties = new ArangoRepositoryTypes.TargetsForProperties(propertyName, payload.types());
         Paginated<NormalizedJsonLd> targetTypesForProperty = typeRepository.getTargetTypesForProperty(authContext.getUserWithRoles().getClientId(), stage, properties, false, false,null);
         List<Type> typesWithLabelInfo = ArangoRepositoryTypes.extractExtendedTypeInformationFromPayload(targetTypesForProperty.getData());
         if(type != null && !type.isBlank()){
             typesWithLabelInfo = typesWithLabelInfo.stream().filter(t -> type.equals(t.getName())).collect(Collectors.toList());
         }
-        suggestionResult.setTypes(targetTypesForProperty.getData().stream().collect(Collectors.toMap(JsonLdDoc::getPrimaryIdentifier, t -> t)));
+        suggestionResult.setTypes(targetTypesForProperty.getData().stream().collect(Collectors.toMap(JsonLdDoc::primaryIdentifier, t -> t)));
         List<UUID> existingLinks = payload.getAsListOf(propertyName, JsonLdId.class, true).stream().map(idUtils::getUUID).filter(Objects::nonNull).collect(Collectors.toList());
         Paginated<SuggestedLink> documentsByTypes = repository.getSuggestionsByTypes(stage, typesWithLabelInfo, paginationParam, search, existingLinks);
         suggestionResult.setSuggestions(documentsByTypes);

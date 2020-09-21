@@ -31,7 +31,7 @@ import java.util.UUID;
 public class TodoListProcessorUnitTest {
 
 
-    private TodoListProcessor processor = Mockito.spy(new TodoListProcessor(Mockito.mock(ArangoRepositoryCommons.class), Mockito.mock(StructureSplitter.class), Mockito.mock(MainEventTracker.class), Mockito.mock(IdUtils.class), Mockito.mock(DataController.class), Mockito.mock(MetaDataController.class), Mockito.mock(ReleasingController.class)));
+    private TodoListProcessor processor = Mockito.spy(new TodoListProcessor(Mockito.mock(ArangoRepositoryCommons.class), Mockito.mock(StructureSplitter.class), Mockito.mock(MainEventTracker.class), Mockito.mock(IdUtils.class), Mockito.mock(DataController.class), Mockito.mock(MetaDataController.class), Mockito.mock(ReleasingController.class), true));
 
     @Test
     public void doProcessTodoList() {

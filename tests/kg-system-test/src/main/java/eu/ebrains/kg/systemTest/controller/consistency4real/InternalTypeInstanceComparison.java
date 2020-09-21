@@ -17,12 +17,12 @@
 package eu.ebrains.kg.systemTest.controller.consistency4real;
 
 import com.arangodb.model.AqlQueryOptions;
-import com.google.gson.Gson;
 import eu.ebrains.kg.arango.commons.aqlBuilder.AQL;
 import eu.ebrains.kg.arango.commons.model.ArangoCollectionReference;
 import eu.ebrains.kg.arango.commons.model.ArangoDatabaseProxy;
 import eu.ebrains.kg.arango.commons.model.InternalSpace;
 import eu.ebrains.kg.commons.IdUtils;
+import eu.ebrains.kg.commons.JsonAdapter;
 import eu.ebrains.kg.commons.Tuple;
 import eu.ebrains.kg.commons.jsonld.IndexedJsonLdDoc;
 import eu.ebrains.kg.commons.jsonld.NormalizedJsonLd;
@@ -42,7 +42,7 @@ import java.util.stream.Collectors;
 @Component
 public class InternalTypeInstanceComparison {
 
-    private final Gson gson;
+    private final JsonAdapter jsonAdapter;
 
     private final SystemTestToCore coreSvc;
 
@@ -53,8 +53,8 @@ public class InternalTypeInstanceComparison {
 
     private final Logger logger = LoggerFactory.getLogger(getClass());
 
-    public InternalTypeInstanceComparison(Gson gson, SystemTestToCore coreSvc, IdUtils idUtils, @Qualifier("inProgressMetaTest") ArangoDatabaseProxy inProgressMeta, @Qualifier("releasedMetaTest") ArangoDatabaseProxy releasedMeta) {
-        this.gson = gson;
+    public InternalTypeInstanceComparison(JsonAdapter jsonAdapter, SystemTestToCore coreSvc, IdUtils idUtils, @Qualifier("inProgressMetaTest") ArangoDatabaseProxy inProgressMeta, @Qualifier("releasedMetaTest") ArangoDatabaseProxy releasedMeta) {
+        this.jsonAdapter = jsonAdapter;
         this.coreSvc = coreSvc;
         this.idUtils = idUtils;
         this.inProgressMeta = inProgressMeta;
@@ -105,7 +105,7 @@ public class InternalTypeInstanceComparison {
     public Map<String, Set<UUID>> analyzeType(DataStage stage, Type type) {
         logger.info(String.format("Now analyzing the type %s", type.getName()));
         PaginatedResultOfDocuments instances = coreSvc.getInstances(type, stage);
-        Set<UUID> idsFromInstances = instances.getData().stream().map(i -> idUtils.getUUID(i.getId())).collect(Collectors.toSet());
+        Set<UUID> idsFromInstances = instances.getData().stream().map(i -> idUtils.getUUID(i.id())).collect(Collectors.toSet());
         Set<UUID> idsFromTypeRelation = getIdsFromMetaTypeRelation(stage, type);
         Set<UUID> idsOnlyInInstances = new HashSet<>(idsFromInstances);
         idsOnlyInInstances.removeAll(idsFromTypeRelation);
@@ -114,7 +114,7 @@ public class InternalTypeInstanceComparison {
         Map<String, Set<UUID>> invalidDocs = new HashMap<>();
         invalidDocs.put("onlyInInstances", idsOnlyInInstances);
         invalidDocs.put("onlyInTypes", idsOnlyInType);
-        logger.info(String.format("Found differences for type %s: %s", type.getName(), gson.toJson(invalidDocs)));
+        logger.info(String.format("Found differences for type %s: %s", type.getName(), jsonAdapter.toJson(invalidDocs)));
         return invalidDocs;
     }
 

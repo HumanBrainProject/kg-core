@@ -46,7 +46,7 @@ public class RegressionController {
     private UUID sessionId;
 
     private long getNumberOfInstancesByTypeAndCheckStatsInstanceConsistency(NormalizedJsonLd payload){
-        Type type = new Type(payload.getTypes().stream().findFirst().orElseThrow());
+        Type type = new Type(payload.types().stream().findFirst().orElseThrow());
         long fromInstances = coreSvc.getInstances(type, 0, 0, DataStage.IN_PROGRESS).getTotal();
         List<Tuple<Type, Long>> types = coreSvc.getTypes(DataStage.IN_PROGRESS);
         Long fromStats = types.stream().filter(t -> t.getA().equals(type)).findFirst().orElse(new Tuple<Type, Long>().setB(0L)).getB();
@@ -73,21 +73,21 @@ public class RegressionController {
         }
 
         //Add the id of instanceA to the instanceB as identifier to provoke a merge
-        simplePayloadB.addIdentifiers(simplePayloadA.getId().getId());
-        Result<NormalizedJsonLd> newInstance = coreSvc.replaceContribution(simplePayloadB, idUtils.getUUID(instanceB.getData().getId()), null, null, true, false);
+        simplePayloadB.addIdentifiers(simplePayloadA.id().getId());
+        Result<NormalizedJsonLd> newInstance = coreSvc.replaceContribution(simplePayloadB, idUtils.getUUID(instanceB.getData().id()), null, null, true, false);
 
         long finalDiffOfNumberOfInstances = getNumberOfInstancesByTypeAndCheckStatsInstanceConsistency(simplePayloadA)-initialNumberOfInstances;
         if(finalDiffOfNumberOfInstances!=1){
             throw new IllegalStateException(String.format("Illegal number of different instances: %d - Since the two instances should be merged now, we only should have a single additional instance", finalDiffOfNumberOfInstances));
         }
         Set<String> allIds = new HashSet<>();
-        allIds.add(instanceA.getData().getId().getId());
-        allIds.add(instanceB.getData().getId().getId());
-        allIds.add(newInstance.getData().getId().getId());
+        allIds.add(instanceA.getData().id().getId());
+        allIds.add(instanceB.getData().id().getId());
+        allIds.add(newInstance.getData().id().getId());
         if(allIds.size()!=3){
             throw new IllegalStateException(String.format("Expected 3 ids in total (two for the original ones and another one for the merge... instead: %s", String.join(", ", allIds)));
         }
-        if(!newInstance.getData().getIdentifiers().containsAll(allIds)){
+        if(!newInstance.getData().identifiers().containsAll(allIds)){
             throw new IllegalStateException("The merged instance didn't contain all ids of the original instances.");
         }
     }

@@ -184,9 +184,9 @@ public class ReconcileTest {
         assertEquals(3, events.size());
         for (Event event : events) {
             if(event.getType() == Event.Type.INSERT){
-                assertTrue(event.getData().getAllIdentifiersIncludingId().contains("A"));
-                assertTrue(event.getData().getAllIdentifiersIncludingId().contains("B"));
-                assertTrue(event.getData().getAllIdentifiersIncludingId().contains("X"));
+                assertTrue(event.getData().allIdentifiersIncludingId().contains("A"));
+                assertTrue(event.getData().allIdentifiersIncludingId().contains("B"));
+                assertTrue(event.getData().allIdentifiersIncludingId().contains("X"));
             }
         }
 

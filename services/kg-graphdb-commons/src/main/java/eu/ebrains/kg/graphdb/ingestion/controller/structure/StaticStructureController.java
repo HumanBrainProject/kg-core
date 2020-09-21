@@ -52,9 +52,11 @@ public class StaticStructureController {
     private final Logger logger = LoggerFactory.getLogger(getClass());
 
     private final ArangoRepositoryCommons arangoRepositoryCommons;
+    private final TypeUtils typeUtils;
 
-    public StaticStructureController(ArangoRepositoryCommons arangoRepositoryCommons) {
+    public StaticStructureController(ArangoRepositoryCommons arangoRepositoryCommons, TypeUtils typeUtils) {
         this.arangoRepositoryCommons = arangoRepositoryCommons;
+        this.typeUtils = typeUtils;
     }
 
     List<ArangoInstance> ensureStaticPropertyToTypeEdges(DataStage stage, ArangoCollectionReference originCollection, ArangoCollectionReference targetCollection, String property, List<String> originTypes, List<String> targetTypes, List<DBOperation> allOperations) {
@@ -91,7 +93,7 @@ public class StaticStructureController {
         if (!arangoRepositoryCommons.doesDocumentExist(stage, arangoDocument.getId())) {
             logger.debug("create document representation");
             MetaRepresentation metaRepresentation = createMetaRepresentation(arangoDocument.getId().toString(), ArangoCollectionReference.fromSpace(InternalSpace.DOCUMENT_SPACE));
-            allOperations.add(new UpsertOperation(originalDocumentRef, new NormalizedJsonLd(TypeUtils.translate(metaRepresentation, Map.class)), arangoDocument.getId()));
+            allOperations.add(new UpsertOperation(originalDocumentRef, new NormalizedJsonLd(typeUtils.translate(metaRepresentation, Map.class)), arangoDocument.getId()));
         } else {
             //Remove all existing edges from the document to the structural edges it has contributed to (e.g. of a previous insertion/update) - this includes outgoing links
             logger.debug("remove existing edges for updating");
@@ -104,7 +106,7 @@ public class StaticStructureController {
 
     private List<DBOperation> createNonExistingGlobalVerticesAndStructuralEdges(DataStage stage, List<ArangoInstance> requiredArangoInstances) {
         Set<ArangoInstance> missingDocuments = arangoRepositoryCommons.checkExistenceOfInstances(stage, requiredArangoInstances, false);
-        return missingDocuments.stream().map(d -> new UpsertOperation(null, d.dumpPayload(), d.getId(), false, false)).
+        return missingDocuments.stream().map(d -> new UpsertOperation(null, typeUtils.translate(d.getPayload(), NormalizedJsonLd.class), d.getId(), false, false)).
                 collect(Collectors.toList());
     }
 
@@ -128,8 +130,8 @@ public class StaticStructureController {
         //... link spaces with types
         typeRepresentations.forEach(type -> {
             ArangoEdge edge = new ArangoEdge();
-            edge.setFrom(spaceRepresentation.getId());
-            edge.setTo(type.getId());
+            edge.setFrom(spaceRepresentation.getIdRef());
+            edge.setTo(type.getIdRef());
             ArangoDocumentReference documentRefForSpaceToTypeEdge = IdFactory.createDocumentRefForSpaceToTypeEdge(spaceRepresentation.getIdentifier(), type.getIdentifier());
             edge.redefineId(documentRefForSpaceToTypeEdge);
             Tuple<String, String> tuple = new Tuple<>();
@@ -154,17 +156,17 @@ public class StaticStructureController {
             Tuple<String, String> tuple = spaceTypes.get(spaceType);
             propertyInSpaceType.redefineId(IdFactory.createDocumentRefForSpaceTypeToPropertyEdge(tuple.getA(), tuple.getB(), property.getIdentifier()));
             propertyInSpaceType.setFrom(spaceType);
-            propertyInSpaceType.setTo(property.getId());
+            propertyInSpaceType.setTo(property.getIdRef());
             allEdges.add(propertyInSpaceType);
 
             ArangoEdge property2propertyValueType = new ArangoEdge();
             property2propertyValueType.setFrom(propertyInSpaceType.getId());
-            property2propertyValueType.setTo(propertyValueType.getId());
+            property2propertyValueType.setTo(propertyValueType.getIdRef());
             property2propertyValueType.redefineId(IdFactory.createDocumentRefForPropertyInSpaceTypeToPropertyValueTypeEdge(propertyInSpaceType.getId().getId(), propertyValueType.getIdentifier()));
             allEdges.add(property2propertyValueType);
         }));
 
-        List<ArangoDocument> verticesAsArangoDocs = allVertices.stream().map(v -> ArangoDocument.from(new NormalizedJsonLd(TypeUtils.translate(v, Map.class)))).collect(Collectors.toList());
+        List<ArangoDocument> verticesAsArangoDocs = allVertices.stream().map(v -> ArangoDocument.from(new NormalizedJsonLd(typeUtils.translate(v, Map.class)))).collect(Collectors.toList());
         List<ArangoInstance> arangoInstances = new ArrayList<>();
         arangoInstances.addAll(verticesAsArangoDocs);
         arangoInstances.addAll(allEdges);
@@ -180,7 +182,7 @@ public class StaticStructureController {
     }
 
     private List<String> findTypesInDocument(ArangoDocument arangoDocument) {
-        return arangoDocument.getDoc().getTypes();
+        return arangoDocument.getDoc().types();
     }
 
     public static ArangoDocumentReference createDocumentRefForMetaRepresentation(String name, ArangoCollectionReference collection) {

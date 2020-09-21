@@ -16,7 +16,8 @@
 
 package eu.ebrains.kg.test;
 
-import com.google.gson.Gson;
+
+import eu.ebrains.kg.commons.JsonAdapter;
 import eu.ebrains.kg.commons.jsonld.JsonLdId;
 import eu.ebrains.kg.commons.jsonld.NormalizedJsonLd;
 import eu.ebrains.kg.commons.model.Space;
@@ -29,14 +30,14 @@ import java.nio.file.Paths;
 import java.util.stream.Collectors;
 
 public class TestObjectFactory {
-    private static final Gson GSON = new Gson();
+    private static final JsonAdapter JSON = new JsonAdapter4Test();
 
     public static final Space SIMPSONS = new Space("simpsons");
     public static final Space ADMIN = new Space("admin");
     public static final Space KGEDITOR = new Space("kgeditor");
 
     public static NormalizedJsonLd overrideId(NormalizedJsonLd jsonLd, JsonLdId id) {
-        jsonLd.addIdentifiers(jsonLd.getId().getId());
+        jsonLd.addIdentifiers(jsonLd.id().getId());
         jsonLd.setId(id);
         return jsonLd;
     }
@@ -60,9 +61,9 @@ public class TestObjectFactory {
         try {
             Path path = Paths.get(TestObjectFactory.class.getClassLoader().getResource("test/" + jsonFile).toURI());
             String json = Files.lines(path).collect(Collectors.joining("\n"));
-            NormalizedJsonLd jsonLd = GSON.fromJson(json, NormalizedJsonLd.class);
-            if(jsonLd.getId()!=null) {
-                jsonLd.addIdentifiers(jsonLd.getId().getId());
+            NormalizedJsonLd jsonLd = JSON.fromJson(json, NormalizedJsonLd.class);
+            if(jsonLd.id()!=null) {
+                jsonLd.addIdentifiers(jsonLd.id().getId());
             }
             return jsonLd;
         }

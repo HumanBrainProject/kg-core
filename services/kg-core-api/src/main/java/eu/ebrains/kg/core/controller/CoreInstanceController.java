@@ -70,12 +70,12 @@ public class CoreInstanceController {
             normalizedJsonLd = new NormalizedJsonLd(jsonLdDoc);
         }
         Space s = new Space(space);
-        List<InstanceId> instanceIdsInSameSpace = idsSvc.resolveIds(DataStage.IN_PROGRESS, new IdWithAlternatives(id, s, normalizedJsonLd.getAllIdentifiersIncludingId()), false).stream().filter(i -> s.equals(i.getSpace())).collect(Collectors.toList());
+        List<InstanceId> instanceIdsInSameSpace = idsSvc.resolveIds(DataStage.IN_PROGRESS, new IdWithAlternatives(id, s, normalizedJsonLd.allIdentifiersIncludingId()), false).stream().filter(i -> s.equals(i.getSpace())).collect(Collectors.toList());
         //Were only interested in those instance ids in the same space. Since merging is not done cross-space, we want to allow instances being created with the same identifiers across spaces.
         if (!instanceIdsInSameSpace.isEmpty()) {
             return ResponseEntity.status(HttpStatus.CONFLICT).body(Result.nok(HttpStatus.CONFLICT.value(), String.format("The id and/or the payload you're providing are pointing to the instance(s) %s. Please do a PATCH instead", instanceIdsInSameSpace.stream().map(i -> i.getUuid().toString()).distinct().collect(Collectors.joining(", ")))));
         }
-        normalizedJsonLd.setFieldUpdateTimes(normalizedJsonLd.keySet().stream().collect(Collectors.toMap(k -> k, k -> externalEventInformation != null && externalEventInformation.getExternalEventTime() != null ? externalEventInformation.getExternalEventTime() : ZonedDateTime.now())));
+        normalizedJsonLd.defineFieldUpdateTimes(normalizedJsonLd.keySet().stream().collect(Collectors.toMap(k -> k, k -> externalEventInformation != null && externalEventInformation.getExternalEventTime() != null ? externalEventInformation.getExternalEventTime() : ZonedDateTime.now())));
         Event upsertEvent = createUpsertEvent(id, externalEventInformation, normalizedJsonLd, s);
         List<InstanceId> ids = primaryStoreSvc.postEvent(upsertEvent, ingestConfiguration.isDeferInference(), authContext.getAuthTokens());
         return handleIngestionResponse(responseConfiguration, ids);
@@ -125,10 +125,10 @@ public class CoreInstanceController {
         if (instance == null) {
             Map<String, ZonedDateTime> updateTimes = new HashMap<>();
             normalizedJsonLd.keySet().forEach(k -> updateTimes.put(k, eventDateTime != null ? eventDateTime : ZonedDateTime.now()));
-            normalizedJsonLd.setFieldUpdateTimes(updateTimes);
+            normalizedJsonLd.defineFieldUpdateTimes(updateTimes);
             return normalizedJsonLd;
         } else {
-            Map<String, ZonedDateTime> updateTimesFromInstance = instance.getFieldUpdateTimes();
+            Map<String, ZonedDateTime> updateTimesFromInstance = instance.fieldUpdateTimes();
             Map<String, ZonedDateTime> updateTimes = updateTimesFromInstance != null ? updateTimesFromInstance : new HashMap<>();
             Set<String> oldKeys = new HashSet<>(instance.keySet());
             normalizedJsonLd.keySet().forEach(k -> {
@@ -148,7 +148,7 @@ public class CoreInstanceController {
                     updateTimes.remove(k);
                 });
             }
-            instance.setFieldUpdateTimes(updateTimes);
+            instance.defineFieldUpdateTimes(updateTimes);
             return instance;
         }
     }
@@ -230,7 +230,7 @@ public class CoreInstanceController {
                     NormalizedJsonLd doc = result.getData();
                     String space = doc.getAs(EBRAINSVocabulary.META_SPACE, String.class);
                     Space sp = space != null ? new Space(space) : null;
-                    Set<Functionality> functionalities = permissions.stream().filter(p -> Functionality.FunctionalityGroup.INSTANCE == p.getFunctionality().getFunctionalityGroup() && stage != null && stage == p.getFunctionality().getStage()).filter(p -> p.appliesTo(sp, idUtils.getUUID(doc.getId()))).map(FunctionalityInstance::getFunctionality).collect(Collectors.toSet());
+                    Set<Functionality> functionalities = permissions.stream().filter(p -> Functionality.FunctionalityGroup.INSTANCE == p.getFunctionality().getFunctionalityGroup() && stage != null && stage == p.getFunctionality().getStage()).filter(p -> p.appliesTo(sp, idUtils.getUUID(doc.id()))).map(FunctionalityInstance::getFunctionality).collect(Collectors.toSet());
                     doc.put(EBRAINSVocabulary.META_PERMISSIONS, functionalities);
                 }
         );

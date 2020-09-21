@@ -16,13 +16,13 @@
 
 package eu.ebrains.kg.graphdb.queries.controller;
 
-import com.google.gson.Gson;
 import eu.ebrains.kg.arango.commons.aqlBuilder.ArangoKey;
 import eu.ebrains.kg.arango.commons.model.AQLQuery;
 import eu.ebrains.kg.arango.commons.model.ArangoCollectionReference;
 import eu.ebrains.kg.commons.jsonld.NormalizedJsonLd;
 import eu.ebrains.kg.commons.params.Pagination;
 import eu.ebrains.kg.graphdb.queries.model.spec.Specification;
+import eu.ebrains.kg.test.JsonAdapter4Test;
 import eu.ebrains.kg.test.TestObjectFactory;
 import org.junit.Assert;
 import org.junit.Test;
@@ -187,7 +187,7 @@ public class DataQueryBuilderTest {
         lines.close();
 
         SpecificationInterpreter interpreter = new SpecificationInterpreter();
-        Specification specification = interpreter.readSpecification(new Gson().fromJson(data, NormalizedJsonLd.class), null);
+        Specification specification = interpreter.readSpecification(new JsonAdapter4Test().fromJson(data, NormalizedJsonLd.class), null);
         List<ArangoCollectionReference> existingCollections = new ArrayList<>();
         existingCollections.add(new ArangoCollectionReference("docs", false));
         Pagination pagination = new Pagination();

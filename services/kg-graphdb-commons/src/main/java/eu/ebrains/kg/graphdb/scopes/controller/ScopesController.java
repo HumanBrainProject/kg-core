@@ -63,7 +63,7 @@ public class ScopesController {
         NormalizedJsonLd instance = graphDBInstancesAPI.getInstanceById(space.getName(), id, stage, false, false, false);
         //get scope relevant queries
         //TODO filter user defined queries (only take client queries into account)
-        Stream<NormalizedJsonLd> typeQueries = instance.getTypes().stream().map(type -> graphDBInstancesAPI.getQueriesByType(stage, null, false, false, null, type)
+        Stream<NormalizedJsonLd> typeQueries = instance.types().stream().map(type -> graphDBInstancesAPI.getQueriesByType(stage, null, false, false, null, type)
                 .getData()).flatMap(Collection::stream);
         List<NormalizedJsonLd> results = typeQueries.map(q -> queryController.query(authContext.getUserWithRoles(), new KgQuery(q, stage).setIdRestrictions(Collections.singletonList(new EntityId(id.toString()))), null, null, true).getData()).flatMap(Collection::stream).collect(Collectors.toList());
 
@@ -113,8 +113,8 @@ public class ScopesController {
         final Map<String, Set<ScopeElement>> typeToUUID = new HashMap<>();
         ScopeElement element;
         if(data == null || data.isEmpty()){
-            element = new ScopeElement(idUtils.getUUID(instance.getId()), instance.getTypes(), null, instance.getAs(ArangoVocabulary.ID, String.class), instance.getAs(EBRAINSVocabulary.META_SPACE, String.class));
-            instance.getTypes().forEach(t -> typeToUUID.computeIfAbsent(t, x -> new HashSet<>()).add(element));
+            element = new ScopeElement(idUtils.getUUID(instance.id()), instance.types(), null, instance.getAs(ArangoVocabulary.ID, String.class), instance.getAs(EBRAINSVocabulary.META_SPACE, String.class));
+            instance.types().forEach(t -> typeToUUID.computeIfAbsent(t, x -> new HashSet<>()).add(element));
         }
         else {
             element = data.stream().map(d -> handleSubElement(d, typeToUUID)).findFirst().orElse(null);

@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package eu.ebrains.kg.core.api;
+package eu.ebrains.kg.core.api.instances.load;
 
 import eu.ebrains.kg.commons.IdUtils;
 import eu.ebrains.kg.commons.jsonld.IndexedJsonLdDoc;
@@ -22,8 +22,8 @@ import eu.ebrains.kg.commons.jsonld.JsonLdDoc;
 import eu.ebrains.kg.commons.jsonld.JsonLdId;
 import eu.ebrains.kg.commons.jsonld.NormalizedJsonLd;
 import eu.ebrains.kg.commons.model.Result;
+import eu.ebrains.kg.core.api.Instances;
 import eu.ebrains.kg.core.model.ExposedStage;
-import eu.ebrains.kg.testutils.AbstractSystemTest;
 import eu.ebrains.kg.testutils.TestDataFactory;
 import org.junit.Test;
 import org.mockito.Mockito;
@@ -38,7 +38,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
-public class ReleaseSystemTest extends AbstractSystemTest {
+public class ReleaseSystemTest extends AbstractInstancesLoadTest {
 
     @Autowired
     private Instances instances;
@@ -57,7 +57,7 @@ public class ReleaseSystemTest extends AbstractSystemTest {
         for (int i = 0; i < allInstancesFromInProgress.size(); i++) {
             Mockito.doReturn(i).when(testInformation).getExecutionNumber();
             IndexedJsonLdDoc from = IndexedJsonLdDoc.from(allInstancesFromInProgress.get(i));
-            ResponseEntity<Result<Void>> resultResponseEntity = instances.releaseInstance(idUtils.getUUID(allInstancesFromInProgress.get(i).getId()), from.getRevision());
+            ResponseEntity<Result<Void>> resultResponseEntity = instances.releaseInstance(idUtils.getUUID(allInstancesFromInProgress.get(i).id()), from.getRevision());
             System.out.printf("Result %d: %d ms%n", i, resultResponseEntity.getBody().getDurationInMs());
         }
         System.out.printf("Total time for %d releases: %d ms%n", batchInsertion, new Date().getTime() - startTime);
@@ -76,7 +76,7 @@ public class ReleaseSystemTest extends AbstractSystemTest {
             int finalI = i;
             executorService.execute(() -> {
                 IndexedJsonLdDoc from = IndexedJsonLdDoc.from(allInstancesFromInProgress.get(finalI));
-                ResponseEntity<Result<Void>> resultResponseEntity = instances.releaseInstance(idUtils.getUUID(allInstancesFromInProgress.get(finalI).getId()), from.getRevision());
+                ResponseEntity<Result<Void>> resultResponseEntity = instances.releaseInstance(idUtils.getUUID(allInstancesFromInProgress.get(finalI).id()), from.getRevision());
                 System.out.printf("Result %d: %d ms%n", finalI, resultResponseEntity.getBody().getDurationInMs());
             });
         }
@@ -100,7 +100,7 @@ public class ReleaseSystemTest extends AbstractSystemTest {
         //When
         long startTime = new Date().getTime();
         for (int i = 0; i < l.size(); i++) {
-            JsonLdId id = l.get(i).getBody().getData().getId();
+            JsonLdId id = l.get(i).getBody().getData().id();
             IndexedJsonLdDoc from = IndexedJsonLdDoc.from(l.get(i).getBody().getData());
             ResponseEntity<Result<Void>> resultResponseEntity = instances.releaseInstance(idUtils.getUUID(id), from.getRevision());
             System.out.println(String.format("Result %d: %d ms", i, resultResponseEntity.getBody().getDurationInMs()));
@@ -117,7 +117,7 @@ public class ReleaseSystemTest extends AbstractSystemTest {
         long startTime = new Date().getTime();
         for (int i = 0; i < allInstancesFromInProgress.size(); i++) {
             Mockito.doReturn(i).when(testInformation).getExecutionNumber();
-            ResponseEntity<Result<Void>> resultResponseEntity = instances.unreleaseInstance(idUtils.getUUID(allInstancesFromInProgress.get(i).getId()));
+            ResponseEntity<Result<Void>> resultResponseEntity = instances.unreleaseInstance(idUtils.getUUID(allInstancesFromInProgress.get(i).id()));
             System.out.println(String.format("Result %d: %d ms", i, resultResponseEntity.getBody().getDurationInMs()));
         }
         System.out.println(String.format("Total time for %d unreleases: %d ms", batchInsertion, new Date().getTime() - startTime));

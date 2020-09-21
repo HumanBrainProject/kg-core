@@ -52,7 +52,7 @@ public class IdsAPI {
         if (idWithAlternatives != null && idWithAlternatives.getId() != null) {
             logger.debug(String.format("Updating id %s%s", idWithAlternatives.getId(), idWithAlternatives.getAlternatives() != null ? "with alternatives " + String.join(", ", idWithAlternatives.getAlternatives()) : ""));
             PersistedId persistedId = new PersistedId();
-            persistedId.setId(idWithAlternatives.getId());
+            persistedId.setUUID(idWithAlternatives.getId());
             persistedId.setSpace(new Space(idWithAlternatives.getSpace()));
             persistedId.setAlternativeIds(idWithAlternatives.getAlternatives());
             return idRepository.upsert(stage, persistedId);

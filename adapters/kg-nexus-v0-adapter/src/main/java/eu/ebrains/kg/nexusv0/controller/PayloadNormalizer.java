@@ -16,7 +16,7 @@
 
 package eu.ebrains.kg.nexusv0.controller;
 
-import com.google.gson.Gson;
+import eu.ebrains.kg.commons.JsonAdapter;
 import eu.ebrains.kg.commons.jsonld.JsonLdConsts;
 import eu.ebrains.kg.commons.jsonld.JsonLdDoc;
 import eu.ebrains.kg.commons.jsonld.JsonLdId;
@@ -35,7 +35,7 @@ import java.util.stream.Collectors;
 public class PayloadNormalizer {
 
     private final CoreSvc coreSvc;
-    private final Gson gson;
+    private final JsonAdapter json;
 
     private static final String[] removeSpaceEnding = new String[]{"editor", "editorsug", "inferred"};
 
@@ -43,22 +43,22 @@ public class PayloadNormalizer {
         return organization.endsWith("inferred");
     }
 
-    public PayloadNormalizer(CoreSvc coreSvc, Gson gson) {
+    public PayloadNormalizer(CoreSvc coreSvc, JsonAdapter json) {
         this.coreSvc = coreSvc;
-        this.gson = gson;
+        this.json = json;
     }
 
 
     private final Logger logger = LoggerFactory.getLogger(getClass());
 
     public NormalizedJsonLd normalizePayload(JsonLdDoc payload, String organization, String domain, String schema, String schemaVersion, String id, String nexusEndpoint) {
-        logger.debug(String.format("Payload received and going to normalize: \n%s", gson.toJson(payload)));
+        logger.debug(String.format("Payload received and going to normalize: \n%s", json.toJson(payload)));
         NormalizedJsonLd normalizedJsonLdDoc = coreSvc.toNormalizedJsonLd(payload);
         //set original nexus id to payload, so it can be handled appropriately.
         String absoluteNexusUrl = getAbsoluteNexusUrl(organization, domain, schema, schemaVersion, id, true, nexusEndpoint);
         //Save original id as identifier (for back-reference) if there is one
-        if (normalizedJsonLdDoc.getId() != null) {
-            normalizedJsonLdDoc.addIdentifiers(normalizedJsonLdDoc.getId().getId());
+        if (normalizedJsonLdDoc.id() != null) {
+            normalizedJsonLdDoc.addIdentifiers(normalizedJsonLdDoc.id().getId());
         }
         normalizedJsonLdDoc.put(JsonLdConsts.ID, absoluteNexusUrl);
         //If the payload contains "extends" links, we want to use them as identifiers too.

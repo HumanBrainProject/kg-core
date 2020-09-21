@@ -61,7 +61,7 @@ public class ArangoRepositoryTypes {
     public static List<Type> extractExtendedTypeInformationFromPayload(Collection<NormalizedJsonLd> payload) {
         return payload.stream().map(t -> {
             //TODO this can probably be solved in a more optimized way - we don't need all properties but only the labels...
-            Type targetType = new Type(t.getPrimaryIdentifier());
+            Type targetType = new Type(t.primaryIdentifier());
             targetType.setLabelProperty(t.getAs(EBRAINSVocabulary.META_TYPE_LABEL_PROPERTY, String.class));
             return targetType;
         }).collect(Collectors.toList());

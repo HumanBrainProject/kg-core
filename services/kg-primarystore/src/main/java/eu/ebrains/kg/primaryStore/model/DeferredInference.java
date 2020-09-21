@@ -17,7 +17,6 @@
 package eu.ebrains.kg.primaryStore.model;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.google.gson.annotations.SerializedName;
 import eu.ebrains.kg.commons.model.Space;
 
 import java.util.UUID;
@@ -25,7 +24,7 @@ import java.util.UUID;
 public class DeferredInference {
     private Space space;
     private UUID uuid;
-    @SerializedName("_key")
+    @JsonProperty("_key")
     private String key;
 
     public Space getSpace() {
@@ -48,7 +47,6 @@ public class DeferredInference {
         this.key = key;
     }
 
-    @JsonProperty("_key")
     public String getKey() {
         return key;
     }

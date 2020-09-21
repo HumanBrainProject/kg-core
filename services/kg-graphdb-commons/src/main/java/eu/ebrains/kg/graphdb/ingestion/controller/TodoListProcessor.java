@@ -35,6 +35,7 @@ import eu.ebrains.kg.graphdb.ingestion.model.DeleteInstanceOperation;
 import eu.ebrains.kg.graphdb.ingestion.model.EdgeResolutionOperation;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import java.nio.charset.StandardCharsets;
@@ -60,8 +61,9 @@ public class TodoListProcessor {
 
     private final ReleasingController releasingController;
 
+    private final boolean synchronousMetadataProcessing;
 
-    public TodoListProcessor(ArangoRepositoryCommons repository, StructureSplitter splitter, MainEventTracker eventTracker, IdUtils idUtils, DataController dataController, MetaDataController metaDataController, ReleasingController releasingController) {
+    public TodoListProcessor(ArangoRepositoryCommons repository, StructureSplitter splitter, MainEventTracker eventTracker, IdUtils idUtils, DataController dataController, MetaDataController metaDataController, ReleasingController releasingController, @Value("${eu.ebrains.kg.core.metadata.synchronous:false}") boolean synchronousMetadataProcessing) {
         this.repository = repository;
         this.splitter = splitter;
         this.eventTracker = eventTracker;
@@ -69,6 +71,7 @@ public class TodoListProcessor {
         this.dataController = dataController;
         this.metaDataController = metaDataController;
         this.releasingController = releasingController;
+        this.synchronousMetadataProcessing = synchronousMetadataProcessing;
     }
 
     private InstanceId getUserInstanceId(User user) {
@@ -164,9 +167,13 @@ public class TodoListProcessor {
         List<EdgeResolutionOperation> lazyIdResolutionOperations;
         if (stage != DataStage.NATIVE) {
             //We don't need to resolve links in NATIVE and neither do META structures... it is sufficient if we do this in IN_PROGRESS and RELEASED
-            lazyIdResolutionOperations = dataController.createResolutionsForPreviouslyUnresolved(stage, rootDocumentRef, payload.getAllIdentifiersIncludingId());
+            lazyIdResolutionOperations = dataController.createResolutionsForPreviouslyUnresolved(stage, rootDocumentRef, payload.allIdentifiersIncludingId());
             repository.executeTransactional(stage, lazyIdResolutionOperations);
-            metaDataController.handleMetaData(stage, rootDocumentRef, payload, arangoInstances, lazyIdResolutionOperations, mergeIds);
+            if (this.synchronousMetadataProcessing) {
+                metaDataController.handleMetaDataSync(stage, rootDocumentRef, payload, arangoInstances, lazyIdResolutionOperations, mergeIds);
+            } else {
+                metaDataController.handleMetaDataAsync(stage, rootDocumentRef, payload, arangoInstances, lazyIdResolutionOperations, mergeIds);
+            }
         }
         return rootDocumentRef;
     }

@@ -271,7 +271,7 @@ public class ArangoRepositoryInstances {
         Paginated<NormalizedJsonLd> normalizedJsonLdPaginated = arangoRepositoryCommons.queryDocuments(databases.getByStage(stage), new AQLQuery(aql, bindVars));
         List<SuggestedLink> links = normalizedJsonLdPaginated.getData().stream().map(payload -> {
             SuggestedLink link = new SuggestedLink();
-            link.setId(idUtils.getUUID(payload.getId()));
+            link.setId(idUtils.getUUID(payload.id()));
             link.setLabel(payload.getAs(EBRAINSVocabulary.LABEL, String.class, null));
             link.setType(payload.getAs(EBRAINSVocabulary.META_TYPE, String.class, null));
             link.setSpace(payload.getAs(EBRAINSVocabulary.META_SPACE, String.class, null));
@@ -400,6 +400,7 @@ public class ArangoRepositoryInstances {
                 !InternalSpace.INTERNAL_NON_META_EDGES.contains(new ArangoCollectionReference(c.getName(), true))
         ).map(c -> AQL.preventAqlInjection(c.getName()).getValue()).collect(Collectors.toSet());
 
+
         //The edges are injection-safe since they have been checked beforehand - so we can trust these values.
         String edges = String.join(", ", edgeCollections);
 
@@ -408,12 +409,18 @@ public class ArangoRepositoryInstances {
         bindVars.put("id", String.format("%s/%s", ArangoCollectionReference.fromSpace(space).getCollectionName(), id));
 
         //TODO use dynamic name label
-        aql.addLine(AQL.trust("LET inbnd = (FOR inbnd IN 1..1 INBOUND doc "+edges));
-        aql.addLine(AQL.trust("    RETURN { \"id\": inbnd._key, \"name\": inbnd.`http://schema.org/name`, \"types\": inbnd.`@type`, \"space\": inbnd.`"+EBRAINSVocabulary.META_SPACE+"`})"));
-        aql.addLine(AQL.trust("LET outbnd = (FOR outbnd IN 1..1 OUTBOUND doc " + edges));
-        aql.addLine(AQL.trust("    LET outbnd2 = (FOR outbnd2 IN 1..1 OUTBOUND outbnd " + edges));
-        aql.addLine(AQL.trust( "    RETURN {\"id\": outbnd2._key, \"name\": outbnd2.`http://schema.org/name`, \"types\": outbnd2.`@type`, \"space\": outbnd2.`"+EBRAINSVocabulary.META_SPACE+"`})"));
-        aql.addLine(AQL.trust(     "    RETURN {\"id\": outbnd._key,  \"name\": outbnd.`http://schema.org/name`, \"outbound\": outbnd2, \"types\": outbnd.`@type`, \"space\": outbnd.`"+EBRAINSVocabulary.META_SPACE+"` })"));
+        if(!edgeCollections.isEmpty()) {
+            aql.addLine(AQL.trust("LET inbnd = (FOR inbnd IN 1..1 INBOUND doc " + edges));
+            aql.addLine(AQL.trust("    RETURN { \"id\": inbnd._key, \"name\": inbnd.`http://schema.org/name`, \"types\": inbnd.`@type`, \"space\": inbnd.`" + EBRAINSVocabulary.META_SPACE + "`})"));
+            aql.addLine(AQL.trust("LET outbnd = (FOR outbnd IN 1..1 OUTBOUND doc " + edges));
+            aql.addLine(AQL.trust("    LET outbnd2 = (FOR outbnd2 IN 1..1 OUTBOUND outbnd " + edges));
+            aql.addLine(AQL.trust("    RETURN {\"id\": outbnd2._key, \"name\": outbnd2.`http://schema.org/name`, \"types\": outbnd2.`@type`, \"space\": outbnd2.`" + EBRAINSVocabulary.META_SPACE + "`})"));
+            aql.addLine(AQL.trust("    RETURN {\"id\": outbnd._key,  \"name\": outbnd.`http://schema.org/name`, \"outbound\": outbnd2, \"types\": outbnd.`@type`, \"space\": outbnd.`" + EBRAINSVocabulary.META_SPACE + "` })"));
+        }
+        else{
+            aql.addLine(AQL.trust("LET inbnd = []"));
+            aql.addLine(AQL.trust("LET outbnd = []"));
+        }
         aql.addLine(AQL.trust("RETURN {\"id\": doc._key, \"name\": doc.`http://schema.org/name`, \"inbound\" : inbnd, \"outbound\": outbnd, \"types\": doc.`@type`, \"space\": doc.`"+EBRAINSVocabulary.META_SPACE+"` }"));
 
         List<GraphEntity> graphEntities = db.query(aql.build().getValue(), bindVars, new AqlQueryOptions(), GraphEntity.class).asListRemaining();
@@ -470,7 +477,7 @@ public class ArangoRepositoryInstances {
             //Because Arango doesn't support indexed filtering of array in array search, we expand the (very limited) list of identifiers of the root document and state them explicitly as individual filter elements. This way, the index applies and we profit from more speed.
             NormalizedJsonLd rootDocument = db.collection(collectionReference.getCollectionName()).getDocument(id.toString(), NormalizedJsonLd.class);
             if (rootDocument != null) {
-                List<NormalizedJsonLd> result = doGetDocumentsByIdentifiers(rootDocument.getAllIdentifiersIncludingId(), stage, space);
+                List<NormalizedJsonLd> result = doGetDocumentsByIdentifiers(rootDocument.allIdentifiersIncludingId(), stage, space);
                 if (result != null) {
                     handleAlternativesAndEmbedded(result, stage, alternatives, embedded);
                     return result;
@@ -559,7 +566,7 @@ public class ArangoRepositoryInstances {
 
     void addEmbeddedInstancesToDocument(List<NormalizedJsonLd> documentsToBeResolved, List<NormalizedJsonLd[]> embeddedDocuments) {
         for (int i = 0; i < documentsToBeResolved.size(); i++) {
-            Map<String, NormalizedJsonLd> embeddedDocs = Arrays.stream(embeddedDocuments.get(i)).filter(Objects::nonNull).collect(Collectors.toMap(e -> e.getId().getId(), e -> e));
+            Map<String, NormalizedJsonLd> embeddedDocs = Arrays.stream(embeddedDocuments.get(i)).filter(Objects::nonNull).collect(Collectors.toMap(e -> e.id().getId(), e -> e));
             embeddedDocs.values().forEach(e -> {
                 e.removeAllInternalProperties();
                 e.remove(JsonLdConsts.ID);

@@ -21,7 +21,7 @@ import eu.ebrains.kg.commons.jsonld.JsonLdDoc;
 import eu.ebrains.kg.commons.model.Result;
 import eu.ebrains.kg.commons.model.User;
 import eu.ebrains.kg.core.serviceCall.CoreToAuthentication;
-import io.swagger.annotations.ApiOperation;
+import io.swagger.v3.oas.annotations.Operation;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -42,7 +42,7 @@ public class Users {
         this.authenticationSvc = authenticationSvc;
     }
 
-    @ApiOperation("Get the endpoint of the authentication service")
+    @Operation(summary = "Get the endpoint of the authentication service")
     @GetMapping(value = "/authorization", produces = MediaType.APPLICATION_JSON_VALUE)
     public Result<JsonLdDoc> getAuthEndpoint() {
         JsonLdDoc ld = new JsonLdDoc();
@@ -50,7 +50,7 @@ public class Users {
         return Result.ok(ld);
     }
 
-    @ApiOperation("Get the endpoint to retrieve your token (e.g. via client id and client secret)")
+    @Operation(summary = "Get the endpoint to retrieve your token (e.g. via client id and client secret)")
     @GetMapping(value = "/authorization/tokenEndpoint", produces = MediaType.APPLICATION_JSON_VALUE)
     public Result<JsonLdDoc> getTokenEndpoint() {
         JsonLdDoc ld = new JsonLdDoc();
@@ -58,7 +58,7 @@ public class Users {
         return Result.ok(ld);
     }
 
-    @ApiOperation("Retrieve user information from the passed token (including detailed information such as e-mail address)")
+    @Operation(summary = "Retrieve user information from the passed token (including detailed information such as e-mail address)")
     @GetMapping("/me")
     public ResponseEntity<Result<User>> profile() {
         User myUserProfile = authenticationSvc.getMyUserProfile();

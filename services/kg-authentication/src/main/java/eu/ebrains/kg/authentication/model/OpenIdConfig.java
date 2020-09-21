@@ -16,43 +16,24 @@
 
 package eu.ebrains.kg.authentication.model;
 
-import com.google.gson.annotations.SerializedName;
+import com.fasterxml.jackson.annotation.JsonProperty;
 
 public class OpenIdConfig {
 
-    @SerializedName("authorization_endpoint")
-    private final String authorizationEndpoint;
+    @JsonProperty("authorization_endpoint")
+    private String authorizationEndpoint;
 
-    @SerializedName("token_endpoint")
-    private final String tokenEndpoint;
+    @JsonProperty("token_endpoint")
+    private String tokenEndpoint;
 
-    @SerializedName("token_introspection_endpoint")
-    private final String tokenIntrospectionEndpoint;
+    @JsonProperty("token_introspection_endpoint")
+    private String tokenIntrospectionEndpoint;
 
-    @SerializedName("userinfo_endpoint")
-    private final String userInfoEndpoint;
-
-    public OpenIdConfig(String authorizationEndpoint, String tokenEndpoint, String tokenIntrospectionEndpoint, String userInfoEndpoint) {
-        this.authorizationEndpoint = authorizationEndpoint;
-        this.tokenEndpoint = tokenEndpoint;
-        this.tokenIntrospectionEndpoint = tokenIntrospectionEndpoint;
-        this.userInfoEndpoint = userInfoEndpoint;
-    }
-
-    public String getAuthorizationEndpoint() {
-        return authorizationEndpoint;
-    }
+    @JsonProperty("userinfo_endpoint")
+    private String userInfoEndpoint;
 
     public String getTokenEndpoint() {
         return tokenEndpoint;
-    }
-
-    public String getTokenIntrospectionEndpoint() {
-        return tokenIntrospectionEndpoint;
-    }
-
-    public String getUserInfoEndpoint() {
-        return userInfoEndpoint;
     }
 
 }

@@ -14,17 +14,16 @@
  * limitations under the License.
  */
 
-package eu.ebrains.kg.core.api;
+package eu.ebrains.kg.core.api.instances.load;
 
 import eu.ebrains.kg.metrics.PerformanceTestUtils;
-import eu.ebrains.kg.testutils.AbstractSystemTest;
 import org.junit.Test;
 import org.springframework.test.context.TestPropertySource;
 
 import java.io.IOException;
 
 @TestPropertySource(properties = {"eu.ebrains.kg.metrics=true"})
-public class InsertMethodInspectionTest extends AbstractSystemTest {
+public class InsertMethodInspectionTest extends AbstractInstancesLoadTest {
 
     @Test
     public void methodInspectionInsertSmallNoLink() throws IOException {

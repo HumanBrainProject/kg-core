@@ -23,8 +23,6 @@ import eu.ebrains.kg.commons.model.ResponseConfiguration;
 import eu.ebrains.kg.commons.permission.ClientAuthToken;
 import eu.ebrains.kg.commons.permission.UserAuthToken;
 import eu.ebrains.kg.commons.serviceCall.ToAuthentication;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -38,11 +36,10 @@ import java.util.UUID;
 @ControllerAdvice(annotations = RestController.class)
 public class RestControllerAdvice {
 
-    private final Logger logger = LoggerFactory.getLogger(getClass());
-
     private final AuthContext authContext;
 
     private final ToAuthentication toAuthentication;
+
 
     public RestControllerAdvice(AuthContext authContext, ToAuthentication toAuthentication) {
         this.authContext = authContext;
@@ -73,7 +70,7 @@ public class RestControllerAdvice {
      * Defines the model attribute of the pagination parameters used in several queries.
      */
     @ModelAttribute
-    public PaginationParam paginationParam(@RequestParam(value = "from", required = false, defaultValue = "0") long from, @RequestParam(value = "size", required = false) Long size) {
+    public PaginationParam paginationParam(@RequestParam(value = "from", required = false, defaultValue = "0") long from, @RequestParam(value = "size", required = false, defaultValue="20") Long size) {
         PaginationParam paginationParam = new PaginationParam();
         paginationParam.setFrom(from);
         paginationParam.setSize(size);
@@ -94,12 +91,11 @@ public class RestControllerAdvice {
             clientToken = new ClientAuthToken(clientAuthorizationToken);
         }
         else if(clientId!=null && clientSecret!=null){
-            String token = toAuthentication.fetchToken(clientId, clientSecret);
-            if(token!=null){
-                clientToken = new ClientAuthToken(token);
+            clientToken = toAuthentication.fetchToken(clientId, clientSecret);
+            if(clientToken!=null){
                 //A special treatment for service accounts - we ask for the client secret in the user authentication to ensure
                 if(clientServiceAccountSecret!=null && clientServiceAccountSecret.equals(clientSecret)){
-                    userToken = new UserAuthToken(token);
+                    userToken = new UserAuthToken(clientToken.getRawToken());
                 }
             }
         }

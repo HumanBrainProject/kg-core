@@ -18,7 +18,10 @@ package eu.ebrains.kg.commons.permission;
 
 public class ClientAuthToken {
 
-    private final String clientToken;
+    private String clientToken;
+
+    private ClientAuthToken() {
+    }
 
     public ClientAuthToken(String clientToken) {
         this.clientToken = clientToken;
@@ -31,8 +34,8 @@ public class ClientAuthToken {
         return null;
     }
 
-    public String getRawToken(){
-        return clientToken!=null && clientToken.toLowerCase().startsWith("bearer ") ? clientToken.substring(7) : clientToken;
+    public String getRawToken() {
+        return clientToken != null && clientToken.toLowerCase().startsWith("bearer ") ? clientToken.substring(7) : clientToken;
     }
 
 }

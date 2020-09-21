@@ -60,7 +60,7 @@ public class AuthContext {
     }
 
     public Space getClientSpace(){
-        return getUserWithRoles()!=null && getUserWithRoles().getClientId()!=null ? new Space(getUserWithRoles().getClientId(), true) : null;
+        return getUserWithRoles()!=null && getUserWithRoles().getClientId()!=null ? new Space(getUserWithRoles().getClientId(), true, false) : null;
     }
 
     public String getUserId(){

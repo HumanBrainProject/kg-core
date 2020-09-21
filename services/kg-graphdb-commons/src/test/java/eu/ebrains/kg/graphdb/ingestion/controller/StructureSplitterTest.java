@@ -16,11 +16,13 @@
 
 package eu.ebrains.kg.graphdb.ingestion.controller;
 
-import com.google.gson.Gson;
 import eu.ebrains.kg.arango.commons.model.ArangoDocumentReference;
 import eu.ebrains.kg.commons.IdUtils;
+import eu.ebrains.kg.commons.JsonAdapter;
+import eu.ebrains.kg.commons.TypeUtils;
 import eu.ebrains.kg.commons.jsonld.NormalizedJsonLd;
 import eu.ebrains.kg.graphdb.commons.model.ArangoInstance;
+import eu.ebrains.kg.test.JsonAdapter4Test;
 import org.junit.Test;
 
 import java.util.List;
@@ -32,8 +34,9 @@ public class StructureSplitterTest {
 
     @Test
     public void extractRelations() {
-        NormalizedJsonLd jsonld = new Gson().fromJson(testJson, NormalizedJsonLd.class);
-        StructureSplitter structureSplitter = new StructureSplitter(new IdUtils("https://kg.ebrains.eu/api/instances/"));
+        JsonAdapter jsonAdapter = new JsonAdapter4Test();
+        NormalizedJsonLd jsonld = jsonAdapter.fromJson(testJson, NormalizedJsonLd.class);
+        StructureSplitter structureSplitter = new StructureSplitter(new IdUtils("https://kg.ebrains.eu/api/instances/"), new TypeUtils(jsonAdapter));
         List<ArangoInstance> indexedNormalizedJsonLdDocs = structureSplitter.extractRelations(ArangoDocumentReference.fromArangoId("minds/"+ UUID.randomUUID().toString(), false), jsonld);
         System.out.println(indexedNormalizedJsonLdDocs);
     }

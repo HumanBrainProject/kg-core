@@ -22,7 +22,7 @@ import eu.ebrains.kg.admin.controller.AdminUserController;
 import eu.ebrains.kg.commons.model.Space;
 import eu.ebrains.kg.commons.model.User;
 import eu.ebrains.kg.commons.permission.SpacePermissionGroup;
-import io.swagger.annotations.ApiOperation;
+import io.swagger.v3.oas.annotations.Operation;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -66,19 +66,19 @@ public class AdminSpacesAPI {
         }
     }
 
-    @ApiOperation("Get the available permission groups for a space")
+    @Operation(summary = "Get the available permission groups for a space")
     @GetMapping("/{id}/permissions")
     public List<SpacePermissionGroup> getPermissions(@PathVariable("id") String id) {
         return SpacePermissionGroup.getAllSpacePermissionGroups();
     }
 
-    @ApiOperation("Get the users which have a specific permission for this space")
+    @Operation(summary = "Get the users which have a specific permission for this space")
     @GetMapping("/{id}/permissions/{permission}/users")
     public List<User> getUsersForPermissionsInSpace(@PathVariable("id") String id, @PathVariable("permission") SpacePermissionGroup permission) {
         return spaceController.getUsersByPermissionGroup(new Space(id), permission);
     }
 
-    @ApiOperation("Register a user in the given space with the according permission group")
+    @Operation(summary = "Register a user in the given space with the according permission group")
     @PutMapping("/{id}/permissions/{permission}/users/{userId}")
     public void registerUserInSpace(@PathVariable("id") String id, @PathVariable("permission") SpacePermissionGroup permissionGroup, @PathVariable("userId") String userId) {
         spaceController.addUserToSpace(userController.getNativeId(userId), new Space(id), permissionGroup);

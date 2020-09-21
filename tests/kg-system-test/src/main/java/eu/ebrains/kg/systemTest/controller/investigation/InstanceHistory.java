@@ -67,7 +67,7 @@ public class InstanceHistory {
             }
             Set<UUID> resolvedUUIDs = resolvedIds.stream().map(idUtils::getUUID).filter(Objects::nonNull).collect(Collectors.toSet());
             List<NormalizedJsonLd> inProgressEventsByResolvedIds = resolvedUUIDs.stream().map(id -> getEvents(id, DataStage.IN_PROGRESS)).flatMap(Collection::stream).collect(Collectors.toList());
-            Set<UUID> involvedInProgressIds = inProgressEventsByResolvedIds.stream().map(e -> e.getAs("data", NormalizedJsonLd.class).getIdentifiers().stream().map(identifier -> JsonLdId.cast(identifier, null)).filter(Objects::nonNull).map(idUtils::getUUID).filter(Objects::nonNull).collect(Collectors.toSet())).flatMap(Collection::stream).collect(Collectors.toSet());
+            Set<UUID> involvedInProgressIds = inProgressEventsByResolvedIds.stream().map(e -> e.getAs("data", NormalizedJsonLd.class).identifiers().stream().map(identifier -> JsonLdId.cast(identifier, null)).filter(Objects::nonNull).map(idUtils::getUUID).filter(Objects::nonNull).collect(Collectors.toSet())).flatMap(Collection::stream).collect(Collectors.toSet());
             Set<UUID> allInProgressIds = Stream.concat(resolvedUUIDs.stream(), involvedInProgressIds.stream()).collect(Collectors.toSet());
             List<NormalizedJsonLd> inProgressEvents = allInProgressIds.stream().map(id -> getEvents(id, DataStage.IN_PROGRESS)).flatMap(Collection::stream).collect(Collectors.toList());
             Set<UUID> involvedNativeUUIDs = inProgressEvents.stream().map(e -> {

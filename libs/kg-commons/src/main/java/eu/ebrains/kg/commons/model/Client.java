@@ -17,16 +17,15 @@
 package eu.ebrains.kg.commons.model;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.google.gson.annotations.SerializedName;
 import eu.ebrains.kg.commons.semantics.vocabularies.SchemaOrgVocabulary;
 
 public class Client {
 
-    @SerializedName(SchemaOrgVocabulary.NAME)
+    @JsonProperty(SchemaOrgVocabulary.NAME)
     private String name;
-    @SerializedName(SchemaOrgVocabulary.IDENTIFIER)
-    private String identifier;
 
+    @JsonProperty(SchemaOrgVocabulary.IDENTIFIER)
+    private String identifier;
     private String serviceAccountId;
     private boolean canExecuteSynchronousQueries;
 
@@ -41,12 +40,10 @@ public class Client {
         this.name = name;
     }
 
-    @JsonProperty(SchemaOrgVocabulary.NAME)
     public String getName() {
         return name;
     }
 
-    @JsonProperty(SchemaOrgVocabulary.IDENTIFIER)
     public String getIdentifier() {
         return identifier;
     }

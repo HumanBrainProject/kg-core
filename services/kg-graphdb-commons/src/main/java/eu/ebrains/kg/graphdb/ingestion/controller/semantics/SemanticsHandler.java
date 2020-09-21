@@ -36,6 +36,12 @@ import java.util.stream.Collectors;
 
 public abstract class SemanticsHandler {
 
+    protected TypeUtils typeUtils;
+
+    public SemanticsHandler(TypeUtils typeUtils) {
+        this.typeUtils = typeUtils;
+    }
+
     public List<DBOperation> createUpsertOperations(DataStage stage, ArangoDocumentReference rootDocumentRef, ArangoDocument document){
         return Collections.emptyList();
     }
@@ -48,7 +54,7 @@ public abstract class SemanticsHandler {
         edge.setOriginalDocument(rootDocumentRef);
         ArangoDocumentReference edgeId = edgeCollection.doc(UUID.randomUUID());
         edge.redefineId(edgeId);
-        UpsertOperation edgeOperation = new UpsertOperation(rootDocumentRef, edge.dumpPayload(), edgeId);
+        UpsertOperation edgeOperation = new UpsertOperation(rootDocumentRef, typeUtils.translate(edge.getPayload(), NormalizedJsonLd.class), edgeId);
         UpsertOperation definition = new UpsertOperation(rootDocumentRef, document.getDoc(), document.getId());
         return Arrays.asList(definition, edgeOperation);
     }
@@ -60,13 +66,13 @@ public abstract class SemanticsHandler {
             return types.stream().map(t -> {
                 ArangoCollectionReference typeReference = ArangoCollectionReference.fromSpace(InternalSpace.TYPES_SPACE);
                 MetaRepresentation metaRepresentation = StaticStructureController.createMetaRepresentation(t, typeReference);
-                UpsertOperation upsertTypeOperation = new UpsertOperation(null, new NormalizedJsonLd(TypeUtils.translate(metaRepresentation, Map.class)), metaRepresentation.getId(), false, false);
+                UpsertOperation upsertTypeOperation = new UpsertOperation(null, new NormalizedJsonLd(typeUtils.translate(metaRepresentation, Map.class)), metaRepresentation.getIdRef(), false, false);
                 ArangoEdge edge = new ArangoEdge();
-                edge.setTo(metaRepresentation.getId());
+                edge.setTo(metaRepresentation.getIdRef());
                 edge.setFrom(propertyRef);
                 ArangoDocumentReference edgeId =  InternalSpace.PROPERTY_TO_TYPE_EDGE_COLLECTION.doc(UUID.randomUUID());
                 edge.redefineId(edgeId);
-                return Arrays.asList(upsertTypeOperation, new UpsertOperation(null, edge.dumpPayload(), edgeId, false, false));
+                return Arrays.asList(upsertTypeOperation, new UpsertOperation(null, typeUtils.translate(edge, NormalizedJsonLd.class), edgeId, false, false));
             }).flatMap(List::stream).collect(Collectors.toList());
         }
         return Collections.emptyList();

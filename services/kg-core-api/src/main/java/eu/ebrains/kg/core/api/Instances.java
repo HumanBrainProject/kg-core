@@ -28,11 +28,12 @@ import eu.ebrains.kg.core.controller.CoreInstanceController;
 import eu.ebrains.kg.core.model.ExposedStage;
 import eu.ebrains.kg.core.serviceCall.CoreToIds;
 import eu.ebrains.kg.core.serviceCall.CoreToRelease;
-import io.swagger.annotations.ApiOperation;
-import io.swagger.annotations.ApiResponse;
-import io.swagger.annotations.ApiResponses;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.responses.ApiResponse;
+import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springdoc.api.annotations.ParameterObject;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -61,9 +62,9 @@ public class Instances {
         this.idUtils = idUtils;
     }
 
-    @ApiOperation(value = "Create new instance with a system generated id")
+    @Operation(summary = "Create new instance with a system generated id")
     @PostMapping("/instances")
-    public ResponseEntity<Result<NormalizedJsonLd>> createNewInstance(@RequestBody JsonLdDoc jsonLdDoc, @RequestParam(value = "space") String space, ResponseConfiguration responseConfiguration, IngestConfiguration ingestConfiguration, ExternalEventInformation externalEventInformation) {
+    public ResponseEntity<Result<NormalizedJsonLd>> createNewInstance(@RequestBody JsonLdDoc jsonLdDoc, @RequestParam(value = "space") String space,  @ParameterObject ResponseConfiguration responseConfiguration, @ParameterObject  IngestConfiguration ingestConfiguration,  @ParameterObject ExternalEventInformation externalEventInformation) {
         Date startTime = new Date();
         UUID id = UUID.randomUUID();
         logger.debug(String.format("Creating new instance with id %s", id));
@@ -80,9 +81,9 @@ public class Instances {
         return newInstance;
     }
 
-    @ApiOperation(value = "Create new instance with a client defined id")
+    @Operation(summary = "Create new instance with a client defined id")
     @PostMapping("/instances/{id}")
-    public ResponseEntity<Result<NormalizedJsonLd>> createNewInstance(@RequestBody JsonLdDoc jsonLdDoc, @PathVariable("id") UUID id, @RequestParam(value = "space") String space, ResponseConfiguration responseConfiguration, IngestConfiguration ingestConfiguration, ExternalEventInformation externalEventInformation) {
+    public ResponseEntity<Result<NormalizedJsonLd>> createNewInstance(@RequestBody JsonLdDoc jsonLdDoc, @PathVariable("id") UUID id, @RequestParam(value = "space") String space,  @ParameterObject ResponseConfiguration responseConfiguration, @ParameterObject  IngestConfiguration ingestConfiguration,  @ParameterObject ExternalEventInformation externalEventInformation) {
         Date startTime = new Date();
         //We want to prevent the UUID to be used twice...
         InstanceId instanceId = idsSvc.resolveId(DataStage.IN_PROGRESS, id);
@@ -98,7 +99,7 @@ public class Instances {
         return newInstance;
     }
 
-    private ResponseEntity<Result<NormalizedJsonLd>> contributeToInstance(JsonLdDoc jsonLdDoc, UUID id, boolean undeprecate, ResponseConfiguration responseConfiguration, IngestConfiguration ingestConfiguration, ExternalEventInformation externalEventInformation, boolean removeNonDeclaredFields) {
+    private ResponseEntity<Result<NormalizedJsonLd>> contributeToInstance(@RequestBody JsonLdDoc jsonLdDoc, UUID id, boolean undeprecate, @ParameterObject ResponseConfiguration responseConfiguration,  @ParameterObject IngestConfiguration ingestConfiguration,  @ParameterObject ExternalEventInformation externalEventInformation, boolean removeNonDeclaredFields) {
         Date startTime = new Date();
         logger.debug(String.format("Contributing to instance with id %s", id));
         InstanceId instanceId = idsSvc.resolveId(DataStage.IN_PROGRESS, id);
@@ -117,27 +118,27 @@ public class Instances {
         return resultResponseEntity;
     }
 
-    @ApiOperation(value = "Replace contribution to an existing instance")
+    @Operation(summary =  "Replace contribution to an existing instance")
     @PutMapping("/instances/{id}")
-    public ResponseEntity<Result<NormalizedJsonLd>> contributeToInstanceFullReplacement(@RequestBody JsonLdDoc jsonLdDoc, @PathVariable("id") UUID id, @RequestParam(value = "undeprecate", required = false, defaultValue = "false") boolean undeprecate, ResponseConfiguration responseConfiguration, IngestConfiguration ingestConfiguration, ExternalEventInformation externalEventInformation) {
+    public ResponseEntity<Result<NormalizedJsonLd>> contributeToInstanceFullReplacement(@RequestBody JsonLdDoc jsonLdDoc, @PathVariable("id") UUID id, @RequestParam(value = "undeprecate", required = false, defaultValue = "false") boolean undeprecate,  @ParameterObject ResponseConfiguration responseConfiguration,  @ParameterObject IngestConfiguration ingestConfiguration,  @ParameterObject ExternalEventInformation externalEventInformation) {
         return contributeToInstance(jsonLdDoc, id, undeprecate, responseConfiguration, ingestConfiguration, externalEventInformation, true);
     }
 
-    @ApiOperation(value = "Partially update contribution to an existing instance")
+    @Operation(summary = "Partially update contribution to an existing instance")
     @PatchMapping("/instances/{id}")
-    public ResponseEntity<Result<NormalizedJsonLd>> contributeToInstancePartialReplacement(@RequestBody JsonLdDoc jsonLdDoc, @PathVariable("id") UUID id, @RequestParam(value = "undeprecate", required = false, defaultValue = "false") boolean undeprecate, ResponseConfiguration responseConfiguration, IngestConfiguration ingestConfiguration, ExternalEventInformation externalEventInformation) {
+    public ResponseEntity<Result<NormalizedJsonLd>> contributeToInstancePartialReplacement(@RequestBody JsonLdDoc jsonLdDoc, @PathVariable("id") UUID id, @RequestParam(value = "undeprecate", required = false, defaultValue = "false") boolean undeprecate,  @ParameterObject ResponseConfiguration responseConfiguration,  @ParameterObject IngestConfiguration ingestConfiguration,  @ParameterObject ExternalEventInformation externalEventInformation) {
         return contributeToInstance(jsonLdDoc, id, undeprecate, responseConfiguration, ingestConfiguration, externalEventInformation, false);
     }
 
-    @ApiOperation(value = "Get the instance by its KG-internal ID")
+    @Operation(summary = "Get the instance by its KG-internal ID")
     @GetMapping("/instances/{id}")
-    public ResponseEntity<Result<NormalizedJsonLd>> getInstanceById(@PathVariable("id") UUID id, @RequestParam("stage") ExposedStage stage, ResponseConfiguration responseConfiguration) {
+    public ResponseEntity<Result<NormalizedJsonLd>> getInstanceById(@PathVariable("id") UUID id, @RequestParam("stage") ExposedStage stage, @ParameterObject ResponseConfiguration responseConfiguration) {
         Date startTime = new Date();
         NormalizedJsonLd instanceById = instanceController.getInstanceById(id, stage.getStage(), responseConfiguration);
         return instanceById != null ? ResponseEntity.ok(Result.ok(instanceById).setExecutionDetails(startTime, new Date())) : ResponseEntity.notFound().build();
     }
 
-    @ApiOperation(value = "Get the scope for the instance by its KG-internal ID")
+    @Operation(summary = "Get the scope for the instance by its KG-internal ID")
     @GetMapping("/instances/{id}/scope")
     public ResponseEntity<Result<ScopeElement>> getInstanceScope(@PathVariable("id") UUID id, @RequestParam("stage") ExposedStage stage, @RequestParam(value = "returnPermissions", required = false, defaultValue = "false") boolean returnPermissions) {
         Date startTime = new Date();
@@ -145,7 +146,7 @@ public class Instances {
         return scope != null ? ResponseEntity.ok(Result.ok(scope).setExecutionDetails(startTime, new Date())) : ResponseEntity.notFound().build();
     }
 
-    @ApiOperation(value = "Get the neighborhood for the instance by its KG-internal ID")
+    @Operation(summary = "Get the neighborhood for the instance by its KG-internal ID")
     @GetMapping("/instances/{id}/neighbors")
     public ResponseEntity<Result<GraphEntity>> getNeighbors(@PathVariable("id") UUID id, @RequestParam("stage") ExposedStage stage) {
         Date startTime = new Date();
@@ -154,37 +155,37 @@ public class Instances {
     }
 
 
-    @ApiOperation(value = "Returns a list of instances according to their types")
+    @Operation(summary = "Returns a list of instances according to their types")
     @GetMapping("/instances")
-    public PaginatedResult<NormalizedJsonLd> getInstances(@RequestParam("stage") ExposedStage stage, @RequestParam("type") String type, @RequestParam(value = "searchByLabel", required = false) String searchByLabel, ResponseConfiguration responseConfiguration, PaginationParam paginationParam) {
+    public PaginatedResult<NormalizedJsonLd> getInstances(@RequestParam("stage") ExposedStage stage, @RequestParam("type") String type, @RequestParam(value = "searchByLabel", required = false) String searchByLabel, @ParameterObject ResponseConfiguration responseConfiguration, @ParameterObject PaginationParam paginationParam) {
         Date startTime = new Date();
         PaginatedResult<NormalizedJsonLd> result = PaginatedResult.ok(instanceController.getInstances(stage.getStage(), new Type(type), searchByLabel, responseConfiguration, paginationParam));
         result.setExecutionDetails(startTime, new Date());
         return result;
     }
 
-    @ApiOperation(value = "Bulk operation of /instances/{id} to read instances by their KG-internal IDs")
+    @Operation(summary = "Bulk operation of /instances/{id} to read instances by their KG-internal IDs")
     @PostMapping("/instancesByIds")
-    public Result<Map<String, Result<NormalizedJsonLd>>> getInstancesByIds(@RequestBody List<String> ids, @RequestParam("stage") ExposedStage stage, ResponseConfiguration responseConfiguration) {
+    public Result<Map<String, Result<NormalizedJsonLd>>> getInstancesByIds(@RequestBody List<String> ids, @RequestParam("stage") ExposedStage stage, @ParameterObject ResponseConfiguration responseConfiguration) {
         Date startTime = new Date();
         return Result.ok(instanceController.getInstancesByIds(ids, stage.getStage(), responseConfiguration)).setExecutionDetails(startTime, new Date());
     }
 
 
-    @ApiOperation(value = "ATTENTION: The result structure will be subject to change! \nRead instances by the given list of (external) identifiers")
+    @Operation(summary = "ATTENTION: The result structure will be subject to change! \nRead instances by the given list of (external) identifiers")
     @PostMapping("/instancesByIdentifiers")
     @Deprecated()
     //TODO change return structure to maintain the mapping to the identifier (as with "getInstancesByIds")
-    public Result<List<NormalizedJsonLd>> getInstancesByIdentifiers(@RequestBody List<String> identifiers, @RequestParam("stage") ExposedStage stage, ResponseConfiguration responseConfiguration) {
+    public Result<List<NormalizedJsonLd>> getInstancesByIdentifiers(@RequestBody List<String> identifiers, @RequestParam("stage") ExposedStage stage, @ParameterObject ResponseConfiguration responseConfiguration) {
         Date startTime = new Date();
         IdWithAlternatives idWithAlternative = new IdWithAlternatives(UUID.randomUUID(), null, new HashSet<>(identifiers));
         List<InstanceId> instanceIds = idsSvc.resolveIds(stage.getStage(), idWithAlternative, false);
         return Result.ok(instanceController.getInstancesByIds(instanceIds.stream().filter(instanceId -> !instanceId.isDeprecated()).map(i -> i.getUuid().toString()).collect(Collectors.toList()), stage.getStage(), responseConfiguration).values().stream().map(Result::getData).collect(Collectors.toList())).setExecutionDetails(startTime, new Date());
     }
 
-    @ApiOperation(value = "Deprecate an instance")
+    @Operation(summary = "Deprecate an instance")
     @DeleteMapping("/instances/{id}")
-    public ResponseEntity<Result<Void>> deleteInstance(@PathVariable("id") UUID id, ExternalEventInformation externalEventInformation) {
+    public ResponseEntity<Result<Void>> deleteInstance(@PathVariable("id") UUID id, @ParameterObject ExternalEventInformation externalEventInformation) {
         Date startTime = new Date();
         InstanceId instanceId = idsSvc.resolveId(DataStage.IN_PROGRESS, id);
         if (instanceId == null) {
@@ -201,7 +202,7 @@ public class Instances {
 
 
     //RELEASE instances
-    @ApiOperation("Release or re-release an instance")
+    @Operation(summary = "Release or re-release an instance")
     @PutMapping("/instances/{id}/release")
     public ResponseEntity<Result<Void>> releaseInstance(@PathVariable("id") UUID id, @RequestParam(value = "revision", required = false) String revision) {
         Date startTime = new Date();
@@ -216,8 +217,8 @@ public class Instances {
         return ResponseEntity.ok(Result.<Void>ok().setExecutionDetails(startTime, new Date()));
     }
 
-    @ApiOperation(value = "Unrelease an instance")
-    @ApiResponses(value = {@ApiResponse(code = 200, message = "The instance that has been unreleased"), @ApiResponse(code = 404, message = "Instance not found")})
+    @Operation(summary =  "Unrelease an instance")
+    @ApiResponses({@ApiResponse(responseCode = "200", description = "The instance that has been unreleased"), @ApiResponse(responseCode = "404", description = "Instance not found")})
     @DeleteMapping("/instances/{id}/release")
     public ResponseEntity<Result<Void>> unreleaseInstance(@PathVariable("id") UUID id) {
         Date startTime = new Date();
@@ -232,10 +233,10 @@ public class Instances {
         return ResponseEntity.ok(Result.<Void>ok().setExecutionDetails(startTime, new Date()));
     }
 
-    @ApiOperation(value = "Get the release status for an instance")
+    @Operation(summary="Get the release status for an instance")
     @ApiResponses(value = {
-            @ApiResponse(code = 200, message = "The release status of the instance"),
-            @ApiResponse(code = 404, message = "Instance not found")})
+            @ApiResponse(responseCode = "200", description = "The release status of the instance"),
+            @ApiResponse(responseCode = "404", description = "Instance not found")})
     @GetMapping(value = "/instances/{id}/release/status")
     public ResponseEntity<Result<ReleaseStatus>> getReleaseStatus(@PathVariable("id") UUID id, @RequestParam("releaseTreeScope") ReleaseTreeScope releaseTreeScope) {
         InstanceId instanceId = idsSvc.resolveId(DataStage.IN_PROGRESS, id);
@@ -249,12 +250,12 @@ public class Instances {
         return ResponseEntity.ok(Result.ok(releaseStatus));
     }
 
-    @ApiOperation(value = "Get the release status for multiple instances")
+    @Operation(summary = "Get the release status for multiple instances")
     @ApiResponses(value = {
-            @ApiResponse(code = 200, message = "The release status of the instance"),
-            @ApiResponse(code = 404, message = "Instance not found")})
+            @ApiResponse(responseCode = "200", description = "The release status of the instance"),
+            @ApiResponse(responseCode = "404", description = "Instance not found")})
     @PostMapping(value = "/instancesByIds/release/status")
-    public Result<Map<UUID, Result<ReleaseStatus>>> getReleasesStatusByIds(@RequestBody List<UUID> listOfIds, @RequestParam("releaseTreeScope") ReleaseTreeScope releaseTreeScope) {
+    public Result<Map<UUID, Result<ReleaseStatus>>> getReleaseStatusByIds(@RequestBody List<UUID> listOfIds, @RequestParam("releaseTreeScope") ReleaseTreeScope releaseTreeScope) {
         List<InstanceId> instanceIds = idsSvc.resolveIdsByUUID(DataStage.IN_PROGRESS, listOfIds, false);
         return Result.ok(instanceIds.stream().filter(instanceId -> !instanceId.isDeprecated()).collect(Collectors.toMap(InstanceId::getUuid, instanceId ->
                 Result.ok(releaseSvc.getReleaseStatus(instanceId, releaseTreeScope))

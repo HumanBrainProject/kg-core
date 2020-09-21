@@ -17,7 +17,7 @@
 package eu.ebrains.kg.ids.model;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.google.gson.annotations.SerializedName;
+import eu.ebrains.kg.arango.commons.aqlBuilder.ArangoVocabulary;
 import eu.ebrains.kg.commons.model.Space;
 
 import java.util.HashSet;
@@ -26,30 +26,25 @@ import java.util.UUID;
 
 public class PersistedId {
 
-    @SerializedName("_key")
+    @JsonProperty(ArangoVocabulary.KEY)
     private String key;
 
-    @SerializedName("_space")
+    @JsonProperty(ArangoVocabulary.SPACE)
     private String space;
 
     private Set<String> alternativeIds = new HashSet<>();
 
     private boolean deprecated;
 
-    @JsonProperty("_key")
     public String getKey() {
         return key;
     }
 
-    public void setKey(String key) {
-        this.key = key;
-    }
-    @JsonProperty("_id")
-    public UUID getId() {
+    public UUID getUUID() {
         return key!=null ? UUID.fromString(key) : null;
     }
 
-    public PersistedId setId(UUID id) {
+    public PersistedId setUUID(UUID id) {
         this.key = id !=null ? id.toString() : null;
         return this;
     }

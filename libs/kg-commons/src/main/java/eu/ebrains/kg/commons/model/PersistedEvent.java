@@ -17,7 +17,7 @@
 package eu.ebrains.kg.commons.model;
 
 
-import com.google.gson.annotations.SerializedName;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import eu.ebrains.kg.commons.jsonld.JsonLdId;
 
 import java.util.Date;
@@ -33,7 +33,7 @@ public class PersistedEvent extends Event implements EventId {
     private List<JsonLdId> mergedIds;
     private boolean suggestion;
 
-    @SerializedName("_key")
+    @JsonProperty("_key")
     private String key;
 
     public PersistedEvent() {
@@ -48,6 +48,18 @@ public class PersistedEvent extends Event implements EventId {
         this.key = this.eventId;
         this.dataStage = dataStage;
         this.user = user;
+    }
+
+    public String getKey() {
+        return key;
+    }
+
+    public String getIngestionUserId() {
+        return ingestionUserId;
+    }
+
+    public boolean isSuggestion() {
+        return suggestion;
     }
 
     public Long getIndexedTimestamp() {

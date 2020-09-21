@@ -16,20 +16,20 @@
 
 package eu.ebrains.kg.graphdb.commons.model;
 
-import com.google.gson.annotations.SerializedName;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import eu.ebrains.kg.arango.commons.aqlBuilder.ArangoVocabulary;
 import eu.ebrains.kg.arango.commons.model.ArangoDocumentReference;
 import eu.ebrains.kg.commons.semantics.vocabularies.SchemaOrgVocabulary;
 
 public class MetaRepresentation {
 
-    @SerializedName(ArangoVocabulary.ID)
+    @JsonProperty(ArangoVocabulary.ID)
     private String id;
 
-    @SerializedName(SchemaOrgVocabulary.IDENTIFIER)
+    @JsonProperty(SchemaOrgVocabulary.IDENTIFIER)
     private String identifier;
 
-    @SerializedName(SchemaOrgVocabulary.NAME)
+    @JsonProperty(SchemaOrgVocabulary.NAME)
     private String name;
 
     public String getIdentifier() {
@@ -48,12 +48,16 @@ public class MetaRepresentation {
         this.name = name;
     }
 
-
-    public ArangoDocumentReference getId() {
-        return id != null ? ArangoDocumentReference.fromArangoId(id, false) : null;
+    public String getId() {
+        return id;
     }
 
     public void setId(ArangoDocumentReference id) {
         this.id = id!=null ? id.getId() : null;
     }
+
+    public ArangoDocumentReference getIdRef() {
+        return id != null ? ArangoDocumentReference.fromArangoId(id, false) : null;
+    }
+
 }

@@ -26,6 +26,7 @@ public class ArangoVocabulary {
 
     //General custom
     public static final String COLLECTION = "_collection";
+    public static final String SPACE = "_space";
 
     //Relations
     public static final String FROM = "_from";

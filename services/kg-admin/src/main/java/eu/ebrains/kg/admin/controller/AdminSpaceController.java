@@ -75,7 +75,7 @@ public class AdminSpaceController {
 
     public  List<InstanceId> defineSpace(Space space, boolean global) {
         NormalizedJsonLd payload = space.toJsonLd();
-        return adminToPrimaryStore.postEvent(Event.createUpsertEvent(global ? InternalSpace.GLOBAL_SPEC : space, UUID.nameUUIDFromBytes(payload.getId().getId().getBytes(StandardCharsets.UTF_8)), Event.Type.INSERT, payload), false);
+        return adminToPrimaryStore.postEvent(Event.createUpsertEvent(global ? InternalSpace.GLOBAL_SPEC : space, UUID.nameUUIDFromBytes(payload.id().getId().getBytes(StandardCharsets.UTF_8)), Event.Type.INSERT, payload), false);
     }
 
 }

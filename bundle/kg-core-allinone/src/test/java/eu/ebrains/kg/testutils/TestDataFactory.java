@@ -26,9 +26,16 @@ import java.util.UUID;
 public class TestDataFactory {
 
 
+    public static JsonLdDoc createTestData(int numberOfFields, int iteration, boolean normalized){
+        return createTestData(numberOfFields, normalized, iteration, null);
+    }
+
+    public static String DYNAMIC_FIELD_PREFIX = "https://schema.hbp.eu/test";
+    public static String TEST_TYPE = "https://core.kg.ebrains.eu/TestPayload";
+
     public static JsonLdDoc createTestData(int numberOfFields, boolean normalized, int iteration, Integer linkedInstance){
         Map<String, Object> testData = new HashMap<>();
-        testData.put("@type", "https://core.kg.ebrains.eu/TestPayload");
+        testData.put("@type", TEST_TYPE);
         testData.put("@id", String.format("https://core.kg.ebrains.eu/test/%d", iteration));
         if(linkedInstance!=null){
             testData.put(normalized ? "https://schema.hbp.eu/linked" : "hbp:linked", new JsonLdId(String.format("https://core.kg.ebrains.eu/test/%d", linkedInstance)));
@@ -40,7 +47,7 @@ public class TestDataFactory {
         }
         String randomValue = UUID.randomUUID().toString();
         for (int i = 0; i < numberOfFields; i++) {
-            String key = normalized ? "https://schema.hbp.eu/test%d" : "hbp:test%d";
+            String key = normalized ? DYNAMIC_FIELD_PREFIX+"%d" : "hbp:test%d";
             testData.put(String.format(key, i), String.format("value-%s-%d", randomValue, i));
         }
 

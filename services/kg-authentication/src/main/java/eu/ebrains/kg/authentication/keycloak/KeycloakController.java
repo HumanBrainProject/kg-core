@@ -21,10 +21,10 @@ import com.auth0.jwt.JWTVerifier;
 import com.auth0.jwt.algorithms.Algorithm;
 import com.auth0.jwt.exceptions.JWTVerificationException;
 import com.auth0.jwt.interfaces.Claim;
-import com.google.gson.Gson;
 import eu.ebrains.kg.authentication.AuthenticationConfig;
 import eu.ebrains.kg.authentication.model.OpenIdConfig;
 import eu.ebrains.kg.commons.AuthContext;
+import eu.ebrains.kg.commons.JsonAdapter;
 import eu.ebrains.kg.commons.exception.UnauthorizedException;
 import eu.ebrains.kg.commons.model.Client;
 import eu.ebrains.kg.commons.model.Space;
@@ -65,24 +65,24 @@ public class KeycloakController {
 
     private final Logger logger = LoggerFactory.getLogger(getClass());
 
-    private final Gson gson;
+    private final JsonAdapter jsonAdapter;
 
-    private KeycloakClient keycloakClient;
+    private final KeycloakClient keycloakClient;
 
     private final AuthContext authContext;
 
     private ClientScopeRepresentation profileScope;
 
-    private AuthenticationConfig authenticationConfig;
+    private final AuthenticationConfig authenticationConfig;
 
     private final KeycloakUsers keycloakUsers;
 
     private final JWTVerifier jwtVerifier;
 
 
-    public KeycloakController(KeycloakConfig config, KeycloakClient keycloakClient, Gson gson, AuthContext authContext, AuthenticationConfig authenticationConfig, KeycloakUsers keycloakUsers) {
+    public KeycloakController(KeycloakConfig config, KeycloakClient keycloakClient, JsonAdapter jsonAdapter, AuthContext authContext, AuthenticationConfig authenticationConfig, KeycloakUsers keycloakUsers) {
         this.config = config;
-        this.gson = gson;
+        this.jsonAdapter = jsonAdapter;
         this.keycloakClient = keycloakClient;
         this.authContext = authContext;
         this.authenticationConfig = authenticationConfig;
@@ -101,13 +101,11 @@ public class KeycloakController {
     }
 
     public String authenticate(String clientId, String clientSecret) {
-        String combinedKey = clientId + "_" + clientSecret;
         Map<?, ?> result = WebClient.builder().build().post().uri(openIdConfig.getTokenEndpoint()).body(BodyInserters.fromFormData("grant_type", "client_credentials").with("client_id", clientId).with("client_secret", clientSecret)).retrieve().bodyToMono(Map.class).block();
         if (result != null) {
             Object access_token = result.get("access_token");
             if (access_token != null) {
-                String token = access_token.toString();
-                return token;
+                return access_token.toString();
             }
         }
         return null;
@@ -231,7 +229,7 @@ public class KeycloakController {
 
     private void loadOpenIdConfig() {
         String result = WebClient.builder().build().get().uri(config.getConfigUrl()).accept(MediaType.APPLICATION_JSON).retrieve().bodyToMono(String.class).block();
-        openIdConfig = gson.fromJson(result, OpenIdConfig.class);
+        openIdConfig = jsonAdapter.fromJson(result, OpenIdConfig.class);
     }
 
 

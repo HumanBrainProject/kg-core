@@ -40,7 +40,7 @@ public class JsonLdDoc extends TreeMap<String, Object> {
     }
 
 
-    public List<String> getTypes() {
+    public List<String> types() {
         Object type = get(JsonLdConsts.TYPE);
         if (type instanceof Collection) {
             return ((Collection<?>)type).stream().map(Object::toString).collect(Collectors.toList());
@@ -51,7 +51,7 @@ public class JsonLdDoc extends TreeMap<String, Object> {
     }
 
     public void addTypes(String... types) {
-        List<String> allTypes = new ArrayList<>(getTypes());
+        List<String> allTypes = new ArrayList<>(types());
         for (String type : types) {
             if (!allTypes.contains(type)) {
                 allTypes.add(type);
@@ -60,7 +60,7 @@ public class JsonLdDoc extends TreeMap<String, Object> {
         put(JsonLdConsts.TYPE, allTypes);
     }
 
-    public Set<String> getIdentifiers() {
+    public Set<String> identifiers() {
         return getAsListOf(SchemaOrgVocabulary.IDENTIFIER, String.class).stream().filter(this::isValidIdentifier).collect(Collectors.toSet());
     }
 
@@ -69,14 +69,14 @@ public class JsonLdDoc extends TreeMap<String, Object> {
     }
 
     public void addIdentifiers(String... identifiers) {
-        Set<String> allIdentifiers = new HashSet<>(getIdentifiers());
+        Set<String> allIdentifiers = new HashSet<>(identifiers());
         allIdentifiers.addAll(Arrays.asList(identifiers));
         put(SchemaOrgVocabulary.IDENTIFIER, allIdentifiers);
     }
 
     public void removeIdentifiers(String... identifiers) {
         for (String identifier : identifiers) {
-            getIdentifiers().remove(identifier);
+            identifiers().remove(identifier);
         }
     }
 
@@ -84,7 +84,7 @@ public class JsonLdDoc extends TreeMap<String, Object> {
         put(JsonLdConsts.ID, id!=null ? id.getId() : null);
     }
 
-    public JsonLdId getId() {
+    public JsonLdId id() {
         String id = getAs(JsonLdConsts.ID, String.class);
         return id!=null ? new JsonLdId(id) : null;
     }
@@ -196,7 +196,7 @@ public class JsonLdDoc extends TreeMap<String, Object> {
         return false;
     }
 
-    public String getPrimaryIdentifier(){
+    public String primaryIdentifier(){
         if(this.containsKey(SchemaOrgVocabulary.IDENTIFIER)){
             Object identifier = get(SchemaOrgVocabulary.IDENTIFIER);
             if(identifier instanceof List && !((List)identifier).isEmpty()){

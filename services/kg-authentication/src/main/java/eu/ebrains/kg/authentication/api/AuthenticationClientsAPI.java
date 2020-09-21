@@ -18,7 +18,7 @@ package eu.ebrains.kg.authentication.api;
 
 import eu.ebrains.kg.authentication.keycloak.KeycloakController;
 import eu.ebrains.kg.commons.model.Client;
-import org.springframework.http.MediaType;
+import eu.ebrains.kg.commons.permission.ClientAuthToken;
 import org.springframework.web.bind.annotation.*;
 
 @RequestMapping("/internal/authentication/clients")
@@ -41,8 +41,8 @@ public class AuthenticationClientsAPI {
         keycloakController.unregisterClient(new Client(clientName).getIdentifier());
     }
 
-    @PostMapping(value = "/{client}/token", produces = MediaType.TEXT_PLAIN_VALUE)
-    public String fetchToken(@PathVariable("client") String clientId, @RequestBody String clientSecret) {
-        return keycloakController.authenticate(clientId, clientSecret);
+    @PostMapping(value = "/{client}/token")
+    public ClientAuthToken fetchToken(@PathVariable("client") String clientId, @RequestBody String clientSecret) {
+        return new ClientAuthToken(keycloakController.authenticate(clientId, clientSecret));
     }
 }

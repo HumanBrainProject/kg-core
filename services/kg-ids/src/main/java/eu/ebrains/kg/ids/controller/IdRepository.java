@@ -21,9 +21,9 @@ import com.arangodb.ArangoDatabase;
 import com.arangodb.model.AqlQueryOptions;
 import com.arangodb.model.DocumentCreateOptions;
 import com.arangodb.model.SkiplistIndexOptions;
-import com.google.gson.Gson;
 import eu.ebrains.kg.arango.commons.model.ArangoDatabaseProxy;
 import eu.ebrains.kg.commons.IdUtils;
+import eu.ebrains.kg.commons.JsonAdapter;
 import eu.ebrains.kg.commons.Tuple;
 import eu.ebrains.kg.commons.jsonld.JsonLdConsts;
 import eu.ebrains.kg.commons.jsonld.JsonLdId;
@@ -42,7 +42,7 @@ import java.util.stream.Collectors;
 public class IdRepository {
     private final ArangoDatabaseProxy arangoDatabase;
 
-    private final Gson gson;
+    private final JsonAdapter jsonAdapter;
 
     private final IdUtils idUtils;
 
@@ -51,14 +51,14 @@ public class IdRepository {
         ArangoCollection collection = database.collection(getCollectionName(stage));
         if(collection.exists()){
             String document = collection.getDocument(uuid.toString(), String.class);
-            return gson.fromJson(document, PersistedId.class);
+            return jsonAdapter.fromJson(document, PersistedId.class);
         }
         return null;
     }
 
-    public IdRepository(@Qualifier("idsDB") ArangoDatabaseProxy arangoDatabase, Gson gson, IdUtils idUtils) {
+    public IdRepository(@Qualifier("idsDB") ArangoDatabaseProxy arangoDatabase, JsonAdapter jsonAdapter, IdUtils idUtils) {
         this.arangoDatabase = arangoDatabase;
-        this.gson = gson;
+        this.jsonAdapter = jsonAdapter;
         this.idUtils = idUtils;
     }
 
@@ -70,10 +70,10 @@ public class IdRepository {
         ArangoCollection coll = getOrCreateCollection(stage);
         //TODO make this transactional
         if (stage == DataStage.IN_PROGRESS) {
-            PersistedId document = gson.fromJson(coll.getDocument(id.getId().toString(), String.class), PersistedId.class);
+            PersistedId document = jsonAdapter.fromJson(coll.getDocument(id.getKey(), String.class), PersistedId.class);
             //It could happen that identifiers disappear during updates. We need to make sure that the old identifiers are not lost though (getting rid of them is called "splitting" and is a separate process).
             if (document != null && document.getAlternativeIds() != null) {
-                JsonLdId instanceId = idUtils.buildAbsoluteUrl(document.getId());
+                JsonLdId instanceId = idUtils.buildAbsoluteUrl(document.getUUID());
                 List<String> alternativeIds = new ArrayList<>(id.getAlternativeIds());
                 alternativeIds.addAll(document.getAlternativeIds());
                 id.setAlternativeIds(alternativeIds.stream().filter(a -> !a.equals(instanceId.getId())).distinct().collect(Collectors.toSet()));
@@ -88,8 +88,8 @@ public class IdRepository {
         }
         //Add the id in its fully qualified form as an alternative
         id.setAlternativeIds(new HashSet<>(id.getAlternativeIds() != null ? id.getAlternativeIds() : Collections.emptySet()));
-        id.getAlternativeIds().add(idUtils.buildAbsoluteUrl(id.getId()).getId());
-        coll.insertDocument(gson.toJson(id), new DocumentCreateOptions().waitForSync(true).overwrite(true));
+        id.getAlternativeIds().add(idUtils.buildAbsoluteUrl(id.getUUID()).getId());
+        coll.insertDocument(jsonAdapter.toJson(id), new DocumentCreateOptions().waitForSync(true).overwrite(true));
         return mergedIds.stream().map(idUtils::buildAbsoluteUrl).collect(Collectors.toList());
     }
 
@@ -121,12 +121,12 @@ public class IdRepository {
             counter++;
         }
         sb.append("    RETURN doc\n");
-        List<PersistedId> persistedIds = database.query(sb.toString(), bindVars, new AqlQueryOptions(), String.class).asListRemaining().stream().map(s -> gson.fromJson(s, PersistedId.class)).collect(Collectors.toList());
-        Set<String> deprecatedInstances = persistedIds.stream().filter(p -> p.isDeprecated()).map(id -> idUtils.buildAbsoluteUrl(id.getId()).getId()).collect(Collectors.toSet());
+        List<PersistedId> persistedIds = database.query(sb.toString(), bindVars, new AqlQueryOptions(), String.class).asListRemaining().stream().map(s -> jsonAdapter.fromJson(s, PersistedId.class)).collect(Collectors.toList());
+        Set<String> deprecatedInstances = persistedIds.stream().filter(PersistedId::isDeprecated).map(id -> idUtils.buildAbsoluteUrl(id.getUUID()).getId()).collect(Collectors.toSet());
         Map<String, Space> resultingSpaceByIdentifier = new HashMap<>();
         Map<String, Set<JsonLdId>> resultingIdsByIdentifier = new HashMap<>();
         persistedIds.forEach(id -> {
-            JsonLdId absoluteId = idUtils.buildAbsoluteUrl(id.getId());
+            JsonLdId absoluteId = idUtils.buildAbsoluteUrl(id.getUUID());
             resultingSpaceByIdentifier.put(absoluteId.getId(), id.getSpace());
             //List<JsonLdId> jsonLdIds = resultingIdsByIdentifier.computeIfAbsent(absoluteId.getId(), k -> new ArrayList<>());
             //jsonLdIds.add(absoluteId);
