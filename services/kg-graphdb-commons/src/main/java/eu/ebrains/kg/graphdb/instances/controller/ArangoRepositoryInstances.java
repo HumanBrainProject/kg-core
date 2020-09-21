@@ -101,7 +101,7 @@ public class ArangoRepositoryInstances {
     private void handleAlternativesAndEmbedded(List<NormalizedJsonLd> documents, DataStage stage, boolean alternatives, boolean embedded) {
         if (alternatives) {
             List<NormalizedJsonLd[]> embeddedDocuments = getEmbeddedDocuments(documents, stage, true);
-            resolveUsersForAlternatives(stage, embeddedDocuments);
+            resolveUsersForAlternatives(embeddedDocuments);
             for (NormalizedJsonLd[] embeddedDocument : embeddedDocuments) {
                 Arrays.stream(embeddedDocument).forEach(e -> {
                     e.remove(EBRAINSVocabulary.META_REVISION);
@@ -112,12 +112,12 @@ public class ArangoRepositoryInstances {
             documents.forEach(d -> d.remove(EBRAINSVocabulary.META_ALTERNATIVE));
         }
         if (embedded) {
-            resolveUsersForDocuments(stage, documents);
+            resolveUsersForDocuments(documents);
             addEmbeddedInstancesToDocument(documents, getEmbeddedDocuments(documents, stage, false));
         }
     }
 
-    private void resolveUsersForDocuments(DataStage stage, List<NormalizedJsonLd> documents) {
+    private void resolveUsersForDocuments(List<NormalizedJsonLd> documents) {
         List<ArangoDocumentReference> userIdsToResolve = documents.stream()
                 .filter(e -> e.containsKey(EBRAINSVocabulary.META_USER) && e.get(EBRAINSVocabulary.META_USER) != null)
                 .map(d -> {
@@ -149,7 +149,7 @@ public class ArangoRepositoryInstances {
         });
     }
 
-    private void resolveUsersForAlternatives(DataStage stage, List<NormalizedJsonLd[]> alternatives) {
+    private void resolveUsersForAlternatives(List<NormalizedJsonLd[]> alternatives) {
         List<ArangoDocumentReference> userIdsToResolve = alternatives.stream().flatMap(Arrays::stream).map(d ->
                 d.keySet().stream().filter(k -> !NormalizedJsonLd.isInternalKey(k) && !JsonLdConsts.isJsonLdConst(k)).map(k -> {
                     List<NormalizedJsonLd> alternative;
@@ -659,7 +659,9 @@ public class ArangoRepositoryInstances {
         bindVars.put("ids", ids.stream().map(InstanceId::serialize).collect(Collectors.toSet()));
         aql.indent().addLine(AQL.trust("LET doc = DOCUMENT(id)"));
         aql.addLine(AQL.trust("FILTER doc != null"));
+        aql.addLine(AQL.trust("FILTER doc.`"+JsonLdConsts.TYPE+"`"));
         aql.addLine(AQL.trust("LET labelProperty = FIRST(NOT_NULL(FOR t IN doc.`" + JsonLdConsts.TYPE + "` LET p = types[t] FILTER p!=NULL SORT p asc RETURN p))"));
+        aql.addLine(AQL.trust("FILTER labelProperty!= null"));
         aql.addLine(AQL.trust("LET label = doc[labelProperty]"));
         aql.addLine(AQL.trust("RETURN {[ id ] : label})"));
 

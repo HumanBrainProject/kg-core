@@ -64,9 +64,13 @@ public class CoreToIds {
         return resolveIds(stage, idWithAlternatives, returnUnresolved);
     }
 
+    public JsonLdIdMapping[] resolveIds(DataStage stage, List<IdWithAlternatives> idWithAlternatives){
+        return serviceCall.post(String.format("%s/ids/%s/resolved", SERVICE_URL, stage.name()), idWithAlternatives, authContext.getAuthTokens(), JsonLdIdMapping[].class);
+    }
+
     private List<InstanceId> resolveIds(DataStage stage, List<IdWithAlternatives> idWithAlternatives, boolean returnUnresolved) {
         List<InstanceId> resultList = new ArrayList<>();
-        JsonLdIdMapping[] result = serviceCall.post(String.format("%s/ids/%s/resolved", SERVICE_URL, stage.name()), idWithAlternatives, authContext.getAuthTokens(), JsonLdIdMapping[].class);
+        JsonLdIdMapping[] result = resolveIds(stage, idWithAlternatives);
         if (result != null) {
             resultList.addAll(Arrays.stream(result).
                     filter(id -> id.getResolvedIds() != null && id.getResolvedIds().size() == 1).

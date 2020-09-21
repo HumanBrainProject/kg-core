@@ -27,6 +27,7 @@ import org.springframework.stereotype.Component;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -76,4 +77,7 @@ public class CoreInstancesToGraphDB {
         return serviceCall.get(BASE_URL + String.format("/%s/instances/%s/neighbors", stage.name(), instanceId.serialize()), authContext.getAuthTokens(), GraphEntity.class);
     }
 
+    public UUIDtoString getLabels(Set<InstanceId> ids, DataStage stage) {
+        return serviceCall.post(BASE_URL+String.format("/%s/instancesByIds/labels", stage.name()), ids.stream().map(InstanceId::serialize).collect(Collectors.toList()), authContext.getAuthTokens(), UUIDtoString.class);
+    }
 }
