@@ -70,7 +70,7 @@ public class RestControllerAdvice {
      * Defines the model attribute of the pagination parameters used in several queries.
      */
     @ModelAttribute
-    public PaginationParam paginationParam(@RequestParam(value = "from", required = false, defaultValue = "0") long from, @RequestParam(value = "size", required = false, defaultValue="20") Long size) {
+    public PaginationParam paginationParam(@RequestParam(value = "from", required = false, defaultValue = "0") long from, @RequestParam(value = "size", required = false) Long size) {
         PaginationParam paginationParam = new PaginationParam();
         paginationParam.setFrom(from);
         paginationParam.setSize(size);
