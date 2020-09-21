@@ -156,7 +156,7 @@ public class CoreInstanceController {
         Map<String, Result<NormalizedJsonLd>> result = new HashMap<>();
         List<UUID> validUUIDs = ids.stream().map(id -> {
             try {
-                return UUID.fromString(id);
+                return id!=null ? UUID.fromString(id) : null;
             } catch (IllegalArgumentException e) {
                 return null;
             }

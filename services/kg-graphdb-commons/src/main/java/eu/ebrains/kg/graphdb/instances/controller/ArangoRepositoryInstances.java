@@ -47,12 +47,15 @@ import eu.ebrains.kg.graphdb.commons.controller.ArangoUtils;
 import eu.ebrains.kg.graphdb.commons.controller.PermissionsController;
 import eu.ebrains.kg.graphdb.commons.model.ArangoDocument;
 import eu.ebrains.kg.graphdb.instances.model.ArangoRelation;
+import eu.ebrains.kg.graphdb.queries.controller.QueryController;
 import eu.ebrains.kg.graphdb.queries.model.spec.GraphQueryKeys;
+import eu.ebrains.kg.graphdb.types.controller.ArangoRepositoryTypes;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
 
 import java.util.*;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 @Component
 public class ArangoRepositoryInstances {
@@ -62,17 +65,19 @@ public class ArangoRepositoryInstances {
     private final PermissionSvc permissionSvc;
     private final AuthContext authContext;
     private final ArangoUtils arangoUtils;
-
+    private final QueryController queryController;
+    private final ArangoRepositoryTypes typesRepo;
     private final ArangoDatabases databases;
-
     private final IdUtils idUtils;
 
-    public ArangoRepositoryInstances(ArangoRepositoryCommons arangoRepositoryCommons, PermissionsController permissionsController, PermissionSvc permissionSvc, AuthContext authContext, ArangoUtils arangoUtils, ArangoDatabases databases, IdUtils idUtils) {
+    public ArangoRepositoryInstances(ArangoRepositoryCommons arangoRepositoryCommons, PermissionsController permissionsController, PermissionSvc permissionSvc, AuthContext authContext, ArangoUtils arangoUtils, QueryController queryController, ArangoRepositoryTypes typesRepo, ArangoDatabases databases, IdUtils idUtils) {
         this.arangoRepositoryCommons = arangoRepositoryCommons;
         this.permissionsController = permissionsController;
         this.permissionSvc = permissionSvc;
         this.authContext = authContext;
         this.arangoUtils = arangoUtils;
+        this.queryController = queryController;
+        this.typesRepo = typesRepo;
         this.databases = databases;
         this.idUtils = idUtils;
     }
@@ -521,13 +526,46 @@ public class ArangoRepositoryInstances {
         return null;
     }
 
-    public ReleaseStatus getReleaseStatus(Space space, UUID id, ReleaseTreeScope treeScope) {
+    private Set<InstanceId> fetchInvolvedInstances(ScopeElement element, Set<InstanceId> collector){
+        collector.add(new InstanceId(element.getId(), new Space(element.getSpace())));
+        if(element.getChildren()!=null){
+            element.getChildren().forEach(c -> fetchInvolvedInstances(c, collector));
+        }
+        return collector;
+    }
 
+    public ReleaseStatus getReleaseStatus(Space space, UUID id, ReleaseTreeScope treeScope) {
         switch (treeScope) {
             case TOP_INSTANCE_ONLY:
                 return getTopInstanceReleaseStatus(space, id);
             case CHILDREN_ONLY:
-//                return getChildrenReleaseStatus(space, id);
+                ScopeElement scopeForInstance = getScopeForInstance(space, id, DataStage.IN_PROGRESS, false);
+                if(scopeForInstance.getChildren()==null || scopeForInstance.getChildren().isEmpty()){
+                    return null;
+                }
+                Set<InstanceId> instanceIds = fetchInvolvedInstances(scopeForInstance, new HashSet<>());
+                //Ignore top instance
+                instanceIds.remove(new InstanceId(id, space));
+                AQL aql = new AQL();
+                aql.addLine(AQL.trust("FOR id IN @ids"));
+                Map<String, Object> bindVars = new HashMap<>();
+                bindVars.put("ids", instanceIds.stream().map(InstanceId::serialize).collect(Collectors.toList()));
+                aql.addLine(AQL.trust("LET doc = DOCUMENT(id)"));
+                aql.addLine(AQL.trust("LET status = FIRST((FOR v IN 1..1 INBOUND  doc @@releaseStatusCollection"));
+                bindVars.put("@releaseStatusCollection", InternalSpace.RELEASE_STATUS_EDGE_COLLECTION.getCollectionName());
+                aql.addLine(AQL.trust("RETURN v.`"+SchemaOrgVocabulary.NAME+"`))"));
+                aql.addLine(AQL.trust("RETURN status"));
+                ArangoDatabase db = databases.getByStage(DataStage.IN_PROGRESS);
+                List<String> status = db.query(aql.build().getValue(), bindVars, String.class).asListRemaining();
+                if(status.contains("null") || status.contains(ReleaseStatus.UNRELEASED.name())){
+                    return ReleaseStatus.UNRELEASED;
+                }
+                else if(status.contains(ReleaseStatus.HAS_CHANGED.name())){
+                    return ReleaseStatus.HAS_CHANGED;
+                }
+                else{
+                    return ReleaseStatus.RELEASED;
+                }
             default:
                 throw new RuntimeException("Release tree scope unknown");
         }
@@ -677,6 +715,84 @@ public class ArangoRepositoryInstances {
         }
         return Collections.emptyMap();
 
+    }
+
+    public ScopeElement getScopeForInstance(Space space, UUID id, DataStage stage, boolean fetchLabels){
+        //get instance
+        NormalizedJsonLd instance = getInstance(stage, space, id, false, false, false);
+        //get scope relevant queries
+        //TODO filter user defined queries (only take client queries into account)
+        Stream<NormalizedJsonLd> typeQueries = instance.types().stream().map(type -> getQueriesByRootType(stage, null, null, false, false, type).getData()).flatMap(Collection::stream);
+        List<NormalizedJsonLd> results = typeQueries.map(q -> queryController.query(authContext.getUserWithRoles(), new KgQuery(q, stage).setIdRestrictions(Collections.singletonList(new EntityId(id.toString()))), null, null, true).getData()).flatMap(Collection::stream).collect(Collectors.toList());
+        return translateResultToScope(results, stage, fetchLabels, instance);
+    }
+
+    private ScopeElement handleSubElement(NormalizedJsonLd data, Map<String, Set<ScopeElement>> typeToUUID){
+        String id = data.getAs("id", String.class);
+        UUID uuid = idUtils.getUUID(new JsonLdId(id));
+        List<ScopeElement> children = data.keySet().stream().filter(k -> k.startsWith("dependency_")).map(k ->
+                data.getAsListOf(k, NormalizedJsonLd.class).stream().map(d -> handleSubElement(d, typeToUUID)).collect(Collectors.toList())
+        ).flatMap(Collection::stream).collect(Collectors.toList());
+        List<String> type = data.getAsListOf("type", String.class);
+        ScopeElement element = new ScopeElement(uuid, type, children.isEmpty() ? null : children, data.getAs("internalId", String.class), data.getAs("space", String.class));
+        type.forEach(t -> {
+            typeToUUID.computeIfAbsent(t, x -> new HashSet<>()).add(element);
+        });
+        return element;
+    }
+
+    private List<ScopeElement> mergeInstancesOnSameLevel(List<ScopeElement> element){
+        if(element!=null && !element.isEmpty()) {
+            Map<UUID, List<ScopeElement>> groupedById = element.stream().collect(Collectors.groupingBy(ScopeElement::getId));
+            List<ScopeElement> result = new ArrayList<>();
+            groupedById.values().forEach(c -> {
+                if (!c.isEmpty()) {
+                    ScopeElement current = null;
+                    if (c.size() == 1) {
+                        current = c.get(0);
+                    } else {
+                        ScopeElement merged = new ScopeElement();
+                        c.forEach(merged::merge);
+                        current = merged;
+                    }
+                    if (current != null) {
+                        result.add(current);
+                        current.setChildren(mergeInstancesOnSameLevel(current.getChildren()));
+                    }
+                }
+            });
+            return result;
+        }
+        return null;
+    }
+
+    private ScopeElement translateResultToScope(List<NormalizedJsonLd> data, DataStage stage, boolean fetchLabels, NormalizedJsonLd instance){
+        final Map<String, Set<ScopeElement>> typeToUUID = new HashMap<>();
+        ScopeElement element;
+        if(data == null || data.isEmpty()){
+            element = new ScopeElement(idUtils.getUUID(instance.id()), instance.types(), null, instance.getAs(ArangoVocabulary.ID, String.class), instance.getAs(EBRAINSVocabulary.META_SPACE, String.class));
+            instance.types().forEach(t -> typeToUUID.computeIfAbsent(t, x -> new HashSet<>()).add(element));
+        }
+        else {
+            element = data.stream().map(d -> handleSubElement(d, typeToUUID)).findFirst().orElse(null);
+        }
+        if(fetchLabels) {
+            List<Type> affectedTypes = typesRepo.getTypeInformation(authContext.getUserWithRoles().getClientId(), stage, typeToUUID.keySet().stream().map(Type::new).collect(Collectors.toList()));
+            Set<InstanceId> instances = typeToUUID.values().stream().flatMap(Collection::stream).map(s -> InstanceId.deserialize(s.getInternalId())).collect(Collectors.toSet());
+            Map<UUID, String> labelsForInstances = getLabelsForInstances(stage, instances, affectedTypes);
+            typeToUUID.values().stream().distinct().parallel().flatMap(Collection::stream).forEach(e -> {
+                if(e.getLabel()==null) {
+                    String label = labelsForInstances.get(e.getId());
+                    if (label != null){
+                        e.setLabel(label);
+                    }
+                }
+            });
+        }
+        if(element==null){
+            return null;
+        }
+        return mergeInstancesOnSameLevel(Collections.singletonList(element)).get(0);
     }
 
 }
