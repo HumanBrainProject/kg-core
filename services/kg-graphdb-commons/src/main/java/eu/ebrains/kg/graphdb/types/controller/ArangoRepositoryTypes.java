@@ -317,7 +317,7 @@ public class ArangoRepositoryTypes {
         if (withCount) {
             aql.addComment("And we sum all the space specific information to generate the global occurrence number.");
             aql.addLine(AQL.trust("LET typeOccurrences = SUM(spaces[0].`" + EBRAINSVocabulary.META_SPACES + "`[**].`" + EBRAINSVocabulary.META_OCCURRENCES + "`)"));
-            aql.addLine(AQL.trust("FILTER typeOccurrences > 0"));
+            //aql.addLine(AQL.trust("FILTER typeOccurrences > 0"));
             aql.addLine(AQL.trust("LET globalOccurrences = [{\"" + EBRAINSVocabulary.META_OCCURRENCES + "\": typeOccurrences}]"));
         }
         if (withProperties) {
