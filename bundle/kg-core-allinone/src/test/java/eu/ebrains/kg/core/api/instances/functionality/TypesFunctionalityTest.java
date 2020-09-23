@@ -91,6 +91,21 @@ public class TypesFunctionalityTest extends AbstractFunctionalityTest {
         assertTrue(response.get(0).identifiers().contains(TestDataFactory.TEST_TYPE));
     }
 
+    @Test
+    public void getTypesBySpace() {
+        //Given
+        // We create a new instance so the type is implicitly created.
+        instances.createNewInstance(TestDataFactory.createTestData(smallPayload, 0, true), "functionalityTest", new ResponseConfiguration(), new IngestConfiguration(), null);
+
+        //When
+        PaginatedResult<NormalizedJsonLd> types = this.types.getTypes(ExposedStage.IN_PROGRESS, "functionalityTest", false, new PaginationParam());
+
+        //Then
+        List<NormalizedJsonLd> response = assureValidPayload(types);
+        assertEquals(1, response.size());
+        assertTrue(response.get(0).identifiers().contains(TestDataFactory.TEST_TYPE));
+    }
+
 
     @Test
     public void getTypesWithProperties() {
@@ -108,6 +123,21 @@ public class TypesFunctionalityTest extends AbstractFunctionalityTest {
         List<NormalizedJsonLd> properties = response.get(0).getAsListOf(EBRAINSVocabulary.META_PROPERTIES, NormalizedJsonLd.class);
         assertNotNull(properties);
         assertTrue(properties.size()>smallPayload);
+    }
+
+    @Test
+    public void getTypesBySpaceWithProperties() {
+        //Given
+        // We create a new instance so the type is implicitly created.
+        instances.createNewInstance(TestDataFactory.createTestData(smallPayload, 0, true), "functionalityTest", new ResponseConfiguration(), new IngestConfiguration(), null);
+
+        //When
+        PaginatedResult<NormalizedJsonLd> types = this.types.getTypes(ExposedStage.IN_PROGRESS, "functionalityTest", true, new PaginationParam());
+
+        //Then
+        List<NormalizedJsonLd> response = assureValidPayload(types);
+        assertEquals(1, response.size());
+        assertTrue(response.get(0).identifiers().contains(TestDataFactory.TEST_TYPE));
     }
 
     @Test
