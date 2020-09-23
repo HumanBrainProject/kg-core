@@ -179,8 +179,8 @@ public class CoreInstanceController {
         return result;
     }
 
-    public Paginated<NormalizedJsonLd> getInstances(DataStage stage, Type type, String searchByLabel, ResponseConfiguration responseConfiguration, PaginationParam paginationParam) {
-        Paginated<NormalizedJsonLd> instancesByType = graphDbSvc.getInstancesByType(stage, type, paginationParam, searchByLabel, responseConfiguration.isReturnEmbedded(), responseConfiguration.isReturnAlternatives());
+    public Paginated<NormalizedJsonLd> getInstances(DataStage stage, Type type, Space space, String searchByLabel, ResponseConfiguration responseConfiguration, PaginationParam paginationParam) {
+        Paginated<NormalizedJsonLd> instancesByType = graphDbSvc.getInstancesByType(stage, type, space, paginationParam, searchByLabel, responseConfiguration.isReturnEmbedded(), responseConfiguration.isReturnAlternatives());
         if(responseConfiguration.isReturnAlternatives()){
             resolveAlternatives(stage, instancesByType.getData());
         }

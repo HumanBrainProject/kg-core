@@ -58,13 +58,13 @@ public class GraphDBInstancesAPI {
     }
 
     @GetMapping("instancesByType")
-    public Paginated<NormalizedJsonLd> getInstancesByType(@PathVariable("stage") DataStage stage, @RequestParam("type") String type, @RequestParam(value = "searchByLabel", required = false) String searchByLabel, @RequestParam(value = "returnAlternatives", required = false, defaultValue = "false") boolean returnAlternatives, @RequestParam(value = "returnEmbedded", required = false, defaultValue = "false") boolean returnEmbedded, PaginationParam paginationParam) {
+    public Paginated<NormalizedJsonLd> getInstancesByType(@PathVariable("stage") DataStage stage, @RequestParam("type") String type,  @RequestParam(value = "space", required = false) String space, @RequestParam(value = "searchByLabel", required = false) String searchByLabel, @RequestParam(value = "returnAlternatives", required = false, defaultValue = "false") boolean returnAlternatives, @RequestParam(value = "returnEmbedded", required = false, defaultValue = "false") boolean returnEmbedded, PaginationParam paginationParam) {
         List<Type> types = Collections.singletonList(new Type(type));
         if(searchByLabel!=null && !searchByLabel.isBlank()){
             //Since we're searching by label, we need to reflect on the type -> we therefore have to resolve the type in the database first...
             types = typeRepository.getTypeInformation(authContext.getUserWithRoles().getClientId(), stage, types);
         }
-        return repository.getDocumentsByTypes(stage, types, paginationParam, searchByLabel, returnEmbedded, returnAlternatives);
+        return repository.getDocumentsByTypes(stage, types, space!=null && !space.isBlank() ? new Space(space) : null, paginationParam, searchByLabel, returnEmbedded, returnAlternatives);
     }
 
     @GetMapping("queriesByType")

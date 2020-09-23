@@ -186,7 +186,7 @@ public class InstancesFunctionalityTest extends AbstractFunctionalityTest {
         NormalizedJsonLd originalInstanceB = createInstanceWithServerDefinedUUID(1);
 
         //When
-        PaginatedResult<NormalizedJsonLd> instances = this.instances.getInstances(ExposedStage.IN_PROGRESS, originalInstanceA.types().get(0), null, defaultResponseConfiguration, defaultPaginationParam);
+        PaginatedResult<NormalizedJsonLd> instances = this.instances.getInstances(ExposedStage.IN_PROGRESS, originalInstanceA.types().get(0), null, null, defaultResponseConfiguration, defaultPaginationParam);
 
         //Then
         assertEquals(0, instances.getFrom());

@@ -331,7 +331,7 @@ public class ArangoRepositoryInstances {
     }
 
 
-    public Paginated<NormalizedJsonLd> getDocumentsByTypes(DataStage stage, List<Type> typesWithLabelInfo, PaginationParam paginationParam, String search, boolean embedded, boolean alternatives) {
+    public Paginated<NormalizedJsonLd> getDocumentsByTypes(DataStage stage, List<Type> typesWithLabelInfo, Space space, PaginationParam paginationParam, String search, boolean embedded, boolean alternatives) {
         //TODO find label field for type (and client) and filter by search if set.
         ArangoDatabase database = databases.getByStage(stage);
         if (database.collection(InternalSpace.TYPE_EDGE_COLLECTION.getCollectionName()).exists()) {
@@ -346,6 +346,10 @@ public class ArangoRepositoryInstances {
             aql.indent().addLine(AQL.trust("FOR v IN 1..1 OUTBOUND typeDefinition.type @@typeRelationCollection"));
             if (whitelistFilter != null) {
                 aql.addDocumentFilterWithWhitelistFilter(AQL.trust("v"));
+            }
+            if(space!=null){
+                aql.addLine(AQL.trust("FILTER v."+ArangoVocabulary.COLLECTION+" == @spaceFilter"));
+                bindVars.put("spaceFilter", ArangoCollectionReference.fromSpace(space).getCollectionName());
             }
             addSearchFilter(bindVars, aql, search);
             aql.addPagination(paginationParam);

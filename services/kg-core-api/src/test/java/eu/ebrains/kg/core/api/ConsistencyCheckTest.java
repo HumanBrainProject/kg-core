@@ -92,7 +92,7 @@ public class ConsistencyCheckTest {
     }
 
     private List<NormalizedJsonLd> getAllInstancesFromInProgress(ExposedStage stage){
-        return this.instances.getInstances(stage, type, null, new ResponseConfiguration().setReturnAlternatives(false).setReturnPermissions(false).setReturnEmbedded(false), EMPTY_PAGINATION).getData();
+        return this.instances.getInstances(stage, type, null, null, new ResponseConfiguration().setReturnAlternatives(false).setReturnPermissions(false).setReturnEmbedded(false), EMPTY_PAGINATION).getData();
     }
 
     @Test
