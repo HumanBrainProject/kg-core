@@ -16,8 +16,10 @@
 
 package eu.ebrains.kg.core.api;
 
+import eu.ebrains.kg.arango.commons.model.InternalSpace;
 import eu.ebrains.kg.commons.AuthContext;
 import eu.ebrains.kg.commons.Version;
+import eu.ebrains.kg.commons.jsonld.JsonLdId;
 import eu.ebrains.kg.commons.jsonld.NormalizedJsonLd;
 import eu.ebrains.kg.commons.model.*;
 import eu.ebrains.kg.commons.models.UserWithRoles;
@@ -27,11 +29,16 @@ import eu.ebrains.kg.commons.semantics.vocabularies.EBRAINSVocabulary;
 import eu.ebrains.kg.core.controller.CoreSpaceController;
 import eu.ebrains.kg.core.model.ExposedStage;
 import eu.ebrains.kg.core.serviceCall.CoreSpacesToGraphDB;
-import eu.ebrains.kg.core.serviceCall.CoreToAdmin;
+import eu.ebrains.kg.core.serviceCall.CoreToPrimaryStore;
+import io.swagger.v3.oas.annotations.Operation;
 import org.springdoc.api.annotations.ParameterObject;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.nio.charset.StandardCharsets;
+import java.util.Collections;
 import java.util.List;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 /**
@@ -42,15 +49,15 @@ import java.util.stream.Collectors;
 public class Spaces {
 
     private final CoreSpacesToGraphDB graphDbSvc;
-    private CoreSpaceController spaceController;
+    private final CoreSpaceController spaceController;
     private final AuthContext authContext;
-    private final CoreToAdmin coreToAdmin;
+    private final CoreToPrimaryStore primaryStoreSvc;
 
-    public Spaces(CoreSpacesToGraphDB graphDbSvc, AuthContext authContext, CoreSpaceController spaceController, CoreToAdmin coreToAdmin) {
+    public Spaces(CoreSpacesToGraphDB graphDbSvc, CoreSpaceController spaceController, AuthContext authContext, CoreToPrimaryStore primaryStoreSvc) {
         this.graphDbSvc = graphDbSvc;
-        this.authContext = authContext;
         this.spaceController = spaceController;
-        this.coreToAdmin = coreToAdmin;
+        this.authContext = authContext;
+        this.primaryStoreSvc = primaryStoreSvc;
     }
 
     @GetMapping("{space}")
@@ -74,6 +81,20 @@ public class Spaces {
         }
         spaces.getData().forEach(NormalizedJsonLd::removeAllInternalProperties);
         return PaginatedResult.ok(spaces);
+    }
+
+
+    @Operation(summary = "Assign a type to a space")
+    @PutMapping("{space}/types")
+    public ResponseEntity<Result<Void>> assignTypeToSpace(@RequestParam("stage") ExposedStage stage, @PathVariable("space") String space, @RequestParam("type") String type) {
+        NormalizedJsonLd payload = new NormalizedJsonLd();
+        payload.addTypes(EBRAINSVocabulary.META_TYPE_IN_SPACE_DEFINITION_TYPE);
+        Type t = new Type(type);
+        payload.addProperty(EBRAINSVocabulary.META_TYPE, new JsonLdId(t.getName()));
+        payload.addProperty(EBRAINSVocabulary.META_SPACES, Collections.singletonList(space));
+        payload.setId(EBRAINSVocabulary.createIdForStructureDefinition("type2space", space, t.getName()));
+        primaryStoreSvc.postEvent(Event.createUpsertEvent(InternalSpace.GLOBAL_SPEC, UUID.nameUUIDFromBytes(payload.id().getId().getBytes(StandardCharsets.UTF_8)), Event.Type.INSERT, payload), false, authContext.getAuthTokens());
+        return ResponseEntity.ok(Result.ok());
     }
 
 }
