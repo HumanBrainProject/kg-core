@@ -27,7 +27,7 @@ import eu.ebrains.kg.commons.model.SpaceName;
 import eu.ebrains.kg.commons.model.User;
 import eu.ebrains.kg.commons.permission.FunctionalityInstance;
 import eu.ebrains.kg.commons.permission.roles.Role;
-import eu.ebrains.kg.commons.permission.roles.UserRole;
+import eu.ebrains.kg.commons.permission.roles.RoleMapping;
 import org.springframework.stereotype.Component;
 
 import java.nio.charset.StandardCharsets;
@@ -45,16 +45,16 @@ public class AdminSpaceController {
         this.authenticationSvc = authenticationSvc;
     }
 
-    private List<Role> findRoles(SpaceName space, UserRole group, List<Role> collector){
-        if(group.getChildPermissionGroup()!=null){
-            findRoles(space, group.getChildPermissionGroup(), collector);
+    private List<Role> findRoles(SpaceName space, RoleMapping group, List<Role> collector){
+        if(group.getChildRole()!=null){
+            findRoles(space, group.getChildRole(), collector);
         }
         collector.add(group.toRole(space));
         return collector;
     }
 
     public InstanceId createSpace(Space space, boolean global) {
-        List<Role> roles = findRoles(space.getName(), UserRole.ADMIN, new ArrayList<>());
+        List<Role> roles = findRoles(space.getName(), RoleMapping.ADMIN, new ArrayList<>());
         List<InstanceId> instanceIds = defineSpace(space, global);
         authenticationSvc.createRoles(roles);
         return instanceIds.size()==1 ? instanceIds.get(0) : null;
@@ -64,11 +64,11 @@ public class AdminSpaceController {
         authenticationSvc.removeRoles(FunctionalityInstance.getRolePatternForSpace(space));
     }
 
-    public List<User> getUsersByPermissionGroup(SpaceName space, UserRole group) {
+    public List<User> getUsersByPermissionGroup(SpaceName space, RoleMapping group) {
         return authenticationSvc.getUsersInRole(group.toRole(space).getName());
     }
 
-    public void addUserToSpace(String nativeUserId, SpaceName space, UserRole permissionGroup) {
+    public void addUserToSpace(String nativeUserId, SpaceName space, RoleMapping permissionGroup) {
         authenticationSvc.addUserToRole(permissionGroup.toRole(space).getName(), nativeUserId);
     }
 

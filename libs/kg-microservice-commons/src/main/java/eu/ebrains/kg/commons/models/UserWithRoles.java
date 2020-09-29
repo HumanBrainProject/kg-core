@@ -19,14 +19,12 @@ package eu.ebrains.kg.commons.models;
 import eu.ebrains.kg.commons.model.User;
 import eu.ebrains.kg.commons.permission.Functionality;
 import eu.ebrains.kg.commons.permission.FunctionalityInstance;
-import eu.ebrains.kg.commons.permission.roles.ClientRole;
-import eu.ebrains.kg.commons.permission.roles.UserRole;
+import eu.ebrains.kg.commons.permission.roles.RoleMapping;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.*;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 /**
  * A composite containing user information together with the assigned roles in the context of a client (originating from the authentication system)
@@ -36,11 +34,13 @@ public class UserWithRoles {
     private List<String> clientRoles;
     private List<String> userRoles;
     private String clientId;
-    private transient boolean isServiceAccount;
-    private transient List<FunctionalityInstance> permissions;
+    private boolean serviceAccount;
     private transient final Logger logger = LoggerFactory.getLogger(getClass());
 
+    private final static String CLIENT_ROLE_NAME = RoleMapping.IS_CLIENT.toRole(null).getName();
+
     // For serialization
+    @SuppressWarnings("unused")
     private UserWithRoles() {
     }
 
@@ -49,6 +49,7 @@ public class UserWithRoles {
         this.userRoles = userRoles;
         this.clientRoles = clientRoles;
         this.clientId = clientId;
+        this.serviceAccount = userRoles.contains(CLIENT_ROLE_NAME);
     }
 
     /**
@@ -69,17 +70,11 @@ public class UserWithRoles {
      * @return the list of functionalities, the user is allowed to execute
      */
     public List<FunctionalityInstance> getPermissions() {
-        if(this.permissions == null){
-            this.permissions = evaluatePermissions(userRoles, clientRoles);
-        }
-        return this.permissions;
+        return evaluatePermissions(userRoles, clientRoles);
     }
 
     public boolean isServiceAccount() {
-        if(this.permissions == null){
-            evaluatePermissions(userRoles, clientRoles);
-        }
-        return isServiceAccount;
+        return serviceAccount;
     }
 
     /**
@@ -92,25 +87,11 @@ public class UserWithRoles {
             //We're lacking of authentication information -> we default to "no permissions"
             return Collections.emptyList();
         }
-
-        long numberOfClientRoles = clientRoleNames.stream().map(ClientRole::getRole).filter(Objects::nonNull).count();
-        if (numberOfClientRoles == 0L) {
+        if (!clientRoleNames.contains(CLIENT_ROLE_NAME)) {
             throw new IllegalArgumentException("The client authorization credentials you've passed doesn't belong to a service account. This is not allowed!");
         }
-        Set<FunctionalityInstance> clientRoles4clientCredentials = clientRoleNames.stream().map(ClientRole::functionalitiesForRole).flatMap(Collection::stream).distinct().collect(Collectors.toSet());
-        Stream<FunctionalityInstance> userRoleStream4clientCredentials = clientRoleNames.stream().map(UserRole::fromRole).flatMap(Collection::stream).distinct();
-        Map<Functionality, List<FunctionalityInstance>> clientFunctionalities = Stream.concat(clientRoles4clientCredentials.stream(), userRoleStream4clientCredentials).distinct().filter(i -> i.getFunctionality() != null).collect(Collectors.groupingBy(FunctionalityInstance::getFunctionality));
-        Set<FunctionalityInstance> clientRoles4userCredentials = userRoleNames.stream().map(ClientRole::functionalitiesForRole).flatMap(Collection::stream).collect(Collectors.toSet());
-        Stream<FunctionalityInstance> userRoleStream4userCredentials = userRoleNames.stream().map(UserRole::fromRole).flatMap(Collection::stream).distinct();
-        List<FunctionalityInstance> userFunctionalities;
-        if(clientRoles4userCredentials.isEmpty()){
-            userFunctionalities = userRoleStream4userCredentials.collect(Collectors.toList());
-        }
-        else{
-            // The user contains client permissions - this can only mean the user is a service account. We flag it accordingly.
-            userFunctionalities = Stream.concat(clientRoles4userCredentials.stream(), userRoleStream4userCredentials).collect(Collectors.toList());
-            this.isServiceAccount = true;
-        }
+        Map<Functionality, List<FunctionalityInstance>> clientFunctionalities = clientRoleNames.stream().map(RoleMapping::fromRole).flatMap(Collection::stream).distinct().collect(Collectors.groupingBy(FunctionalityInstance::getFunctionality));
+        Set<FunctionalityInstance> userFunctionalities = userRoleNames.stream().map(RoleMapping::fromRole).flatMap(Collection::stream).collect(Collectors.toSet());
         List<FunctionalityInstance> result = new ArrayList<>();
         //Filter the user roles by the client permissions (only those user permissions are guaranteed which are also allowed by the client)
         for (FunctionalityInstance userRole : userFunctionalities) {

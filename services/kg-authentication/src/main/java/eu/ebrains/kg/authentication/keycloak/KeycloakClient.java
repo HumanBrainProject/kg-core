@@ -17,8 +17,8 @@
 package eu.ebrains.kg.authentication.keycloak;
 
 import eu.ebrains.kg.commons.exception.UnauthorizedException;
-import eu.ebrains.kg.commons.permission.roles.ClientRole;
 import eu.ebrains.kg.commons.permission.roles.Role;
+import eu.ebrains.kg.commons.permission.roles.RoleMapping;
 import org.keycloak.admin.client.Keycloak;
 import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.admin.client.resource.RealmResource;
@@ -146,7 +146,7 @@ public class KeycloakClient {
                 clientRepresentation.setRedirectUris(Arrays.asList(getRedirectUri(), "http://localhost*"));
             }
             getClientResource().update(clientRepresentation);
-            Arrays.stream(ClientRole.values()).forEach(p -> createRoleForClient(p.toRole()));
+            Arrays.stream(RoleMapping.values()).forEach(p -> createRoleForClient(p.toRole(null)));
         } catch (ForbiddenException e) {
             throw new UnauthorizedException(String.format("Your keycloak account does not allow to configure clients in realm %s", config.getRealm()));
         }
@@ -191,10 +191,15 @@ public class KeycloakClient {
         try {
             getClientResource().roles().get(role.getName()).toRepresentation();
         } catch (NotFoundException e) {
-            RoleRepresentation roleRepresentation = new RoleRepresentation();
-            roleRepresentation.setName(role.getName());
-            logger.info(String.format("Create role %s in client %s", role.getName(), getClientId()));
-            getClientResource().roles().create(roleRepresentation);
+            try{
+                RoleRepresentation roleRepresentation = new RoleRepresentation();
+                roleRepresentation.setName(role.getName());
+                logger.info(String.format("Create role %s in client %s", role.getName(), getClientId()));
+                getClientResource().roles().create(roleRepresentation);
+            }
+            catch (ForbiddenException ex) {
+                throw new UnauthorizedException(String.format("Your keycloak account does not allow to configure roles in realm %s and client %s", config.getRealm(), config.getClientId()));
+            }
         }
     }
 

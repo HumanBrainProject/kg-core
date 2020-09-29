@@ -20,8 +20,7 @@ import eu.ebrains.kg.commons.model.SpaceName;
 import eu.ebrains.kg.commons.model.User;
 import eu.ebrains.kg.commons.permission.Functionality;
 import eu.ebrains.kg.commons.permission.FunctionalityInstance;
-import eu.ebrains.kg.commons.permission.roles.ClientRole;
-import eu.ebrains.kg.commons.permission.roles.UserRole;
+import eu.ebrains.kg.commons.permission.roles.RoleMapping;
 import org.junit.Test;
 
 import java.util.Collections;
@@ -32,18 +31,18 @@ import static org.junit.Assert.*;
 
 public class UserWithRolesTest {
 
-    List<String> clientAdminRoles = Collections.singletonList(ClientRole.ADMIN.toRole().getName());
+    List<String> adminRole = Collections.singletonList(RoleMapping.ADMIN.toRole(null).getName());
     SpaceName space = new SpaceName("test");
     User user = new User("testUser", "Test", "test@test.xy", "Test", "User", null);
 
-    private List<String> getUserRoles(UserRole role, SpaceName space){
+    private List<String> getUserRoles(RoleMapping role, SpaceName space){
         return Collections.singletonList(role.toRole(space).getName());
     }
 
     @Test(expected = IllegalArgumentException.class)
     public void testFailWhenNotAClient(){
         //Given
-        UserWithRoles userWithRoles = new UserWithRoles(user, getUserRoles(UserRole.ADMIN, null), clientAdminRoles, "testClient");
+        UserWithRoles userWithRoles = new UserWithRoles(user, getUserRoles(RoleMapping.ADMIN, null), adminRole, "testClient");
 
         //when
         List<FunctionalityInstance> permissions = userWithRoles.getPermissions();
@@ -52,7 +51,7 @@ public class UserWithRolesTest {
     @Test
     public void testEvaluatePermissionsFullUserAccess(){
         //Given
-        UserWithRoles userWithRoles = new UserWithRoles(user, getUserRoles(UserRole.ADMIN, null), clientAdminRoles, "testClient");
+        UserWithRoles userWithRoles = new UserWithRoles(user, getUserRoles(RoleMapping.ADMIN, null), adminRole, "testClient");
 
         //when
         List<FunctionalityInstance> permissions = userWithRoles.getPermissions();
@@ -68,7 +67,7 @@ public class UserWithRolesTest {
     @Test
     public void testEvaluatePermissionsFullServiceAccountAccess(){
         //Given
-        UserWithRoles userWithRoles = new UserWithRoles(user, clientAdminRoles, clientAdminRoles, "testClient");
+        UserWithRoles userWithRoles = new UserWithRoles(user, adminRole, adminRole, "testClient");
 
         //when
         List<FunctionalityInstance> permissions = userWithRoles.getPermissions();
@@ -84,7 +83,7 @@ public class UserWithRolesTest {
     @Test
     public void testEvaluatePermissionsSpaceUserAccess(){
         //Given
-        UserWithRoles userWithRoles = new UserWithRoles(user, getUserRoles(UserRole.ADMIN, space), clientAdminRoles, "testClient");
+        UserWithRoles userWithRoles = new UserWithRoles(user, getUserRoles(RoleMapping.ADMIN, space), adminRole, "testClient");
 
         //when
         List<FunctionalityInstance> permissions = userWithRoles.getPermissions();
@@ -105,7 +104,7 @@ public class UserWithRolesTest {
     @Test
     public void testEvaluatePermissionsSpaceReviewUserAccess(){
         //Given
-        UserWithRoles userWithRoles = new UserWithRoles(user, getUserRoles(UserRole.REVIEWER, space), clientAdminRoles, "testClient");
+        UserWithRoles userWithRoles = new UserWithRoles(user, getUserRoles(RoleMapping.REVIEWER, space), adminRole, "testClient");
 
         //when
         List<FunctionalityInstance> permissions = userWithRoles.getPermissions();

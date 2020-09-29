@@ -22,7 +22,7 @@ import eu.ebrains.kg.admin.controller.AdminUserController;
 import eu.ebrains.kg.commons.model.Space;
 import eu.ebrains.kg.commons.model.SpaceName;
 import eu.ebrains.kg.commons.model.User;
-import eu.ebrains.kg.commons.permission.roles.UserRole;
+import eu.ebrains.kg.commons.permission.roles.RoleMapping;
 import io.swagger.v3.oas.annotations.Operation;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -69,19 +69,19 @@ public class AdminSpacesAPI {
 
     @Operation(summary = "Get the available permission groups for a space")
     @GetMapping("/{id}/permissions")
-    public List<UserRole> getPermissions(@PathVariable("id") String id) {
-        return UserRole.getAllSpacePermissionGroups();
+    public List<RoleMapping> getPermissions(@PathVariable("id") String id) {
+        return RoleMapping.getAllSpacePermissionGroups();
     }
 
     @Operation(summary = "Get the users which have a specific permission for this space")
     @GetMapping("/{id}/permissions/{permission}/users")
-    public List<User> getUsersForPermissionsInSpace(@PathVariable("id") String id, @PathVariable("permission") UserRole permission) {
+    public List<User> getUsersForPermissionsInSpace(@PathVariable("id") String id, @PathVariable("permission") RoleMapping permission) {
         return spaceController.getUsersByPermissionGroup(new SpaceName(id), permission);
     }
 
     @Operation(summary = "Register a user in the given space with the according permission group")
     @PutMapping("/{id}/permissions/{permission}/users/{userId}")
-    public void registerUserInSpace(@PathVariable("id") String id, @PathVariable("permission") UserRole permissionGroup, @PathVariable("userId") String userId) {
+    public void registerUserInSpace(@PathVariable("id") String id, @PathVariable("permission") RoleMapping permissionGroup, @PathVariable("userId") String userId) {
         spaceController.addUserToSpace(userController.getNativeId(userId), new SpaceName(id), permissionGroup);
     }
 

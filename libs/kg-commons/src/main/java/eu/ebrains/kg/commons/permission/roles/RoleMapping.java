@@ -28,25 +28,28 @@ import java.util.stream.Collectors;
  * <p>
  * Example: Space-administrator inherits the permissions of Space-Curator etc...
  */
-public enum UserRole {
+public enum RoleMapping {
     CONSUMER(null, Functionality.READ_RELEASED, Functionality.EXECUTE_QUERY, Functionality.CREATE_QUERY, Functionality.READ_QUERY, Functionality.DELETE_QUERY, Functionality.READ_SPACE),
     REVIEWER(CONSUMER, Functionality.READ, Functionality.SUGGEST, Functionality.INVITE_FOR_REVIEW),
     EDITOR(REVIEWER, Functionality.WRITE, Functionality.CREATE, Functionality.INVITE_FOR_SUGGESTION),
     OWNER(EDITOR, Functionality.RELEASE, Functionality.DELETE, Functionality.UNRELEASE),
-    ADMIN(null, Functionality.values());
+    ADMIN(null, Functionality.values()),
 
-    private final UserRole childPermissionGroup;
+    //This is a marker role -> it is to be able to flag a user as a technical (client) user.
+    IS_CLIENT(null);
+
+    private final RoleMapping childRole;
     private final String name;
     private final Set<Functionality> functionality;
 
-    UserRole(UserRole childPermissionGroup, Functionality... functionality) {
-        this.name = name().toLowerCase();
+    RoleMapping(RoleMapping childRole, Functionality... functionality) {
+        this.name = name().toLowerCase().replaceAll("_", "-");
         this.functionality = new HashSet<>(Arrays.asList(functionality));
-        this.childPermissionGroup = childPermissionGroup;
+        this.childRole = childRole;
     }
 
-    public UserRole getChildPermissionGroup() {
-        return childPermissionGroup;
+    public RoleMapping getChildRole() {
+        return childRole;
     }
 
     public String getName() {
@@ -59,8 +62,8 @@ public enum UserRole {
 
     private Set<Functionality> getAllFunctionality() {
         Set<Functionality> functionalitySet = new HashSet<>(getFunctionality());
-        if (getChildPermissionGroup() != null) {
-            functionalitySet.addAll(getChildPermissionGroup().getAllFunctionality());
+        if (getChildRole() != null) {
+            functionalitySet.addAll(getChildRole().getAllFunctionality());
         }
         return functionalitySet;
     }
@@ -72,7 +75,7 @@ public enum UserRole {
     public static Set<FunctionalityInstance> fromRole(String role) {
         String[] roleSplit = role.trim().split("\\:");
         if (roleSplit.length == 2) {
-           UserRole userRole = Arrays.stream(UserRole.values()).filter(r -> r.getName().equals(roleSplit[1])).findFirst().orElse(null);
+           RoleMapping userRole = Arrays.stream(RoleMapping.values()).filter(r -> r.getName().equals(roleSplit[1])).findFirst().orElse(null);
            if(userRole!=null) {
                return userRole.getFunctionalityInstances(!roleSplit[0].equals("") ? new SpaceName(roleSplit[0]) : null);
            }
@@ -84,7 +87,7 @@ public enum UserRole {
         return getAllFunctionality().stream().map(f -> new FunctionalityInstance(f, space, null)).collect(Collectors.toSet());
     }
 
-    public static List<UserRole> getAllSpacePermissionGroups() {
+    public static List<RoleMapping> getAllSpacePermissionGroups() {
         return Arrays.asList(values());
     }
 

@@ -28,9 +28,8 @@ import eu.ebrains.kg.commons.exception.UnauthorizedException;
 import eu.ebrains.kg.commons.model.Client;
 import eu.ebrains.kg.commons.model.SpaceName;
 import eu.ebrains.kg.commons.model.User;
-import eu.ebrains.kg.commons.permission.roles.ClientRole;
 import eu.ebrains.kg.commons.permission.roles.Role;
-import eu.ebrains.kg.commons.permission.roles.UserRole;
+import eu.ebrains.kg.commons.permission.roles.RoleMapping;
 import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.admin.client.resource.RoleResource;
 import org.keycloak.admin.client.resource.UserResource;
@@ -147,6 +146,7 @@ public class KeycloakController {
             c = findClient(client.getIdentifier());
         }
         if (c != null) {
+            Arrays.stream(RoleMapping.values()).filter(r -> r != RoleMapping.IS_CLIENT).forEach(p -> createRoleForClient(p.toRole(client.getSpace().getName())));
             ClientResource clientResource = keycloakClient.getRealmResource().clients().get(c.getId());
             String serviceAccountId = clientResource.getServiceAccountUser().getId();
             String profileClientScopeId = getProfileClientScopeId(clientResource);
@@ -168,8 +168,8 @@ public class KeycloakController {
     }
 
     private List<RoleRepresentation> getServiceAccountRoles(SpaceName space) {
-        String ownerRole = UserRole.OWNER.toRole(space).getName();
-        String clientRole = ClientRole.IS_CLIENT.toRole().getName();
+        String ownerRole = RoleMapping.OWNER.toRole(space).getName();
+        String clientRole = RoleMapping.IS_CLIENT.toRole(null).getName();
 
         RoleResource ownerRoleResource = keycloakClient.getClientResource().roles().get(ownerRole);
         RoleResource isClientRoleResource = keycloakClient.getClientResource().roles().get(clientRole);
