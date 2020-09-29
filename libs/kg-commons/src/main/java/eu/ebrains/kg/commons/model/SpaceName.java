@@ -43,7 +43,7 @@ public class SpaceName {
     }
 
     private String normalizeName(String name) {
-        return name!=null ? name.replaceAll("_", "-") : null;
+        return name!=null ? name.toLowerCase().replaceAll("_", "-") : null;
     }
 
     @Override
