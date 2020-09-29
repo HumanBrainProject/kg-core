@@ -38,7 +38,7 @@ public class IdWithAlternatives {
     public IdWithAlternatives() {
     }
 
-    public IdWithAlternatives(UUID id, Space space, Set<String> alternatives) {
+    public IdWithAlternatives(UUID id, SpaceName space, Set<String> alternatives) {
         this.id = id;
         this.space = space != null ? space.getName() : null;
         this.alternatives = alternatives;

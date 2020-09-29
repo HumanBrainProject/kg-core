@@ -23,7 +23,7 @@ import eu.ebrains.kg.commons.TypeUtils;
 import eu.ebrains.kg.commons.jsonld.JsonLdId;
 import eu.ebrains.kg.commons.jsonld.NormalizedJsonLd;
 import eu.ebrains.kg.commons.model.DataStage;
-import eu.ebrains.kg.commons.model.Space;
+import eu.ebrains.kg.commons.model.SpaceName;
 import eu.ebrains.kg.commons.semantics.vocabularies.EBRAINSVocabulary;
 import eu.ebrains.kg.graphdb.commons.controller.ArangoDatabases;
 import eu.ebrains.kg.graphdb.commons.model.ArangoDocument;
@@ -60,7 +60,7 @@ public class TypeDefinitionSemanticsHandler extends SemanticsHandler {
                     MetaRepresentation typeMetaRepresentation = StaticStructureController.createMetaRepresentation(typeReference.getId(), targetType.getArangoCollectionReference());
                     upsertTypeOperation = new UpsertOperation(null, new NormalizedJsonLd(typeUtils.translate(typeMetaRepresentation, Map.class)), typeMetaRepresentation.getIdRef(), false, false);
                 }
-                List<DBOperation> dbOperations = handleOverrideReference(rootDocumentReference, document, typeReference, targetType, ArangoCollectionReference.fromSpace(new Space(EBRAINSVocabulary.META_TYPE), true));
+                List<DBOperation> dbOperations = handleOverrideReference(rootDocumentReference, document, typeReference, targetType, ArangoCollectionReference.fromSpace(new SpaceName(EBRAINSVocabulary.META_TYPE), true));
                 if(upsertTypeOperation!=null){
                     List<DBOperation> result = new ArrayList<>();
                     result.add(upsertTypeOperation);

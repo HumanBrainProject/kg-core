@@ -21,7 +21,7 @@ import eu.ebrains.kg.commons.IdUtils;
 import eu.ebrains.kg.commons.jsonld.IndexedJsonLdDoc;
 import eu.ebrains.kg.commons.jsonld.NormalizedJsonLd;
 import eu.ebrains.kg.commons.model.DataStage;
-import eu.ebrains.kg.commons.model.Space;
+import eu.ebrains.kg.commons.model.SpaceName;
 import eu.ebrains.kg.docker.SpringDockerComposeRunner;
 import eu.ebrains.kg.test.TestToGraphDB;
 import org.junit.Before;
@@ -50,7 +50,7 @@ public class ReleaseApiTest {
     SpringDockerComposeRunner dockerComposeRunner;
 
 
-    Space space = new Space("test");
+    SpaceName space =new SpaceName("test");
     UUID docId = UUID.randomUUID();
 
     @Before

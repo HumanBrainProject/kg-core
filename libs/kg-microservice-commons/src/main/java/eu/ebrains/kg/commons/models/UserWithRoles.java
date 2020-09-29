@@ -19,31 +19,35 @@ package eu.ebrains.kg.commons.models;
 import eu.ebrains.kg.commons.model.User;
 import eu.ebrains.kg.commons.permission.Functionality;
 import eu.ebrains.kg.commons.permission.FunctionalityInstance;
+import eu.ebrains.kg.commons.permission.roles.ClientRole;
+import eu.ebrains.kg.commons.permission.roles.UserRole;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * A composite containing user information together with the assigned roles in the context of a client (originating from the authentication system)
  */
 public class UserWithRoles {
-    User user;
-    List<String> permissions;
-    String clientId;
-
+    private User user;
+    private List<String> clientRoles;
+    private List<String> userRoles;
+    private String clientId;
+    private transient boolean isServiceAccount;
+    private transient List<FunctionalityInstance> permissions;
     private transient final Logger logger = LoggerFactory.getLogger(getClass());
 
-    public UserWithRoles() {
+    // For serialization
+    private UserWithRoles() {
     }
 
     public UserWithRoles(User user, List<String> userRoles, List<String> clientRoles, String clientId) {
         this.user = user;
-        this.permissions = evaluatePermissions(userRoles, clientRoles);
+        this.userRoles = userRoles;
+        this.clientRoles = clientRoles;
         this.clientId = clientId;
     }
 
@@ -65,7 +69,17 @@ public class UserWithRoles {
      * @return the list of functionalities, the user is allowed to execute
      */
     public List<FunctionalityInstance> getPermissions() {
-        return permissions.stream().map(FunctionalityInstance::fromRoleName).collect(Collectors.toList());
+        if(this.permissions == null){
+            this.permissions = evaluatePermissions(userRoles, clientRoles);
+        }
+        return this.permissions;
+    }
+
+    public boolean isServiceAccount() {
+        if(this.permissions == null){
+            evaluatePermissions(userRoles, clientRoles);
+        }
+        return isServiceAccount;
     }
 
     /**
@@ -73,68 +87,80 @@ public class UserWithRoles {
      *
      * @return the list of permissions applicable for the user using this client.
      */
-    private List<String> evaluatePermissions(List<String> userRoleNames, List<String> clientRoleNames){
-        if(userRoleNames==null || clientRoleNames == null){
+    List<FunctionalityInstance> evaluatePermissions(List<String> userRoleNames, List<String> clientRoleNames) {
+        if (userRoleNames == null || clientRoleNames == null) {
             //We're lacking of authentication information -> we default to "no permissions"
             return Collections.emptyList();
         }
-        List<FunctionalityInstance> userRoles = userRoleNames.stream().map(FunctionalityInstance::fromRoleName).filter(i -> i.getFunctionality() != null).collect(Collectors.toList());
-        Map<Functionality, List<FunctionalityInstance>> clientRoles = clientRoleNames.stream().map(FunctionalityInstance::fromRoleName).filter(i -> i.getFunctionality() != null).collect(Collectors.groupingBy(FunctionalityInstance::getFunctionality));
-        if(!clientRoles.containsKey(Functionality.IS_CLIENT)){
-            throw new IllegalArgumentException("The Client-Authorization token you've passed doesn't belong to a client. This is not allowed!");
+
+        long numberOfClientRoles = clientRoleNames.stream().map(ClientRole::getRole).filter(Objects::nonNull).count();
+        if (numberOfClientRoles == 0L) {
+            throw new IllegalArgumentException("The client authorization credentials you've passed doesn't belong to a service account. This is not allowed!");
         }
-        List<String> functionalities = new ArrayList<>();
-        //Filter the user roles by the client permissions
-        for (FunctionalityInstance userRole : userRoles) {
+        Set<FunctionalityInstance> clientRoles4clientCredentials = clientRoleNames.stream().map(ClientRole::functionalitiesForRole).flatMap(Collection::stream).distinct().collect(Collectors.toSet());
+        Stream<FunctionalityInstance> userRoleStream4clientCredentials = clientRoleNames.stream().map(UserRole::fromRole).flatMap(Collection::stream).distinct();
+        Map<Functionality, List<FunctionalityInstance>> clientFunctionalities = Stream.concat(clientRoles4clientCredentials.stream(), userRoleStream4clientCredentials).distinct().filter(i -> i.getFunctionality() != null).collect(Collectors.groupingBy(FunctionalityInstance::getFunctionality));
+        Set<FunctionalityInstance> clientRoles4userCredentials = userRoleNames.stream().map(ClientRole::functionalitiesForRole).flatMap(Collection::stream).collect(Collectors.toSet());
+        Stream<FunctionalityInstance> userRoleStream4userCredentials = userRoleNames.stream().map(UserRole::fromRole).flatMap(Collection::stream).distinct();
+        List<FunctionalityInstance> userFunctionalities;
+        if(clientRoles4userCredentials.isEmpty()){
+            userFunctionalities = userRoleStream4userCredentials.collect(Collectors.toList());
+        }
+        else{
+            // The user contains client permissions - this can only mean the user is a service account. We flag it accordingly.
+            userFunctionalities = Stream.concat(clientRoles4userCredentials.stream(), userRoleStream4userCredentials).collect(Collectors.toList());
+            this.isServiceAccount = true;
+        }
+        List<FunctionalityInstance> result = new ArrayList<>();
+        //Filter the user roles by the client permissions (only those user permissions are guaranteed which are also allowed by the client)
+        for (FunctionalityInstance userRole : userFunctionalities) {
             Functionality functionality = userRole.getFunctionality();
-            if(clientRoles.containsKey(functionality)){
-                List<FunctionalityInstance> clientFunctionalities = clientRoles.get(functionality);
+            if (clientFunctionalities.containsKey(functionality)) {
                 FunctionalityInstance global = null;
                 FunctionalityInstance space = null;
                 FunctionalityInstance instance = null;
-                for (FunctionalityInstance clientFunctionality : clientFunctionalities) {
-                    if(clientFunctionality.getSpace()==null && clientFunctionality.getInstanceId()==null){
-                        //This is the global functionality of the client - in any case, this is allowed
+                for (FunctionalityInstance clientFunctionality : clientFunctionalities.get(functionality)) {
+                    if (clientFunctionality.getSpace() == null && clientFunctionality.getInstanceId() == null) {
+                        //The client provides this functionality on a global permission layer, so this is ok.
                         global = userRole;
                     }
-                    if(clientFunctionality.getSpace()!=null && clientFunctionality.getInstanceId()==null){
+                    if (clientFunctionality.getSpace() != null && clientFunctionality.getInstanceId() == null) {
                         //This is a space-limited functionality for this client...
-                        if(userRole.getSpace() == null && userRole.getInstanceId()==null){
+                        if (userRole.getSpace() == null && userRole.getInstanceId() == null) {
                             // ... the user has a global permission, so we restrict it to the client space
                             space = clientFunctionality;
                         }
-                        if(userRole.getSpace()!=null && userRole.getSpace().equals(clientFunctionality.getSpace())){
+                        if (userRole.getSpace() != null && userRole.getSpace().equals(clientFunctionality.getSpace())) {
                             //... the user has a permission for the space so we can provide access to it.
                             space = clientFunctionality;
                         }
                     }
-                    if(clientFunctionality.getSpace()!=null && clientFunctionality.getInstanceId()!=null){
-                        if(userRole.getSpace() == null && userRole.getInstanceId()==null){
+                    if (clientFunctionality.getSpace() != null && clientFunctionality.getInstanceId() != null) {
+                        //This is an instance-limited functionality for this client...
+                        if (userRole.getSpace() == null && userRole.getInstanceId() == null) {
                             // ... the user has a global permission, so we restrict it to the instance of the client
                             instance = clientFunctionality;
                         }
-                        if(userRole.getSpace()!=null && userRole.getInstanceId()==null && userRole.getSpace().equals(clientFunctionality.getSpace())){
-                            //... the user has a permission for the space so we can provide access to the instance
+                        if (userRole.getSpace() != null && userRole.getInstanceId() == null && userRole.getSpace().equals(clientFunctionality.getSpace())) {
+                            //... the user has a permission for the space so we restrict it to the instance of the client
                             instance = clientFunctionality;
                         }
-                        if(userRole.getSpace()!=null && userRole.getInstanceId()!=null && userRole.getSpace().equals(clientFunctionality.getSpace()) && userRole.getInstanceId().equals(clientFunctionality.getInstanceId())){
+                        if (userRole.getSpace() != null && userRole.getInstanceId() != null && userRole.getSpace().equals(clientFunctionality.getSpace()) && userRole.getInstanceId().equals(clientFunctionality.getInstanceId())) {
                             //... the user has a permission for the same instance
                             instance = clientFunctionality;
                         }
                     }
                 }
-                if(global!=null){
-                    functionalities.add(global.getRoleName());
-                }
-                else if(space!=null){
-                    functionalities.add(space.getRoleName());
-                }
-                else if(instance!=null){
-                    functionalities.add(instance.getRoleName());
+                if (global != null) {
+                    result.add(global);
+                } else if (space != null) {
+                    result.add(space);
+                } else if (instance != null) {
+                    result.add(instance);
                 }
             }
         }
-        logger.trace(String.format("Available roles for user %s in client %s: %s", user!=null ? user.getUserName() : "anonymous", clientId, String.join(", ", functionalities)));
-        return functionalities;
+        logger.trace(String.format("Available roles for user %s in client %s: %s", user != null ? user.getUserName() : "anonymous", clientId, String.join(", ", result.stream().map(Object::toString).collect(Collectors.toSet()))));
+        return result;
     }
 }

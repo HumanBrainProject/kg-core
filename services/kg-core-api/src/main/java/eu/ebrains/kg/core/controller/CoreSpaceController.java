@@ -18,7 +18,7 @@ package eu.ebrains.kg.core.controller;
 
 import eu.ebrains.kg.commons.AuthContext;
 import eu.ebrains.kg.commons.jsonld.NormalizedJsonLd;
-import eu.ebrains.kg.commons.model.Space;
+import eu.ebrains.kg.commons.model.SpaceName;
 import eu.ebrains.kg.commons.models.UserWithRoles;
 import eu.ebrains.kg.commons.permission.Functionality;
 import eu.ebrains.kg.commons.permission.FunctionalityInstance;
@@ -46,12 +46,12 @@ public class CoreSpaceController {
     }
 
     public NormalizedJsonLd getSpace(ExposedStage stage, String space, boolean permissions) {
-        NormalizedJsonLd sp = graphDbSvc.getSpace(new Space(space), stage.getStage());
+        NormalizedJsonLd sp = graphDbSvc.getSpace(new SpaceName(space), stage.getStage());
         if (sp != null && permissions) {
             UserWithRoles userWithRoles = authContext.getUserWithRoles();
             String spaceIdentifier = sp.getAs(SchemaOrgVocabulary.IDENTIFIER, String.class, null);
             if (spaceIdentifier != null) {
-                List<Functionality> applyingFunctionalities = userWithRoles.getPermissions().stream().filter(f -> (f.getFunctionality().getStage() == null || f.getFunctionality().getStage() == stage.getStage()) && f.getFunctionality().getFunctionalityGroup() == Functionality.FunctionalityGroup.INSTANCE && f.appliesTo(new Space(spaceIdentifier), null)).map(FunctionalityInstance::getFunctionality).collect(Collectors.toList());
+                List<Functionality> applyingFunctionalities = userWithRoles.getPermissions().stream().filter(f -> (f.getFunctionality().getStage() == null || f.getFunctionality().getStage() == stage.getStage()) && f.getFunctionality().getFunctionalityGroup() == Functionality.FunctionalityGroup.INSTANCE && f.appliesTo(new SpaceName(spaceIdentifier), null)).map(FunctionalityInstance::getFunctionality).collect(Collectors.toList());
                 sp.put(EBRAINSVocabulary.META_PERMISSIONS, applyingFunctionalities);
             }
         }

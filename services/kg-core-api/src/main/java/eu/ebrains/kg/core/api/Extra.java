@@ -23,7 +23,6 @@ import eu.ebrains.kg.commons.jsonld.JsonLdDoc;
 import eu.ebrains.kg.commons.jsonld.NormalizedJsonLd;
 import eu.ebrains.kg.commons.model.*;
 import eu.ebrains.kg.core.controller.CoreInferenceController;
-import eu.ebrains.kg.core.controller.CoreSpaceController;
 import eu.ebrains.kg.core.model.ExposedStage;
 import eu.ebrains.kg.core.serviceCall.*;
 import io.swagger.v3.oas.annotations.Operation;
@@ -48,19 +47,17 @@ public class Extra {
     private final CoreToIds idsSvc;
     private final CoreExtraToGraphDB graphDB4ExtraSvc;
     private final CoreToAuthentication authenticationSvc;
-    private final CoreSpaceController spaceController;
     private final CoreToAdmin coreToAdmin;
 
     private final Logger logger = LoggerFactory.getLogger(getClass());
 
-    public Extra(CoreToJsonLd coreToJsonLd, AuthContext authContext, CoreInferenceController inferenceController, CoreToIds idsSvc, CoreExtraToGraphDB graphDB4ExtraSvc, CoreToAuthentication authenticationSvc, CoreSpaceController spaceController, CoreToAdmin coreToAdmin) {
+    public Extra(CoreToJsonLd coreToJsonLd, AuthContext authContext, CoreInferenceController inferenceController, CoreToIds idsSvc, CoreExtraToGraphDB graphDB4ExtraSvc, CoreToAuthentication authenticationSvc, CoreToAdmin coreToAdmin) {
         this.coreToJsonLd = coreToJsonLd;
         this.authContext = authContext;
         this.inferenceController = inferenceController;
         this.idsSvc = idsSvc;
         this.graphDB4ExtraSvc = graphDB4ExtraSvc;
         this.authenticationSvc = authenticationSvc;
-        this.spaceController = spaceController;
         this.coreToAdmin = coreToAdmin;
     }
 
@@ -68,16 +65,16 @@ public class Extra {
     @PostMapping("/extra/inference/{space}")
     public void triggerInference(@PathVariable(value = "space") String space, @RequestParam(value = "identifier", required = false) String identifier, @RequestParam(value = "async", required = false, defaultValue = "false") boolean async) {
         if (async) {
-            inferenceController.asyncTriggerInference(new Space(space), identifier, authContext.getAuthTokens());
+            inferenceController.asyncTriggerInference(new SpaceName(space), identifier, authContext.getAuthTokens());
         } else {
-            inferenceController.triggerInference(new Space(space), identifier, authContext.getAuthTokens());
+            inferenceController.triggerInference(new SpaceName(space), identifier, authContext.getAuthTokens());
         }
     }
 
     @Operation(summary = "Triggers the inference of all documents which have been tagged to be deferred as part of their creation/contribution")
     @PostMapping("/extra/inference/deferred/{space}")
     public void triggerDeferredInference(@RequestParam(value = "sync", required = false, defaultValue = "false") boolean sync, @PathVariable(value = "space") String space) {
-        inferenceController.triggerDeferredInference(authContext.getAuthTokens(), new Space(space), sync);
+        inferenceController.triggerDeferredInference(authContext.getAuthTokens(), new SpaceName(space), sync);
     }
 
     @Operation(summary = "Normalizes the passed payload according to the EBRAINS KG conventions")

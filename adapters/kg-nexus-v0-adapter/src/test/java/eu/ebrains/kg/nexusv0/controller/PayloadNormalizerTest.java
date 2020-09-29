@@ -18,7 +18,7 @@ package eu.ebrains.kg.nexusv0.controller;
 
 import eu.ebrains.kg.commons.jsonld.JsonLdDoc;
 import eu.ebrains.kg.commons.jsonld.NormalizedJsonLd;
-import eu.ebrains.kg.commons.model.Space;
+import eu.ebrains.kg.commons.model.SpaceName;
 import eu.ebrains.kg.nexusv0.serviceCall.CoreSvc;
 import eu.ebrains.kg.test.JsonAdapter4Test;
 import org.junit.Assert;
@@ -40,8 +40,8 @@ public class PayloadNormalizerTest {
     @Test
     public void spaceFromUrl(){
         //The nexus endpoint is explicitly set differently than the url endpoint - this allows us to do cross-environment data loads.
-        Space spaceFromUrl = new PayloadNormalizer(Mockito.mock(CoreSvc.class), new JsonAdapter4Test()).getSpaceFromUrl("https://nexus.humanbrainproject.org/v0/data/cscs/core/file/v1.0.0/fc0a5034-2aba-4b55-94c8-78e92538ecc9");
-        Assert.assertEquals(new Space("cscs").getName(), spaceFromUrl.getName());
+        SpaceName spaceFromUrl = new PayloadNormalizer(Mockito.mock(CoreSvc.class), new JsonAdapter4Test()).getSpaceFromUrl("https://nexus.humanbrainproject.org/v0/data/cscs/core/file/v1.0.0/fc0a5034-2aba-4b55-94c8-78e92538ecc9");
+        Assert.assertEquals(new SpaceName("cscs").getName(), spaceFromUrl.getName());
     }
 
     @Test
@@ -71,8 +71,8 @@ public class PayloadNormalizerTest {
 
     @Test
     public void normalizeIfSuffixed(){
-        Space space = PayloadNormalizer.normalizeIfSuffixed(new Space("mindseditor"));
-        Assert.assertEquals(new Space("minds"), space);
+        SpaceName space = PayloadNormalizer.normalizeIfSuffixed(new SpaceName("mindseditor"));
+        Assert.assertEquals(new SpaceName("minds"), space);
     }
 
 }

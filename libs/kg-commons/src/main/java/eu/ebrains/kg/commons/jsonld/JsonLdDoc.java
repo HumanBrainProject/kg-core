@@ -16,6 +16,7 @@
 
 package eu.ebrains.kg.commons.jsonld;
 
+import eu.ebrains.kg.commons.model.SpaceName;
 import eu.ebrains.kg.commons.semantics.vocabularies.HBPVocabulary;
 import eu.ebrains.kg.commons.semantics.vocabularies.SchemaOrgVocabulary;
 
@@ -155,6 +156,9 @@ public class JsonLdDoc extends TreeMap<String, Object> {
         }
         if(clazz == UUID.class && o instanceof String){
             return (T)UUID.fromString((String)o);
+        }
+        if(clazz == SpaceName.class && o instanceof String){
+            return (T)new SpaceName((String)o);
         }
         if (clazz.isInstance(o)) {
             return (T) o;

@@ -19,7 +19,7 @@ package eu.ebrains.kg.primaryStore.controller;
 import eu.ebrains.kg.commons.AuthTokens;
 import eu.ebrains.kg.commons.model.DataStage;
 import eu.ebrains.kg.commons.model.PersistedEvent;
-import eu.ebrains.kg.commons.model.Space;
+import eu.ebrains.kg.commons.model.SpaceName;
 import eu.ebrains.kg.commons.models.UserWithRoles;
 import eu.ebrains.kg.primaryStore.model.DeferredInference;
 import eu.ebrains.kg.primaryStore.model.ExecutedDeferredInference;
@@ -90,7 +90,7 @@ public class InferenceProcessor {
         }
     }
 
-    public List<PersistedEvent> triggerInference(Space space, UUID documentId, UserWithRoles userWithRoles, AuthTokens authTokens){
+    public List<PersistedEvent> triggerInference(SpaceName space, UUID documentId, UserWithRoles userWithRoles, AuthTokens authTokens){
         List<PersistedEvent> events = inferenceSvc.infer(space, documentId, authTokens).stream().map(e -> eventController.persistEvent(authTokens, e, DataStage.IN_PROGRESS, userWithRoles, null)).collect(Collectors.toList());
         events.forEach(evt -> {
             try {

@@ -19,7 +19,7 @@ package eu.ebrains.kg.commons.model;
 public class VocabularyProperty {
 
 
-    public static final Space VOCABSPACE = new Space("kgvocabulary");
+    public static final SpaceName VOCABSPACE = new SpaceName("kgvocabulary");
 
     private String propertyName;
     private String description;

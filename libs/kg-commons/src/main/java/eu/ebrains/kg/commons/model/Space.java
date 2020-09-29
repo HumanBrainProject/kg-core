@@ -27,44 +27,25 @@ import java.util.Set;
 
 public class Space {
 
-    private String name;
-    private boolean clientSpace;
+    private SpaceName name;
     private boolean autoRelease;
     private Set<Functionality> permissions;
 
-    public Space() {
-        this(null);
-    }
+    private Space(){}
 
-    public Space(String name){
-        this(name, false, false);
-    }
-
-    public Space(String name, boolean clientSpace, boolean autoRelease) {
+    public Space(SpaceName name, boolean autoRelease) {
         setName(name);
-        setClientSpace(clientSpace);
         setAutoRelease(autoRelease);
     }
 
-    protected String normalizeName(String name) {
-        return name!=null ? name.replaceAll("_", "-") : null;
+    public void setName(SpaceName name) {
+        this.name = name;
     }
 
-    public void setName(String name) {
-        this.name = normalizeName(name);
-    }
-
-    public String getName() {
+    public SpaceName getName() {
         return name;
     }
 
-    public boolean isClientSpace() {
-        return clientSpace;
-    }
-
-    public void setClientSpace(boolean clientSpace) {
-        this.clientSpace = clientSpace;
-    }
 
     @Override
     public boolean equals(Object o) {
@@ -91,11 +72,10 @@ public class Space {
     public NormalizedJsonLd toJsonLd() {
         NormalizedJsonLd payload = new NormalizedJsonLd();
         payload.put(JsonLdConsts.TYPE, EBRAINSVocabulary.META_SPACEDEFINITION_TYPE);
-        payload.setId(EBRAINSVocabulary.createIdForStructureDefinition("spaces", getName()));
+        payload.setId(EBRAINSVocabulary.createIdForStructureDefinition("spaces", name.getName()));
         payload.put(SchemaOrgVocabulary.NAME, getName());
         payload.put(SchemaOrgVocabulary.IDENTIFIER, getName());
         payload.put(EBRAINSVocabulary.META_SPACE, getName());
-        payload.put(EBRAINSVocabulary.META_CLIENT_SPACE, isClientSpace());
         payload.put(EBRAINSVocabulary.META_AUTORELEASE_SPACE, isAutoRelease());
         return payload;
     }
@@ -111,8 +91,7 @@ public class Space {
     public static Space fromJsonLd(NormalizedJsonLd payload) {
         if (payload != null) {
             Space space = new Space();
-            space.setName(payload.getAs(SchemaOrgVocabulary.NAME, String.class));
-            space.setClientSpace(payload.getAs(EBRAINSVocabulary.META_CLIENT_SPACE, Boolean.class, false));
+            space.setName(payload.getAs(SchemaOrgVocabulary.NAME, SpaceName.class));
             space.setAutoRelease(payload.getAs(EBRAINSVocabulary.META_AUTORELEASE_SPACE, Boolean.class, false));
             return space;
         }

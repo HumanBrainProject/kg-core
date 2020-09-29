@@ -68,7 +68,7 @@ public class CoreInstanceController {
         } else {
             normalizedJsonLd = new NormalizedJsonLd(jsonLdDoc);
         }
-        Space s = new Space(space);
+        SpaceName s = new SpaceName(space);
         List<InstanceId> instanceIdsInSameSpace = idsSvc.resolveIds(DataStage.IN_PROGRESS, new IdWithAlternatives(id, s, normalizedJsonLd.allIdentifiersIncludingId()), false).stream().filter(i -> s.equals(i.getSpace())).collect(Collectors.toList());
         //Were only interested in those instance ids in the same space. Since merging is not done cross-space, we want to allow instances being created with the same identifiers across spaces.
         if (!instanceIdsInSameSpace.isEmpty()) {
@@ -101,7 +101,7 @@ public class CoreInstanceController {
     }
 
 
-    private Event createUpsertEvent(UUID id, ExternalEventInformation externalEventInformation, NormalizedJsonLd normalizedJsonLd, Space s) {
+    private Event createUpsertEvent(UUID id, ExternalEventInformation externalEventInformation, NormalizedJsonLd normalizedJsonLd, SpaceName s) {
         Event upsertEvent = Event.createUpsertEvent(s, id, Event.Type.INSERT, normalizedJsonLd);
         handleExternalEventInformation(externalEventInformation, upsertEvent);
         return upsertEvent;
@@ -179,7 +179,7 @@ public class CoreInstanceController {
         return result;
     }
 
-    public Paginated<NormalizedJsonLd> getInstances(DataStage stage, Type type, Space space, String searchByLabel, ResponseConfiguration responseConfiguration, PaginationParam paginationParam) {
+    public Paginated<NormalizedJsonLd> getInstances(DataStage stage, Type type, SpaceName space, String searchByLabel, ResponseConfiguration responseConfiguration, PaginationParam paginationParam) {
         Paginated<NormalizedJsonLd> instancesByType = graphDbSvc.getInstancesByType(stage, type, space, paginationParam, searchByLabel, responseConfiguration.isReturnEmbedded(), responseConfiguration.isReturnAlternatives());
         if(responseConfiguration.isReturnAlternatives()){
             resolveAlternatives(stage, instancesByType.getData());
@@ -273,7 +273,7 @@ public class CoreInstanceController {
         documents.forEach(result -> {
                     NormalizedJsonLd doc = result.getData();
                     String space = doc.getAs(EBRAINSVocabulary.META_SPACE, String.class);
-                    Space sp = space != null ? new Space(space) : null;
+                    SpaceName sp = space != null ? new SpaceName(space) : null;
                     Set<Functionality> functionalities = permissions.stream().filter(p -> Functionality.FunctionalityGroup.INSTANCE == p.getFunctionality().getFunctionalityGroup() && stage != null && stage == p.getFunctionality().getStage()).filter(p -> p.appliesTo(sp, idUtils.getUUID(doc.id()))).map(FunctionalityInstance::getFunctionality).collect(Collectors.toSet());
                     doc.put(EBRAINSVocabulary.META_PERMISSIONS, functionalities);
                 }
@@ -281,7 +281,7 @@ public class CoreInstanceController {
     }
 
     private void enrichWithPermissionInformation(DataStage stage, ScopeElement scopeElement, List<FunctionalityInstance> permissions) {
-        Space sp = scopeElement.getSpace() != null ? new Space(scopeElement.getSpace()) : null;
+        SpaceName sp = scopeElement.getSpace() != null ? new SpaceName(scopeElement.getSpace()) : null;
         scopeElement.setPermissions(permissions.stream().filter(p -> Functionality.FunctionalityGroup.INSTANCE == p.getFunctionality().getFunctionalityGroup() && stage != null && stage == p.getFunctionality().getStage()).filter(p -> p.appliesTo(sp, scopeElement.getId())).map(FunctionalityInstance::getFunctionality).collect(Collectors.toSet()));
         if(scopeElement.getChildren()!=null){
             scopeElement.getChildren().forEach(c -> enrichWithPermissionInformation(stage, c, permissions));

@@ -20,7 +20,7 @@ import eu.ebrains.kg.commons.AuthTokens;
 import eu.ebrains.kg.commons.ServiceCall;
 import eu.ebrains.kg.commons.jsonld.InstanceId;
 import eu.ebrains.kg.commons.model.Event;
-import eu.ebrains.kg.commons.model.Space;
+import eu.ebrains.kg.commons.model.SpaceName;
 import org.springframework.stereotype.Component;
 
 import java.util.Arrays;
@@ -42,11 +42,11 @@ public class CoreToPrimaryStore {
         return result!=null ? Arrays.asList(result) : Collections.emptyList();
     }
 
-    public void inferInstance(Space space, UUID id, AuthTokens authTokens) {
+    public void inferInstance(SpaceName space, UUID id, AuthTokens authTokens) {
         serviceCall.post(String.format("http://kg-primarystore/internal/primaryStore/events/inference/%s/%s", space.getName(), id), null, authTokens, String.class);
     }
 
-    public void inferDeferred(AuthTokens authTokens, Space space, boolean synchronous) {
+    public void inferDeferred(AuthTokens authTokens, SpaceName space, boolean synchronous) {
         serviceCall.post(String.format("http://kg-primarystore/internal/primaryStore/events/inference/deferred/%s?sync=%b", space.getName(), synchronous), null, authTokens, String.class);
     }
 

@@ -28,7 +28,7 @@ import eu.ebrains.kg.commons.jsonld.NormalizedJsonLd;
 import eu.ebrains.kg.commons.model.DataStage;
 import eu.ebrains.kg.commons.model.Paginated;
 import eu.ebrains.kg.commons.model.PaginationParam;
-import eu.ebrains.kg.commons.model.Space;
+import eu.ebrains.kg.commons.model.SpaceName;
 import eu.ebrains.kg.commons.permission.Functionality;
 import eu.ebrains.kg.commons.permissions.controller.PermissionSvc;
 import eu.ebrains.kg.commons.semantics.vocabularies.EBRAINSVocabulary;
@@ -64,7 +64,7 @@ public class ArangoRepositorySpaces {
         this.arangoRepositoryCommons = arangoRepositoryCommons;
     }
 
-    public NormalizedJsonLd getSpace(Space space, DataStage stage) {
+    public NormalizedJsonLd getSpace(SpaceName space, DataStage stage) {
         if (!permissionSvc.hasPermission(authContext.getUserWithRoles(), Functionality.READ_SPACE, space)){
             throw new ForbiddenException(String.format("You don't have the right to read the space %s", space.getName()));
         }
@@ -96,15 +96,15 @@ public class ArangoRepositorySpaces {
 
 
     private AQLQuery createSpaceQuery(PaginationParam param, String filterBySpace, ArangoDatabase db) {
-        Set<Space> whitelistedSpaces = permissionsController.whitelistedSpaceReads(authContext.getUserWithRoles());
-        ArangoCollectionReference extensionSpace = ArangoCollectionReference.fromSpace(new Space(EBRAINSVocabulary.META_SPACE), true);
+        Set<SpaceName> whitelistedSpaces = permissionsController.whitelistedSpaceReads(authContext.getUserWithRoles());
+        ArangoCollectionReference extensionSpace = ArangoCollectionReference.fromSpace(new SpaceName(EBRAINSVocabulary.META_SPACE), true);
         AQL aql = new AQL();
         Map<String, Object> bindVars = new HashMap<>();
         aql.addLine(AQL.trust("FOR space IN @@spaceCollection"));
         aql.addPagination(param);
         if(whitelistedSpaces!=null){
             aql.addLine(AQL.trust("FILTER space.@schemaorgname IN @whitelistedSpaces"));
-            bindVars.put("whitelistedSpaces", whitelistedSpaces.stream().map(Space::getName).collect(Collectors.toSet()));
+            bindVars.put("whitelistedSpaces", whitelistedSpaces.stream().map(SpaceName::getName).collect(Collectors.toSet()));
             bindVars.put("schemaorgname", SchemaOrgVocabulary.NAME);
         }
         if (filterBySpace != null) {

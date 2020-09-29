@@ -61,19 +61,19 @@ public class Types {
     @Operation(summary = "Returns the types available - either with property information or without")
     @GetMapping("/types")
     public PaginatedResult<NormalizedJsonLd> getTypes(@RequestParam("stage") ExposedStage stage, @RequestParam(value = "space", required = false) String space, @RequestParam(value = "withProperties", defaultValue = "false") boolean withProperties, @ParameterObject PaginationParam paginationParam) {
-        return PaginatedResult.ok(graphDBSvc.getTypes(stage.getStage(), space != null ? new Space(space) : null, withProperties, paginationParam));
+        return PaginatedResult.ok(graphDBSvc.getTypes(stage.getStage(), space != null ? new SpaceName(space) : null, withProperties, paginationParam));
     }
 
     @Operation(summary = "Returns the types according to the list of names - either with property information or without")
     @PostMapping("/typesByName")
     public Result<Map<String, Result<NormalizedJsonLd>>> getTypesByName(@RequestBody List<String> listOfTypeNames, @RequestParam("stage") ExposedStage stage, @RequestParam(value = "withProperties", defaultValue = "false") boolean withProperties, @RequestParam(value = "space", required = false) String space) {
-        return Result.ok(graphDBSvc.getTypesByNameList(listOfTypeNames, stage.getStage(), space != null ? new Space(space) : null, withProperties));
+        return Result.ok(graphDBSvc.getTypesByNameList(listOfTypeNames, stage.getStage(), space != null ? new SpaceName(space) : null, withProperties));
     }
 
     @Operation(summary = "Define a type")
     @PutMapping("/types")
     public ResponseEntity<Result<Void>> defineType(@RequestBody NormalizedJsonLd payload, @Parameter(description = "By default, the specification is only valid for the current client. If this flag is set to true (and the client/user combination has the permission), the specification is applied for all clients (unless they have defined something by themselves)")  @RequestParam(value = "global", required = false) boolean global) {
-        Space targetSpace = global ? InternalSpace.GLOBAL_SPEC : authContext.getClientSpace();
+        SpaceName targetSpace = global ? InternalSpace.GLOBAL_SPEC : authContext.getClientSpace().getName();
         JsonLdId type = payload.getAs(EBRAINSVocabulary.META_TYPE, JsonLdId.class);
         if(type==null){
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Result.nok(HttpStatus.BAD_REQUEST.value(), String.format("Property \"%s\" should be specified.", EBRAINSVocabulary.META_TYPE)));

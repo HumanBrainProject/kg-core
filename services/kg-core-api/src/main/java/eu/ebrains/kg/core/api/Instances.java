@@ -159,7 +159,7 @@ public class Instances {
     @GetMapping("/instances")
     public PaginatedResult<NormalizedJsonLd> getInstances(@RequestParam("stage") ExposedStage stage, @RequestParam("type") String type, @RequestParam(value = "space", required = false) String space, @RequestParam(value = "searchByLabel", required = false) String searchByLabel, @ParameterObject ResponseConfiguration responseConfiguration, @ParameterObject PaginationParam paginationParam) {
         Date startTime = new Date();
-        PaginatedResult<NormalizedJsonLd> result = PaginatedResult.ok(instanceController.getInstances(stage.getStage(), new Type(type), space!=null ? new Space(space) : null, searchByLabel, responseConfiguration, paginationParam));
+        PaginatedResult<NormalizedJsonLd> result = PaginatedResult.ok(instanceController.getInstances(stage.getStage(), new Type(type), space!=null ? new SpaceName(space) : null, searchByLabel, responseConfiguration, paginationParam));
         result.setExecutionDetails(startTime, new Date());
         return result;
     }

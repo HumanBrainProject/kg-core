@@ -21,7 +21,7 @@ import eu.ebrains.kg.commons.jsonld.InstanceId;
 import eu.ebrains.kg.commons.model.DataStage;
 import eu.ebrains.kg.commons.model.Event;
 import eu.ebrains.kg.commons.model.PersistedEvent;
-import eu.ebrains.kg.commons.model.Space;
+import eu.ebrains.kg.commons.model.SpaceName;
 import eu.ebrains.kg.commons.models.UserWithRoles;
 import eu.ebrains.kg.primaryStore.controller.EventProcessor;
 import eu.ebrains.kg.primaryStore.controller.EventRepository;
@@ -91,10 +91,10 @@ public class PrimaryStoreEventsAPI {
         UserWithRoles userWithRoles = authContext.getUserWithRoles();
         logger.info("Received request for deferred inference");
         if(sync) {
-            eventProcessor.syncDeferredInference(authContext.getAuthTokens(), new Space(space), userWithRoles);
+            eventProcessor.syncDeferredInference(authContext.getAuthTokens(), new SpaceName(space), userWithRoles);
         }
         else {
-            eventProcessor.asyncDeferredInference(authContext.getAuthTokens(), new Space(space), userWithRoles);
+            eventProcessor.asyncDeferredInference(authContext.getAuthTokens(), new SpaceName(space), userWithRoles);
         }
     }
 
@@ -103,7 +103,7 @@ public class PrimaryStoreEventsAPI {
     public void infer(@PathVariable("space") String space, @PathVariable("id") UUID id) {
         UserWithRoles userWithRoles = authContext.getUserWithRoles();
         logger.info("Received request for deferred inference");
-        eventProcessor.autoRelease(inferenceProcessor.triggerInference(new Space(space), id, userWithRoles, authContext.getAuthTokens()), userWithRoles, authContext.getAuthTokens());
+        eventProcessor.autoRelease(inferenceProcessor.triggerInference(new SpaceName(space), id, userWithRoles, authContext.getAuthTokens()), userWithRoles, authContext.getAuthTokens());
     }
 
 }

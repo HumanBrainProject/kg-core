@@ -80,7 +80,7 @@ public class ArangoRepositoryTypes {
         return arangoRepositoryCommons.queryDocuments(db, typeStructureQuery);
     }
 
-    public Paginated<NormalizedJsonLd> getTypesForSpace(String client, DataStage stage, Space space, boolean withProperties, boolean withCount, PaginationParam pagination) {
+    public Paginated<NormalizedJsonLd> getTypesForSpace(String client, DataStage stage, SpaceName space, boolean withProperties, boolean withCount, PaginationParam pagination) {
         ArangoDatabase db = databases.getMetaByStage(stage);
         AQLQuery typeStructureQuery = createTypeStructureQuery(db, client, null, null, space, withProperties, withCount, pagination);
         return arangoRepositoryCommons.queryDocuments(db, typeStructureQuery);
@@ -97,7 +97,7 @@ public class ArangoRepositoryTypes {
 
     }
 
-    public List<NormalizedJsonLd> getTypesForSpace(String client, DataStage stage, Space space, List<Type> types, boolean withProperties, boolean withCount) {
+    public List<NormalizedJsonLd> getTypesForSpace(String client, DataStage stage, SpaceName space, List<Type> types, boolean withProperties, boolean withCount) {
         ArangoDatabase db = databases.getMetaByStage(stage);
         AQLQuery typeStructureQuery = createTypeStructureQuery(db, client, types, null, space, withProperties, withCount, null);
         return db.query(typeStructureQuery.getAql().build().getValue(), typeStructureQuery.getBindVars(), new AqlQueryOptions(), NormalizedJsonLd.class).asListRemaining();
@@ -107,8 +107,8 @@ public class ArangoRepositoryTypes {
         List<ArangoCollectionReference> collections = new ArrayList<>(Arrays.asList(ArangoCollectionReference.fromSpace(InternalSpace.GLOBAL_SPEC),
                 InternalSpace.SPACE_TO_TYPE_EDGE_COLLECTION, ArangoCollectionReference.fromSpace(InternalSpace.TYPES_SPACE),
                 ArangoCollectionReference.fromSpace(InternalSpace.SPACES_SPACE),
-                ArangoCollectionReference.fromSpace(new Space(EBRAINSVocabulary.META_TYPE), true),
-                ArangoCollectionReference.fromSpace(new Space(EBRAINSVocabulary.META_PROPERTY), true),
+                ArangoCollectionReference.fromSpace(new SpaceName(EBRAINSVocabulary.META_TYPE), true),
+                ArangoCollectionReference.fromSpace(new SpaceName(EBRAINSVocabulary.META_PROPERTY), true),
                 InternalSpace.PROPERTY_TO_TYPE_EDGE_COLLECTION,
                 InternalSpace.TYPE_TO_PROPERTY_EDGE_COLLECTION, InternalSpace.DOCUMENT_RELATION_EDGE_COLLECTION,
                 InternalSpace.PROPERTY_TO_PROPERTY_VALUE_TYPE_EDGE_COLLECTION,
@@ -139,7 +139,7 @@ public class ArangoRepositoryTypes {
         }
     }
 
-    private AQLQuery createTypeStructureQuery(ArangoDatabase db, String client, Collection<Type> types, TargetsForProperties targetTypesForProperty, Space space, boolean withProperties, boolean withCount, PaginationParam paginationParam) {
+    private AQLQuery createTypeStructureQuery(ArangoDatabase db, String client, Collection<Type> types, TargetsForProperties targetTypesForProperty, SpaceName space, boolean withProperties, boolean withCount, PaginationParam paginationParam) {
         ensureTypeStructureCollections(db, withProperties);
         Map<String, Object> bindVars = new HashMap<>();
         AQL aql = new AQL();
@@ -162,7 +162,7 @@ public class ArangoRepositoryTypes {
         propertiesToRemove.add(InferredJsonLdDoc.INFERENCE_OF);
         bindVars.put("propertiesToRemove", propertiesToRemove);
         bindVars.put("propertiesToRemoveForOverrides", Arrays.asList(JsonLdConsts.TYPE, SchemaOrgVocabulary.IDENTIFIER));
-        bindVars.put("clientName", ArangoCollectionReference.fromSpace(new Client(client).getSpace()).getCollectionName());
+        bindVars.put("clientName", ArangoCollectionReference.fromSpace(new Client(client).getSpace().getName()).getCollectionName());
         bindVars.put("globalSpace", ArangoCollectionReference.fromSpace(InternalSpace.GLOBAL_SPEC).getCollectionName());
         if (targetTypesForProperty != null && !targetTypesForProperty.getPropertyName().isBlank()) {
             aql.addComment("We're interested in the target types of a property. We query the list of types matching.");
@@ -202,7 +202,7 @@ public class ArangoRepositoryTypes {
         aql.indent().addLine(AQL.trust("FILTER IS_SAME_COLLECTION(@clientName, g._id)"));
         aql.addLine(AQL.trust("RETURN UNSET(g, propertiesToRemoveForOverrides)"));
         aql.outdent().addLine(AQL.trust(")"));
-        bindVars.put("@typeDefinition", ArangoCollectionReference.fromSpace(new Space(EBRAINSVocabulary.META_TYPE)).getCollectionName());
+        bindVars.put("@typeDefinition", ArangoCollectionReference.fromSpace(new SpaceName(EBRAINSVocabulary.META_TYPE)).getCollectionName());
         aql.addNewline();
         aql.addLine(AQL.trust("LET globalTypeDef = ("));
         aql.addLine(AQL.trust("FOR g IN 1..1 INBOUND type @@typeDefinition"));
@@ -263,7 +263,7 @@ public class ArangoRepositoryTypes {
                 aql.addNewline();
                 aql.outdent();
             }
-            bindVars.put("@metaProperty", ArangoCollectionReference.fromSpace(new Space(EBRAINSVocabulary.META_PROPERTY)).getCollectionName());
+            bindVars.put("@metaProperty", ArangoCollectionReference.fromSpace(new SpaceName(EBRAINSVocabulary.META_PROPERTY)).getCollectionName());
             bindVars.put("@clientTypeProperty", InternalSpace.CLIENT_TYPE_PROPERTY_EDGE_COLLECTION.getCollectionName());
 
             aql.addComment("Now, we need to figure out the property specification");

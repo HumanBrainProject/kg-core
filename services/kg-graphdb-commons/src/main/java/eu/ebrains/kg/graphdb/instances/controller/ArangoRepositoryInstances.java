@@ -82,7 +82,7 @@ public class ArangoRepositoryInstances {
         this.idUtils = idUtils;
     }
 
-    public NormalizedJsonLd getInstance(DataStage stage, Space space, UUID id, boolean embedded, boolean removeInternalProperties, boolean alternatives) {
+    public NormalizedJsonLd getInstance(DataStage stage, SpaceName space, UUID id, boolean embedded, boolean removeInternalProperties, boolean alternatives) {
         if (!permissionSvc.hasPermission(authContext.getUserWithRoles(), Functionality.READ, space, id)) {
             throw new ForbiddenException(String.format("You don't have read rights on the instance with the id %s", id));
         }
@@ -320,7 +320,7 @@ public class ArangoRepositoryInstances {
         aql.addLine(AQL.trust("]"));
     }
 
-    public List<String> getDocumentIdsBySpace(Space space) {
+    public List<String> getDocumentIdsBySpace(SpaceName space) {
         AQL aql = new AQL();
         Map<String, Object> bindVars = new HashMap<>();
         aql.addLine(AQL.trust("FOR doc IN @@space"));
@@ -331,7 +331,7 @@ public class ArangoRepositoryInstances {
     }
 
 
-    public Paginated<NormalizedJsonLd> getDocumentsByTypes(DataStage stage, List<Type> typesWithLabelInfo, Space space, PaginationParam paginationParam, String search, boolean embedded, boolean alternatives) {
+    public Paginated<NormalizedJsonLd> getDocumentsByTypes(DataStage stage, List<Type> typesWithLabelInfo, SpaceName space, PaginationParam paginationParam, String search, boolean embedded, boolean alternatives) {
         //TODO find label field for type (and client) and filter by search if set.
         ArangoDatabase database = databases.getByStage(stage);
         if (database.collection(InternalSpace.TYPE_EDGE_COLLECTION.getCollectionName()).exists()) {
@@ -392,11 +392,11 @@ public class ArangoRepositoryInstances {
     }
 
 
-    public List<NormalizedJsonLd> getDocumentsByIncomingRelation(DataStage stage, Space space, UUID id, ArangoRelation relation, boolean useOriginalTo, boolean embedded, boolean alternatives) {
+    public List<NormalizedJsonLd> getDocumentsByIncomingRelation(DataStage stage, SpaceName space, UUID id, ArangoRelation relation, boolean useOriginalTo, boolean embedded, boolean alternatives) {
         return getDocumentsByRelation(stage, space, id, relation, true, useOriginalTo, embedded, alternatives);
     }
 
-    public GraphEntity getNeighbors(DataStage stage, Space space, UUID id){
+    public GraphEntity getNeighbors(DataStage stage, SpaceName space, UUID id){
         AQL aql = new AQL();
         Map<String, Object> bindVars = new HashMap<>();
         ArangoDatabase db = databases.getByStage(stage);
@@ -404,7 +404,7 @@ public class ArangoRepositoryInstances {
                 //We're only interested in edges
                 c.getType() == CollectionType.EDGES &&
                 //We want to exclude meta properties
-                !c.getName().startsWith(ArangoCollectionReference.fromSpace(new Space(EBRAINSVocabulary.META), true).getCollectionName()) &&
+                !c.getName().startsWith(ArangoCollectionReference.fromSpace(new SpaceName(EBRAINSVocabulary.META), true).getCollectionName()) &&
                 //And we want to exclude the internal ones...
                 !InternalSpace.INTERNAL_NON_META_EDGES.contains(new ArangoCollectionReference(c.getName(), true))
         ).map(c -> AQL.preventAqlInjection(c.getName()).getValue()).collect(Collectors.toSet());
@@ -445,11 +445,11 @@ public class ArangoRepositoryInstances {
 
     }
 
-    public List<NormalizedJsonLd> getDocumentsByOutgoingRelation(DataStage stage, Space space, UUID id, ArangoRelation relation, boolean embedded, boolean alternatives) {
+    public List<NormalizedJsonLd> getDocumentsByOutgoingRelation(DataStage stage, SpaceName space, UUID id, ArangoRelation relation, boolean embedded, boolean alternatives) {
         return getDocumentsByRelation(stage, space, id, relation, false, false, embedded, alternatives);
     }
 
-    private List<NormalizedJsonLd> getDocumentsByRelation(DataStage stage, Space space, UUID id, ArangoRelation relation, boolean incoming, boolean useOriginalTo, boolean embedded, boolean alternatives) {
+    private List<NormalizedJsonLd> getDocumentsByRelation(DataStage stage, SpaceName space, UUID id, ArangoRelation relation, boolean incoming, boolean useOriginalTo, boolean embedded, boolean alternatives) {
         ArangoDatabase db = databases.getByStage(stage);
 
         ArangoCollectionReference relationColl;
@@ -479,7 +479,7 @@ public class ArangoRepositoryInstances {
         return Collections.emptyList();
     }
 
-    public List<NormalizedJsonLd> getDocumentsBySharedIdentifiers(DataStage stage, Space space, UUID id, boolean embedded, boolean alternatives) {
+    public List<NormalizedJsonLd> getDocumentsBySharedIdentifiers(DataStage stage, SpaceName space, UUID id, boolean embedded, boolean alternatives) {
         ArangoDatabase db = databases.getByStage(stage);
         ArangoCollectionReference collectionReference = ArangoCollectionReference.fromSpace(space);
         if (db.collection(collectionReference.getCollectionName()).exists()) {
@@ -496,13 +496,13 @@ public class ArangoRepositoryInstances {
         return Collections.emptyList();
     }
 
-    public List<NormalizedJsonLd> getDocumentsByIdentifiers(Set<String> allIdentifiersIncludingId, DataStage stage, Space space, boolean embedded, boolean alternatives) {
+    public List<NormalizedJsonLd> getDocumentsByIdentifiers(Set<String> allIdentifiersIncludingId, DataStage stage, SpaceName space, boolean embedded, boolean alternatives) {
         List<NormalizedJsonLd> normalizedJsonLds = doGetDocumentsByIdentifiers(allIdentifiersIncludingId, stage, space);
         handleAlternativesAndEmbedded(normalizedJsonLds, stage, alternatives, embedded);
         return normalizedJsonLds;
     }
 
-    private List<NormalizedJsonLd> doGetDocumentsByIdentifiers(Set<String> allIdentifiersIncludingId, DataStage stage, Space space) {
+    private List<NormalizedJsonLd> doGetDocumentsByIdentifiers(Set<String> allIdentifiersIncludingId, DataStage stage, SpaceName space) {
         ArangoDatabase db = databases.getByStage(stage);
         ArangoCollectionReference collectionReference = ArangoCollectionReference.fromSpace(space);
         if (!db.collection(collectionReference.getCollectionName()).exists()) {
@@ -531,14 +531,14 @@ public class ArangoRepositoryInstances {
     }
 
     private Set<InstanceId> fetchInvolvedInstances(ScopeElement element, Set<InstanceId> collector){
-        collector.add(new InstanceId(element.getId(), new Space(element.getSpace())));
+        collector.add(new InstanceId(element.getId(), new SpaceName(element.getSpace())));
         if(element.getChildren()!=null){
             element.getChildren().forEach(c -> fetchInvolvedInstances(c, collector));
         }
         return collector;
     }
 
-    public ReleaseStatus getReleaseStatus(Space space, UUID id, ReleaseTreeScope treeScope) {
+    public ReleaseStatus getReleaseStatus(SpaceName space, UUID id, ReleaseTreeScope treeScope) {
         switch (treeScope) {
             case TOP_INSTANCE_ONLY:
                 return getTopInstanceReleaseStatus(space, id);
@@ -575,7 +575,7 @@ public class ArangoRepositoryInstances {
         }
     }
 
-    private ReleaseStatus getTopInstanceReleaseStatus(Space space, UUID id) {
+    private ReleaseStatus getTopInstanceReleaseStatus(SpaceName space, UUID id) {
         ArangoDatabase db = databases.getByStage(DataStage.IN_PROGRESS);
         ArangoCollectionReference collectionReference = ArangoCollectionReference.fromSpace(space);
         ArangoCollectionReference releaseStatusCollection = InternalSpace.RELEASE_STATUS_EDGE_COLLECTION;
@@ -721,7 +721,7 @@ public class ArangoRepositoryInstances {
 
     }
 
-    public ScopeElement getScopeForInstance(Space space, UUID id, DataStage stage, boolean fetchLabels){
+    public ScopeElement getScopeForInstance(SpaceName space, UUID id, DataStage stage, boolean fetchLabels){
         //get instance
         NormalizedJsonLd instance = getInstance(stage, space, id, false, false, false);
         //get scope relevant queries

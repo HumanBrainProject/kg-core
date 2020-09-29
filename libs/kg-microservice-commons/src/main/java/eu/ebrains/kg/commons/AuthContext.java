@@ -17,6 +17,7 @@
 package eu.ebrains.kg.commons;
 
 import eu.ebrains.kg.commons.model.Space;
+import eu.ebrains.kg.commons.model.SpaceName;
 import eu.ebrains.kg.commons.models.UserWithRoles;
 import eu.ebrains.kg.commons.serviceCall.ToAuthentication;
 import org.springframework.context.annotation.Scope;
@@ -60,7 +61,7 @@ public class AuthContext {
     }
 
     public Space getClientSpace(){
-        return getUserWithRoles()!=null && getUserWithRoles().getClientId()!=null ? new Space(getUserWithRoles().getClientId(), true, false) : null;
+        return getUserWithRoles()!=null && getUserWithRoles().getClientId()!=null ? new Space(new SpaceName(getUserWithRoles().getClientId()),  false) : null;
     }
 
     public String getUserId(){

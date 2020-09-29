@@ -17,7 +17,7 @@
 package eu.ebrains.kg.commons.permission;
 
 import eu.ebrains.kg.commons.jsonld.InstanceId;
-import eu.ebrains.kg.commons.model.Space;
+import eu.ebrains.kg.commons.model.SpaceName;
 
 import java.util.Objects;
 import java.util.UUID;
@@ -26,11 +26,13 @@ import java.util.UUID;
  * A functionality instance carries the functionality which can be executed either globally (neither space nor id) for a specific space or for a specific instance (id)
  */
 public class FunctionalityInstance {
-    private final Functionality functionality;
-    private final Space space;
-    private final UUID id;
+    private Functionality functionality;
+    private SpaceName space;
+    private UUID id;
 
-    public boolean appliesTo(Space space, UUID id){
+    private FunctionalityInstance(){}
+
+    public boolean appliesTo(SpaceName space, UUID id){
         if(this.space == null && this.id == null){
             return true;
         }
@@ -43,45 +45,14 @@ public class FunctionalityInstance {
         return false;
     }
 
-    public FunctionalityInstance(Functionality functionality, Space space, UUID id) {
+    public FunctionalityInstance(Functionality functionality, SpaceName space, UUID id) {
         this.functionality = functionality;
         this.space = space;
         this.id = id;
     }
 
-    public static FunctionalityInstance fromRoleName(String roleName) {
-        String[] split = roleName.split(":");
-        Functionality f = null;
-        Space s = null;
-        UUID id = null;
-        if (split.length > 0) {
-            f = Functionality.fromRoleName(split[split.length-1]);
-        }
-        if (split.length > 1) {
-            s = split[0].isBlank() ? null : new Space(split[0]);
-        }
-        if (split.length > 2) {
-            id = UUID.fromString(split[1]);
-        }
-        return new FunctionalityInstance(f, s, id);
-    }
-
-
-    public static String getRolePatternForSpace(Space space) {
+    public static String getRolePatternForSpace(SpaceName space) {
         return String.format("%s\\:.*", space.getName());
-    }
-
-
-    public String getRoleName() {
-        if (space != null && id != null) {
-            return String.format("%s:%s:%s", space.getName(), id.toString(), functionality.getRoleName());
-        } else if (space != null) {
-            return String.format("%s:%s", space.getName(), functionality.getRoleName());
-        } else if(functionality!=null){
-            return String.format(":%s", functionality.getRoleName());
-        } else{
-            return null;
-        }
     }
 
     @Override
@@ -103,7 +74,7 @@ public class FunctionalityInstance {
         return functionality;
     }
 
-    public Space getSpace() {
+    public SpaceName getSpace() {
         return space;
     }
 
@@ -117,9 +88,4 @@ public class FunctionalityInstance {
         }
         return null;
     }
-
-    public Role toRole() {
-        return new Role(getRoleName());
-    }
-
 }

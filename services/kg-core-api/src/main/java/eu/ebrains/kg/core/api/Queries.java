@@ -73,14 +73,14 @@ public class Queries {
     @Operation(summary = "Get the query specification with the given query id in a specific space (note that query ids are unique per space only)")
     @GetMapping("/{queryId}")
     public Result<NormalizedJsonLd> getQuerySpecification(@PathVariable("queryId") UUID queryId, @RequestParam("space") String space) {
-        KgQuery kgQuery = queryController.fetchQueryById(queryId, new Space(space), DataStage.IN_PROGRESS);
+        KgQuery kgQuery = queryController.fetchQueryById(queryId, new SpaceName(space), DataStage.IN_PROGRESS);
         return Result.ok(kgQuery.getPayload());
     }
 
     @Operation(summary = "Removes a query specification")
     @DeleteMapping("/{queryId}")
     public void removeQuery(@PathVariable("queryId") UUID queryId, @RequestParam("space") String space) {
-        queryController.deleteQuery(new InstanceId(queryId, new Space(space)));
+        queryController.deleteQuery(new InstanceId(queryId, new SpaceName(space)));
     }
 
     @Operation(summary = "Save a query specification")
@@ -88,7 +88,7 @@ public class Queries {
     public ResponseEntity<Result<NormalizedJsonLd>> saveQuery(@RequestBody JsonLdDoc query, @PathVariable(value = "queryId") UUID queryId, @RequestParam("space") String space) {
         NormalizedJsonLd normalizedJsonLd = jsonLdSvc.toNormalizedJsonLd(query);
         normalizedJsonLd.addTypes(KgQuery.getKgQueryType());
-        Space querySpace = new Space(space);
+        SpaceName querySpace = new SpaceName(space);
         InstanceId resolveId = idsSvc.resolveId(DataStage.IN_PROGRESS, queryId);
         if(resolveId != null){
             return queryController.updateQuery(normalizedJsonLd, resolveId);
@@ -99,7 +99,7 @@ public class Queries {
     @Operation(summary = "Execute a stored query to receive the instances")
     @GetMapping("/{queryId}/instances")
     public PaginatedResult<NormalizedJsonLd> executeQueryById(@PathVariable("queryId") UUID queryId, @ParameterObject PaginationParam paginationParam,@RequestParam("space") String space, @RequestParam("stage") ExposedStage stage) {
-        KgQuery query = queryController.fetchQueryById(queryId, new Space(space), stage.getStage());
+        KgQuery query = queryController.fetchQueryById(queryId, new SpaceName(space), stage.getStage());
         return PaginatedResult.ok(queryController.executeQuery(query, paginationParam));
     }
 

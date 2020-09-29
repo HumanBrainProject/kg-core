@@ -17,7 +17,7 @@
 package eu.ebrains.kg.commons.permissions.controller;
 
 import eu.ebrains.kg.commons.jsonld.InstanceId;
-import eu.ebrains.kg.commons.model.Space;
+import eu.ebrains.kg.commons.model.SpaceName;
 import eu.ebrains.kg.commons.models.UserWithRoles;
 import eu.ebrains.kg.commons.permission.Functionality;
 import eu.ebrains.kg.commons.permission.FunctionalityInstance;
@@ -33,7 +33,7 @@ import java.util.stream.Collectors;
 @Component
 public class PermissionSvc {
 
-    private Set<FunctionalityInstance> getExpectedFunctionalityList(Functionality functionality, Space space, UUID id) {
+    private Set<FunctionalityInstance> getExpectedFunctionalityList(Functionality functionality, SpaceName space, UUID id) {
         Set<FunctionalityInstance> instances = new HashSet<>();
         if(functionality.getAllowedPermissionLevels().contains(Permission.Level.GLOBAL)){
             instances.add(new FunctionalityInstance(functionality, null, null));
@@ -47,21 +47,20 @@ public class PermissionSvc {
         return instances;
     }
 
-    private boolean isServiceAccountForClientSpace(UserWithRoles userWithRoles, Space space){
-        return userWithRoles != null && space != null && userWithRoles.getClientId() != null && userWithRoles.getClientId().equals(space.getName()) && userWithRoles.getUser()!=null && userWithRoles.getUser().isServiceAccountForClient(userWithRoles.getClientId()) && checkFunctionalities(Functionality.IS_CLIENT, space, null, userWithRoles.getPermissions());
-
+    private boolean isServiceAccountForClientSpace(UserWithRoles userWithRoles, SpaceName space){
+        return userWithRoles != null && space != null && userWithRoles.getClientId() != null && userWithRoles.getClientId().equals(space.getName()) && userWithRoles.getUser()!=null && userWithRoles.getUser().isServiceAccountForClient(userWithRoles.getClientId()) && userWithRoles.isServiceAccount();
     }
 
-    public boolean hasPermission(UserWithRoles userWithRoles, Functionality functionality, Space space) {
+    public boolean hasPermission(UserWithRoles userWithRoles, Functionality functionality, SpaceName space) {
         return hasPermission(userWithRoles, functionality, space, null);
     }
 
-    private boolean checkFunctionalities(Functionality functionality, Space space, UUID id, List<FunctionalityInstance> permissions){
+    private boolean checkFunctionalities(Functionality functionality, SpaceName space, UUID id, List<FunctionalityInstance> permissions){
         Set<FunctionalityInstance> expectedRoles = getExpectedFunctionalityList(functionality, space, id);
         return expectedRoles.stream().anyMatch(permissions::contains);
     }
 
-    public boolean hasPermission(UserWithRoles userWithRoles, Functionality functionality, Space space, UUID id) {
+    public boolean hasPermission(UserWithRoles userWithRoles, Functionality functionality, SpaceName space, UUID id) {
         boolean clientOwnedSpace = isServiceAccountForClientSpace(userWithRoles, space);
         switch (functionality){
             case CREATE_SPACE:
@@ -70,20 +69,6 @@ public class PermissionSvc {
                     return true;
                 }
                 break;
-            case READ_QUERY:
-            case CREATE_QUERY:
-            case EXECUTE_QUERY:
-            case EXECUTE_SYNC_QUERY:
-            case DELETE_QUERY:
-                //For queries in client owned spaces, only the client service account and users with global rights for this functionality (e.g. admins) are allowed to do so
-                if(space != null && space.isClientSpace()){
-                    if(clientOwnedSpace || hasGlobalPermission(userWithRoles, functionality)){
-                        return true;
-                    }
-                    else{
-                        return false;
-                    }
-                }
         }
         return checkFunctionalities(functionality, space, id, userWithRoles.getPermissions());
     }
@@ -92,7 +77,7 @@ public class PermissionSvc {
         return hasPermission(userWithRoles, functionality, null, null);
     }
 
-    public Set<Space> getSpacesForPermission(UserWithRoles userWithRoles, Functionality functionality) {
+    public Set<SpaceName> getSpacesForPermission(UserWithRoles userWithRoles, Functionality functionality) {
         List<FunctionalityInstance> permissions = userWithRoles.getPermissions();
         if(functionality==null){
             return Collections.emptySet();

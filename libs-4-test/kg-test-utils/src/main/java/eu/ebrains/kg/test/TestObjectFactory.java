@@ -20,7 +20,7 @@ package eu.ebrains.kg.test;
 import eu.ebrains.kg.commons.JsonAdapter;
 import eu.ebrains.kg.commons.jsonld.JsonLdId;
 import eu.ebrains.kg.commons.jsonld.NormalizedJsonLd;
-import eu.ebrains.kg.commons.model.Space;
+import eu.ebrains.kg.commons.model.SpaceName;
 
 import java.io.IOException;
 import java.net.URISyntaxException;
@@ -32,9 +32,12 @@ import java.util.stream.Collectors;
 public class TestObjectFactory {
     private static final JsonAdapter JSON = new JsonAdapter4Test();
 
-    public static final Space SIMPSONS = new Space("simpsons");
-    public static final Space ADMIN = new Space("admin");
-    public static final Space KGEDITOR = new Space("kgeditor");
+    public static final SpaceName SIMPSONS = new SpaceName("simpsons");
+    public static final SpaceName ADMIN = new SpaceName("admin");
+    public static final SpaceName KGEDITOR = new SpaceName("kgeditor");
+
+
+
 
     public static NormalizedJsonLd overrideId(NormalizedJsonLd jsonLd, JsonLdId id) {
         jsonLd.addIdentifiers(jsonLd.id().getId());
@@ -42,12 +45,12 @@ public class TestObjectFactory {
         return jsonLd;
     }
 
-    public static NormalizedJsonLd createJsonLdWithInternalId(Space space, String jsonFile, JsonLdId id) {
+    public static NormalizedJsonLd createJsonLdWithInternalId(SpaceName space, String jsonFile, JsonLdId id) {
         NormalizedJsonLd jsonLd = createJsonLd(space, jsonFile);
         return overrideId(jsonLd, id);
     }
 
-    public static NormalizedJsonLd createJsonLd(Space space, String jsonFile) {
+    public static NormalizedJsonLd createJsonLd(SpaceName space, String jsonFile) {
         return createJsonLd(space.getName()+"/"+jsonFile);
     }
 

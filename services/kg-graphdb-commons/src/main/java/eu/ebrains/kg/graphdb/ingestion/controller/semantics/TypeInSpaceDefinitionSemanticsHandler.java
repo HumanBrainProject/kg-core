@@ -23,7 +23,7 @@ import eu.ebrains.kg.commons.TypeUtils;
 import eu.ebrains.kg.commons.jsonld.JsonLdId;
 import eu.ebrains.kg.commons.jsonld.NormalizedJsonLd;
 import eu.ebrains.kg.commons.model.DataStage;
-import eu.ebrains.kg.commons.model.Space;
+import eu.ebrains.kg.commons.model.SpaceName;
 import eu.ebrains.kg.commons.semantics.vocabularies.EBRAINSVocabulary;
 import eu.ebrains.kg.graphdb.commons.controller.ArangoDatabases;
 import eu.ebrains.kg.graphdb.commons.model.ArangoDocument;
@@ -56,7 +56,7 @@ public class TypeInSpaceDefinitionSemanticsHandler extends SemanticsHandler {
             if (typeReference != null && spaces != null && !spaces.isEmpty()) {
                 List<DBOperation> operations = new ArrayList<>();
                 for (String space : spaces) {
-                    ArangoDocumentReference documentRefForSpaceToTypeEdge = IdFactory.createDocumentRefForSpaceToTypeEdge(ArangoCollectionReference.fromSpace(new Space(space)).getCollectionName(), typeReference.getId());
+                    ArangoDocumentReference documentRefForSpaceToTypeEdge = IdFactory.createDocumentRefForSpaceToTypeEdge(ArangoCollectionReference.fromSpace(new SpaceName(space)).getCollectionName(), typeReference.getId());
                     ArangoDocumentReference spaceRef = StaticStructureController.createDocumentRefForMetaRepresentation(space, ArangoCollectionReference.fromSpace(InternalSpace.SPACES_SPACE));
                     ArangoDocumentReference typeRef = StaticStructureController.createDocumentRefForMetaRepresentation(typeReference.getId(), ArangoCollectionReference.fromSpace(InternalSpace.TYPES_SPACE));
                     ArangoEdge edge = new ArangoEdge();

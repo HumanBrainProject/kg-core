@@ -61,7 +61,7 @@ public class AdminClientsAPI {
     public ResponseEntity<String> deleteClient(@PathVariable("id") String id) {
         try {
             Client client = new Client(id);
-            spaceController.removeSpace(client.getSpace());
+            spaceController.removeSpace(client.getSpace().getName());
             authenticationSvc.unregisterClient(id);
             return ResponseEntity.ok(String.format("Successfully deleted the client with id %s", id));
         } catch (ArangoDBException ex) {

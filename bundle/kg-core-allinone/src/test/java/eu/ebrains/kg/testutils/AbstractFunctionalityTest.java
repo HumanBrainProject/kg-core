@@ -23,9 +23,9 @@ import eu.ebrains.kg.commons.model.Result;
 import eu.ebrains.kg.commons.model.User;
 import eu.ebrains.kg.commons.models.UserWithRoles;
 import eu.ebrains.kg.commons.permission.ClientAuthToken;
-import eu.ebrains.kg.commons.permission.Functionality;
-import eu.ebrains.kg.commons.permission.GlobalPermissionGroup;
 import eu.ebrains.kg.commons.permission.UserAuthToken;
+import eu.ebrains.kg.commons.permission.roles.ClientRole;
+import eu.ebrains.kg.commons.permission.roles.UserRole;
 import eu.ebrains.kg.commons.serviceCall.ToAuthentication;
 import org.junit.Before;
 import org.mockito.Mockito;
@@ -34,7 +34,6 @@ import org.springframework.http.ResponseEntity;
 
 import java.util.Collections;
 import java.util.List;
-import java.util.stream.Collectors;
 
 import static org.springframework.util.Assert.*;
 
@@ -79,18 +78,19 @@ public abstract class AbstractFunctionalityTest extends AbstractSystemTest {
         authenticate();
     }
 
+    private final static List<String> ADMIN_USER_ROLE = Collections.singletonList(UserRole.ADMIN.toRole(null).getName());
+    private final static List<String> ADMIN_CLIENT_ROLE = Collections.singletonList(ClientRole.ADMIN.toRole().getName());
+
     public void beAdmin(){
-        List<String> allRoles =  GlobalPermissionGroup.ADMIN.getFunctionality().stream().map(Functionality::getRoleName).collect(Collectors.toList());
         User user = new User("bobEverythingGoes", "Bob Everything Goes", "fakeAdmin@ebrains.eu", "Bob Everything", "Goes", "admin");
-        UserWithRoles userWithRoles = new UserWithRoles(user, allRoles, allRoles, "testClient");
+        UserWithRoles userWithRoles = new UserWithRoles(user, ADMIN_USER_ROLE, ADMIN_CLIENT_ROLE, "testClient");
         Mockito.doAnswer(a -> userWithRoles).when(authenticationSvc).getUserWithRoles();
     }
 
     public void beUnauthorized(){
-        List<String> allRoles =  GlobalPermissionGroup.ADMIN.getFunctionality().stream().map(Functionality::getRoleName).collect(Collectors.toList());
         User user = new User("joeCantDoAThing", "Joe Cant Do A Thing", "fakeUnauthorized@ebrains.eu", "Joe Cant Do A", "Thing", "unauthorized");
         //It's the user not having any rights - the client is still the same with full rights
-        UserWithRoles userWithRoles = new UserWithRoles(user, Collections.emptyList(), allRoles, "testClient");
+        UserWithRoles userWithRoles = new UserWithRoles(user, Collections.emptyList(), ADMIN_CLIENT_ROLE, "testClient");
         Mockito.doAnswer(a -> userWithRoles).when(authenticationSvc).getUserWithRoles();
     }
 

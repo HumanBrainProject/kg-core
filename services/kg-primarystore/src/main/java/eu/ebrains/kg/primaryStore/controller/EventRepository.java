@@ -23,7 +23,7 @@ import eu.ebrains.kg.arango.commons.model.ArangoDatabaseProxy;
 import eu.ebrains.kg.commons.JsonAdapter;
 import eu.ebrains.kg.commons.model.DataStage;
 import eu.ebrains.kg.commons.model.PersistedEvent;
-import eu.ebrains.kg.commons.model.Space;
+import eu.ebrains.kg.commons.model.SpaceName;
 import eu.ebrains.kg.primaryStore.model.DeferredInference;
 import eu.ebrains.kg.primaryStore.model.FailedEvent;
 import org.slf4j.Logger;
@@ -62,7 +62,7 @@ public class EventRepository {
         events.insertDocument(jsonAdapter.toJson(e), new DocumentCreateOptions().overwrite(true));
     }
 
-    List<DeferredInference> getDeferredInferences(Space space, int pageSize) {
+    List<DeferredInference> getDeferredInferences(SpaceName space, int pageSize) {
         HashMap<String, Object> bindVars = new HashMap<>();
         bindVars.put("@collection", getOrCreateDeferredInferenceCollection(DataStage.IN_PROGRESS).name());
         bindVars.put("space", space.getName());

@@ -18,7 +18,7 @@ package eu.ebrains.kg.authentication.api;
 
 import eu.ebrains.kg.authentication.keycloak.KeycloakController;
 import eu.ebrains.kg.commons.model.User;
-import eu.ebrains.kg.commons.permission.Role;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.web.bind.annotation.*;
 
 import java.net.URLDecoder;
@@ -27,22 +27,13 @@ import java.util.List;
 
 @RequestMapping("/internal/authentication/roles")
 @RestController
+@ConditionalOnProperty(value = "eu.ebrains.kg.test", havingValue = "false", matchIfMissing = true)
 public class AuthenticationRolesAPI {
 
     private final KeycloakController keycloakController;
 
     public AuthenticationRolesAPI(KeycloakController keycloakController) {
         this.keycloakController = keycloakController;
-    }
-
-    @PostMapping
-    public void createRoles(@RequestBody List<Role> roles) {
-        keycloakController.getNonExistingRoles(roles).forEach(keycloakController::createRoleForClient);
-    }
-
-    @DeleteMapping("/{rolePattern}")
-    public void removeRoles(@PathVariable("rolePattern") String rolePattern) {
-        keycloakController.removeRolesFromClient(URLDecoder.decode(rolePattern, StandardCharsets.UTF_8));
     }
 
     @GetMapping("/{role}/users")

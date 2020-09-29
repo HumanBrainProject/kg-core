@@ -17,28 +17,28 @@
 package eu.ebrains.kg.arango.commons.model;
 
 import eu.ebrains.kg.commons.jsonld.InferredJsonLdDoc;
-import eu.ebrains.kg.commons.model.Space;
+import eu.ebrains.kg.commons.model.SpaceName;
 
 import java.util.Arrays;
 import java.util.Collection;
 
-public class InternalSpace extends Space {
+public class InternalSpace extends SpaceName {
 
 
-    public static final Space GLOBAL_SPEC = new Space("global_spec");
+    public static final SpaceName GLOBAL_SPEC = new SpaceName("global_spec");
 
     public static final InternalSpace INFERENCE_OF_SPACE = new InternalSpace(InferredJsonLdDoc.INFERENCE_OF);
     public static final InternalSpace UNRESOLVED_SPACE = new InternalSpace("unresolved");
     public static final ArangoCollectionReference PROPERTY_TO_PROPERTY_VALUE_TYPE_EDGE_COLLECTION = new ArangoCollectionReference("property2propertyValueType", true);
-    public static final Space PROPERTIES_SPACE = new Space("properties");
+    public static final SpaceName PROPERTIES_SPACE = new SpaceName("properties");
     public static final ArangoCollectionReference SPACE_TO_TYPE_EDGE_COLLECTION = new ArangoCollectionReference("space2type", true);
-    public static final Space SPACES_SPACE = new Space("spaces");
-    public static final Space PROPERTY_VALUE_TYPE_SPACE = new Space("propertyValueTypes");
+    public static final SpaceName SPACES_SPACE = new SpaceName("spaces");
+    public static final SpaceName PROPERTY_VALUE_TYPE_SPACE = new SpaceName("propertyValueTypes");
     public static final ArangoCollectionReference DOCUMENT_RELATION_EDGE_COLLECTION = new ArangoCollectionReference("documentRelation", true);
-    public static final Space DOCUMENT_SPACE = new Space("documents");
+    public static final SpaceName DOCUMENT_SPACE = new SpaceName("documents");
     public static final ArangoCollectionReference CLIENT_TYPE_PROPERTY_EDGE_COLLECTION = new ArangoCollectionReference("clientTypeProperty", true);
     public static final ArangoCollectionReference CLIENT_TYPE_EDGE_COLLECTION = new ArangoCollectionReference("clientType", true);
-    public static final Space CLIENT_SPACE = new Space("clients");
+    public static final SpaceName CLIENT_SPACE = new SpaceName("clients");
     public static final ArangoCollectionReference DOCUMENT_ID_EDGE_COLLECTION = new ArangoCollectionReference("documentId", true);
     public static final InternalSpace DOCUMENT_ID_SPACE = new InternalSpace("documentIds");
     public static final ArangoCollectionReference RELEASE_STATUS_EDGE_COLLECTION = new ArangoCollectionReference("internalrelease", true);
@@ -47,9 +47,9 @@ public class InternalSpace extends Space {
     public static final ArangoCollectionReference GLOBAL_TYPE_TO_PROPERTY_EDGE_COLLECTION = new ArangoCollectionReference("globaltype2property", true);
     public static final ArangoCollectionReference TYPE_TO_PROPERTY_EDGE_COLLECTION = new ArangoCollectionReference("type2property", true);
     public static final ArangoCollectionReference PROPERTY_TO_TYPE_EDGE_COLLECTION = new ArangoCollectionReference("property2type", true);
-    public static final Space TYPES_SPACE = new Space("types");
-    public static final Space USERS_SPACE = new Space("users");
-    public static final Space ALTERNATIVES_SPACE = new Space("alternatives");
+    public static final SpaceName TYPES_SPACE = new SpaceName("types");
+    public static final SpaceName USERS_SPACE = new SpaceName("users");
+    public static final SpaceName ALTERNATIVES_SPACE = new SpaceName("alternatives");
     public static final ArangoCollectionReference TYPE_EDGE_COLLECTION = new ArangoCollectionReference("internaltype", true);
     public static final InternalSpace TYPE_SPACE = new InternalSpace("types");
 
@@ -64,13 +64,14 @@ public class InternalSpace extends Space {
     }
 
     @Override
-    public void setName(String name) {
+    public SpaceName setName(String name) {
         if(name!=null && !name.startsWith("internal")) {
             super.setName("internal" + name);
         }
         else {
             super.setName(name);
         }
+        return this;
     }
 
 }

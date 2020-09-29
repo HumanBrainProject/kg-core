@@ -60,7 +60,7 @@ public class QueryControllerTest {
     @Autowired
     IdUtils idUtils;
 
-    private final Space space = TestObjectFactory.SIMPSONS;
+    private final SpaceName space = TestObjectFactory.SIMPSONS;
     private final DataStage stage = DataStage.IN_PROGRESS;
     private final ArangoCollectionReference simpsons = ArangoCollectionReference.fromSpace(TestObjectFactory.SIMPSONS);
     private final UserWithRoles userWithRoles = Mockito.mock(UserWithRoles.class);

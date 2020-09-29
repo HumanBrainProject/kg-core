@@ -26,6 +26,7 @@ public class Client {
 
     @JsonProperty(SchemaOrgVocabulary.IDENTIFIER)
     private String identifier;
+
     private String serviceAccountId;
     private boolean canExecuteSynchronousQueries;
 
@@ -57,6 +58,6 @@ public class Client {
     }
 
     public Space getSpace() {
-        return new Space(getIdentifier(), true, true);
+        return new Space(new SpaceName(getIdentifier()),  true);
     }
 }

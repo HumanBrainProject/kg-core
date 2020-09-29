@@ -25,7 +25,7 @@ import eu.ebrains.kg.commons.jsonld.JsonLdDoc;
 import eu.ebrains.kg.commons.jsonld.JsonLdId;
 import eu.ebrains.kg.commons.jsonld.NormalizedJsonLd;
 import eu.ebrains.kg.commons.model.Result;
-import eu.ebrains.kg.commons.model.Space;
+import eu.ebrains.kg.commons.model.SpaceName;
 import eu.ebrains.kg.commons.model.User;
 import eu.ebrains.kg.commons.semantics.vocabularies.EBRAINSVocabulary;
 import eu.ebrains.kg.commons.semantics.vocabularies.SchemaOrgVocabulary;
@@ -65,7 +65,7 @@ public class NexusV0Importer {
     private void releaseInstance(JsonLdId jsonLdId, boolean deferInference, String nexusEndpoint) {
         String idTranslatedToEndpoint = payloadNormalizer.translateToCurrentEndpoint(jsonLdId.getId(), nexusEndpoint);
         if (deferInference) {
-            Space spaceFromUrl = payloadNormalizer.getSpaceFromUrl(jsonLdId.getId());
+            SpaceName spaceFromUrl = payloadNormalizer.getSpaceFromUrl(jsonLdId.getId());
             if (spaceFromUrl != null) {
                 //When releasing, we first ensure that the object actually is inferred...
                 logger.info(String.format("Now inferring the instance in space %s because there is a release waiting...", spaceFromUrl.getName()));
@@ -94,7 +94,7 @@ public class NexusV0Importer {
 
     public void insertOrUpdateEvent(JsonLdDoc payload, String organization, String domain, String schema, String version, String timestamp, String user, String id, boolean deferInference, String nexusEndpoint) {
         logger.info(String.format("Received insert/update payload from Nexus v0 for instance id %s/%s/%s/%s/%s", organization, domain, schema, version, id));
-        Space space = PayloadNormalizer.normalizeIfSuffixed(new Space(organization));
+        SpaceName space = PayloadNormalizer.normalizeIfSuffixed(new SpaceName(organization));
         logger.trace(String.format("Found space %s for instance id %s/%s/%s/%s/%s ", space.getName(), organization, domain, schema, version, id));
         NormalizedJsonLd normalizedJsonLdDoc;
         String userId = resolveUserId(user, organization);

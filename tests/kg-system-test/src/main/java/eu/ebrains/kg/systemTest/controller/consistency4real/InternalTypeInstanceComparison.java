@@ -93,7 +93,7 @@ public class InternalTypeInstanceComparison {
             if(instanceById!=null) {
                 String space = instanceById.getAs(EBRAINSVocabulary.META_SPACE, String.class);
                 logger.info(String.format("Trying to re-infer the instance %s in space %s", uuid, space));
-                coreSvc.inferInstance(new Space(space), uuid, false);
+                coreSvc.inferInstance(new SpaceName(space), uuid, false);
             }
             else{
                 logger.error(String.format("Was not able to find the instance %s", uuid));

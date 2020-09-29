@@ -22,7 +22,7 @@ import eu.ebrains.kg.commons.IdUtils;
 import eu.ebrains.kg.commons.jsonld.NormalizedJsonLd;
 import eu.ebrains.kg.commons.model.DataStage;
 import eu.ebrains.kg.commons.model.Event;
-import eu.ebrains.kg.commons.model.Space;
+import eu.ebrains.kg.commons.model.SpaceName;
 import eu.ebrains.kg.commons.model.User;
 import org.springframework.stereotype.Component;
 
@@ -33,7 +33,7 @@ import java.util.UUID;
 @Component
 public class AdminUserController {
 
-    private static Space USERS_SPACE = new Space("users");
+    private static SpaceName USERS_SPACE = new SpaceName("users");
 
     private final AdminToGraphDB graphDBSvc;
 

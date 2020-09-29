@@ -24,7 +24,7 @@ import eu.ebrains.kg.commons.jsonld.NormalizedJsonLd;
 import eu.ebrains.kg.commons.model.DataStage;
 import eu.ebrains.kg.commons.model.IdPayloadMapping;
 import eu.ebrains.kg.commons.model.Result;
-import eu.ebrains.kg.commons.model.Space;
+import eu.ebrains.kg.commons.model.SpaceName;
 import org.springframework.stereotype.Component;
 
 import java.net.URLEncoder;
@@ -48,19 +48,19 @@ public class GraphDBSvc {
 
     private final static String SERVICE_URL = "http://kg-graphdb-sync/internal/graphdb";
 
-    public List<IndexedJsonLdDoc> getRelatedInstancesByIdentifiers(Space space, UUID id, DataStage stage, boolean embedded) {
+    public List<IndexedJsonLdDoc> getRelatedInstancesByIdentifiers(SpaceName space, UUID id, DataStage stage, boolean embedded) {
         return Arrays.stream(serviceCall.get(String.format("%s/%s/instances/%s/%s/relatedByIdentifier?returnEmbedded=%b", SERVICE_URL, stage.name(), space.getName(), id, embedded), authContext.getAuthTokens(), NormalizedJsonLd[].class)).map(IndexedJsonLdDoc::from).collect(Collectors.toList());
     }
 
-    public List<IndexedJsonLdDoc> getRelatedInstancesByIncomingRelation(Space space, UUID id, DataStage stage, String relation, boolean useOriginalTo) {
+    public List<IndexedJsonLdDoc> getRelatedInstancesByIncomingRelation(SpaceName space, UUID id, DataStage stage, String relation, boolean useOriginalTo) {
         return Arrays.stream(serviceCall.get(String.format("%s/%s/instances/%s/%s/relatedByIncomingRelation?useOriginalTo=%s&relation=%s", SERVICE_URL,  stage.name(), space.getName(), id, useOriginalTo, URLEncoder.encode(relation, StandardCharsets.UTF_8)), authContext.getAuthTokens(), NormalizedJsonLd[].class)).map(IndexedJsonLdDoc::from).collect(Collectors.toList());
     }
 
-    public Map<UUID, Result<NormalizedJsonLd>> getInstancesByIds(DataStage stage, List<UUID> ids, Space space, boolean returnEmbedded, boolean returnAlternatives){
+    public Map<UUID, Result<NormalizedJsonLd>> getInstancesByIds(DataStage stage, List<UUID> ids, SpaceName space, boolean returnEmbedded, boolean returnAlternatives){
         return serviceCall.post(SERVICE_URL + String.format("/%s/instancesByIds?returnEmbedded=%b&returnAlternatives=%b", stage.name(), returnEmbedded, returnAlternatives), ids.stream().map(id -> new InstanceId(id, space)).map(InstanceId::serialize).collect(Collectors.toList()), authContext.getAuthTokens(), IdPayloadMapping.class);
     }
 
-    public IndexedJsonLdDoc getInstanceById(Space space, UUID id, DataStage stage, boolean removeInternalProperties, boolean embedded){
+    public IndexedJsonLdDoc getInstanceById(SpaceName space, UUID id, DataStage stage, boolean removeInternalProperties, boolean embedded){
         return IndexedJsonLdDoc.from(serviceCall.get(String.format("%s/%s/instances/%s/%s?removeInternalProperties=%b&returnEmbedded=%b", SERVICE_URL, stage.name(), space.getName(), id, removeInternalProperties, embedded), authContext.getAuthTokens(), NormalizedJsonLd.class));
     }
 

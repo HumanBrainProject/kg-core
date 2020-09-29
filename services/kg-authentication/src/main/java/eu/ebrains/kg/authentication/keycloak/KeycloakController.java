@@ -21,18 +21,16 @@ import com.auth0.jwt.JWTVerifier;
 import com.auth0.jwt.algorithms.Algorithm;
 import com.auth0.jwt.exceptions.JWTVerificationException;
 import com.auth0.jwt.interfaces.Claim;
-import eu.ebrains.kg.authentication.AuthenticationConfig;
 import eu.ebrains.kg.authentication.model.OpenIdConfig;
 import eu.ebrains.kg.commons.AuthContext;
 import eu.ebrains.kg.commons.JsonAdapter;
 import eu.ebrains.kg.commons.exception.UnauthorizedException;
 import eu.ebrains.kg.commons.model.Client;
-import eu.ebrains.kg.commons.model.Space;
+import eu.ebrains.kg.commons.model.SpaceName;
 import eu.ebrains.kg.commons.model.User;
-import eu.ebrains.kg.commons.permission.Functionality;
-import eu.ebrains.kg.commons.permission.FunctionalityInstance;
-import eu.ebrains.kg.commons.permission.Role;
-import eu.ebrains.kg.commons.permission.SpacePermissionGroup;
+import eu.ebrains.kg.commons.permission.roles.ClientRole;
+import eu.ebrains.kg.commons.permission.roles.Role;
+import eu.ebrains.kg.commons.permission.roles.UserRole;
 import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.admin.client.resource.RoleResource;
 import org.keycloak.admin.client.resource.UserResource;
@@ -42,6 +40,7 @@ import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
@@ -58,6 +57,7 @@ import java.security.spec.X509EncodedKeySpec;
 import java.util.*;
 import java.util.stream.Collectors;
 
+@ConditionalOnProperty(value = "eu.ebrains.kg.test", havingValue = "false", matchIfMissing = true)
 @Component
 public class KeycloakController {
 
@@ -73,21 +73,18 @@ public class KeycloakController {
 
     private ClientScopeRepresentation profileScope;
 
-    private final AuthenticationConfig authenticationConfig;
-
     private final KeycloakUsers keycloakUsers;
 
     private final JWTVerifier jwtVerifier;
 
 
-    public KeycloakController(KeycloakConfig config, KeycloakClient keycloakClient, JsonAdapter jsonAdapter, AuthContext authContext, AuthenticationConfig authenticationConfig, KeycloakUsers keycloakUsers) {
+    public KeycloakController(KeycloakConfig config, KeycloakClient keycloakClient, JsonAdapter jsonAdapter, AuthContext authContext, KeycloakUsers keycloakUsers) {
         this.config = config;
         this.jsonAdapter = jsonAdapter;
         this.keycloakClient = keycloakClient;
         this.authContext = authContext;
-        this.authenticationConfig = authenticationConfig;
         this.keycloakUsers = keycloakUsers;
-        this.jwtVerifier = authenticationConfig.isDevelopMode() ? null : JWT.require(getAlgorithmFromKeycloakConfig(keycloakClient.getPublicKey())).withIssuer(config.getIssuer()).build(); //Reusable verifier instance;
+        this.jwtVerifier = JWT.require(getAlgorithmFromKeycloakConfig(keycloakClient.getPublicKey())).withIssuer(config.getIssuer()).build(); //Reusable verifier instance;
     }
 
     private OpenIdConfig openIdConfig;
@@ -157,7 +154,7 @@ public class KeycloakController {
                 clientResource.addDefaultClientScope(profileClientScopeId);
             }
             UserResource userResource = keycloakClient.getRealmResource().users().get(serviceAccountId);
-            userResource.roles().clientLevel(keycloakClient.getTechnicalClientId()).add(getServiceAccountRoles(client.getSpace()));
+            userResource.roles().clientLevel(keycloakClient.getTechnicalClientId()).add(getServiceAccountRoles(client.getSpace().getName()));
             client.setServiceAccountId(serviceAccountId);
         }
         return client;
@@ -170,11 +167,12 @@ public class KeycloakController {
         return profileScope != null ? profileScope.getId() : null;
     }
 
-    private List<RoleRepresentation> getServiceAccountRoles(Space space) {
-        String ownerRole = SpacePermissionGroup.OWNER.toRole(space).getName();
+    private List<RoleRepresentation> getServiceAccountRoles(SpaceName space) {
+        String ownerRole = UserRole.OWNER.toRole(space).getName();
+        String clientRole = ClientRole.IS_CLIENT.toRole().getName();
+
         RoleResource ownerRoleResource = keycloakClient.getClientResource().roles().get(ownerRole);
-        String isClientRole = new FunctionalityInstance(Functionality.IS_CLIENT, null, null).toRole().getName();
-        RoleResource isClientRoleResource = keycloakClient.getClientResource().roles().get(isClientRole);
+        RoleResource isClientRoleResource = keycloakClient.getClientResource().roles().get(clientRole);
         return Arrays.asList(ownerRoleResource.toRepresentation(), isClientRoleResource.toRepresentation());
     }
 
@@ -209,22 +207,20 @@ public class KeycloakController {
 
     @PostConstruct
     public void setup() {
-        if (!authenticationConfig.isDevelopMode()) {
-            if (config.getPwd() != null && !config.getPwd().isEmpty()) {
+        if (config.getPwd() != null && !config.getPwd().isEmpty()) {
+            try {
+                keycloakClient.ensureRealmClientAndGlobalRolesInKeycloak();
+            } catch (ProcessingException ex) {
                 try {
-                    keycloakClient.ensureRealmClientAndGlobalRolesInKeycloak();
-                } catch (ProcessingException ex) {
-                    try {
-                        logger.warn("Was not able to connect to keycloak - trying again in 5 secs...");
-                        Thread.sleep(5000);
-                        setup();
-                    } catch (InterruptedException e) {
-                        e.printStackTrace();
-                    }
+                    logger.warn("Was not able to connect to keycloak - trying again in 5 secs...");
+                    Thread.sleep(5000);
+                    setup();
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
                 }
             }
-            loadOpenIdConfig();
         }
+        loadOpenIdConfig();
     }
 
     private void loadOpenIdConfig() {

@@ -18,7 +18,7 @@ package eu.ebrains.kg.ids.model;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import eu.ebrains.kg.arango.commons.aqlBuilder.ArangoVocabulary;
-import eu.ebrains.kg.commons.model.Space;
+import eu.ebrains.kg.commons.model.SpaceName;
 
 import java.util.HashSet;
 import java.util.Set;
@@ -49,11 +49,11 @@ public class PersistedId {
         return this;
     }
 
-    public Space getSpace() {
-        return space != null ? new Space(space) : null;
+    public SpaceName getSpace() {
+        return space != null ? new SpaceName(space) : null;
     }
 
-    public void setSpace(Space space) {
+    public void setSpace(SpaceName space) {
         this.space = space != null ? space.getName() : null;
     }
 

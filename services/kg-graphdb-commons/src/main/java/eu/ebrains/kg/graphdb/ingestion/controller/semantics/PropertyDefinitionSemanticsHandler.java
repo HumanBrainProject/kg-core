@@ -22,7 +22,7 @@ import eu.ebrains.kg.arango.commons.model.InternalSpace;
 import eu.ebrains.kg.commons.TypeUtils;
 import eu.ebrains.kg.commons.jsonld.JsonLdId;
 import eu.ebrains.kg.commons.model.DataStage;
-import eu.ebrains.kg.commons.model.Space;
+import eu.ebrains.kg.commons.model.SpaceName;
 import eu.ebrains.kg.commons.semantics.vocabularies.EBRAINSVocabulary;
 import eu.ebrains.kg.graphdb.commons.model.ArangoDocument;
 import eu.ebrains.kg.graphdb.ingestion.controller.structure.StaticStructureController;
@@ -47,7 +47,7 @@ public class PropertyDefinitionSemanticsHandler extends SemanticsHandler {
             if (propertyReference != null) {
                 ArangoDocumentReference propertyRef = StaticStructureController.createDocumentRefForMetaRepresentation(propertyReference.getId(), ArangoCollectionReference.fromSpace(InternalSpace.PROPERTIES_SPACE));
                 List<DBOperation> dbOperations = new ArrayList<>();
-                dbOperations.addAll(handleOverrideReference(rootDocumentRef, document, propertyReference, propertyRef, ArangoCollectionReference.fromSpace(new Space(EBRAINSVocabulary.META_PROPERTY), true)));
+                dbOperations.addAll(handleOverrideReference(rootDocumentRef, document, propertyReference, propertyRef, ArangoCollectionReference.fromSpace(new SpaceName(EBRAINSVocabulary.META_PROPERTY), true)));
                 dbOperations.addAll(handleExplicitlyStatedTargetTypes(document, propertyRef));
                 return dbOperations;
             }

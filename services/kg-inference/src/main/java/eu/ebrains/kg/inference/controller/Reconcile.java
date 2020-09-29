@@ -20,7 +20,7 @@ import eu.ebrains.kg.commons.IdUtils;
 import eu.ebrains.kg.commons.jsonld.*;
 import eu.ebrains.kg.commons.model.DataStage;
 import eu.ebrains.kg.commons.model.Event;
-import eu.ebrains.kg.commons.model.Space;
+import eu.ebrains.kg.commons.model.SpaceName;
 import eu.ebrains.kg.commons.semantics.vocabularies.EBRAINSVocabulary;
 import eu.ebrains.kg.commons.semantics.vocabularies.SchemaOrgVocabulary;
 import eu.ebrains.kg.inference.serviceCall.GraphDBSvc;
@@ -102,7 +102,7 @@ public class Reconcile {
     }
 
 
-    private InvolvedPayloads findInvolvedDocuments(Space space, UUID id, Set<UUID> handledDocumentIds, Set<UUID> handledInstanceIds, InvolvedPayloads involvedPayloads) {
+    private InvolvedPayloads findInvolvedDocuments(SpaceName space, UUID id, Set<UUID> handledDocumentIds, Set<UUID> handledInstanceIds, InvolvedPayloads involvedPayloads) {
         List<IndexedJsonLdDoc> relatedInstancesByIdentifiers = graphDBSvc.getRelatedInstancesByIdentifiers(space, id, DataStage.NATIVE, true);
         involvedPayloads.documents.addAll(relatedInstancesByIdentifiers);
         handledDocumentIds.add(id);
@@ -220,7 +220,7 @@ public class Reconcile {
         return inferenceResult;
     }
 
-    List<Event> translateInferenceResultToEvents(Space space, InferenceResult inferenceResult) {
+    List<Event> translateInferenceResultToEvents(SpaceName space, InferenceResult inferenceResult) {
         List<Event> result = new ArrayList<>();
         for (InferredJsonLdDoc inferredJsonLdDoc : inferenceResult.toBeInserted) {
             IndexedJsonLdDoc indexedJsonLdDoc = inferredJsonLdDoc.asIndexed();
@@ -257,7 +257,7 @@ public class Reconcile {
     }
 
 
-    public List<Event> reconcile(Space space, UUID id) {
+    public List<Event> reconcile(SpaceName space, UUID id) {
         InvolvedPayloads involvedPayloads = findInvolvedDocuments(space, id, new HashSet<>(), new HashSet<>(), new InvolvedPayloads());
         Set<InferredJsonLdDoc> inferredJsonLdDocs = reconcileDocuments(involvedPayloads.documents);
         //Compare calculated inferred instances to already existing ones and take according action.

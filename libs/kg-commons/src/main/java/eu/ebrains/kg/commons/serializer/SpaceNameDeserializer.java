@@ -14,24 +14,19 @@
  * limitations under the License.
  */
 
-package eu.ebrains.kg.commons.permissions.model;
+package eu.ebrains.kg.commons.serializer;
 
-import eu.ebrains.kg.commons.model.Space;
-import eu.ebrains.kg.commons.permission.Functionality;
-import eu.ebrains.kg.commons.permission.Permission;
+import com.fasterxml.jackson.core.JsonParser;
+import com.fasterxml.jackson.databind.DeserializationContext;
+import com.fasterxml.jackson.databind.JsonDeserializer;
+import eu.ebrains.kg.commons.model.SpaceName;
 
-/**
- * An instance permission allows a user to execute a specific functionality for the given space
- */
-public class SpacePermission extends Permission {
+import java.io.IOException;
 
-    private Space space;
+public class SpaceNameDeserializer extends JsonDeserializer<SpaceName> {
 
-    public SpacePermission(Functionality functionality, Space space){
-        super(Level.SPACE, functionality);
-        this.space = space;
+    @Override
+    public SpaceName deserialize(JsonParser p, DeserializationContext ctxt) throws IOException {
+        return p.getValueAsString() != null ? new SpaceName(p.getValueAsString()) : null;
     }
-
-
-
 }

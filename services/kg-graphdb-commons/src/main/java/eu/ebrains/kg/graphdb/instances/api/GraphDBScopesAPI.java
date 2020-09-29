@@ -18,7 +18,7 @@ package eu.ebrains.kg.graphdb.instances.api;
 
 import eu.ebrains.kg.commons.model.DataStage;
 import eu.ebrains.kg.commons.model.ScopeElement;
-import eu.ebrains.kg.commons.model.Space;
+import eu.ebrains.kg.commons.model.SpaceName;
 import eu.ebrains.kg.graphdb.instances.controller.ArangoRepositoryInstances;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -39,7 +39,7 @@ public class GraphDBScopesAPI {
 
     @GetMapping("/{space}/{id}")
     public ScopeElement getScopeForInstance(@PathVariable("space") String space, @PathVariable("id") UUID id, @PathVariable("stage") DataStage stage, @RequestParam(value = "fetchLabels", defaultValue = "true") boolean fetchLabels){
-       return this.repository.getScopeForInstance(new Space(space), id, stage, fetchLabels);
+       return this.repository.getScopeForInstance(new SpaceName(space), id, stage, fetchLabels);
     }
 
 }

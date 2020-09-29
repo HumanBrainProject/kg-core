@@ -52,7 +52,7 @@ public class ArangoRepositoryInstancesTest {
     TodoListProcessor todoListProcessor;
 
 
-    private final Space space = TestObjectFactory.SIMPSONS;
+    private final SpaceName space = TestObjectFactory.SIMPSONS;
     private final DataStage stage = DataStage.NATIVE;
 
     private final ArangoCollectionReference simpsons = ArangoCollectionReference.fromSpace(TestObjectFactory.SIMPSONS);

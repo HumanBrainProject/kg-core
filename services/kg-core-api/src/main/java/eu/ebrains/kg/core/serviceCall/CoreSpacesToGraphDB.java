@@ -36,7 +36,7 @@ public class CoreSpacesToGraphDB {
     }
 
 
-    public NormalizedJsonLd getSpace(Space space, DataStage stage) {
+    public NormalizedJsonLd getSpace(SpaceName space, DataStage stage) {
         String relativeUrl = String.format("/%s/spaces/%s", stage.name(), space.getName());
         return serviceCall.get(BASE_URL + relativeUrl, authContext.getAuthTokens(), NormalizedJsonLd.class);
     }

@@ -21,7 +21,7 @@ import eu.ebrains.kg.commons.jsonld.IndexedJsonLdDoc;
 import eu.ebrains.kg.commons.jsonld.InferredJsonLdDoc;
 import eu.ebrains.kg.commons.jsonld.NormalizedJsonLd;
 import eu.ebrains.kg.commons.model.Event;
-import eu.ebrains.kg.commons.model.Space;
+import eu.ebrains.kg.commons.model.SpaceName;
 import eu.ebrains.kg.inference.serviceCall.GraphDBSvc;
 import org.junit.Before;
 import org.junit.Test;
@@ -169,7 +169,7 @@ public class ReconcileTest {
     @Test
     public void testTranslateMergeInferenceResultToEvents(){
         //Given
-        Space space = new Space("Foobar");
+        SpaceName space = new SpaceName("Foobar");
         Reconcile.InferenceResult result = new Reconcile.InferenceResult();
         Set<IndexedJsonLdDoc> existing = new HashSet<>();
         existing.add(createDoc("A", "X"));

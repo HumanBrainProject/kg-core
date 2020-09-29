@@ -18,7 +18,7 @@ package eu.ebrains.kg.inference.api;
 
 import eu.ebrains.kg.commons.IdUtils;
 import eu.ebrains.kg.commons.model.Event;
-import eu.ebrains.kg.commons.model.Space;
+import eu.ebrains.kg.commons.model.SpaceName;
 import eu.ebrains.kg.inference.controller.Reconcile;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -48,7 +48,7 @@ public class InferenceAPI {
     @GetMapping("/{space}/{id}")
     public List<Event> infer(@PathVariable("space") String space, @PathVariable("id") UUID id) {
         //Something happened (insert / update / delete) to the native document referenced by the id.
-        return this.reconcile.reconcile(new Space(space), id);
+        return this.reconcile.reconcile(new SpaceName(space), id);
     }
 
 }

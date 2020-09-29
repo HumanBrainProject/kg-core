@@ -16,7 +16,7 @@
 
 package eu.ebrains.kg.commons.jsonld;
 
-import eu.ebrains.kg.commons.model.Space;
+import eu.ebrains.kg.commons.model.SpaceName;
 
 import java.util.Set;
 import java.util.UUID;
@@ -30,7 +30,7 @@ public class JsonLdIdMapping {
     public JsonLdIdMapping() {
     }
 
-    public JsonLdIdMapping(UUID requestedId, Set<JsonLdId> resolvedIds, Space space, boolean deprecated) {
+    public JsonLdIdMapping(UUID requestedId, Set<JsonLdId> resolvedIds, SpaceName space, boolean deprecated) {
         this.requestedId = requestedId;
         this.resolvedIds = resolvedIds;
         this.deprecated = deprecated;
@@ -41,8 +41,8 @@ public class JsonLdIdMapping {
         return deprecated;
     }
 
-    public Space getSpace(){
-        return space!=null ? new Space(space) : null;
+    public SpaceName getSpace(){
+        return space!=null ? new SpaceName(space) : null;
     }
 
     public UUID getRequestedId() {

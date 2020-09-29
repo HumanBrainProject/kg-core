@@ -21,11 +21,11 @@ import eu.ebrains.kg.commons.IdUtils;
 import eu.ebrains.kg.commons.jsonld.NormalizedJsonLd;
 import eu.ebrains.kg.commons.model.DataStage;
 import eu.ebrains.kg.commons.model.Event;
-import eu.ebrains.kg.commons.model.Space;
+import eu.ebrains.kg.commons.model.SpaceName;
 import eu.ebrains.kg.docker.SpringDockerComposeRunner;
 import eu.ebrains.kg.inference.api.InferenceAPI;
-import eu.ebrains.kg.test.TestToGraphDB;
 import eu.ebrains.kg.test.TestObjectFactory;
+import eu.ebrains.kg.test.TestToGraphDB;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -61,7 +61,7 @@ public class InferenceTest {
     @Autowired
     IdUtils idUtils;
 
-    private final  Space space = TestObjectFactory.SIMPSONS;
+    private final SpaceName space = TestObjectFactory.SIMPSONS;
 
     @Test
     public void singleObjectWithEmbeddedInsertionInference() throws IOException, URISyntaxException {

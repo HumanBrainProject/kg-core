@@ -23,7 +23,7 @@ import eu.ebrains.kg.commons.jsonld.JsonLdId;
 import eu.ebrains.kg.commons.jsonld.JsonLdIdMapping;
 import eu.ebrains.kg.commons.model.DataStage;
 import eu.ebrains.kg.commons.model.IdWithAlternatives;
-import eu.ebrains.kg.commons.model.Space;
+import eu.ebrains.kg.commons.model.SpaceName;
 import org.springframework.stereotype.Component;
 
 import java.util.*;
@@ -57,7 +57,7 @@ public class PrimaryStoreToIds {
         return Collections.emptyList();
     }
 
-    public Set<JsonLdId> resolveIds(DataStage stage, UUID id, Set<String> alternativeIds, Space space, AuthTokens authTokens) {
+    public Set<JsonLdId> resolveIds(DataStage stage, UUID id, Set<String> alternativeIds, SpaceName space, AuthTokens authTokens) {
         IdWithAlternatives idWithAlternatives = new IdWithAlternatives();
         idWithAlternatives.setId(id);
         idWithAlternatives.setSpace(space.getName());

@@ -32,6 +32,7 @@ public class PersistedEvent extends Event implements EventId {
     private DataStage dataStage;
     private List<JsonLdId> mergedIds;
     private boolean suggestion;
+    private Space space;
 
     @JsonProperty("_key")
     private String key;
@@ -40,14 +41,15 @@ public class PersistedEvent extends Event implements EventId {
         super();
     }
 
-    public PersistedEvent(Event event, DataStage dataStage, User user) {
-        super(event.getSpace(), event.getDocumentId(), event.getData(), event.getType(), event.getReportedTimeStampInMs());
+    public PersistedEvent(Event event, DataStage dataStage, User user, Space space) {
+        super(event.getSpaceName(), event.getDocumentId(), event.getData(), event.getType(), event.getReportedTimeStampInMs());
         this.ingestionUserId = event.getUserId();
         this.indexedTimestamp = new Date().getTime();
         this.eventId = UUID.randomUUID().toString();
         this.key = this.eventId;
         this.dataStage = dataStage;
         this.user = user;
+        this.space = space;
     }
 
     public String getKey() {
@@ -88,5 +90,13 @@ public class PersistedEvent extends Event implements EventId {
 
     public void setSuggestion(boolean suggestion) {
         this.suggestion = suggestion;
+    }
+
+    public Space getSpace() {
+        return space;
+    }
+
+    public void setSpace(Space space) {
+        this.space = space;
     }
 }

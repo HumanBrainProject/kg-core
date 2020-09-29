@@ -27,7 +27,7 @@ import eu.ebrains.kg.commons.jsonld.JsonLdIdMapping;
 import eu.ebrains.kg.commons.jsonld.NormalizedJsonLd;
 import eu.ebrains.kg.commons.model.DataStage;
 import eu.ebrains.kg.commons.model.IdWithAlternatives;
-import eu.ebrains.kg.commons.model.Space;
+import eu.ebrains.kg.commons.model.SpaceName;
 import eu.ebrains.kg.commons.semantics.vocabularies.EBRAINSVocabulary;
 import eu.ebrains.kg.graphdb.commons.controller.ArangoRepositoryCommons;
 import eu.ebrains.kg.graphdb.commons.controller.ArangoUtils;
@@ -101,7 +101,7 @@ public class DataController {
             //Direct the found edges to the new document
             arangoEdge.setTo(rootDocumentRef);
             //Relocate the edge to the correct edge collection (according to the property label)
-            ArangoCollectionReference propertyEdgeCollection = ArangoCollectionReference.fromSpace(new Space(arangoEdge.getOriginalLabel()), true);
+            ArangoCollectionReference propertyEdgeCollection = ArangoCollectionReference.fromSpace(new SpaceName(arangoEdge.getOriginalLabel()), true);
             arangoEdge.redefineId(propertyEdgeCollection.doc(arangoEdge.getKey()));
             arangoEdge.setResolvedTargetId(idUtils.buildAbsoluteUrl(rootDocumentRef.getDocumentId()));
             result.add(new EdgeResolutionOperation(oldEdgeRef, arangoEdge));
@@ -179,7 +179,7 @@ public class DataController {
 
         for (ArangoEdge edge : edges) {
             ArangoDocumentReference unknownTarget = ArangoDocumentReference.fromArangoId("unknown/" + UUID.nameUUIDFromBytes("unknown".getBytes(StandardCharsets.UTF_8)).toString(), false);
-            if (stage == DataStage.NATIVE || isEdgeOf(edge.getId(), InternalSpace.INFERENCE_OF_SPACE, new Space(EBRAINSVocabulary.META_USER))) {
+            if (stage == DataStage.NATIVE || isEdgeOf(edge.getId(), InternalSpace.INFERENCE_OF_SPACE, new SpaceName(EBRAINSVocabulary.META_USER))) {
                 //We are either in NATIVE stage or have a relation to inference of or user - we already know that we won't be able to resolve it (since the target instance is in a different database), so we shortcut the process.
                 logger.trace(String.format("Not resolving edge pointing to %s", edge.getOriginalTo()));
                 edge.setTo(unknownTarget);
@@ -218,11 +218,11 @@ public class DataController {
         return arangoDocuments.stream().map(i -> new UpsertOperation(rootDocumentRef, typeUtils.translate(i.getPayload(), NormalizedJsonLd.class), i.getId())).collect(Collectors.toList());
     }
 
-    private boolean isEdgeOf(ArangoDocumentReference edge, Space... spaces) {
+    private boolean isEdgeOf(ArangoDocumentReference edge, SpaceName... spaces) {
         if(edge == null || edge.getArangoCollectionReference() == null || edge.getArangoCollectionReference().getCollectionName() == null){
             return false;
         }
-        for (Space space : spaces) {
+        for (SpaceName space : spaces) {
             if(edge.getArangoCollectionReference().getCollectionName().equals(ArangoCollectionReference.fromSpace(space, true).getCollectionName())){
                 return true;
             }

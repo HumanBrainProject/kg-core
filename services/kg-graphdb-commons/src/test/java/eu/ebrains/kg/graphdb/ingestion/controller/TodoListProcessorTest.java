@@ -23,7 +23,7 @@ import eu.ebrains.kg.commons.IdUtils;
 import eu.ebrains.kg.commons.jsonld.NormalizedJsonLd;
 import eu.ebrains.kg.commons.model.DataStage;
 import eu.ebrains.kg.commons.model.IdWithAlternatives;
-import eu.ebrains.kg.commons.model.Space;
+import eu.ebrains.kg.commons.model.SpaceName;
 import eu.ebrains.kg.docker.SpringDockerComposeRunner;
 import eu.ebrains.kg.graphdb.commons.controller.ArangoDatabases;
 import eu.ebrains.kg.graphdb.commons.controller.ArangoRepositoryCommons;
@@ -77,10 +77,10 @@ public class TodoListProcessorTest {
         new SpringDockerComposeRunner(discoveryClient, Collections.singletonList("arango"), "kg-ids").start();
     }
 
-    private final Space space = TestObjectFactory.SIMPSONS;
+    private final SpaceName space = TestObjectFactory.SIMPSONS;
     private final ArangoCollectionReference simpsons = ArangoCollectionReference.fromSpace(TestObjectFactory.SIMPSONS);
-    private final ArangoCollectionReference admin = ArangoCollectionReference.fromSpace(new Space("admin"));
-    private final ArangoCollectionReference kgeditor = ArangoCollectionReference.fromSpace(new Space("kgeditor"));
+    private final ArangoCollectionReference admin = ArangoCollectionReference.fromSpace(new SpaceName("admin"));
+    private final ArangoCollectionReference kgeditor = ArangoCollectionReference.fromSpace(new SpaceName("kgeditor"));
 
 
     @Test
@@ -323,7 +323,7 @@ public class TodoListProcessorTest {
     }
 
 
-    private ArangoDocumentReference uploadToDatabase(DataStage stage, Space space, String json){
+    private ArangoDocumentReference uploadToDatabase(DataStage stage, SpaceName space, String json){
         NormalizedJsonLd payload = TestObjectFactory.createJsonLd(json);
         UUID uuid = UUID.randomUUID();
         payload.setId(idUtils.buildAbsoluteUrl(uuid));

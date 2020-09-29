@@ -30,7 +30,7 @@ import eu.ebrains.kg.commons.jsonld.JsonLdId;
 import eu.ebrains.kg.commons.jsonld.JsonLdIdMapping;
 import eu.ebrains.kg.commons.model.DataStage;
 import eu.ebrains.kg.commons.model.IdWithAlternatives;
-import eu.ebrains.kg.commons.model.Space;
+import eu.ebrains.kg.commons.model.SpaceName;
 import eu.ebrains.kg.ids.model.PersistedId;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Component;
@@ -94,8 +94,8 @@ public class IdRepository {
     }
 
     public List<JsonLdIdMapping> resolveIds(DataStage stage, List<IdWithAlternatives> ids) {
-        Set<Tuple<String, Space>> idsWithAlternatives = ids.stream().filter(Objects::nonNull).filter(id -> id.getAlternatives()!=null).map(id -> id.getAlternatives().stream().map(alternative -> new Tuple<String, Space>().setA(alternative).setB(id.getSpace()!=null ? new Space(id.getSpace()) : null)).collect(Collectors.toSet())).flatMap(Collection::stream).filter(Objects::nonNull).collect(Collectors.toSet());
-        idsWithAlternatives.addAll(ids.stream().map(id -> id!=null ? new Tuple<String, Space>().setA(idUtils.buildAbsoluteUrl(id.getId()).getId()).setB(id.getSpace()!=null ? new Space(id.getSpace()) : null) : null).filter(Objects::nonNull).collect(Collectors.toSet()));
+        Set<Tuple<String, SpaceName>> idsWithAlternatives = ids.stream().filter(Objects::nonNull).filter(id -> id.getAlternatives()!=null).map(id -> id.getAlternatives().stream().map(alternative -> new Tuple<String, SpaceName>().setA(alternative).setB(id.getSpace()!=null ? new SpaceName(id.getSpace()) : null)).collect(Collectors.toSet())).flatMap(Collection::stream).filter(Objects::nonNull).collect(Collectors.toSet());
+        idsWithAlternatives.addAll(ids.stream().map(id -> id!=null ? new Tuple<String, SpaceName>().setA(idUtils.buildAbsoluteUrl(id.getId()).getId()).setB(id.getSpace()!=null ? new SpaceName(id.getSpace()) : null) : null).filter(Objects::nonNull).collect(Collectors.toSet()));
         String collectionName = getCollectionName(stage);
         ArangoDatabase database = arangoDatabase.getOrCreate();
         if (!database.collection(collectionName).exists() || idsWithAlternatives.isEmpty()) {
@@ -105,7 +105,7 @@ public class IdRepository {
         Map<String, Object> bindVars = new HashMap<>();
         int counter = 0;
 
-        for (Tuple<String, Space> searchKey : idsWithAlternatives) {
+        for (Tuple<String, SpaceName> searchKey : idsWithAlternatives) {
             if (counter > 0) {
                 sb.append(" OR ");
             }
@@ -123,7 +123,7 @@ public class IdRepository {
         sb.append("    RETURN doc\n");
         List<PersistedId> persistedIds = database.query(sb.toString(), bindVars, new AqlQueryOptions(), String.class).asListRemaining().stream().map(s -> jsonAdapter.fromJson(s, PersistedId.class)).collect(Collectors.toList());
         Set<String> deprecatedInstances = persistedIds.stream().filter(PersistedId::isDeprecated).map(id -> idUtils.buildAbsoluteUrl(id.getUUID()).getId()).collect(Collectors.toSet());
-        Map<String, Space> resultingSpaceByIdentifier = new HashMap<>();
+        Map<String, SpaceName> resultingSpaceByIdentifier = new HashMap<>();
         Map<String, Set<JsonLdId>> resultingIdsByIdentifier = new HashMap<>();
         persistedIds.forEach(id -> {
             JsonLdId absoluteId = idUtils.buildAbsoluteUrl(id.getUUID());

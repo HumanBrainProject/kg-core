@@ -19,10 +19,12 @@ package eu.ebrains.kg.authentication.api;
 import eu.ebrains.kg.authentication.keycloak.KeycloakController;
 import eu.ebrains.kg.commons.model.Client;
 import eu.ebrains.kg.commons.permission.ClientAuthToken;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.web.bind.annotation.*;
 
 @RequestMapping("/internal/authentication/clients")
 @RestController
+@ConditionalOnProperty(value = "eu.ebrains.kg.test", havingValue = "false", matchIfMissing = true)
 public class AuthenticationClientsAPI {
 
     private final KeycloakController keycloakController;

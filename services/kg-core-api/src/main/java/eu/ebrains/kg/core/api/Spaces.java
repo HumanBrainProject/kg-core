@@ -75,7 +75,7 @@ public class Spaces {
         if (permissions) {
             UserWithRoles userWithRoles = authContext.getUserWithRoles();
             spaces.getData().forEach(space -> {
-                List<Functionality> applyingFunctionalities = userWithRoles.getPermissions().stream().filter(f -> (f.getFunctionality().getStage() == null || f.getFunctionality().getStage() == stage.getStage()) && f.getFunctionality().getFunctionalityGroup() == Functionality.FunctionalityGroup.INSTANCE && f.appliesTo(Space.fromJsonLd(space), null)).map(FunctionalityInstance::getFunctionality).collect(Collectors.toList());
+                List<Functionality> applyingFunctionalities = userWithRoles.getPermissions().stream().filter(f -> (f.getFunctionality().getStage() == null || f.getFunctionality().getStage() == stage.getStage()) && f.getFunctionality().getFunctionalityGroup() == Functionality.FunctionalityGroup.INSTANCE && f.appliesTo(Space.fromJsonLd(space).getName(), null)).map(FunctionalityInstance::getFunctionality).collect(Collectors.toList());
                 space.put(EBRAINSVocabulary.META_PERMISSIONS, applyingFunctionalities);
             });
         }

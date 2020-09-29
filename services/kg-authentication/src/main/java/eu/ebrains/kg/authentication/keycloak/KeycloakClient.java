@@ -17,14 +17,11 @@
 package eu.ebrains.kg.authentication.keycloak;
 
 import eu.ebrains.kg.commons.exception.UnauthorizedException;
-import eu.ebrains.kg.commons.permission.Functionality;
-import eu.ebrains.kg.commons.permission.FunctionalityInstance;
-import eu.ebrains.kg.commons.permission.GlobalPermissionGroup;
-import eu.ebrains.kg.commons.permission.Role;
+import eu.ebrains.kg.commons.permission.roles.ClientRole;
+import eu.ebrains.kg.commons.permission.roles.Role;
 import org.keycloak.admin.client.Keycloak;
 import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.admin.client.resource.RealmResource;
-import org.keycloak.admin.client.resource.RoleResource;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.RealmRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
@@ -41,7 +38,6 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 @Component
 public class KeycloakClient {
@@ -150,8 +146,7 @@ public class KeycloakClient {
                 clientRepresentation.setRedirectUris(Arrays.asList(getRedirectUri(), "http://localhost*"));
             }
             getClientResource().update(clientRepresentation);
-            Functionality.getGlobalFunctionality().forEach(f -> createRoleForClient(new FunctionalityInstance(f, null, null).toRole()));
-            Arrays.stream(GlobalPermissionGroup.values()).forEach(p -> createRoleForClient(p.toRole()));
+            Arrays.stream(ClientRole.values()).forEach(p -> createRoleForClient(p.toRole()));
         } catch (ForbiddenException e) {
             throw new UnauthorizedException(String.format("Your keycloak account does not allow to configure clients in realm %s", config.getRealm()));
         }
@@ -199,19 +194,7 @@ public class KeycloakClient {
             RoleRepresentation roleRepresentation = new RoleRepresentation();
             roleRepresentation.setName(role.getName());
             logger.info(String.format("Create role %s in client %s", role.getName(), getClientId()));
-
             getClientResource().roles().create(roleRepresentation);
-            if (role.getIncludedRoles() != null && !role.getIncludedRoles().isEmpty()) {
-                RoleResource roleResource = getClientResource().roles().get(role.getName());
-                roleResource.addComposites(role.getIncludedRoles().stream().map(r -> {
-                    try {
-                        return getClientResource().roles().get(r.getName()).toRepresentation();
-                    } catch (NotFoundException notFound) {
-                        logger.error(String.format("Was not able to find role %s", r.getName()));
-                        throw notFound;
-                    }
-                }).collect(Collectors.toList()));
-            }
         }
     }
 

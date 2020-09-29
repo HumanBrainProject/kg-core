@@ -21,7 +21,7 @@ import eu.ebrains.kg.commons.IdUtils;
 import eu.ebrains.kg.commons.exception.UnauthorizedException;
 import eu.ebrains.kg.commons.jsonld.*;
 import eu.ebrains.kg.commons.model.DataStage;
-import eu.ebrains.kg.commons.model.Space;
+import eu.ebrains.kg.commons.model.SpaceName;
 import eu.ebrains.kg.core.serviceCall.CoreExtraToGraphDB;
 import eu.ebrains.kg.core.serviceCall.CoreExtraToIds;
 import eu.ebrains.kg.core.serviceCall.CoreToPrimaryStore;
@@ -55,11 +55,11 @@ public class CoreInferenceController {
     private final Logger logger = LoggerFactory.getLogger(getClass());
 
     @Async
-    public void asyncTriggerInference(Space space, String identifier, AuthTokens authTokens){
+    public void asyncTriggerInference(SpaceName space, String identifier, AuthTokens authTokens){
         triggerInference(space, identifier, authTokens);
     }
 
-    public void triggerInference(Space space, String identifier, AuthTokens authTokens) {
+    public void triggerInference(SpaceName space, String identifier, AuthTokens authTokens) {
         List<UUID> uuids;
         if (identifier == null) {
             uuids = graphSvc.getDocumentIdsBySpace(space, authTokens).stream().map(UUID::fromString).collect(Collectors.toList());
@@ -112,7 +112,7 @@ public class CoreInferenceController {
         return uuid;
     }
 
-    public void triggerDeferredInference(AuthTokens authTokens, Space space, boolean synchronous) {
+    public void triggerDeferredInference(AuthTokens authTokens, SpaceName space, boolean synchronous) {
         primaryStoreSvc.inferDeferred(authTokens, space, synchronous);
     }
 }

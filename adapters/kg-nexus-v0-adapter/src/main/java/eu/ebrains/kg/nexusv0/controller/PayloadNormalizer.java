@@ -21,7 +21,7 @@ import eu.ebrains.kg.commons.jsonld.JsonLdConsts;
 import eu.ebrains.kg.commons.jsonld.JsonLdDoc;
 import eu.ebrains.kg.commons.jsonld.JsonLdId;
 import eu.ebrains.kg.commons.jsonld.NormalizedJsonLd;
-import eu.ebrains.kg.commons.model.Space;
+import eu.ebrains.kg.commons.model.SpaceName;
 import eu.ebrains.kg.nexusv0.serviceCall.CoreSvc;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -77,7 +77,7 @@ public class PayloadNormalizer {
         return normalizedJsonLdDoc;
     }
 
-    public static Space normalizeIfSuffixed(Space space) {
+    public static SpaceName normalizeIfSuffixed(SpaceName space) {
         for (String s : removeSpaceEnding) {
             if (space.getName().endsWith(s)) {
                 space.setName(space.getName().substring(0, space.getName().length() - s.length()));
@@ -87,7 +87,7 @@ public class PayloadNormalizer {
     }
 
     public String getAbsoluteNexusUrl(String organization, String domain, String schema, String version, String id, boolean removeSuffix, String nexusEndpoint) {
-        return nexusEndpoint + String.format("data/%s/%s/%s/%s/%s", removeSuffix ? normalizeIfSuffixed(new Space(organization)).getName() : organization, domain, schema, version, id);
+        return nexusEndpoint + String.format("data/%s/%s/%s/%s/%s", removeSuffix ? normalizeIfSuffixed(new SpaceName(organization)).getName() : organization, domain, schema, version, id);
     }
 
     public String getRelativeUrl(String absoluteUrl, String nexusEndpoint){
@@ -109,13 +109,13 @@ public class PayloadNormalizer {
         return absoluteUrl;
     }
 
-    public Space getSpaceFromUrl(String absoluteUrl){
+    public SpaceName getSpaceFromUrl(String absoluteUrl){
         int i = absoluteUrl.indexOf("/v0/data/");
         if(i>-1){
             String relative = absoluteUrl.substring(i + "/v0/data/".length());
             String[] split = relative.split("/");
             if(split.length>0){
-                return normalizeIfSuffixed(new Space(split[0]));
+                return normalizeIfSuffixed(new SpaceName(split[0]));
             }
         }
         return null;

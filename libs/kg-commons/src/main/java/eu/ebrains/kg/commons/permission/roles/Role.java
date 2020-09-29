@@ -14,21 +14,13 @@
  * limitations under the License.
  */
 
-package eu.ebrains.kg.commons.permission;
-
-import java.util.Set;
+package eu.ebrains.kg.commons.permission.roles;
 
 public class Role {
     private String name;
-    private Set<Role> includedRoles;
 
     public Role(String name) {
         this.name = name;
-    }
-
-    public Role(String name, Set<Role> includedRoles) {
-        this.name = name;
-        this.includedRoles = includedRoles;
     }
 
     public Role() {
@@ -40,13 +32,5 @@ public class Role {
 
     public void setName(String name) {
         this.name = name;
-    }
-
-    public Set<Role> getIncludedRoles() {
-        return includedRoles;
-    }
-
-    public void setIncludedRoles(Set<Role> includedRoles) {
-        this.includedRoles = includedRoles;
     }
 }

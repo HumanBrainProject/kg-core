@@ -48,7 +48,7 @@ public class GraphDBTypesAPI {
 
     private Paginated<NormalizedJsonLd> getTypes(DataStage stage, String space, boolean withProperties, boolean withCount, PaginationParam paginationParam) {
         if (space != null && !space.isEmpty()) {
-            return repositoryTypes.getTypesForSpace(authContext.getUserWithRoles().getClientId(), stage, new Space(space), withProperties, withCount, paginationParam);
+            return repositoryTypes.getTypesForSpace(authContext.getUserWithRoles().getClientId(), stage, new SpaceName(space), withProperties, withCount, paginationParam);
         } else {
             return repositoryTypes.getAllTypes(authContext.getUserWithRoles().getClientId(), stage, withProperties, withCount, paginationParam);
         }
@@ -73,7 +73,7 @@ public class GraphDBTypesAPI {
         List<Type> typeList = types.stream().map(Type::new).collect(Collectors.toList());
         List<NormalizedJsonLd> typeObjects;
         if (space != null && !space.isBlank()) {
-            typeObjects = repositoryTypes.getTypesForSpace(authContext.getUserWithRoles().getClientId(), stage, new Space(space), typeList, withProperties, withCounts);
+            typeObjects = repositoryTypes.getTypesForSpace(authContext.getUserWithRoles().getClientId(), stage, new SpaceName(space), typeList, withProperties, withCounts);
         } else {
             typeObjects = repositoryTypes.getTypes(authContext.getUserWithRoles().getClientId(), stage, typeList, withProperties, withCounts);
         }

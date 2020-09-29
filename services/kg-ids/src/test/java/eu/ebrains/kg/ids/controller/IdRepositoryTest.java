@@ -21,7 +21,7 @@ import eu.ebrains.kg.arango.commons.model.ArangoDatabaseProxy;
 import eu.ebrains.kg.commons.IdUtils;
 import eu.ebrains.kg.commons.jsonld.JsonLdId;
 import eu.ebrains.kg.commons.model.DataStage;
-import eu.ebrains.kg.commons.model.Space;
+import eu.ebrains.kg.commons.model.SpaceName;
 import eu.ebrains.kg.ids.model.PersistedId;
 import eu.ebrains.kg.test.JsonAdapter4Test;
 import org.junit.Assert;
@@ -41,7 +41,7 @@ public class IdRepositoryTest {
     public void upsertWithMerge() {
         //Given
         String namespace = "http://test/";
-        Space foo = new Space("foo");
+        SpaceName foo = new SpaceName("foo");
         IdUtils idUtils = new IdUtils(namespace);
 
         IdRepository idRepository = Mockito.spy(new IdRepository(Mockito.mock(ArangoDatabaseProxy.class), new JsonAdapter4Test(), idUtils));
@@ -51,7 +51,7 @@ public class IdRepositoryTest {
         //We start with two instances in the "database": the first doc with one alternative...
         PersistedId existingPersistedId = new PersistedId();
         existingPersistedId.setUUID(UUID.randomUUID());
-        existingPersistedId.setSpace(new Space("foo"));
+        existingPersistedId.setSpace(new SpaceName("foo"));
         existingPersistedId.setAlternativeIds(new HashSet<>(Arrays.asList("http://bar/foo")));
         Mockito.doReturn(existingPersistedId).when(collection).getDocument(Mockito.any(), Mockito.any());
 

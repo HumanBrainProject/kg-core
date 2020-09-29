@@ -25,7 +25,7 @@ import eu.ebrains.kg.commons.jsonld.InferredJsonLdDoc;
 import eu.ebrains.kg.commons.jsonld.JsonLdDoc;
 import eu.ebrains.kg.commons.jsonld.JsonLdId;
 import eu.ebrains.kg.commons.jsonld.NormalizedJsonLd;
-import eu.ebrains.kg.commons.model.Space;
+import eu.ebrains.kg.commons.model.SpaceName;
 import eu.ebrains.kg.commons.query.KgQuery;
 import eu.ebrains.kg.commons.semantics.vocabularies.EBRAINSVocabulary;
 import eu.ebrains.kg.graphdb.commons.model.ArangoDocument;
@@ -129,7 +129,7 @@ public class StructureSplitter {
         edge.setOriginalLabel(EBRAINSVocabulary.META_ALTERNATIVE);
         edge.setOriginalDocument(originalDocumentReference);
         edge.setFrom(parent.getId());
-        edge.redefineId(ArangoCollectionReference.fromSpace(new Space(EBRAINSVocabulary.META_ALTERNATIVE)).doc(UUID.randomUUID()));
+        edge.redefineId(ArangoCollectionReference.fromSpace(new SpaceName(EBRAINSVocabulary.META_ALTERNATIVE)).doc(UUID.randomUUID()));
         collector.add(edge);
         subTree.put(EBRAINSVocabulary.META_ALTERNATIVE, alternativeId);
     }
@@ -173,7 +173,7 @@ public class StructureSplitter {
         edge.setOriginalLabel(relationName);
         edge.setOriginalDocument(originalDocumentRef);
         edge.setFrom(parent.getId());
-        edge.redefineId(ArangoCollectionReference.fromSpace(new Space(relationName)).doc(UUID.randomUUID()));
+        edge.redefineId(ArangoCollectionReference.fromSpace(new SpaceName(relationName)).doc(UUID.randomUUID()));
         if (edge.getOriginalTo() != null) {
             collector.add(edge);
             return edge;

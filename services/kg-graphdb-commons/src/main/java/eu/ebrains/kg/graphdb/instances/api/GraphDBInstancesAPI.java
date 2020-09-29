@@ -54,7 +54,7 @@ public class GraphDBInstancesAPI {
 
     @GetMapping("instances/{space}/{id}")
     public NormalizedJsonLd getInstanceById(@PathVariable("space") String space, @PathVariable("id") UUID id, @PathVariable("stage") DataStage stage, @RequestParam(value = "returnEmbedded", defaultValue = "false") boolean returnEmbedded, @RequestParam(value = "returnAlternatives", required = false, defaultValue = "false") boolean returnAlternatives, @RequestParam(value = "removeInternalProperties", required = false, defaultValue = "true") boolean removeInternalProperties) {
-        return repository.getInstance(stage, new Space(space), id, returnEmbedded, removeInternalProperties, returnAlternatives);
+        return repository.getInstance(stage, new SpaceName(space), id, returnEmbedded, removeInternalProperties, returnAlternatives);
     }
 
     @GetMapping("instancesByType")
@@ -64,7 +64,7 @@ public class GraphDBInstancesAPI {
             //Since we're searching by label, we need to reflect on the type -> we therefore have to resolve the type in the database first...
             types = typeRepository.getTypeInformation(authContext.getUserWithRoles().getClientId(), stage, types);
         }
-        return repository.getDocumentsByTypes(stage, types, space!=null && !space.isBlank() ? new Space(space) : null, paginationParam, searchByLabel, returnEmbedded, returnAlternatives);
+        return repository.getDocumentsByTypes(stage, types, space!=null && !space.isBlank() ? new SpaceName(space) : null, paginationParam, searchByLabel, returnEmbedded, returnAlternatives);
     }
 
     @GetMapping("queriesByType")
@@ -88,39 +88,39 @@ public class GraphDBInstancesAPI {
 
   @GetMapping("instancesByIdentifier/{space}")
   public List<NormalizedJsonLd> getInstancesByIdentifier(@RequestParam("identifier") String identifier, @PathVariable("space") String space, @PathVariable("stage") DataStage stage) {
-        return repository.getDocumentsByIdentifiers(Collections.singleton(identifier), stage, new Space(space), false, false);
+        return repository.getDocumentsByIdentifiers(Collections.singleton(identifier), stage, new SpaceName(space), false, false);
   }
 
     @GetMapping("instances/{space}/{id}/relatedByIdentifier")
     public List<NormalizedJsonLd> getDocumentWithRelatedInstancesByIdentifiers(@PathVariable("space") String space, @PathVariable("id") UUID id, @PathVariable("stage") DataStage stage, @RequestParam(value = "returnEmbedded", required = false, defaultValue = "false") boolean returnEmbedded, @RequestParam(value = "returnAlternatives", required = false, defaultValue = "false") boolean returnAlternatives) {
-        return repository.getDocumentsBySharedIdentifiers(stage, new Space(space), id, returnEmbedded, returnAlternatives);
+        return repository.getDocumentsBySharedIdentifiers(stage, new SpaceName(space), id, returnEmbedded, returnAlternatives);
     }
 
     @GetMapping("instances/{space}/{id}/relatedByIncomingRelation")
     public List<NormalizedJsonLd> getDocumentWithIncomingRelatedInstances(@PathVariable("space") String space, @PathVariable("id") UUID id, @PathVariable("stage") DataStage stage, @RequestParam("relation") String relation, @RequestParam(value = "useOriginalTo", defaultValue = "false") boolean useOriginalTo, @RequestParam(value = "returnEmbedded", required = false, defaultValue = "false") boolean returnEmbedded, @RequestParam(value = "returnAlternatives", required = false, defaultValue = "false") boolean returnAlternatives) {
-        return repository.getDocumentsByIncomingRelation(stage, new Space(space), id, new ArangoRelation(URLDecoder.decode(relation, StandardCharsets.UTF_8)), useOriginalTo, returnEmbedded, returnAlternatives);
+        return repository.getDocumentsByIncomingRelation(stage, new SpaceName(space), id, new ArangoRelation(URLDecoder.decode(relation, StandardCharsets.UTF_8)), useOriginalTo, returnEmbedded, returnAlternatives);
     }
 
     @GetMapping("instances/{space}/{id}/relatedByOutgoingRelation")
     public List<NormalizedJsonLd> getDocumentWithOutgoingRelatedInstances(@PathVariable("space") String space, @PathVariable("id") UUID id, @PathVariable("stage") DataStage stage, @RequestParam("relation") String relation, @RequestParam(value = "returnEmbedded", required = false, defaultValue = "false") boolean returnEmbedded, @RequestParam(value = "returnAlternatives", required = false, defaultValue = "false") boolean returnAlternatives) {
-        return repository.getDocumentsByOutgoingRelation(stage, new Space(space), id, new ArangoRelation(URLDecoder.decode(relation, StandardCharsets.UTF_8)), returnEmbedded, returnAlternatives);
+        return repository.getDocumentsByOutgoingRelation(stage, new SpaceName(space), id, new ArangoRelation(URLDecoder.decode(relation, StandardCharsets.UTF_8)), returnEmbedded, returnAlternatives);
     }
 
     @GetMapping("instances/{space}/{id}/neighbors")
     public GraphEntity getNeighbors(@PathVariable("space") String space, @PathVariable("id") UUID id, @PathVariable("stage") DataStage stage) {
-        return repository.getNeighbors(stage, new Space(space), id);
+        return repository.getNeighbors(stage, new SpaceName(space), id);
     }
 
     @GetMapping("instances/{space}/{id}/releaseStatus")
     public ReleaseStatus getReleaseStatus(@PathVariable("space") String space, @PathVariable("id") UUID id, @RequestParam("releaseTreeScope") ReleaseTreeScope treeScope) {
-        return repository.getReleaseStatus(new Space(space), id, treeScope);
+        return repository.getReleaseStatus(new SpaceName(space), id, treeScope);
     }
 
 
     @PostMapping("instances/{space}/{id}/suggestedLinksForProperty")
     public SuggestionResult getSuggestedLinksForProperty(@RequestBody(required = false) NormalizedJsonLd payload, @PathVariable("stage") DataStage stage, @PathVariable("space") String space, @PathVariable("id") UUID id, @RequestParam(value = "property") String propertyName, @RequestParam(value = "type", required = false) String type, @RequestParam(value = "search", required = false) String search, PaginationParam paginationParam) {
         if (payload == null) {
-            payload = repository.getInstance(stage, new Space(space), id, true, true, false);
+            payload = repository.getInstance(stage, new SpaceName(space), id, true, true, false);
         }
         SuggestionResult suggestionResult = new SuggestionResult();
         ArangoRepositoryTypes.TargetsForProperties properties = new ArangoRepositoryTypes.TargetsForProperties(propertyName, payload.types());

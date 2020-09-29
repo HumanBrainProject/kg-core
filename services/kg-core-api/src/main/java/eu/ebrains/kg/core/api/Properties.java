@@ -24,7 +24,7 @@ import eu.ebrains.kg.commons.jsonld.JsonLdId;
 import eu.ebrains.kg.commons.jsonld.NormalizedJsonLd;
 import eu.ebrains.kg.commons.model.Event;
 import eu.ebrains.kg.commons.model.Result;
-import eu.ebrains.kg.commons.model.Space;
+import eu.ebrains.kg.commons.model.SpaceName;
 import eu.ebrains.kg.commons.semantics.vocabularies.EBRAINSVocabulary;
 import eu.ebrains.kg.core.serviceCall.CoreToPrimaryStore;
 import io.swagger.v3.oas.annotations.Operation;
@@ -58,7 +58,7 @@ public class Properties {
         if(!payload.containsKey(EBRAINSVocabulary.META_PROPERTY)) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Result.nok(HttpStatus.BAD_REQUEST.value(), String.format("Property \"%s\" should be specified.", EBRAINSVocabulary.META_PROPERTY)));
         }
-        Space targetSpace = global ? InternalSpace.GLOBAL_SPEC : authContext.getClientSpace();
+        SpaceName targetSpace = global ? InternalSpace.GLOBAL_SPEC : authContext.getClientSpace().getName();
         JsonLdId property = payload.getAs(EBRAINSVocabulary.META_PROPERTY, JsonLdId.class);
         List<String> listOfType = payload.getAsListOf(JsonLdConsts.TYPE, String.class);
         if(listOfType.isEmpty()) {
