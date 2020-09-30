@@ -61,7 +61,7 @@ public class PermissionSvc {
     }
 
     public boolean hasPermission(UserWithRoles userWithRoles, Functionality functionality, SpaceName space, UUID id) {
-        boolean clientOwnedSpace = isServiceAccountForClientSpace(userWithRoles, space);
+         boolean clientOwnedSpace = isServiceAccountForClientSpace(userWithRoles, space);
         switch (functionality){
             case CREATE_SPACE:
                 //One special case is, that a client service account can create its own space even if there are no explicitly declared rights.

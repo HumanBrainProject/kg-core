@@ -23,7 +23,8 @@ import org.keycloak.admin.client.Keycloak;
 import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.representations.idm.ClientRepresentation;
-import org.keycloak.representations.idm.RealmRepresentation;
+import org.keycloak.representations.idm.ClientScopeRepresentation;
+import org.keycloak.representations.idm.ProtocolMapperRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -34,17 +35,20 @@ import org.springframework.web.reactive.function.client.WebClient;
 
 import javax.ws.rs.ForbiddenException;
 import javax.ws.rs.NotFoundException;
+import javax.ws.rs.core.Response;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 @Component
 public class KeycloakClient {
 
     private final KeycloakConfig config;
 
-    private final Keycloak adminKeycloak;
+    private final Keycloak kgKeycloak;
 
     private final WebClient.Builder webclient;
 
@@ -54,32 +58,31 @@ public class KeycloakClient {
 
     private String technicalClientId;
 
-    public KeycloakClient(KeycloakConfig config, Keycloak adminKeycloak, @Qualifier("direct") WebClient.Builder internalWebClient) {
-        this.config = config;
-        this.adminKeycloak = adminKeycloak;
-        this.webclient = internalWebClient;
-    }
+    private final String kgClientScopeName;
 
-    String getCurrentAccessToken() {
-        return this.adminKeycloak.tokenManager().getAccessTokenString();
+    public KeycloakClient(KeycloakConfig config, Keycloak kgKeycloak, @Qualifier("direct") WebClient.Builder internalWebClient) {
+        this.config = config;
+        this.webclient = internalWebClient;
+        this.kgKeycloak = kgKeycloak;
+        this.kgClientScopeName = config.getKgClientId() + "-scope";
     }
 
     String getClientId() {
-        return config.getClientId();
+        return config.getKgClientId();
     }
 
-    String getPublicKey(){
+    String getPublicKey() {
         Map issuerInfo = this.webclient.build().get().uri(config.getIssuer()).accept(MediaType.APPLICATION_JSON).retrieve().bodyToMono(Map.class).block();
         Object public_key = issuerInfo.get("public_key");
-        if(public_key instanceof String){
-            return (String)public_key;
+        if (public_key instanceof String) {
+            return (String) public_key;
         }
         return null;
     }
 
     private synchronized ClientRepresentation getClient() {
         if (clientResource == null) {
-            List<ClientRepresentation> byClientId = getRealmResource().clients().findByClientId(config.getClientId());
+            List<ClientRepresentation> byClientId = getRealmResource().clients().findByClientId(config.getKgClientId());
             if (byClientId != null && !byClientId.isEmpty()) {
                 ClientRepresentation clientRepresentation = byClientId.get(0);
                 technicalClientId = clientRepresentation.getId();
@@ -102,19 +105,13 @@ public class KeycloakClient {
         return technicalClientId;
     }
 
+
     RealmResource getRealmResource() {
-        return this.adminKeycloak.realm(config.getRealm());
+        return this.kgKeycloak.realm(config.getRealm());
     }
 
-    void ensureRealmClientAndGlobalRolesInKeycloak() {
-        RealmRepresentation realmRepresentation = getRealmResource().toRepresentation();
-        if (realmRepresentation == null) {
-            try {
-                this.adminKeycloak.realms().create(createRealm());
-            } catch (ForbiddenException e) {
-                throw new UnauthorizedException(String.format("The keycloak user you have specified does not have the permissions to create a realm and the realm %s doesn't exist yet", config.getRealm()));
-            }
-        }
+    public void ensureDefaultClientAndGlobalRolesInKeycloak() {
+        getRealmResource().toRepresentation();
         try {
             try {
                 boolean initialCreation = false;
@@ -133,16 +130,19 @@ public class KeycloakClient {
 
     private void configureDefaultClient(boolean initialConfig) {
         try {
+            ClientScopeRepresentation clientScope = createClientScope();
             ClientRepresentation clientRepresentation = new ClientRepresentation();
-            clientRepresentation.setClientId(config.getClientId());
+            clientRepresentation.setClientId(config.getKgClientId());
             clientRepresentation.setEnabled(true);
             clientRepresentation.setConsentRequired(true);
             clientRepresentation.setImplicitFlowEnabled(true);
             clientRepresentation.setStandardFlowEnabled(false);
+            clientRepresentation.setFullScopeAllowed(false);
+            getClientResource().addDefaultClientScope(clientScope.getId());
             Map<String, String> attributes = new HashMap<>();
             attributes.put("access.token.lifespan", "1800");
             clientRepresentation.setAttributes(attributes);
-            if(initialConfig){
+            if (initialConfig) {
                 clientRepresentation.setRedirectUris(Arrays.asList(getRedirectUri(), "http://localhost*"));
             }
             getClientResource().update(clientRepresentation);
@@ -152,35 +152,88 @@ public class KeycloakClient {
         }
     }
 
+    public ClientScopeRepresentation getKgClientScope(){
+        return getRealmResource().clientScopes().findAll().stream().filter(sc -> sc.getName().equals(kgClientScopeName)).findFirst().orElse(null);
+    }
+
+    private ClientScopeRepresentation createClientScope() {
+        ClientScopeRepresentation clientScope = getKgClientScope();
+        if (clientScope == null) {
+            clientScope = new ClientScopeRepresentation();
+        }
+        clientScope.setName(kgClientScopeName);
+        clientScope.setProtocol("openid-connect");
+        Map<String, String> attrs = new HashMap<>();
+        attrs.put("display.on.consent.screen", "true");
+        attrs.put("include.in.token.scope", "true");
+        clientScope.setAttributes(attrs);
+        String roleMapperName = "client roles";
+        ProtocolMapperRepresentation mapper = clientScope.getProtocolMappers().stream().filter(p -> p.getName().equals(roleMapperName)).findFirst().orElse(null);
+        if(mapper == null){
+            mapper = new ProtocolMapperRepresentation();
+        }
+        mapper.setProtocolMapper("oidc-usermodel-client-role-mapper");
+        mapper.setProtocol("openid-connect");
+        mapper.setName("client roles");
+        Map<String, String> c = new HashMap<>();
+        c.put("access.token.claim", "true");
+        c.put("claim.name", "resource_access.${client_id}.roles");
+        c.put("id.token.claim", "false");
+        c.put("jsonType.label", "String");
+        c.put("multivalued", "true");
+        c.put("userinfo.token.claim", "true");
+        c.put("usermodel.clientRoleMapping.clientId", config.getKgClientId());
+        c.put("usermodel.clientRoleMapping.rolePrefix", "");
+        mapper.setConfig(c);
+        if (clientScope.getId()!=null) {
+            getRealmResource().clientScopes().get(clientScope.getId()).update(clientScope);
+        } else {
+            Response response = getRealmResource().clientScopes().create(clientScope);
+            Response.Status status = response.getStatusInfo().toEnum();
+            if (Response.Status.Family.SUCCESSFUL != status.getFamily()) {
+                throw new RuntimeException(status.getReasonPhrase());
+            }
+        }
+        clientScope = getKgClientScope();
+        if ( clientScope != null) {
+            List<String> existingMappers = clientScope.getProtocolMappers().stream().map(ProtocolMapperRepresentation::getName).collect(Collectors.toList());
+            List<String> builtinProtocolMappers = Stream.of("given name", "full name", "family name", "email", "username").filter(l -> !existingMappers.contains(l)).collect(Collectors.toList());
+            List<ProtocolMapperRepresentation> mappers = kgKeycloak.serverInfo().getInfo().getBuiltinProtocolMappers().get("openid-connect").stream().filter(p -> builtinProtocolMappers.contains(p.getName())).collect(Collectors.toList());
+            getRealmResource().clientScopes().get(clientScope.getId()).getProtocolMappers().createMapper(mappers);
+            if(mapper.getId()!=null){
+                getRealmResource().clientScopes().get(clientScope.getId()).getProtocolMappers().update(mapper.getId(), mapper);
+            }
+            else{
+                getRealmResource().clientScopes().get(clientScope.getId()).getProtocolMappers().createMapper(mapper);
+            }
+            syncKgScopeWithKgRoles(clientScope.getId());
+        }
+        return clientScope;
+    }
+
+    public void syncKgScopeWithKgRoles(){
+        ClientScopeRepresentation kgClientScope = getKgClientScope();
+        if(kgClientScope!=null) {
+            syncKgScopeWithKgRoles(kgClientScope.getId());
+        }
+    }
+
+    private void syncKgScopeWithKgRoles(String clientScopeId){
+        List<RoleRepresentation> kgRoles = getRealmResource().clients().get(getClient().getId()).roles().list();
+        getRealmResource().clientScopes().get(clientScopeId).getScopeMappings().clientLevel(getClient().getId()).add(kgRoles);
+    }
+
     private void createDefaultClient() {
         try {
             ClientRepresentation clientRepresentation = new ClientRepresentation();
-            clientRepresentation.setClientId(config.getClientId());
+            clientRepresentation.setClientId(config.getKgClientId());
             getRealmResource().clients().create(clientRepresentation);
+            getClientResource().getDefaultClientScopes().forEach(c -> getClientResource().removeDefaultClientScope(c.getId()));
         } catch (ForbiddenException e) {
             throw new UnauthorizedException(String.format("Your keycloak client does not allow to create clients in realm %s", config.getRealm()));
         }
     }
 
-
-    private RealmRepresentation createRealm() {
-        RealmRepresentation kgRealm = new RealmRepresentation();
-        kgRealm.setRealm(config.getRealm());
-        kgRealm.setEnabled(true);
-        kgRealm.setUserManagedAccessAllowed(true);
-        kgRealm.setRegistrationAllowed(true);
-        kgRealm.setVerifyEmail(true);
-        kgRealm.setLoginWithEmailAllowed(true);
-        kgRealm.setResetPasswordAllowed(true);
-        //TODO Check numbers / make them configurable.
-        kgRealm.setSsoSessionIdleTimeout(4 * 60);
-        kgRealm.setSsoSessionMaxLifespan(7 * 24 * 60);
-        kgRealm.setAccessTokenLifespan(60 * 60);
-        kgRealm.setAccessTokenLifespanForImplicitFlow(60 * 60);
-        kgRealm.setMaxDeltaTimeSeconds(30 * 60);
-
-        return kgRealm;
-    }
 
     private String getRedirectUri() {
         return String.format("%s%s*", config.isHttps() ? "https://" : "http://", config.getIp());
@@ -191,14 +244,13 @@ public class KeycloakClient {
         try {
             getClientResource().roles().get(role.getName()).toRepresentation();
         } catch (NotFoundException e) {
-            try{
+            try {
                 RoleRepresentation roleRepresentation = new RoleRepresentation();
                 roleRepresentation.setName(role.getName());
                 logger.info(String.format("Create role %s in client %s", role.getName(), getClientId()));
                 getClientResource().roles().create(roleRepresentation);
-            }
-            catch (ForbiddenException ex) {
-                throw new UnauthorizedException(String.format("Your keycloak account does not allow to configure roles in realm %s and client %s", config.getRealm(), config.getClientId()));
+            } catch (ForbiddenException ex) {
+                throw new UnauthorizedException(String.format("Your keycloak account does not allow to configure roles in realm %s and client %s", config.getRealm(), config.getKgClientId()));
             }
         }
     }

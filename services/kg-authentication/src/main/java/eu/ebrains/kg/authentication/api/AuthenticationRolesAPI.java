@@ -18,6 +18,7 @@ package eu.ebrains.kg.authentication.api;
 
 import eu.ebrains.kg.authentication.keycloak.KeycloakController;
 import eu.ebrains.kg.commons.model.User;
+import eu.ebrains.kg.commons.permission.roles.Role;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.web.bind.annotation.*;
 
@@ -44,5 +45,10 @@ public class AuthenticationRolesAPI {
     @PutMapping("/{role}/users/{nativeUserId}")
     public void addUserToRole(@PathVariable("role") String role, @PathVariable("nativeUserId") String nativeUserId) {
         keycloakController.addUserToRole(nativeUserId, URLDecoder.decode(role, StandardCharsets.UTF_8));
+    }
+
+    @PostMapping
+    public void createRoles(@RequestBody List<Role> roles) {
+        keycloakController.createRoles(roles);
     }
 }

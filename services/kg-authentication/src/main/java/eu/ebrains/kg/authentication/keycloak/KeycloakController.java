@@ -47,6 +47,7 @@ import org.springframework.web.reactive.function.BodyInserters;
 import org.springframework.web.reactive.function.client.WebClient;
 
 import javax.annotation.PostConstruct;
+import javax.ws.rs.NotAuthorizedException;
 import javax.ws.rs.ProcessingException;
 import java.security.KeyFactory;
 import java.security.NoSuchAlgorithmException;
@@ -69,8 +70,6 @@ public class KeycloakController {
     private final KeycloakClient keycloakClient;
 
     private final AuthContext authContext;
-
-    private ClientScopeRepresentation profileScope;
 
     private final KeycloakUsers keycloakUsers;
 
@@ -132,39 +131,33 @@ public class KeycloakController {
 
     public Client registerClient(Client client) {
         ClientRepresentation c = findClient(client.getIdentifier());
-        if (c != null) {
-            client.setServiceAccountId(keycloakClient.getRealmResource().clients().get(c.getId()).getServiceAccountUser().getId());
-        } else {
+        if (c == null) {
             //Create if it doesn't exist
             c = new ClientRepresentation();
             c.setClientId(client.getIdentifier());
-            c.setDirectAccessGrantsEnabled(true);
-            c.setImplicitFlowEnabled(false);
-            c.setStandardFlowEnabled(false);
-            c.setServiceAccountsEnabled(true);
             keycloakClient.getRealmResource().clients().create(c);
             c = findClient(client.getIdentifier());
         }
         if (c != null) {
-            Arrays.stream(RoleMapping.values()).filter(r -> r != RoleMapping.IS_CLIENT).forEach(p -> createRoleForClient(p.toRole(client.getSpace().getName())));
+            c.setDirectAccessGrantsEnabled(false);
+            c.setImplicitFlowEnabled(false);
+            c.setStandardFlowEnabled(false);
+            c.setServiceAccountsEnabled(true);
+            c.setFullScopeAllowed(false);
+            keycloakClient.getRealmResource().clients().get(c.getId()).update(c);
+            List<Role> roles = Arrays.stream(RoleMapping.values()).filter(r -> r != RoleMapping.IS_CLIENT).map(p -> p.toRole(client.getSpace().getName())).collect(Collectors.toList());
+            createRoles(roles);
             ClientResource clientResource = keycloakClient.getRealmResource().clients().get(c.getId());
             String serviceAccountId = clientResource.getServiceAccountUser().getId();
-            String profileClientScopeId = getProfileClientScopeId(clientResource);
-            if (profileClientScopeId != null) {
-                clientResource.addDefaultClientScope(profileClientScopeId);
+            ClientScopeRepresentation kgClientScope = keycloakClient.getKgClientScope();
+            if(kgClientScope!=null){
+                clientResource.addDefaultClientScope(kgClientScope.getId());
             }
             UserResource userResource = keycloakClient.getRealmResource().users().get(serviceAccountId);
             userResource.roles().clientLevel(keycloakClient.getTechnicalClientId()).add(getServiceAccountRoles(client.getSpace().getName()));
             client.setServiceAccountId(serviceAccountId);
         }
         return client;
-    }
-
-    private String getProfileClientScopeId(ClientResource clientResource) {
-        if (profileScope == null) {
-            profileScope = clientResource.getDefaultClientScopes().stream().filter(scope -> scope.getName().equals("profile")).findFirst().orElse(null);
-        }
-        return profileScope != null ? profileScope.getId() : null;
     }
 
     private List<RoleRepresentation> getServiceAccountRoles(SpaceName space) {
@@ -176,8 +169,9 @@ public class KeycloakController {
         return Arrays.asList(ownerRoleResource.toRepresentation(), isClientRoleResource.toRepresentation());
     }
 
-    public void createRoleForClient(Role role) {
-        keycloakClient.createRoleForClient(role);
+    public void createRoles(List<Role> roles){
+        roles.forEach(keycloakClient::createRoleForClient);
+        keycloakClient.syncKgScopeWithKgRoles();
     }
 
     public List<Role> getNonExistingRoles(List<Role> roles) {
@@ -203,14 +197,19 @@ public class KeycloakController {
             logger.info(String.format("Removing role %s from client %s", r.getName(), keycloakClient.getClientId()));
             keycloakClient.getClientResource().roles().deleteRole(r.getName());
         });
+        keycloakClient.syncKgScopeWithKgRoles();
     }
 
     @PostConstruct
     public void setup() {
-        if (config.getPwd() != null && !config.getPwd().isEmpty()) {
-            try {
-                keycloakClient.ensureRealmClientAndGlobalRolesInKeycloak();
-            } catch (ProcessingException ex) {
+        try {
+            keycloakClient.ensureDefaultClientAndGlobalRolesInKeycloak();
+        }
+        catch (ProcessingException ex) {
+            if (ex.getCause() instanceof NotAuthorizedException){
+                logger.error("The registered kg-core keycloak account is not authorized. Please make sure, you have the right credential (if this is a new installation, you should consider executing the setup api) ");
+            }
+            else {
                 try {
                     logger.warn("Was not able to connect to keycloak - trying again in 5 secs...");
                     Thread.sleep(5000);
@@ -322,7 +321,7 @@ public class KeycloakController {
     public List<String> buildRoleListFromKeycloak(Map<String, Claim> authInfo) {
         Claim resource_access = authInfo.get("resource_access");
         if (resource_access != null) {
-            Object kgResources = resource_access.asMap().get(config.getClientId());
+            Object kgResources = resource_access.asMap().get(config.getKgClientId());
             if (kgResources instanceof Map) {
                 Map<String, Object> kg = (Map<String, Object>) kgResources;
                 Object roles = kg.get("roles");

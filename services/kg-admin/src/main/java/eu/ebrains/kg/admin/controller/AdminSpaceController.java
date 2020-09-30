@@ -31,9 +31,10 @@ import eu.ebrains.kg.commons.permission.roles.RoleMapping;
 import org.springframework.stereotype.Component;
 
 import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 @Component
 public class AdminSpaceController {
@@ -54,9 +55,8 @@ public class AdminSpaceController {
     }
 
     public InstanceId createSpace(Space space, boolean global) {
-        List<Role> roles = findRoles(space.getName(), RoleMapping.ADMIN, new ArrayList<>());
         List<InstanceId> instanceIds = defineSpace(space, global);
-        authenticationSvc.createRoles(roles);
+        authenticationSvc.createRoles(Arrays.stream(RoleMapping.values()).filter(r -> r != RoleMapping.IS_CLIENT).map(r -> r.toRole(space.getName())).collect(Collectors.toList()));
         return instanceIds.size()==1 ? instanceIds.get(0) : null;
     }
 
