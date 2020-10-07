@@ -138,9 +138,11 @@ public class KeycloakClient {
             clientRepresentation.setImplicitFlowEnabled(true);
             clientRepresentation.setStandardFlowEnabled(false);
             clientRepresentation.setFullScopeAllowed(false);
+            clientRepresentation.setPublicClient(true);
             getClientResource().addDefaultClientScope(clientScope.getId());
             Map<String, String> attributes = new HashMap<>();
             attributes.put("access.token.lifespan", "1800");
+            attributes.put("consent.screen.text", "By using the EBRAINS Knowledge Graph, you agree to the according terms of use available at https://kg.ebrains.eu/search-terms-of-use.html");
             clientRepresentation.setAttributes(attributes);
             if (initialConfig) {
                 clientRepresentation.setRedirectUris(Arrays.asList(getRedirectUri(), "http://localhost*"));
@@ -166,6 +168,7 @@ public class KeycloakClient {
         Map<String, String> attrs = new HashMap<>();
         attrs.put("display.on.consent.screen", "true");
         attrs.put("include.in.token.scope", "true");
+        attrs.put("consent.screen.text", "You agree to share user information (user name, family and given name as well as your e-mail address) with the EBRAINS KG");
         clientScope.setAttributes(attrs);
         String roleMapperName = "client roles";
         ProtocolMapperRepresentation mapper = clientScope.getProtocolMappers().stream().filter(p -> p.getName().equals(roleMapperName)).findFirst().orElse(null);
