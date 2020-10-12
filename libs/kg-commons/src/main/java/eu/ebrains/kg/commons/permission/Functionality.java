@@ -27,6 +27,10 @@ import java.util.stream.Collectors;
 
 public enum Functionality {
 
+    //The minimal read permission allows to receive the label as well as type and space information. This is e.g. useful whenever users are required to link to instances of other spaces, which they are not allowed to see everything.
+    MINIMAL_READ(Permission.Level.GLOBAL_AND_SPACE, FunctionalityGroup.PERMISSIONS, null, null, null),
+    MINIMAL_READ_RELEASED(Permission.Level.GLOBAL_AND_SPACE, FunctionalityGroup.PERMISSIONS, null, null, null),
+
     READ_PERMISSION(Permission.Level.GLOBAL_AND_SPACE, FunctionalityGroup.PERMISSIONS, null, null, null),
     CREATE_PERMISSION(Permission.Level.GLOBAL_AND_SPACE, FunctionalityGroup.PERMISSIONS, null, null, null ),
     DELETE_PERMISSION(Permission.Level.GLOBAL_AND_SPACE, FunctionalityGroup.PERMISSIONS, null, null, null),
@@ -43,6 +47,7 @@ public enum Functionality {
     //Instances
     READ_RELEASED(Permission.Level.ALL_LEVELS, FunctionalityGroup.INSTANCE, DataStage.RELEASED, null, null),
     READ(Permission.Level.ALL_LEVELS, FunctionalityGroup.INSTANCE, DataStage.IN_PROGRESS, null, null),
+    RELEASE_STATUS(Permission.Level.ALL_LEVELS, FunctionalityGroup.INSTANCE, DataStage.IN_PROGRESS, null, null),
     SUGGEST(Permission.Level.ALL_LEVELS, FunctionalityGroup.INSTANCE, DataStage.IN_PROGRESS, null, null),
     WRITE(Permission.Level.GLOBAL_AND_SPACE, FunctionalityGroup.INSTANCE, DataStage.IN_PROGRESS, null, null),
     CREATE( Permission.Level.GLOBAL_AND_SPACE, FunctionalityGroup.INSTANCE, DataStage.IN_PROGRESS, null, null),

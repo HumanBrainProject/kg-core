@@ -22,6 +22,10 @@ import eu.ebrains.kg.commons.jsonld.InstanceId;
 import eu.ebrains.kg.commons.jsonld.JsonLdDoc;
 import eu.ebrains.kg.commons.jsonld.JsonLdId;
 import eu.ebrains.kg.commons.jsonld.NormalizedJsonLd;
+import eu.ebrains.kg.commons.markers.ExposesData;
+import eu.ebrains.kg.commons.markers.ExposesMinimalData;
+import eu.ebrains.kg.commons.markers.ExposesQuery;
+import eu.ebrains.kg.commons.markers.ExposesReleaseStatus;
 import eu.ebrains.kg.commons.model.*;
 import eu.ebrains.kg.commons.params.ReleaseTreeScope;
 import eu.ebrains.kg.graphdb.instances.controller.ArangoRepositoryInstances;
@@ -53,32 +57,37 @@ public class GraphDBInstancesAPI {
 
 
     @GetMapping("instances/{space}/{id}")
+    @ExposesData
     public NormalizedJsonLd getInstanceById(@PathVariable("space") String space, @PathVariable("id") UUID id, @PathVariable("stage") DataStage stage, @RequestParam(value = "returnEmbedded", defaultValue = "false") boolean returnEmbedded, @RequestParam(value = "returnAlternatives", required = false, defaultValue = "false") boolean returnAlternatives, @RequestParam(value = "removeInternalProperties", required = false, defaultValue = "true") boolean removeInternalProperties) {
         return repository.getInstance(stage, new SpaceName(space), id, returnEmbedded, removeInternalProperties, returnAlternatives);
     }
 
     @GetMapping("instancesByType")
-    public Paginated<NormalizedJsonLd> getInstancesByType(@PathVariable("stage") DataStage stage, @RequestParam("type") String type,  @RequestParam(value = "space", required = false) String space, @RequestParam(value = "searchByLabel", required = false) String searchByLabel, @RequestParam(value = "returnAlternatives", required = false, defaultValue = "false") boolean returnAlternatives, @RequestParam(value = "returnEmbedded", required = false, defaultValue = "false") boolean returnEmbedded, PaginationParam paginationParam) {
+    @ExposesData
+    public Paginated<NormalizedJsonLd> getInstancesByType(@PathVariable("stage") DataStage stage, @RequestParam("type") String type, @RequestParam(value = "space", required = false) String space, @RequestParam(value = "searchByLabel", required = false) String searchByLabel, @RequestParam(value = "returnAlternatives", required = false, defaultValue = "false") boolean returnAlternatives, @RequestParam(value = "returnEmbedded", required = false, defaultValue = "false") boolean returnEmbedded, PaginationParam paginationParam) {
         List<Type> types = Collections.singletonList(new Type(type));
-        if(searchByLabel!=null && !searchByLabel.isBlank()){
+        if (searchByLabel != null && !searchByLabel.isBlank()) {
             //Since we're searching by label, we need to reflect on the type -> we therefore have to resolve the type in the database first...
             types = typeRepository.getTypeInformation(authContext.getUserWithRoles().getClientId(), stage, types);
         }
-        return repository.getDocumentsByTypes(stage, types, space!=null && !space.isBlank() ? new SpaceName(space) : null, paginationParam, searchByLabel, returnEmbedded, returnAlternatives);
+        return repository.getDocumentsByTypes(stage, types, space != null && !space.isBlank() ? new SpaceName(space) : null, paginationParam, searchByLabel, returnEmbedded, returnAlternatives);
     }
 
     @GetMapping("queriesByType")
+    @ExposesQuery
     public Paginated<NormalizedJsonLd> getQueriesByType(@PathVariable("stage") DataStage stage, @RequestParam(value = "searchByLabel", required = false) String searchByLabel, @RequestParam(value = "returnAlternatives", required = false, defaultValue = "false") boolean returnAlternatives, @RequestParam(value = "returnEmbedded", required = false, defaultValue = "false") boolean returnEmbedded, PaginationParam paginationParam, @RequestParam("rootType") String rootType) {
         return repository.getQueriesByRootType(stage, paginationParam, searchByLabel, returnEmbedded, returnAlternatives, rootType == null ? null : URLDecoder.decode(rootType, StandardCharsets.UTF_8));
     }
 
     @PostMapping("instancesByIds")
+    @ExposesData
     public Map<UUID, Result<NormalizedJsonLd>> getInstancesByIds(@RequestBody List<String> ids, @PathVariable("stage") DataStage stage, @RequestParam(value = "returnEmbedded", required = false, defaultValue = "false") boolean returnEmbedded, @RequestParam(value = "returnAlternatives", required = false, defaultValue = "false") boolean returnAlternatives) {
         List<InstanceId> instanceIds = ids.stream().map(InstanceId::deserialize).filter(Objects::nonNull).collect(Collectors.toList());
         return repository.getDocumentsByIdList(stage, instanceIds, returnEmbedded, returnAlternatives);
-  }
+    }
 
     @PostMapping("instancesByIds/labels")
+    @ExposesMinimalData
     public Map<UUID, String> getLabels(@RequestBody List<String> ids, @PathVariable("stage") DataStage stage) {
         Set<InstanceId> instanceIds = ids.stream().map(InstanceId::deserialize).filter(Objects::nonNull).collect(Collectors.toSet());
         Set<Type> types = getInstancesByIds(ids, stage, false, false).values().stream().map(Result::getData).map(JsonLdDoc::types).flatMap(Collection::stream).distinct().map(Type::new).collect(Collectors.toSet());
@@ -86,47 +95,54 @@ public class GraphDBInstancesAPI {
         return repository.getLabelsForInstances(stage, instanceIds, extendedTypes);
     }
 
-  @GetMapping("instancesByIdentifier/{space}")
-  public List<NormalizedJsonLd> getInstancesByIdentifier(@RequestParam("identifier") String identifier, @PathVariable("space") String space, @PathVariable("stage") DataStage stage) {
+    @GetMapping("instancesByIdentifier/{space}")
+    @ExposesData
+    public List<NormalizedJsonLd> getInstancesByIdentifier(@RequestParam("identifier") String identifier, @PathVariable("space") String space, @PathVariable("stage") DataStage stage) {
         return repository.getDocumentsByIdentifiers(Collections.singleton(identifier), stage, new SpaceName(space), false, false);
-  }
+    }
 
     @GetMapping("instances/{space}/{id}/relatedByIdentifier")
+    @ExposesData
     public List<NormalizedJsonLd> getDocumentWithRelatedInstancesByIdentifiers(@PathVariable("space") String space, @PathVariable("id") UUID id, @PathVariable("stage") DataStage stage, @RequestParam(value = "returnEmbedded", required = false, defaultValue = "false") boolean returnEmbedded, @RequestParam(value = "returnAlternatives", required = false, defaultValue = "false") boolean returnAlternatives) {
         return repository.getDocumentsBySharedIdentifiers(stage, new SpaceName(space), id, returnEmbedded, returnAlternatives);
     }
 
     @GetMapping("instances/{space}/{id}/relatedByIncomingRelation")
+    @ExposesData
     public List<NormalizedJsonLd> getDocumentWithIncomingRelatedInstances(@PathVariable("space") String space, @PathVariable("id") UUID id, @PathVariable("stage") DataStage stage, @RequestParam("relation") String relation, @RequestParam(value = "useOriginalTo", defaultValue = "false") boolean useOriginalTo, @RequestParam(value = "returnEmbedded", required = false, defaultValue = "false") boolean returnEmbedded, @RequestParam(value = "returnAlternatives", required = false, defaultValue = "false") boolean returnAlternatives) {
         return repository.getDocumentsByIncomingRelation(stage, new SpaceName(space), id, new ArangoRelation(URLDecoder.decode(relation, StandardCharsets.UTF_8)), useOriginalTo, returnEmbedded, returnAlternatives);
     }
 
     @GetMapping("instances/{space}/{id}/relatedByOutgoingRelation")
+    @ExposesData
     public List<NormalizedJsonLd> getDocumentWithOutgoingRelatedInstances(@PathVariable("space") String space, @PathVariable("id") UUID id, @PathVariable("stage") DataStage stage, @RequestParam("relation") String relation, @RequestParam(value = "returnEmbedded", required = false, defaultValue = "false") boolean returnEmbedded, @RequestParam(value = "returnAlternatives", required = false, defaultValue = "false") boolean returnAlternatives) {
         return repository.getDocumentsByOutgoingRelation(stage, new SpaceName(space), id, new ArangoRelation(URLDecoder.decode(relation, StandardCharsets.UTF_8)), returnEmbedded, returnAlternatives);
     }
 
     @GetMapping("instances/{space}/{id}/neighbors")
+    @ExposesMinimalData
     public GraphEntity getNeighbors(@PathVariable("space") String space, @PathVariable("id") UUID id, @PathVariable("stage") DataStage stage) {
         return repository.getNeighbors(stage, new SpaceName(space), id);
     }
 
     @GetMapping("instances/{space}/{id}/releaseStatus")
+    @ExposesReleaseStatus
     public ReleaseStatus getReleaseStatus(@PathVariable("space") String space, @PathVariable("id") UUID id, @RequestParam("releaseTreeScope") ReleaseTreeScope treeScope) {
         return repository.getReleaseStatus(new SpaceName(space), id, treeScope);
     }
 
 
     @PostMapping("instances/{space}/{id}/suggestedLinksForProperty")
+    @ExposesMinimalData
     public SuggestionResult getSuggestedLinksForProperty(@RequestBody(required = false) NormalizedJsonLd payload, @PathVariable("stage") DataStage stage, @PathVariable("space") String space, @PathVariable("id") UUID id, @RequestParam(value = "property") String propertyName, @RequestParam(value = "type", required = false) String type, @RequestParam(value = "search", required = false) String search, PaginationParam paginationParam) {
         if (payload == null) {
             payload = repository.getInstance(stage, new SpaceName(space), id, true, true, false);
         }
         SuggestionResult suggestionResult = new SuggestionResult();
         ArangoRepositoryTypes.TargetsForProperties properties = new ArangoRepositoryTypes.TargetsForProperties(propertyName, payload.types());
-        Paginated<NormalizedJsonLd> targetTypesForProperty = typeRepository.getTargetTypesForProperty(authContext.getUserWithRoles().getClientId(), stage, properties, false, false,null);
+        Paginated<NormalizedJsonLd> targetTypesForProperty = typeRepository.getTargetTypesForProperty(authContext.getUserWithRoles().getClientId(), stage, properties, false, false, null);
         List<Type> typesWithLabelInfo = ArangoRepositoryTypes.extractExtendedTypeInformationFromPayload(targetTypesForProperty.getData());
-        if(type != null && !type.isBlank()){
+        if (type != null && !type.isBlank()) {
             typesWithLabelInfo = typesWithLabelInfo.stream().filter(t -> type.equals(t.getName())).collect(Collectors.toList());
         }
         suggestionResult.setTypes(targetTypesForProperty.getData().stream().collect(Collectors.toMap(JsonLdDoc::primaryIdentifier, t -> t)));

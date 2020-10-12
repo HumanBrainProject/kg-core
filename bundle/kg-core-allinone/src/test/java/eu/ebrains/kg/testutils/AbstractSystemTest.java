@@ -23,7 +23,6 @@ import eu.ebrains.kg.commons.IdUtils;
 import eu.ebrains.kg.commons.model.IngestConfiguration;
 import eu.ebrains.kg.commons.model.PaginationParam;
 import eu.ebrains.kg.commons.model.ResponseConfiguration;
-import org.junit.Before;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -33,7 +32,7 @@ import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.junit4.SpringRunner;
 @RunWith(SpringRunner.class)
 @SpringBootTest(classes = KgCoreAllInOne.class, webEnvironment = SpringBootTest.WebEnvironment.DEFINED_PORT)
-@TestPropertySource(properties = {"eu.ebrains.kg.arango.pwd=changeMe", "eu.ebrains.kg.arango.port=9111", "eu.ebrains.kg.test=true", "opentracing.jaeger.enabled=false", "arangodb.connections.max=1"})
+@TestPropertySource(properties = {"eu.ebrains.kg.core.metadata.synchronous=true", "eu.ebrains.kg.arango.pwd=changeMe", "eu.ebrains.kg.arango.port=9111", "eu.ebrains.kg.test=true", "opentracing.jaeger.enabled=false", "arangodb.connections.max=1"})
 public abstract class AbstractSystemTest {
 
     protected PaginationParam EMPTY_PAGINATION = new PaginationParam();
@@ -52,23 +51,9 @@ public abstract class AbstractSystemTest {
 
     @Autowired
     @Qualifier("arangoBuilderForGraphDB")
-    protected ArangoDB.Builder arangoBuilder;
+    protected ArangoDB.Builder database;
 
     @Autowired
     protected IdUtils idUtils;
-
-    private void clearDatabase() {
-        ArangoDB arango = arangoBuilder.build();
-        arango.getDatabases().stream().filter(db -> db.startsWith("kg")).forEach(db -> {
-            System.out.println(String.format("Removing database %s", db));
-            arango.db(db).drop();
-        });
-    }
-
-    @Before
-    public void setup() {
-        clearDatabase();
-
-    }
 
 }

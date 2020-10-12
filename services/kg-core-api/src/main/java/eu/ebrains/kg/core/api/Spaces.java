@@ -21,6 +21,8 @@ import eu.ebrains.kg.commons.AuthContext;
 import eu.ebrains.kg.commons.Version;
 import eu.ebrains.kg.commons.jsonld.JsonLdId;
 import eu.ebrains.kg.commons.jsonld.NormalizedJsonLd;
+import eu.ebrains.kg.commons.markers.ExposesSpace;
+import eu.ebrains.kg.commons.markers.WritesData;
 import eu.ebrains.kg.commons.model.*;
 import eu.ebrains.kg.commons.models.UserWithRoles;
 import eu.ebrains.kg.commons.permission.Functionality;
@@ -61,6 +63,7 @@ public class Spaces {
     }
 
     @GetMapping("{space}")
+    @ExposesSpace
     public Result<NormalizedJsonLd> getSpace(@RequestParam("stage") ExposedStage stage, @PathVariable("space") String space, @RequestParam(value = "permissions", defaultValue = "false") boolean permissions) {
         NormalizedJsonLd s = spaceController.getSpace(stage, space, permissions);
         if(s!=null){
@@ -70,6 +73,7 @@ public class Spaces {
     }
 
     @GetMapping
+    @ExposesSpace
     public PaginatedResult<NormalizedJsonLd> getSpaces(@RequestParam("stage") ExposedStage stage, @ParameterObject PaginationParam paginationParam, @RequestParam(value = "permissions", defaultValue = "false") boolean permissions) {
         Paginated<NormalizedJsonLd> spaces = graphDbSvc.getSpaces(stage.getStage(), paginationParam);
         if (permissions) {
@@ -86,6 +90,7 @@ public class Spaces {
 
     @Operation(summary = "Assign a type to a space")
     @PutMapping("{space}/types")
+    @WritesData
     public ResponseEntity<Result<Void>> assignTypeToSpace(@RequestParam("stage") ExposedStage stage, @PathVariable("space") String space, @RequestParam("type") String type) {
         NormalizedJsonLd payload = new NormalizedJsonLd();
         payload.addTypes(EBRAINSVocabulary.META_TYPE_IN_SPACE_DEFINITION_TYPE);

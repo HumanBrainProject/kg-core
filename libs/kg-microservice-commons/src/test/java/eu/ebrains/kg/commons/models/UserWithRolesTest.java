@@ -23,6 +23,7 @@ import eu.ebrains.kg.commons.permission.FunctionalityInstance;
 import eu.ebrains.kg.commons.permission.roles.RoleMapping;
 import org.junit.Test;
 
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
@@ -30,6 +31,8 @@ import static org.junit.Assert.*;
 
 
 public class UserWithRolesTest {
+
+    List<String> adminClientRoles = Arrays.asList(RoleMapping.ADMIN.toRole(null).getName(), RoleMapping.IS_CLIENT.toRole(null).getName());
 
     List<String> adminRole = Collections.singletonList(RoleMapping.ADMIN.toRole(null).getName());
     SpaceName space = new SpaceName("test");
@@ -51,7 +54,7 @@ public class UserWithRolesTest {
     @Test
     public void testEvaluatePermissionsFullUserAccess(){
         //Given
-        UserWithRoles userWithRoles = new UserWithRoles(user, getUserRoles(RoleMapping.ADMIN, null), adminRole, "testClient");
+        UserWithRoles userWithRoles = new UserWithRoles(user, getUserRoles(RoleMapping.ADMIN, null), adminClientRoles, "testClient");
 
         //when
         List<FunctionalityInstance> permissions = userWithRoles.getPermissions();
@@ -61,13 +64,12 @@ public class UserWithRolesTest {
         assertTrue(permissions.contains(new FunctionalityInstance(Functionality.WRITE, null, null)));
         assertTrue(permissions.contains(new FunctionalityInstance(Functionality.RELEASE, null, null)));
         assertTrue(permissions.contains(new FunctionalityInstance(Functionality.CREATE, null, null)));
-        assertFalse("Client permissions such as \"create client\" shouldn't be accessible even by an admin user", permissions.contains(new FunctionalityInstance(Functionality.CREATE_CLIENT, null, null)));
     }
 
     @Test
     public void testEvaluatePermissionsFullServiceAccountAccess(){
         //Given
-        UserWithRoles userWithRoles = new UserWithRoles(user, adminRole, adminRole, "testClient");
+        UserWithRoles userWithRoles = new UserWithRoles(user, adminRole, adminClientRoles, "testClient");
 
         //when
         List<FunctionalityInstance> permissions = userWithRoles.getPermissions();
@@ -77,13 +79,13 @@ public class UserWithRolesTest {
         assertTrue(permissions.contains(new FunctionalityInstance(Functionality.WRITE, null, null)));
         assertTrue(permissions.contains(new FunctionalityInstance(Functionality.RELEASE, null, null)));
         assertTrue(permissions.contains(new FunctionalityInstance(Functionality.CREATE, null, null)));
-        assertTrue("Client permissions such as \"create client\" should be accessible by admin clients", permissions.contains(new FunctionalityInstance(Functionality.CREATE_CLIENT, null, null)));
+        assertTrue(permissions.contains(new FunctionalityInstance(Functionality.CREATE_CLIENT, null, null)));
     }
 
     @Test
     public void testEvaluatePermissionsSpaceUserAccess(){
         //Given
-        UserWithRoles userWithRoles = new UserWithRoles(user, getUserRoles(RoleMapping.ADMIN, space), adminRole, "testClient");
+        UserWithRoles userWithRoles = new UserWithRoles(user, getUserRoles(RoleMapping.ADMIN, space), adminClientRoles, "testClient");
 
         //when
         List<FunctionalityInstance> permissions = userWithRoles.getPermissions();
@@ -104,7 +106,7 @@ public class UserWithRolesTest {
     @Test
     public void testEvaluatePermissionsSpaceReviewUserAccess(){
         //Given
-        UserWithRoles userWithRoles = new UserWithRoles(user, getUserRoles(RoleMapping.REVIEWER, space), adminRole, "testClient");
+        UserWithRoles userWithRoles = new UserWithRoles(user, getUserRoles(RoleMapping.REVIEWER, space), adminClientRoles, "testClient");
 
         //when
         List<FunctionalityInstance> permissions = userWithRoles.getPermissions();

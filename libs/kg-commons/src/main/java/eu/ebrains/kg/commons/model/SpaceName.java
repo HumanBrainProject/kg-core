@@ -42,6 +42,10 @@ public class SpaceName {
         return this;
     }
 
+    public static SpaceName fromString(String name){
+        return name!=null ? new SpaceName(name): null;
+    }
+
     private String normalizeName(String name) {
         return name!=null ? name.toLowerCase().replaceAll("_", "-") : null;
     }

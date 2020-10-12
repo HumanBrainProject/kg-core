@@ -70,7 +70,6 @@ public abstract class AbstractLoadTest extends AbstractSystemTest {
 
     @Before
     public void setup() {
-        super.setup();
         Mockito.doReturn(authenticationSvc.getUserWithRoles()).when(authContext).getUserWithRoles();
         Mockito.doAnswer(a -> authTokens.get()).when(authContext).getAuthTokens();
         Mockito.doAnswer(a -> {

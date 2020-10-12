@@ -18,6 +18,8 @@ package eu.ebrains.kg.core.api;
 
 import eu.ebrains.kg.commons.Version;
 import eu.ebrains.kg.commons.jsonld.JsonLdDoc;
+import eu.ebrains.kg.commons.markers.ExposesConfigurationInformation;
+import eu.ebrains.kg.commons.markers.ExposesUserInfo;
 import eu.ebrains.kg.commons.model.Result;
 import eu.ebrains.kg.commons.model.User;
 import eu.ebrains.kg.core.serviceCall.CoreToAuthentication;
@@ -44,6 +46,7 @@ public class Users {
 
     @Operation(summary = "Get the endpoint of the authentication service")
     @GetMapping(value = "/authorization", produces = MediaType.APPLICATION_JSON_VALUE)
+    @ExposesConfigurationInformation
     public Result<JsonLdDoc> getAuthEndpoint() {
         JsonLdDoc ld = new JsonLdDoc();
         ld.addProperty("endpoint", authenticationSvc.endpoint());
@@ -52,6 +55,7 @@ public class Users {
 
     @Operation(summary = "Get the endpoint to retrieve your token (e.g. via client id and client secret)")
     @GetMapping(value = "/authorization/tokenEndpoint", produces = MediaType.APPLICATION_JSON_VALUE)
+    @ExposesConfigurationInformation
     public Result<JsonLdDoc> getTokenEndpoint() {
         JsonLdDoc ld = new JsonLdDoc();
         ld.addProperty("endpoint", authenticationSvc.tokenEndpoint());
@@ -60,6 +64,7 @@ public class Users {
 
     @Operation(summary = "Retrieve user information from the passed token (including detailed information such as e-mail address)")
     @GetMapping("/me")
+    @ExposesUserInfo
     public ResponseEntity<Result<User>> profile() {
         User myUserProfile = authenticationSvc.getMyUserProfile();
         return myUserProfile!=null ? ResponseEntity.ok(Result.ok(myUserProfile)) : ResponseEntity.notFound().build();

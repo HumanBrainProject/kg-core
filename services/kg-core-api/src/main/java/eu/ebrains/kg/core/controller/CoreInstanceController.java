@@ -61,14 +61,13 @@ public class CoreInstanceController {
         this.primaryStoreSvc = primaryStoreSvc;
     }
 
-    public ResponseEntity<Result<NormalizedJsonLd>> createNewInstance(JsonLdDoc jsonLdDoc, UUID id, String space, ResponseConfiguration responseConfiguration, IngestConfiguration ingestConfiguration, ExternalEventInformation externalEventInformation) {
+    public ResponseEntity<Result<NormalizedJsonLd>> createNewInstance(JsonLdDoc jsonLdDoc, UUID id, SpaceName s, ResponseConfiguration responseConfiguration, IngestConfiguration ingestConfiguration, ExternalEventInformation externalEventInformation) {
         NormalizedJsonLd normalizedJsonLd;
         if (ingestConfiguration.isNormalizePayload()) {
             normalizedJsonLd = jsonLdSvc.toNormalizedJsonLd(jsonLdDoc);
         } else {
             normalizedJsonLd = new NormalizedJsonLd(jsonLdDoc);
         }
-        SpaceName s = new SpaceName(space);
         List<InstanceId> instanceIdsInSameSpace = idsSvc.resolveIds(DataStage.IN_PROGRESS, new IdWithAlternatives(id, s, normalizedJsonLd.allIdentifiersIncludingId()), false).stream().filter(i -> s.equals(i.getSpace())).collect(Collectors.toList());
         //Were only interested in those instance ids in the same space. Since merging is not done cross-space, we want to allow instances being created with the same identifiers across spaces.
         if (!instanceIdsInSameSpace.isEmpty()) {

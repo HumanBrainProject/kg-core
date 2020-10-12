@@ -29,20 +29,24 @@ import java.util.stream.Collectors;
  * Example: Space-administrator inherits the permissions of Space-Curator etc...
  */
 public enum RoleMapping {
-    CONSUMER(null, Functionality.READ_RELEASED, Functionality.EXECUTE_QUERY, Functionality.CREATE_QUERY, Functionality.READ_QUERY, Functionality.DELETE_QUERY, Functionality.READ_SPACE),
-    REVIEWER(CONSUMER, Functionality.READ, Functionality.SUGGEST, Functionality.INVITE_FOR_REVIEW),
-    EDITOR(REVIEWER, Functionality.WRITE, Functionality.CREATE, Functionality.INVITE_FOR_SUGGESTION),
-    OWNER(EDITOR, Functionality.RELEASE, Functionality.DELETE, Functionality.UNRELEASE),
-    ADMIN(null, Functionality.values()),
+    CONSUMER(false, true,null, Functionality.READ_RELEASED, Functionality.EXECUTE_QUERY, Functionality.CREATE_QUERY, Functionality.READ_QUERY, Functionality.DELETE_QUERY, Functionality.READ_SPACE),
+    REVIEWER(true, false, CONSUMER, Functionality.READ, Functionality.SUGGEST, Functionality.INVITE_FOR_REVIEW, Functionality.MINIMAL_READ, Functionality.RELEASE_STATUS),
+    EDITOR(true, false, REVIEWER, Functionality.WRITE, Functionality.CREATE, Functionality.INVITE_FOR_SUGGESTION),
+    OWNER(true, false, EDITOR, Functionality.RELEASE, Functionality.DELETE, Functionality.UNRELEASE),
+    ADMIN(true, false, null, Functionality.values()),
 
     //This is a marker role -> it is to be able to flag a user as a technical (client) user.
-    IS_CLIENT(null);
+    IS_CLIENT(false, false, null);
 
     private final RoleMapping childRole;
     private final String name;
     private final Set<Functionality> functionality;
+    private final boolean globalMinimalRead;
+    private final boolean globalMinimalReadReleased;
 
-    RoleMapping(RoleMapping childRole, Functionality... functionality) {
+    RoleMapping(boolean globalMinimalRead, boolean globalMinimalReadReleased, RoleMapping childRole, Functionality... functionality) {
+        this.globalMinimalRead = globalMinimalRead;
+        this.globalMinimalReadReleased = globalMinimalReadReleased;
         this.name = name().toLowerCase().replaceAll("_", "-");
         this.functionality = new HashSet<>(Arrays.asList(functionality));
         this.childRole = childRole;
@@ -84,11 +88,25 @@ public enum RoleMapping {
     }
 
     private Set<FunctionalityInstance> getFunctionalityInstances(SpaceName space) {
-        return getAllFunctionality().stream().map(f -> new FunctionalityInstance(f, space, null)).collect(Collectors.toSet());
+        Set<FunctionalityInstance> functionalityInstances = getAllFunctionality().stream().map(f -> new FunctionalityInstance(f, space, null)).collect(Collectors.toSet());
+        if(globalMinimalReadReleased){
+            functionalityInstances.add(new FunctionalityInstance(Functionality.MINIMAL_READ_RELEASED, null, null));
+        }
+        if(globalMinimalRead){
+            functionalityInstances.add(new FunctionalityInstance(Functionality.MINIMAL_READ, null, null));
+        }
+        return functionalityInstances;
     }
 
     public static List<RoleMapping> getAllSpacePermissionGroups() {
         return Arrays.asList(values());
     }
 
+    public static RoleMapping[] getRemainingUserRoles(RoleMapping[] excludedRoles){
+        List<RoleMapping> roleMappings = Arrays.stream(RoleMapping.values()).filter(r -> r != RoleMapping.IS_CLIENT && Arrays.stream(excludedRoles).noneMatch(e -> e == r)).collect(Collectors.toList());
+        if(Arrays.stream(excludedRoles).noneMatch(Objects::isNull)){
+            roleMappings.add(null);
+        }
+        return roleMappings.toArray(RoleMapping[]::new);
+    }
 }

@@ -17,6 +17,7 @@
 package eu.ebrains.kg.commons.permissions.controller;
 
 import eu.ebrains.kg.commons.jsonld.InstanceId;
+import eu.ebrains.kg.commons.model.DataStage;
 import eu.ebrains.kg.commons.model.SpaceName;
 import eu.ebrains.kg.commons.models.UserWithRoles;
 import eu.ebrains.kg.commons.permission.Functionality;
@@ -60,8 +61,26 @@ public class PermissionSvc {
         return expectedRoles.stream().anyMatch(permissions::contains);
     }
 
+
+    public Functionality getMinimalReadFunctionality(DataStage stage) {
+        return Functionality.MINIMAL_READ;
+    }
+
+    public Functionality getReadFunctionality(DataStage stage) {
+        switch (stage) {
+            case IN_PROGRESS:
+                return Functionality.READ;
+            case RELEASED:
+                return Functionality.READ_RELEASED;
+        }
+        return null;
+    }
+
     public boolean hasPermission(UserWithRoles userWithRoles, Functionality functionality, SpaceName space, UUID id) {
-         boolean clientOwnedSpace = isServiceAccountForClientSpace(userWithRoles, space);
+        boolean clientOwnedSpace = isServiceAccountForClientSpace(userWithRoles, space);
+        if(functionality==null){
+            return false;
+        }
         switch (functionality){
             case CREATE_SPACE:
                 //One special case is, that a client service account can create its own space even if there are no explicitly declared rights.

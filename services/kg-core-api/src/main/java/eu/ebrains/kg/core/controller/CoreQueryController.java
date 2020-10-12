@@ -42,7 +42,7 @@ public class CoreQueryController {
     }
 
     public ResponseEntity<Result<NormalizedJsonLd>> createNewQuery(NormalizedJsonLd query, UUID queryId, SpaceName space){
-        return instanceController.createNewInstance(query, queryId, space.getName(), new ResponseConfiguration(), new IngestConfiguration().setNormalizePayload(false), null);
+        return instanceController.createNewInstance(query, queryId, space, new ResponseConfiguration(), new IngestConfiguration().setNormalizePayload(false), null);
     }
 
     public ResponseEntity<Result<NormalizedJsonLd>> updateQuery(NormalizedJsonLd query, InstanceId instanceId){

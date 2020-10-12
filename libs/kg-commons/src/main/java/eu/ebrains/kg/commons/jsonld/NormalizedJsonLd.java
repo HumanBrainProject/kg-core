@@ -48,6 +48,11 @@ public class NormalizedJsonLd extends JsonLdDoc {
         return this;
     }
 
+    public NormalizedJsonLd keepPropertiesOnly(Collection<String> whiteList){
+        this.keySet().removeIf(k -> !whiteList.contains(k));
+        return this;
+    }
+
     public NormalizedJsonLd removeAllInternalProperties() {
         this.keySet().removeIf(NormalizedJsonLd::isInternalKey);
         return this;

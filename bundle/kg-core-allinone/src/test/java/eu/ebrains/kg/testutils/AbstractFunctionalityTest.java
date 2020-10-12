@@ -17,24 +17,12 @@
 package eu.ebrains.kg.testutils;
 
 import eu.ebrains.kg.commons.AuthTokens;
-import eu.ebrains.kg.commons.jsonld.JsonLdId;
-import eu.ebrains.kg.commons.jsonld.NormalizedJsonLd;
-import eu.ebrains.kg.commons.model.Result;
-import eu.ebrains.kg.commons.model.User;
-import eu.ebrains.kg.commons.models.UserWithRoles;
 import eu.ebrains.kg.commons.permission.ClientAuthToken;
 import eu.ebrains.kg.commons.permission.UserAuthToken;
-import eu.ebrains.kg.commons.permission.roles.RoleMapping;
 import eu.ebrains.kg.commons.serviceCall.ToAuthentication;
 import org.junit.Before;
 import org.mockito.Mockito;
 import org.springframework.boot.test.mock.mockito.MockBean;
-import org.springframework.http.ResponseEntity;
-
-import java.util.Collections;
-import java.util.List;
-
-import static org.springframework.util.Assert.*;
 
 public abstract class AbstractFunctionalityTest extends AbstractSystemTest {
 
@@ -43,30 +31,8 @@ public abstract class AbstractFunctionalityTest extends AbstractSystemTest {
 
     private AuthTokens authTokens;
 
-    protected abstract void authenticate();
-
-    protected <T> T assureValidPayload(Result<T> result){
-        notNull(result, "The response body shouldn't be null");
-        T data = result.getData();
-        notNull(result, "The data section of the body shouldn't be null");
-        return data;
-    }
-
-    protected <T> T assureValidPayload(ResponseEntity<Result<T>> response){
-        notNull(response, "Response shouldn't be null");
-        return assureValidPayload(response.getBody());
-    }
-
-    protected NormalizedJsonLd assureValidPayloadIncludingId(ResponseEntity<Result<NormalizedJsonLd>> response) {
-        NormalizedJsonLd data = assureValidPayload(response);
-        JsonLdId id = data.id();
-        notNull(id, "The id shouldn't be null when creating an instance");
-        return data;
-    }
-
     @Before
     public void setup() {
-        super.setup();
         this.authTokens=new AuthTokens();
         this.authTokens.setUserAuthToken(new UserAuthToken("userToken"));
         this.authTokens.setClientAuthToken(new ClientAuthToken("clientToken"));
@@ -74,22 +40,6 @@ public abstract class AbstractFunctionalityTest extends AbstractSystemTest {
         Mockito.doCallRealMethod().when(authContext).getUserId();
         Mockito.doCallRealMethod().when(authContext).getClientSpace();
         Mockito.doAnswer(a -> authenticationSvc.getUserWithRoles()).when(authContext).getUserWithRoles();
-        authenticate();
-    }
-
-    private final static List<String> ADMIN_ROLE = Collections.singletonList(RoleMapping.ADMIN.toRole(null).getName());
-
-    public void beAdmin(){
-        User user = new User("bobEverythingGoes", "Bob Everything Goes", "fakeAdmin@ebrains.eu", "Bob Everything", "Goes", "admin");
-        UserWithRoles userWithRoles = new UserWithRoles(user, ADMIN_ROLE, ADMIN_ROLE, "testClient");
-        Mockito.doAnswer(a -> userWithRoles).when(authenticationSvc).getUserWithRoles();
-    }
-
-    public void beUnauthorized(){
-        User user = new User("joeCantDoAThing", "Joe Cant Do A Thing", "fakeUnauthorized@ebrains.eu", "Joe Cant Do A", "Thing", "unauthorized");
-        //It's the user not having any rights - the client is still the same with full rights
-        UserWithRoles userWithRoles = new UserWithRoles(user, Collections.emptyList(), ADMIN_ROLE, "testClient");
-        Mockito.doAnswer(a -> userWithRoles).when(authenticationSvc).getUserWithRoles();
     }
 
 }

@@ -20,6 +20,10 @@ import eu.ebrains.kg.commons.Version;
 import eu.ebrains.kg.commons.jsonld.InstanceId;
 import eu.ebrains.kg.commons.jsonld.JsonLdDoc;
 import eu.ebrains.kg.commons.jsonld.NormalizedJsonLd;
+import eu.ebrains.kg.commons.markers.ExposesData;
+import eu.ebrains.kg.commons.markers.ExposesInputWithoutEnrichedSensitiveData;
+import eu.ebrains.kg.commons.markers.ExposesQuery;
+import eu.ebrains.kg.commons.markers.WritesData;
 import eu.ebrains.kg.commons.model.*;
 import eu.ebrains.kg.commons.query.KgQuery;
 import eu.ebrains.kg.core.controller.CoreQueryController;
@@ -55,6 +59,7 @@ public class Queries {
 
     @Operation(summary = "List the queries which have been registered for the given root type")
     @GetMapping
+    @ExposesQuery
     public PaginatedResult<NormalizedJsonLd> listQueriesPerRootType(@ParameterObject PaginationParam paginationParam, @RequestParam(value = "type", required = false) String rootType, @RequestParam(value = "search", required = false) String search) {
         if(rootType != null){
             return PaginatedResult.ok(queryController.listQueriesPerRootType(search, new Type(rootType), paginationParam));
@@ -65,6 +70,7 @@ public class Queries {
 
     @Operation(summary = "Execute the query in the payload in test mode (e.g. for execution before saving with the KG QueryBuilder)")
     @PostMapping
+    @ExposesData
     public PaginatedResult<NormalizedJsonLd> testQuery(@RequestBody JsonLdDoc query, @ParameterObject PaginationParam paginationParam, @RequestParam("stage") ExposedStage stage) {
         NormalizedJsonLd normalizedJsonLd = jsonLdSvc.toNormalizedJsonLd(query);
         return PaginatedResult.ok(queryController.executeQuery(new KgQuery(normalizedJsonLd, stage.getStage()), paginationParam));
@@ -72,6 +78,7 @@ public class Queries {
 
     @Operation(summary = "Get the query specification with the given query id in a specific space (note that query ids are unique per space only)")
     @GetMapping("/{queryId}")
+    @ExposesQuery
     public Result<NormalizedJsonLd> getQuerySpecification(@PathVariable("queryId") UUID queryId, @RequestParam("space") String space) {
         KgQuery kgQuery = queryController.fetchQueryById(queryId, new SpaceName(space), DataStage.IN_PROGRESS);
         return Result.ok(kgQuery.getPayload());
@@ -79,12 +86,15 @@ public class Queries {
 
     @Operation(summary = "Removes a query specification")
     @DeleteMapping("/{queryId}")
+    @WritesData
     public void removeQuery(@PathVariable("queryId") UUID queryId, @RequestParam("space") String space) {
         queryController.deleteQuery(new InstanceId(queryId, new SpaceName(space)));
     }
 
     @Operation(summary = "Save a query specification")
     @PutMapping("/{queryId}")
+    @WritesData
+    @ExposesInputWithoutEnrichedSensitiveData
     public ResponseEntity<Result<NormalizedJsonLd>> saveQuery(@RequestBody JsonLdDoc query, @PathVariable(value = "queryId") UUID queryId, @RequestParam("space") String space) {
         NormalizedJsonLd normalizedJsonLd = jsonLdSvc.toNormalizedJsonLd(query);
         normalizedJsonLd.addTypes(KgQuery.getKgQueryType());
@@ -98,6 +108,7 @@ public class Queries {
 
     @Operation(summary = "Execute a stored query to receive the instances")
     @GetMapping("/{queryId}/instances")
+    @ExposesData
     public PaginatedResult<NormalizedJsonLd> executeQueryById(@PathVariable("queryId") UUID queryId, @ParameterObject PaginationParam paginationParam,@RequestParam("space") String space, @RequestParam("stage") ExposedStage stage) {
         KgQuery query = queryController.fetchQueryById(queryId, new SpaceName(space), stage.getStage());
         return PaginatedResult.ok(queryController.executeQuery(query, paginationParam));
@@ -105,6 +116,7 @@ public class Queries {
 
     @Operation(summary = "TO BE IMPLEMENTED: Returns the meta information of a query specification")
     @GetMapping("/{queryId}/meta")
+    @ExposesData
     public Result<NormalizedJsonLd> getMetaInformation(@PathVariable("queryId") String queryId) {
         return null;
     }
