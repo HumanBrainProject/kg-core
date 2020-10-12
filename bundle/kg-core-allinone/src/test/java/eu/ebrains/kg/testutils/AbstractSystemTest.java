@@ -32,7 +32,7 @@ import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.junit4.SpringRunner;
 @RunWith(SpringRunner.class)
 @SpringBootTest(classes = KgCoreAllInOne.class, webEnvironment = SpringBootTest.WebEnvironment.DEFINED_PORT)
-@TestPropertySource(properties = {"eu.ebrains.kg.core.metadata.synchronous=true", "eu.ebrains.kg.arango.pwd=changeMe", "eu.ebrains.kg.arango.port=9111", "eu.ebrains.kg.test=true", "opentracing.jaeger.enabled=false", "arangodb.connections.max=1"})
+@TestPropertySource(properties = {"eu.ebrains.kg.core.metadata.synchronous=true", "eu.ebrains.kg.test=true", "opentracing.jaeger.enabled=false", "arangodb.connections.max=1"})
 public abstract class AbstractSystemTest {
 
     protected PaginationParam EMPTY_PAGINATION = new PaginationParam();
