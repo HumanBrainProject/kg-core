@@ -67,6 +67,12 @@ public class AuthenticationUsersAPI {
         return userWithRoles != null ? ResponseEntity.ok(userWithRoles) : ResponseEntity.notFound().build();
     }
 
+    @GetMapping("/profiles")
+    public ResponseEntity<User> getOtherUserInfoAsList(@PathVariable("nativeId") String nativeId) {
+        User userById = keycloakController.getOtherUserInfo(nativeId);
+        return userById != null ? ResponseEntity.ok(userById) : ResponseEntity.notFound().build();
+    }
+
     @GetMapping("/profiles/{nativeId}")
     public ResponseEntity<User> getOtherUserInfo(@PathVariable("nativeId") String nativeId) {
         User userById = keycloakController.getOtherUserInfo(nativeId);

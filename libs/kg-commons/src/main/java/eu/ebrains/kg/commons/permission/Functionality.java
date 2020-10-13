@@ -55,6 +55,8 @@ public enum Functionality {
     UNRELEASE( Permission.Level.GLOBAL_AND_SPACE, FunctionalityGroup.INSTANCE, DataStage.RELEASED, null, null),
     DELETE( Permission.Level.GLOBAL_AND_SPACE, FunctionalityGroup.INSTANCE, DataStage.IN_PROGRESS, null, null),
 
+    //Users
+    LIST_USERS(Permission.Level.GLOBAL_ONLY, FunctionalityGroup.USERS, DataStage.NATIVE, null, null),
 
     // Client mgmt
     READ_CLIENT(Permission.Level.GLOBAL_AND_SPACE, FunctionalityGroup.CLIENT, null, null, null),
@@ -108,6 +110,6 @@ public enum Functionality {
     }
 
     public enum FunctionalityGroup{
-        INSTANCE, CLIENT, QUERY, PERMISSIONS, SPACES
+        INSTANCE, CLIENT, QUERY, PERMISSIONS, SPACES, USERS
     }
 }

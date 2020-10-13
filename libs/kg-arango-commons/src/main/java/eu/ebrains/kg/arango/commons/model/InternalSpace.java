@@ -49,6 +49,8 @@ public class InternalSpace extends SpaceName {
     public static final ArangoCollectionReference PROPERTY_TO_TYPE_EDGE_COLLECTION = new ArangoCollectionReference("property2type", true);
     public static final SpaceName TYPES_SPACE = new SpaceName("types");
     public static final SpaceName USERS_SPACE = new SpaceName("users");
+    public static final SpaceName USERS_PICTURE_SPACE = new SpaceName("userpictures");
+
     public static final SpaceName ALTERNATIVES_SPACE = new SpaceName("alternatives");
     public static final ArangoCollectionReference TYPE_EDGE_COLLECTION = new ArangoCollectionReference("internaltype", true);
     public static final InternalSpace TYPE_SPACE = new InternalSpace("types");
