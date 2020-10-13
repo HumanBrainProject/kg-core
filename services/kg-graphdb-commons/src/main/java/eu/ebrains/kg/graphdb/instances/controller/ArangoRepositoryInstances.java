@@ -126,6 +126,8 @@ public class ArangoRepositoryInstances {
             for (NormalizedJsonLd[] embeddedDocument : embeddedDocuments) {
                 Arrays.stream(embeddedDocument).forEach(e -> {
                     e.remove(EBRAINSVocabulary.META_REVISION);
+                    //We don't need the space field of embedded instances since it's redundant
+                    e.remove(EBRAINSVocabulary.META_SPACE);
                 });
             }
             addEmbeddedInstancesToDocument(documents, embeddedDocuments);

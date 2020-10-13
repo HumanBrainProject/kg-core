@@ -263,6 +263,17 @@ public class CoreInstanceController {
         for (UUID uuid : labels.keySet()) {
             updatedObjects.get(uuid).forEach(o -> o.put(SchemaOrgVocabulary.NAME, labels.get(uuid)));
         }
+        //Alternatives are a special case -> we merge the values, so this means we're actually always having a single object at once max. Therefore, let's get rid of the wrapping array
+        documents.forEach(d -> {
+            List<NormalizedJsonLd> alternatives = d.getAsListOf(EBRAINSVocabulary.META_ALTERNATIVE, NormalizedJsonLd.class);
+            if(!alternatives.isEmpty()){
+                d.put(EBRAINSVocabulary.META_ALTERNATIVE, alternatives.get(0));
+            }
+            else{
+                d.put(EBRAINSVocabulary.META_ALTERNATIVE, null);
+            }
+        });
+
     }
 
 
