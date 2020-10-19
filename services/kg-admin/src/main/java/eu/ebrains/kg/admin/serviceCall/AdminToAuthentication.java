@@ -20,7 +20,7 @@ import eu.ebrains.kg.commons.AuthContext;
 import eu.ebrains.kg.commons.ServiceCall;
 import eu.ebrains.kg.commons.model.Client;
 import eu.ebrains.kg.commons.model.User;
-import eu.ebrains.kg.commons.permission.Role;
+import eu.ebrains.kg.commons.permission.roles.Role;
 import org.springframework.stereotype.Component;
 
 import java.net.URLEncoder;

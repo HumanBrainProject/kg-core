@@ -16,15 +16,18 @@
 
 package eu.ebrains.kg.graphdb.instances.controller;
 
-import com.google.gson.Gson;
 import eu.ebrains.kg.commons.AuthContext;
 import eu.ebrains.kg.commons.IdUtils;
+import eu.ebrains.kg.commons.JsonAdapter;
 import eu.ebrains.kg.commons.jsonld.NormalizedJsonLd;
 import eu.ebrains.kg.commons.permissions.controller.PermissionSvc;
 import eu.ebrains.kg.graphdb.commons.controller.ArangoDatabases;
 import eu.ebrains.kg.graphdb.commons.controller.ArangoRepositoryCommons;
 import eu.ebrains.kg.graphdb.commons.controller.ArangoUtils;
 import eu.ebrains.kg.graphdb.commons.controller.PermissionsController;
+import eu.ebrains.kg.graphdb.queries.controller.QueryController;
+import eu.ebrains.kg.graphdb.types.controller.ArangoRepositoryTypes;
+import eu.ebrains.kg.test.JsonAdapter4Test;
 import org.junit.Assert;
 import org.junit.Test;
 import org.mockito.Mockito;
@@ -37,20 +40,19 @@ public class ArangoRepositoryInstancesUnitTest {
     @Test
     public void mergeEmbeddedDocuments() {
         //Given
-        ArangoRepositoryInstances repository =
-                new ArangoRepositoryInstances(Mockito.mock(ArangoRepositoryCommons.class), Mockito.mock(PermissionsController.class), Mockito.mock(PermissionSvc.class), Mockito.mock(AuthContext.class), Mockito.mock(ArangoUtils.class), Mockito.mock(ArangoDatabases.class), Mockito.mock(IdUtils.class));
-        Gson gson = new Gson();
+        ArangoRepositoryInstances repository = new ArangoRepositoryInstances(Mockito.mock(ArangoRepositoryCommons.class), Mockito.mock(PermissionsController.class), Mockito.mock(PermissionSvc.class), Mockito.mock(AuthContext.class), Mockito.mock(ArangoUtils.class), Mockito.mock(QueryController.class), Mockito.mock(ArangoRepositoryTypes.class), Mockito.mock(ArangoDatabases.class), Mockito.mock(IdUtils.class));
+        JsonAdapter jsonAdapter = new JsonAdapter4Test();
         String originalDoc = "{\"helloWorld\": {\"@id\": \"http://foobar\"}, \"@id\": \"http://foo\"}";
-        NormalizedJsonLd original = gson.fromJson(originalDoc, NormalizedJsonLd.class);
+        NormalizedJsonLd original = jsonAdapter.fromJson(originalDoc, NormalizedJsonLd.class);
         String embeddedDoc = "{\"name\": \"foobar\"}";
         Map<String, NormalizedJsonLd> embedded = new HashMap<>();
-        embedded.put("http://foobar", gson.fromJson(embeddedDoc, NormalizedJsonLd.class));
+        embedded.put("http://foobar", jsonAdapter.fromJson(embeddedDoc, NormalizedJsonLd.class));
 
         //When
         repository.mergeEmbeddedDocuments(original, embedded);
 
         //Then
-        Assert.assertEquals("{\"helloWorld\":{\"name\":\"foobar\"},\"@id\":\"http://foo\"}", gson.toJson(original));
+        Assert.assertEquals("{\"helloWorld\":{\"name\":\"foobar\"},\"@id\":\"http://foo\"}", jsonAdapter.toJson(original));
     }
 
 }

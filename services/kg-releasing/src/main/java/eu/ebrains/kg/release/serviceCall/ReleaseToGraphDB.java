@@ -22,7 +22,7 @@ import eu.ebrains.kg.commons.jsonld.IndexedJsonLdDoc;
 import eu.ebrains.kg.commons.jsonld.NormalizedJsonLd;
 import eu.ebrains.kg.commons.model.DataStage;
 import eu.ebrains.kg.commons.model.ReleaseStatus;
-import eu.ebrains.kg.commons.model.Space;
+import eu.ebrains.kg.commons.model.SpaceName;
 import eu.ebrains.kg.commons.params.ReleaseTreeScope;
 import org.springframework.stereotype.Component;
 
@@ -42,11 +42,11 @@ public class ReleaseToGraphDB {
         this.authContext = authContext;
     }
 
-    public IndexedJsonLdDoc getWithEmbedded(DataStage stage, Space space, UUID id){
+    public IndexedJsonLdDoc getWithEmbedded(DataStage stage, SpaceName space, UUID id){
         return IndexedJsonLdDoc.from(serviceCall.get(String.format("%s/%s/instances/%s/%s?returnEmbedded=true", SERVICE_ENDPOINT, stage.name(), space.getName(), id), authContext.getAuthTokens(), NormalizedJsonLd.class));
     }
 
-    public ReleaseStatus getReleaseStatus(Space space, UUID id, ReleaseTreeScope treeScope){
+    public ReleaseStatus getReleaseStatus(SpaceName space, UUID id, ReleaseTreeScope treeScope){
         return serviceCall.get(String.format("%s/%s/instances/%s/%s/releaseStatus?releaseTreeScope=%s", SERVICE_ENDPOINT, DataStage.IN_PROGRESS, space.getName(), id, treeScope.toString()), authContext.getAuthTokens(), ReleaseStatus.class);
     }
 

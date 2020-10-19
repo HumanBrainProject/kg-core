@@ -19,7 +19,7 @@ package eu.ebrains.kg.systemTest.controller.consistency4artificial;
 import eu.ebrains.kg.commons.jsonld.JsonLdId;
 import eu.ebrains.kg.commons.jsonld.NormalizedJsonLd;
 import eu.ebrains.kg.commons.model.Result;
-import eu.ebrains.kg.commons.model.Space;
+import eu.ebrains.kg.commons.model.SpaceName;
 import eu.ebrains.kg.systemTest.serviceCall.SystemTestToCore;
 import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
@@ -54,8 +54,8 @@ public class InternalArtificialData {
             NormalizedJsonLd normalizedJsonLd = new NormalizedJsonLd();
             normalizedJsonLd.addTypes(createType(groupName));
             normalizedJsonLd.put(createProperty(groupName), groupName + i);
-            Result<NormalizedJsonLd> createdDocument = coreSvc.createInstance(normalizedJsonLd, new Space("testA"), null, null, false, false);
-            group.add(createdDocument.getData().getId());
+            Result<NormalizedJsonLd> createdDocument = coreSvc.createInstance(normalizedJsonLd, new SpaceName("testA"), null, null, false, false);
+            group.add(createdDocument.getData().id());
         }
         return group;
     }

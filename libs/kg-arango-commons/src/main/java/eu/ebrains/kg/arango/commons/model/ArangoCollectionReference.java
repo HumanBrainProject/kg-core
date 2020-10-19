@@ -17,7 +17,7 @@
 package eu.ebrains.kg.arango.commons.model;
 
 import eu.ebrains.kg.arango.commons.aqlBuilder.ArangoKey;
-import eu.ebrains.kg.commons.model.Space;
+import eu.ebrains.kg.commons.model.SpaceName;
 
 import java.nio.charset.StandardCharsets;
 import java.util.Objects;
@@ -38,7 +38,6 @@ public class ArangoCollectionReference {
     }
 
 
-
     protected ArangoCollectionReference() {
     }
 
@@ -55,11 +54,11 @@ public class ArangoCollectionReference {
         return new ArangoDocumentReference(this, uuid);
     }
 
-    public static ArangoCollectionReference fromSpace(Space space) {
+    public static ArangoCollectionReference fromSpace(SpaceName space) {
         return fromSpace(space, false);
     }
 
-    public static ArangoCollectionReference fromSpace(Space space, boolean edge) {
+    public static ArangoCollectionReference fromSpace(SpaceName space, boolean edge) {
         return space == null ? null : new ArangoCollectionReference(space.getName(), edge);
     }
 

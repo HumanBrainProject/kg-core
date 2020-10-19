@@ -17,19 +17,11 @@
 package eu.ebrains.kg.core.api;
 
 import com.netflix.discovery.EurekaClient;
-import eu.ebrains.kg.commons.jsonld.NormalizedJsonLd;
-import eu.ebrains.kg.commons.model.IngestConfiguration;
-import eu.ebrains.kg.commons.model.ResponseConfiguration;
-import eu.ebrains.kg.commons.model.Result;
 import eu.ebrains.kg.docker.SpringDockerComposeRunner;
-import eu.ebrains.kg.test.TestObjectFactory;
-import org.junit.Assert;
 import org.junit.Before;
-import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.http.ResponseEntity;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.junit4.SpringRunner;
 
@@ -48,17 +40,5 @@ public class InstancesTest {
     @Before
     public void setup() {
         new SpringDockerComposeRunner(discoveryClient, Arrays.asList("arango"), "kg-ids", "kg-jsonld", "kg-primarystore", "kg-permissions", "kg-indexing", "kg-graphdb-sync").start();
-    }
-
-    @Test
-    public void createNewInstance() {
-        //Given
-        NormalizedJsonLd homer = TestObjectFactory.createJsonLd(TestObjectFactory.SIMPSONS, "homer.json");
-
-        //When
-        ResponseEntity<Result<NormalizedJsonLd>> result = instances.createNewInstance(homer, TestObjectFactory.SIMPSONS.getName(), new ResponseConfiguration(), new IngestConfiguration(), null);
-
-        //Then
-        Assert.assertNotNull(result);
     }
 }

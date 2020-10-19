@@ -17,7 +17,7 @@
 package eu.ebrains.kg.commons.model;
 
 
-import com.google.gson.annotations.SerializedName;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import eu.ebrains.kg.commons.jsonld.JsonLdId;
 
 import java.util.Date;
@@ -32,22 +32,36 @@ public class PersistedEvent extends Event implements EventId {
     private DataStage dataStage;
     private List<JsonLdId> mergedIds;
     private boolean suggestion;
+    private Space space;
 
-    @SerializedName("_key")
+    @JsonProperty("_key")
     private String key;
 
     public PersistedEvent() {
         super();
     }
 
-    public PersistedEvent(Event event, DataStage dataStage, User user) {
-        super(event.getSpace(), event.getDocumentId(), event.getData(), event.getType(), event.getReportedTimeStampInMs());
+    public PersistedEvent(Event event, DataStage dataStage, User user, Space space) {
+        super(event.getSpaceName(), event.getDocumentId(), event.getData(), event.getType(), event.getReportedTimeStampInMs());
         this.ingestionUserId = event.getUserId();
         this.indexedTimestamp = new Date().getTime();
         this.eventId = UUID.randomUUID().toString();
         this.key = this.eventId;
         this.dataStage = dataStage;
         this.user = user;
+        this.space = space;
+    }
+
+    public String getKey() {
+        return key;
+    }
+
+    public String getIngestionUserId() {
+        return ingestionUserId;
+    }
+
+    public boolean isSuggestion() {
+        return suggestion;
     }
 
     public Long getIndexedTimestamp() {
@@ -76,5 +90,13 @@ public class PersistedEvent extends Event implements EventId {
 
     public void setSuggestion(boolean suggestion) {
         this.suggestion = suggestion;
+    }
+
+    public Space getSpace() {
+        return space;
+    }
+
+    public void setSpace(Space space) {
+        this.space = space;
     }
 }

@@ -18,6 +18,7 @@ package eu.ebrains.kg.admin.controller;
 
 import com.netflix.discovery.EurekaClient;
 import eu.ebrains.kg.commons.model.Space;
+import eu.ebrains.kg.commons.model.SpaceName;
 import eu.ebrains.kg.docker.SpringDockerComposeRunner;
 import org.junit.Before;
 import org.junit.Test;
@@ -47,12 +48,12 @@ public class SpaceControllerTest {
 
     @Test
     public void testSpaceCreation() {
-        spaceController.createSpace(new Space("fooBar"), true);
+        spaceController.createSpace(new Space(new SpaceName("fooBar"),  false), true);
     }
 
     @Test
     public void testSpaceRemoval() {
-        spaceController.removeSpace(new Space("fooBar"));
+        spaceController.removeSpace(new SpaceName("fooBar"));
     }
 
 }

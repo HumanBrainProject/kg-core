@@ -20,7 +20,7 @@ import eu.ebrains.kg.commons.AuthContext;
 import eu.ebrains.kg.commons.ServiceCall;
 import eu.ebrains.kg.commons.jsonld.NormalizedJsonLd;
 import eu.ebrains.kg.commons.model.DataStage;
-import eu.ebrains.kg.commons.model.Space;
+import eu.ebrains.kg.commons.model.SpaceName;
 import org.springframework.stereotype.Component;
 
 import java.util.UUID;
@@ -39,7 +39,7 @@ public class AdminToGraphDB {
         this.authContext = authContext;
     }
 
-    public NormalizedJsonLd getInstance(DataStage stage, Space space, UUID id, boolean embedded) {
+    public NormalizedJsonLd getInstance(DataStage stage, SpaceName space, UUID id, boolean embedded) {
         return serviceCall.get(BASE_URL+String.format("/%s/instances/%s/%s?returnEmbedded=%b", stage.name(), space.getName(), id, embedded), authContext.getAuthTokens(), NormalizedJsonLd.class);
     }
 

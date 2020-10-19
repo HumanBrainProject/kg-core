@@ -18,7 +18,7 @@ package eu.ebrains.kg.release.api;
 
 
 import eu.ebrains.kg.commons.model.ReleaseStatus;
-import eu.ebrains.kg.commons.model.Space;
+import eu.ebrains.kg.commons.model.SpaceName;
 import eu.ebrains.kg.commons.params.ReleaseTreeScope;
 import eu.ebrains.kg.release.controller.Release;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -36,17 +36,17 @@ public class ReleaseAPI {
 
     @PutMapping("/{space}/{id}")
     public void releaseInstance(@PathVariable("space") String space, @PathVariable("id") UUID id, @RequestParam(value = "rev", required = false) String revision){
-        release.release(new Space(space), id, revision);
+        release.release(new SpaceName(space), id, revision);
     }
 
     @DeleteMapping("/{space}/{id}")
     public void unreleaseInstance(@PathVariable("space") String space, @PathVariable("id") UUID id){
-        release.unrelease(new Space(space), id);
+        release.unrelease(new SpaceName(space), id);
     }
 
     @GetMapping("/{space}/{id}")
     public ReleaseStatus getReleaseStatus(@PathVariable("space") String space, @PathVariable("id") UUID id, @RequestParam("releaseTreeScope") ReleaseTreeScope releaseTreeScope){
-        return release.getStatus(new Space(space), id, releaseTreeScope);
+        return release.getStatus(new SpaceName(space), id, releaseTreeScope);
     }
 
 

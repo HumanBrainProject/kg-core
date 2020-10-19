@@ -16,7 +16,7 @@
 
 package eu.ebrains.kg.commons.jsonld;
 
-import eu.ebrains.kg.commons.model.Space;
+import eu.ebrains.kg.commons.model.SpaceName;
 
 import java.util.Objects;
 import java.util.UUID;
@@ -28,18 +28,18 @@ public class InstanceId {
     public InstanceId() {
     }
 
-    public InstanceId(UUID id, Space space){
+    public InstanceId(UUID id, SpaceName space){
         this(id, space, false);
     }
 
-    public InstanceId(UUID id, Space space, boolean deprecated) {
+    public InstanceId(UUID id, SpaceName space, boolean deprecated) {
         this.uuid = id;
         this.space = space;
         this.deprecated = deprecated;
     }
 
     private UUID uuid;
-    private Space space;
+    private SpaceName space;
     private boolean deprecated;
     private transient boolean  unresolved;
 
@@ -63,7 +63,7 @@ public class InstanceId {
         return uuid;
     }
 
-    public Space getSpace() {
+    public SpaceName getSpace() {
         return space;
     }
 
@@ -77,7 +77,7 @@ public class InstanceId {
             if (i != -1) {
                 String space = instanceId.substring(0, i).trim();
                 String uuid = instanceId.substring(i + 1).trim();
-                return new InstanceId(UUID.fromString(uuid), new Space(space));
+                return new InstanceId(UUID.fromString(uuid), new SpaceName(space));
             }
         }
         return null;

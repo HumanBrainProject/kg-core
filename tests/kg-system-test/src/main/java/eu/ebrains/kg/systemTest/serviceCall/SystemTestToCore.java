@@ -49,7 +49,7 @@ public class SystemTestToCore {
     }
 
 
-    public Result<NormalizedJsonLd> createInstance(JsonLdDoc payload, Space space, String user, ZonedDateTime dateTime, boolean returnPayload, boolean deferInference){
+    public Result<NormalizedJsonLd> createInstance(JsonLdDoc payload, SpaceName space, String user, ZonedDateTime dateTime, boolean returnPayload, boolean deferInference){
         return serviceCallWithClientSecret.post(String.format("%s/instances?space=%s&returnPayload=%b&returnEmbedded=false&externalUserDefinition=%s&externalEventTime=%s&deferInference=%b", SERVICE_URL, space.getName(), returnPayload, user!=null ? user : "", dateTime!=null ? dateTime.format(DateTimeFormatter.ISO_INSTANT) : "", deferInference), payload, new AuthTokens(), ResultOfDocument.class);
     }
 
@@ -120,7 +120,7 @@ public class SystemTestToCore {
         return resultOfDocument!=null ? resultOfDocument.getData() : null;
     }
 
-    public void inferInstance(Space space, UUID uuid, boolean async) {
+    public void inferInstance(SpaceName space, UUID uuid, boolean async) {
         serviceCallWithClientSecret.post(String.format("%s/extra/inference/%s?identifier=%s&async=%b", SERVICE_URL, space.getName(), idUtils.buildAbsoluteUrl(uuid).getId(), async), null, new AuthTokens(), String.class);
     }
 }

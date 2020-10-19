@@ -44,9 +44,11 @@ public class ArangoDocumentReference {
     }
 
     public static ArangoDocumentReference fromArangoId(String arangoId, Boolean isEdge) {
-        String[] split = arangoId.split("/");
-        if (split.length == 2) {
-            return new ArangoDocumentReference(new ArangoCollectionReference(split[0], isEdge), UUID.fromString(split[1]));
+        if(arangoId!=null) {
+            String[] split = arangoId.split("/");
+            if (split.length == 2) {
+                return new ArangoDocumentReference(new ArangoCollectionReference(split[0], isEdge), UUID.fromString(split[1]));
+            }
         }
         return null;
     }

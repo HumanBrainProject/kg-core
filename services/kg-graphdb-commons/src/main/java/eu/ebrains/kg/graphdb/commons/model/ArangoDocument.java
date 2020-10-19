@@ -29,35 +29,35 @@ import java.util.stream.Collectors;
 
 /**
  * An arango document is a JSON-LD with specific properties:
- *
+ * <p>
  * 1. It's flat - meaning, there are no nested constructs except for lists on the first level as well as edge-maps ("@id") indicating links.
- *    All originally nested structures have been extracted into other Arango documents and have been linked.
- *    They share the common @documentId property though for easy lookup and lifecycle management.
- *
+ * All originally nested structures have been extracted into other Arango documents and have been linked.
+ * They share the common @documentId property though for easy lookup and lifecycle management.
+ * <p>
  * 2. Its compacted and contextless.
- *
+ * <p>
  * 3. It contains additional, arango-internal fields (such as "_key" or "_id")
  */
 public class ArangoDocument implements ArangoInstance {
     private final IndexedJsonLdDoc indexedDoc;
 
     private ArangoDocument(IndexedJsonLdDoc indexedDoc) {
-        this.indexedDoc =indexedDoc;
+        this.indexedDoc = indexedDoc;
     }
 
-    public static ArangoDocument from(IndexedJsonLdDoc indexedDoc){
+    public static ArangoDocument from(IndexedJsonLdDoc indexedDoc) {
         return indexedDoc != null ? new ArangoDocument(indexedDoc) : null;
     }
 
-    public static ArangoDocument from(NormalizedJsonLd jsonLdDoc){
+    public static ArangoDocument from(NormalizedJsonLd jsonLdDoc) {
         return from(IndexedJsonLdDoc.from(jsonLdDoc));
     }
 
-    public static ArangoDocument create(){
+    public static ArangoDocument create() {
         return from(new NormalizedJsonLd());
     }
 
-    public IndexedJsonLdDoc asIndexedDoc(){
+    public IndexedJsonLdDoc asIndexedDoc() {
         return indexedDoc;
     }
 
@@ -65,23 +65,17 @@ public class ArangoDocument implements ArangoInstance {
         return indexedDoc.getDoc();
     }
 
-
-    @Override
-    public NormalizedJsonLd dumpPayload() {
-        return new NormalizedJsonLd(indexedDoc.getDoc());
-    }
-
     @Override
     public ArangoDocumentReference getId() {
         return ArangoDocumentReference.fromArangoId(indexedDoc.getDoc().getAs(ArangoVocabulary.ID, String.class), false);
     }
 
-    public void setKeyBasedOnId(){
-        indexedDoc.getDoc().put(ArangoVocabulary.KEY, getId()!=null && getId().getDocumentId() !=null ? getId().getDocumentId().toString() : null);
+    public void setKeyBasedOnId() {
+        indexedDoc.getDoc().put(ArangoVocabulary.KEY, getId() != null && getId().getDocumentId() != null ? getId().getDocumentId().toString() : null);
     }
 
-    public void setReference(ArangoDocumentReference reference){
-        indexedDoc.getDoc().put(ArangoVocabulary.ID, reference!=null ? reference.getId() : null);
+    public void setReference(ArangoDocumentReference reference) {
+        indexedDoc.getDoc().put(ArangoVocabulary.ID, reference != null ? reference.getId() : null);
         setKeyBasedOnId();
     }
 
@@ -94,12 +88,17 @@ public class ArangoDocument implements ArangoInstance {
         indexedDoc.getDoc().put(IndexedJsonLdDoc.ORIGINAL_DOCUMENT, originalDocument.getId());
     }
 
-    public void applyResolvedEdges(Set<ArangoEdge> resolvedEdges){
-        Map<String, JsonLdId> oldToNew = resolvedEdges.stream().collect(Collectors.toMap(k->k.getOriginalTo().getId(), ArangoEdge::getResolvedTargetId));
+    @Override
+    public Object getPayload() {
+        return getDoc();
+    }
+
+    public void applyResolvedEdges(Set<ArangoEdge> resolvedEdges) {
+        Map<String, JsonLdId> oldToNew = resolvedEdges.stream().collect(Collectors.toMap(k -> k.getOriginalTo().getId(), ArangoEdge::getResolvedTargetId));
         NormalizedJsonLd doc = indexedDoc.getDoc();
         for (String key : doc.keySet()) {
             List<JsonLdId> jsonldIds = doc.getAsListOf(key, JsonLdId.class, true);
-            if(!jsonldIds.isEmpty()){
+            if (!jsonldIds.isEmpty()) {
                 List<JsonLdId> newJsonLds = jsonldIds.stream().map(jsonLdId -> {
                     JsonLdId newValue = oldToNew.get(jsonLdId.getId());
                     return newValue != null ? newValue : jsonLdId;

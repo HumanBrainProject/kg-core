@@ -18,15 +18,14 @@ package eu.ebrains.kg.core.controller;
 
 import eu.ebrains.kg.commons.AuthContext;
 import eu.ebrains.kg.commons.IdUtils;
-import eu.ebrains.kg.commons.jsonld.InstanceId;
-import eu.ebrains.kg.commons.jsonld.JsonLdDoc;
-import eu.ebrains.kg.commons.jsonld.NormalizedJsonLd;
+import eu.ebrains.kg.commons.jsonld.*;
 import eu.ebrains.kg.commons.model.*;
 import eu.ebrains.kg.commons.models.ExternalEventInformation;
 import eu.ebrains.kg.commons.models.UserWithRoles;
 import eu.ebrains.kg.commons.permission.Functionality;
 import eu.ebrains.kg.commons.permission.FunctionalityInstance;
 import eu.ebrains.kg.commons.semantics.vocabularies.EBRAINSVocabulary;
+import eu.ebrains.kg.commons.semantics.vocabularies.SchemaOrgVocabulary;
 import eu.ebrains.kg.core.serviceCall.CoreInstancesToGraphDB;
 import eu.ebrains.kg.core.serviceCall.CoreToIds;
 import eu.ebrains.kg.core.serviceCall.CoreToJsonLd;
@@ -62,20 +61,19 @@ public class CoreInstanceController {
         this.primaryStoreSvc = primaryStoreSvc;
     }
 
-    public ResponseEntity<Result<NormalizedJsonLd>> createNewInstance(JsonLdDoc jsonLdDoc, UUID id, String space, ResponseConfiguration responseConfiguration, IngestConfiguration ingestConfiguration, ExternalEventInformation externalEventInformation) {
+    public ResponseEntity<Result<NormalizedJsonLd>> createNewInstance(JsonLdDoc jsonLdDoc, UUID id, SpaceName s, ResponseConfiguration responseConfiguration, IngestConfiguration ingestConfiguration, ExternalEventInformation externalEventInformation) {
         NormalizedJsonLd normalizedJsonLd;
         if (ingestConfiguration.isNormalizePayload()) {
             normalizedJsonLd = jsonLdSvc.toNormalizedJsonLd(jsonLdDoc);
         } else {
             normalizedJsonLd = new NormalizedJsonLd(jsonLdDoc);
         }
-        Space s = new Space(space);
-        List<InstanceId> instanceIdsInSameSpace = idsSvc.resolveIds(DataStage.IN_PROGRESS, new IdWithAlternatives(id, s, normalizedJsonLd.getAllIdentifiersIncludingId()), false).stream().filter(i -> s.equals(i.getSpace())).collect(Collectors.toList());
+        List<InstanceId> instanceIdsInSameSpace = idsSvc.resolveIds(DataStage.IN_PROGRESS, new IdWithAlternatives(id, s, normalizedJsonLd.allIdentifiersIncludingId()), false).stream().filter(i -> s.equals(i.getSpace())).collect(Collectors.toList());
         //Were only interested in those instance ids in the same space. Since merging is not done cross-space, we want to allow instances being created with the same identifiers across spaces.
         if (!instanceIdsInSameSpace.isEmpty()) {
             return ResponseEntity.status(HttpStatus.CONFLICT).body(Result.nok(HttpStatus.CONFLICT.value(), String.format("The id and/or the payload you're providing are pointing to the instance(s) %s. Please do a PATCH instead", instanceIdsInSameSpace.stream().map(i -> i.getUuid().toString()).distinct().collect(Collectors.joining(", ")))));
         }
-        normalizedJsonLd.setFieldUpdateTimes(normalizedJsonLd.keySet().stream().collect(Collectors.toMap(k -> k, k -> externalEventInformation != null && externalEventInformation.getExternalEventTime() != null ? externalEventInformation.getExternalEventTime() : ZonedDateTime.now())));
+        normalizedJsonLd.defineFieldUpdateTimes(normalizedJsonLd.keySet().stream().collect(Collectors.toMap(k -> k, k -> externalEventInformation != null && externalEventInformation.getExternalEventTime() != null ? externalEventInformation.getExternalEventTime() : ZonedDateTime.now())));
         Event upsertEvent = createUpsertEvent(id, externalEventInformation, normalizedJsonLd, s);
         List<InstanceId> ids = primaryStoreSvc.postEvent(upsertEvent, ingestConfiguration.isDeferInference(), authContext.getAuthTokens());
         return handleIngestionResponse(responseConfiguration, ids);
@@ -102,7 +100,7 @@ public class CoreInstanceController {
     }
 
 
-    private Event createUpsertEvent(UUID id, ExternalEventInformation externalEventInformation, NormalizedJsonLd normalizedJsonLd, Space s) {
+    private Event createUpsertEvent(UUID id, ExternalEventInformation externalEventInformation, NormalizedJsonLd normalizedJsonLd, SpaceName s) {
         Event upsertEvent = Event.createUpsertEvent(s, id, Event.Type.INSERT, normalizedJsonLd);
         handleExternalEventInformation(externalEventInformation, upsertEvent);
         return upsertEvent;
@@ -125,10 +123,10 @@ public class CoreInstanceController {
         if (instance == null) {
             Map<String, ZonedDateTime> updateTimes = new HashMap<>();
             normalizedJsonLd.keySet().forEach(k -> updateTimes.put(k, eventDateTime != null ? eventDateTime : ZonedDateTime.now()));
-            normalizedJsonLd.setFieldUpdateTimes(updateTimes);
+            normalizedJsonLd.defineFieldUpdateTimes(updateTimes);
             return normalizedJsonLd;
         } else {
-            Map<String, ZonedDateTime> updateTimesFromInstance = instance.getFieldUpdateTimes();
+            Map<String, ZonedDateTime> updateTimesFromInstance = instance.fieldUpdateTimes();
             Map<String, ZonedDateTime> updateTimes = updateTimesFromInstance != null ? updateTimesFromInstance : new HashMap<>();
             Set<String> oldKeys = new HashSet<>(instance.keySet());
             normalizedJsonLd.keySet().forEach(k -> {
@@ -148,7 +146,7 @@ public class CoreInstanceController {
                     updateTimes.remove(k);
                 });
             }
-            instance.setFieldUpdateTimes(updateTimes);
+            instance.defineFieldUpdateTimes(updateTimes);
             return instance;
         }
     }
@@ -157,13 +155,11 @@ public class CoreInstanceController {
         Map<String, Result<NormalizedJsonLd>> result = new HashMap<>();
         List<UUID> validUUIDs = ids.stream().map(id -> {
             try {
-                return UUID.fromString(id);
+                return id!=null ? UUID.fromString(id) : null;
             } catch (IllegalArgumentException e) {
                 return null;
             }
         }).filter(Objects::nonNull).collect(Collectors.toList());
-
-
         List<InstanceId> idsAfterResolution = idsSvc.resolveIdsByUUID(stage, validUUIDs, true);
         idsAfterResolution.stream().filter(instanceId -> !instanceId.isDeprecated()).filter(InstanceId::isUnresolved).forEach(id -> result.put(id.getUuid().toString(), Result.nok(HttpStatus.NOT_FOUND.value(), HttpStatus.NOT_FOUND.getReasonPhrase())));
         Map<UUID, Result<NormalizedJsonLd>> instancesByIds = graphDbSvc.getInstancesByIds(stage, idsAfterResolution.stream().filter(i -> !i.isUnresolved() && !i.isDeprecated()).collect(Collectors.toList()), responseConfiguration.isReturnEmbedded(), responseConfiguration.isReturnAlternatives());
@@ -173,16 +169,22 @@ public class CoreInstanceController {
                 result.put(id, Result.nok(HttpStatus.NOT_FOUND.value(), id));
             }
         }
+        if(responseConfiguration.isReturnAlternatives()){
+            resolveAlternatives(stage, instancesByIds.values().stream().map(Result::getData).collect(Collectors.toList()));
+        }
         if (responseConfiguration.isReturnPermissions()) {
             enrichWithPermissionInformation(stage, instancesByIds.values());
         }
         return result;
     }
 
-    public Paginated<NormalizedJsonLd> getInstances(DataStage stage, Type type, String searchByLabel, ResponseConfiguration responseConfiguration, PaginationParam paginationParam) {
-        Paginated<NormalizedJsonLd> instancesByType = graphDbSvc.getInstancesByType(stage, type, paginationParam, searchByLabel, responseConfiguration.isReturnEmbedded(), responseConfiguration.isReturnAlternatives());
+    public Paginated<NormalizedJsonLd> getInstances(DataStage stage, Type type, SpaceName space, String searchByLabel, ResponseConfiguration responseConfiguration, PaginationParam paginationParam) {
+        Paginated<NormalizedJsonLd> instancesByType = graphDbSvc.getInstancesByType(stage, type, space, paginationParam, searchByLabel, responseConfiguration.isReturnEmbedded(), responseConfiguration.isReturnAlternatives());
+        if(responseConfiguration.isReturnAlternatives()){
+            resolveAlternatives(stage, instancesByType.getData());
+        }
         if (responseConfiguration.isReturnPermissions()) {
-            enrichWithPermissionInformation(stage, instancesByType.getData().stream().map(i -> Result.ok(i)).collect(Collectors.toList()));
+            enrichWithPermissionInformation(stage, instancesByType.getData().stream().map(Result::ok).collect(Collectors.toList()));
         }
         return instancesByType;
     }
@@ -191,6 +193,9 @@ public class CoreInstanceController {
         Result<NormalizedJsonLd> result;
         if (responseConfiguration.isReturnPayload()) {
             Map<UUID, Result<NormalizedJsonLd>> instancesByIds = graphDbSvc.getInstancesByIds(DataStage.IN_PROGRESS, instanceIds, responseConfiguration.isReturnEmbedded(), responseConfiguration.isReturnAlternatives());
+            if(responseConfiguration.isReturnAlternatives()){
+                resolveAlternatives(DataStage.IN_PROGRESS, instancesByIds.values().stream().map(Result::getData).collect(Collectors.toList()));
+            }
             if (responseConfiguration.isReturnPermissions()) {
                 enrichWithPermissionInformation(DataStage.IN_PROGRESS, instancesByIds.values());
             }
@@ -212,6 +217,9 @@ public class CoreInstanceController {
         }
         if (responseConfiguration.isReturnPayload()) {
             NormalizedJsonLd instance = graphDbSvc.getInstance(stage, instanceId, responseConfiguration.isReturnEmbedded(), responseConfiguration.isReturnAlternatives());
+            if(responseConfiguration.isReturnAlternatives()){
+                resolveAlternatives(stage, Collections.singletonList(instance));
+            }
             if (responseConfiguration.isReturnPermissions() && instance != null) {
                 enrichWithPermissionInformation(stage, Collections.singletonList(Result.ok(instance)));
             }
@@ -223,21 +231,67 @@ public class CoreInstanceController {
         }
     }
 
+    private void resolveAlternatives(DataStage stage, List<NormalizedJsonLd> documents){
+        Map<String, List<Map<String, Object>>> idsForResolution = documents.stream().map(d -> d.get(EBRAINSVocabulary.META_ALTERNATIVE)).filter(a -> a instanceof Map).map(a -> ((Map<?,?>) a).values()).flatMap(Collection::stream).map(v -> v instanceof Collection ? (Collection<?>) v : Collections.singleton(v)).flatMap(Collection::stream).filter(value -> value instanceof Map).map(value -> ((Map<?, ?>) value).get(EBRAINSVocabulary.META_VALUE)).filter(Objects::nonNull).map(v -> v instanceof Collection ? (Collection<?>) v : Collections.singleton(v)).flatMap(Collection::stream).filter(v -> {
+            if (v instanceof Map) {
+                Object id = ((Map<?, ?>) v).get(JsonLdConsts.ID);
+                return id instanceof String && !idUtils.isInternalId((String) id);
+            }
+            return false;
+        }).map(v -> (Map<String, Object>) v).collect(Collectors.groupingBy(k -> (String)k.get(JsonLdConsts.ID)));
+        Map<UUID, String> requestToIdentifier = new HashMap<>();
+        idsForResolution.keySet().forEach(id -> requestToIdentifier.put(UUID.randomUUID(), id));
+        List<IdWithAlternatives> idWithAlternatives = requestToIdentifier.keySet().stream().map(k -> new IdWithAlternatives(k, null, Collections.singleton(requestToIdentifier.get(k)))).collect(Collectors.toList());
+        JsonLdIdMapping[] mappings = idsSvc.resolveIds(stage, idWithAlternatives);
+
+        Map<UUID, Set<Map<String, Object>>> updatedObjects = new HashMap<>();
+        Set<InstanceId> instanceIds = new HashSet<>();
+        Arrays.stream(mappings).forEach(mapping -> {
+            if(mapping.getResolvedIds() != null && mapping.getResolvedIds().size() == 1) {
+                JsonLdId resolvedId = mapping.getResolvedIds().iterator().next();
+                String requestedIdentifier = requestToIdentifier.get(mapping.getRequestedId());
+                List<Map<String, Object>> objectsToBeUpdated = idsForResolution.get(requestedIdentifier);
+                objectsToBeUpdated.forEach(o -> {
+                    o.put(JsonLdConsts.ID, resolvedId.getId());
+                    UUID uuid = idUtils.getUUID(resolvedId);
+                    instanceIds.add(new InstanceId(uuid, mapping.getSpace()));
+                    updatedObjects.computeIfAbsent(uuid, x -> new HashSet<>()).add(o);
+                });
+            }
+        });
+        UUIDtoString labels = graphDbSvc.getLabels(instanceIds, stage);
+        for (UUID uuid : labels.keySet()) {
+            updatedObjects.get(uuid).forEach(o -> o.put(SchemaOrgVocabulary.NAME, labels.get(uuid)));
+        }
+        //Alternatives are a special case -> we merge the values, so this means we're actually always having a single object at once max. Therefore, let's get rid of the wrapping array
+        documents.forEach(d -> {
+            List<NormalizedJsonLd> alternatives = d.getAsListOf(EBRAINSVocabulary.META_ALTERNATIVE, NormalizedJsonLd.class);
+            if(!alternatives.isEmpty()){
+                d.put(EBRAINSVocabulary.META_ALTERNATIVE, alternatives.get(0));
+            }
+            else{
+                d.put(EBRAINSVocabulary.META_ALTERNATIVE, null);
+            }
+        });
+
+    }
+
+
     private void enrichWithPermissionInformation(DataStage stage, Collection<Result<NormalizedJsonLd>> documents) {
         UserWithRoles userWithRoles = authContext.getUserWithRoles();
         List<FunctionalityInstance> permissions = userWithRoles.getPermissions();
         documents.forEach(result -> {
                     NormalizedJsonLd doc = result.getData();
                     String space = doc.getAs(EBRAINSVocabulary.META_SPACE, String.class);
-                    Space sp = space != null ? new Space(space) : null;
-                    Set<Functionality> functionalities = permissions.stream().filter(p -> Functionality.FunctionalityGroup.INSTANCE == p.getFunctionality().getFunctionalityGroup() && stage != null && stage == p.getFunctionality().getStage()).filter(p -> p.appliesTo(sp, idUtils.getUUID(doc.getId()))).map(FunctionalityInstance::getFunctionality).collect(Collectors.toSet());
+                    SpaceName sp = space != null ? new SpaceName(space) : null;
+                    Set<Functionality> functionalities = permissions.stream().filter(p -> Functionality.FunctionalityGroup.INSTANCE == p.getFunctionality().getFunctionalityGroup() && stage != null && stage == p.getFunctionality().getStage()).filter(p -> p.appliesTo(sp, idUtils.getUUID(doc.id()))).map(FunctionalityInstance::getFunctionality).collect(Collectors.toSet());
                     doc.put(EBRAINSVocabulary.META_PERMISSIONS, functionalities);
                 }
         );
     }
 
     private void enrichWithPermissionInformation(DataStage stage, ScopeElement scopeElement, List<FunctionalityInstance> permissions) {
-        Space sp = scopeElement.getSpace() != null ? new Space(scopeElement.getSpace()) : null;
+        SpaceName sp = scopeElement.getSpace() != null ? new SpaceName(scopeElement.getSpace()) : null;
         scopeElement.setPermissions(permissions.stream().filter(p -> Functionality.FunctionalityGroup.INSTANCE == p.getFunctionality().getFunctionalityGroup() && stage != null && stage == p.getFunctionality().getStage()).filter(p -> p.appliesTo(sp, scopeElement.getId())).map(FunctionalityInstance::getFunctionality).collect(Collectors.toSet()));
         if(scopeElement.getChildren()!=null){
             scopeElement.getChildren().forEach(c -> enrichWithPermissionInformation(stage, c, permissions));

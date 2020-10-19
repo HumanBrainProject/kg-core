@@ -21,7 +21,7 @@ import eu.ebrains.kg.commons.IdUtils;
 import eu.ebrains.kg.commons.jsonld.JsonLdIdMapping;
 import eu.ebrains.kg.commons.model.DataStage;
 import eu.ebrains.kg.commons.model.IdWithAlternatives;
-import eu.ebrains.kg.commons.model.Space;
+import eu.ebrains.kg.commons.model.SpaceName;
 import eu.ebrains.kg.docker.SpringDockerComposeRunner;
 import org.junit.Before;
 import org.junit.Test;
@@ -76,7 +76,7 @@ public class IdsTest {
 
         //then
         assertEquals(1, mappings.size());
-        assertEquals(new Space("simpsons"), mappings.get(0).getSpace());
+        assertEquals(new SpaceName("simpsons"), mappings.get(0).getSpace());
         assertEquals(id.getId(), mappings.get(0).getRequestedId());
         assertEquals(1, mappings.get(0).getResolvedIds().size());
         assertEquals(idUtils.buildAbsoluteUrl(id.getId()).getId(), mappings.get(0).getResolvedIds().iterator().next().getId());

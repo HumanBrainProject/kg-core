@@ -16,11 +16,11 @@
 
 package eu.ebrains.kg.graphdb.queries.model;
 
-import io.swagger.annotations.ApiModel;
+import io.swagger.v3.oas.annotations.media.Schema;
 
 import java.util.TreeMap;
 
-@ApiModel(description = "The spec object is expected to be a context-less JSON-LD structure (meaning it has fully qualified keys but follows the compacted form - e.g. no \"@graph\" elements expected)")
+@Schema(description = "The spec object is expected to be a context-less JSON-LD structure (meaning it has fully qualified keys but follows the compacted form - e.g. no \"@graph\" elements expected)")
 public class SpecificationPayload extends TreeMap<String, Object> {
 
 

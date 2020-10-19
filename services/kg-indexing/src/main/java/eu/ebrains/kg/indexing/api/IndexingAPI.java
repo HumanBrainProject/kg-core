@@ -62,7 +62,7 @@ public class IndexingAPI {
     }
 
     private boolean isValidEvent(PersistedEvent event) {
-        return event.getData() != null && idUtils.getUUID(event.getData().getId()) != null;
+        return event.getData() != null && idUtils.getUUID(event.getData().id()) != null;
     }
 
 

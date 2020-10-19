@@ -22,7 +22,7 @@ import eu.ebrains.kg.commons.jsonld.IndexedJsonLdDoc;
 import eu.ebrains.kg.commons.jsonld.NormalizedJsonLd;
 import eu.ebrains.kg.commons.model.DataStage;
 import eu.ebrains.kg.commons.model.Event;
-import eu.ebrains.kg.commons.model.Space;
+import eu.ebrains.kg.commons.model.SpaceName;
 import eu.ebrains.kg.commons.model.TodoItem;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
@@ -43,7 +43,7 @@ public class TestToGraphDB {
 
     private final static String SERVICE_URL = "http://kg-graphdb-sync/internal/graphdb";
 
-    public void upsert(NormalizedJsonLd jsonLd, DataStage stage, UUID documentId, Space space){
+    public void upsert(NormalizedJsonLd jsonLd, DataStage stage, UUID documentId, SpaceName space){
         handleTodoList(Collections.singletonList(new TodoItem(null, documentId, space, Event.Type.INSERT, jsonLd, null, null)), stage);
     }
 
@@ -51,7 +51,7 @@ public class TestToGraphDB {
         serviceCall.post(String.format("%s/%s/todoLists", SERVICE_URL, stage.name()), todoItems, authContext.getAuthTokens(), Void.class);
     }
 
-    public IndexedJsonLdDoc get(DataStage stage, Space space, UUID id){
+    public IndexedJsonLdDoc get(DataStage stage, SpaceName space, UUID id){
         return IndexedJsonLdDoc.from(serviceCall.get(String.format("%s/%s/instances/%s/%s", SERVICE_URL, stage.name(), space.getName(), id), authContext.getAuthTokens(), NormalizedJsonLd.class));
     }
 

@@ -20,7 +20,7 @@ import com.arangodb.ArangoDBException;
 import eu.ebrains.kg.admin.controller.AdminSpaceController;
 import eu.ebrains.kg.admin.serviceCall.AdminToAuthentication;
 import eu.ebrains.kg.commons.model.Client;
-import io.swagger.annotations.ApiOperation;
+import io.swagger.v3.oas.annotations.Operation;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -41,7 +41,7 @@ public class AdminClientsAPI {
     }
 
 
-    @ApiOperation("Register a client in EBRAINS KG")
+    @Operation(summary = "Register a client in EBRAINS KG")
     @PutMapping("/{id}")
     public ResponseEntity<String> addClient(@PathVariable("id") String id) {
         try {
@@ -56,12 +56,12 @@ public class AdminClientsAPI {
     }
 
 
-    @ApiOperation("Remove a registered client")
+    @Operation(summary = "Remove a registered client")
     @DeleteMapping("/{id}")
     public ResponseEntity<String> deleteClient(@PathVariable("id") String id) {
         try {
             Client client = new Client(id);
-            spaceController.removeSpace(client.getSpace());
+            spaceController.removeSpace(client.getSpace().getName());
             authenticationSvc.unregisterClient(id);
             return ResponseEntity.ok(String.format("Successfully deleted the client with id %s", id));
         } catch (ArangoDBException ex) {

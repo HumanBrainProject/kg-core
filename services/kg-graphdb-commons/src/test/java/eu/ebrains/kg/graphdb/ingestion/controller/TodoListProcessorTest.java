@@ -23,14 +23,14 @@ import eu.ebrains.kg.commons.IdUtils;
 import eu.ebrains.kg.commons.jsonld.NormalizedJsonLd;
 import eu.ebrains.kg.commons.model.DataStage;
 import eu.ebrains.kg.commons.model.IdWithAlternatives;
-import eu.ebrains.kg.commons.model.Space;
+import eu.ebrains.kg.commons.model.SpaceName;
 import eu.ebrains.kg.docker.SpringDockerComposeRunner;
 import eu.ebrains.kg.graphdb.commons.controller.ArangoDatabases;
 import eu.ebrains.kg.graphdb.commons.controller.ArangoRepositoryCommons;
 import eu.ebrains.kg.graphdb.commons.model.ArangoDocument;
 import eu.ebrains.kg.graphdb.serviceCall.PrimaryStoreSvcTest;
-import eu.ebrains.kg.test.TestToIds;
 import eu.ebrains.kg.test.TestObjectFactory;
+import eu.ebrains.kg.test.TestToIds;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -77,10 +77,10 @@ public class TodoListProcessorTest {
         new SpringDockerComposeRunner(discoveryClient, Collections.singletonList("arango"), "kg-ids").start();
     }
 
-    private final Space space = TestObjectFactory.SIMPSONS;
+    private final SpaceName space = TestObjectFactory.SIMPSONS;
     private final ArangoCollectionReference simpsons = ArangoCollectionReference.fromSpace(TestObjectFactory.SIMPSONS);
-    private final ArangoCollectionReference admin = ArangoCollectionReference.fromSpace(new Space("admin"));
-    private final ArangoCollectionReference kgeditor = ArangoCollectionReference.fromSpace(new Space("kgeditor"));
+    private final ArangoCollectionReference admin = ArangoCollectionReference.fromSpace(new SpaceName("admin"));
+    private final ArangoCollectionReference kgeditor = ArangoCollectionReference.fromSpace(new SpaceName("kgeditor"));
 
 
     @Test
@@ -269,11 +269,11 @@ public class TodoListProcessorTest {
 
         NormalizedJsonLd bart = TestObjectFactory.createJsonLd("simpsons/bart.json");
         ArangoDocumentReference bartId = todoListProcessor.upsertDocument(simpsons.doc(UUID.randomUUID()), bart, stage, null);
-        idsSvcForTest.upsert(stage, new IdWithAlternatives().setId(bartId.getDocumentId()).setSpace(TestObjectFactory.SIMPSONS.getName()).setAlternatives(bart.getIdentifiers()));
+        idsSvcForTest.upsert(stage, new IdWithAlternatives().setId(bartId.getDocumentId()).setSpace(TestObjectFactory.SIMPSONS.getName()).setAlternatives(bart.identifiers()));
 
         NormalizedJsonLd homer = TestObjectFactory.createJsonLd("simpsons/homer.json");
         ArangoDocumentReference homerId = todoListProcessor.upsertDocument(simpsons.doc(UUID.randomUUID()), homer, stage, null);
-        idsSvcForTest.upsert(stage, new IdWithAlternatives().setId(homerId.getDocumentId()).setSpace(TestObjectFactory.SIMPSONS.getName()).setAlternatives(homer.getIdentifiers()));
+        idsSvcForTest.upsert(stage, new IdWithAlternatives().setId(homerId.getDocumentId()).setSpace(TestObjectFactory.SIMPSONS.getName()).setAlternatives(homer.identifiers()));
 
         //When
         NormalizedJsonLd bartUpdate = TestObjectFactory.createJsonLd("simpsons/bartUpdate.json");
@@ -290,11 +290,11 @@ public class TodoListProcessorTest {
 
         NormalizedJsonLd bart = TestObjectFactory.createJsonLd("simpsons/bartUpdate.json");
         ArangoDocumentReference bartId = todoListProcessor.upsertDocument(simpsons.doc(UUID.randomUUID()), bart, stage, null);
-        idsSvcForTest.upsert(stage, new IdWithAlternatives().setId(bartId.getDocumentId()).setSpace(TestObjectFactory.SIMPSONS.getName()).setAlternatives(bart.getIdentifiers()));
+        idsSvcForTest.upsert(stage, new IdWithAlternatives().setId(bartId.getDocumentId()).setSpace(TestObjectFactory.SIMPSONS.getName()).setAlternatives(bart.identifiers()));
 
         NormalizedJsonLd homer = TestObjectFactory.createJsonLd("simpsons/homer.json");
         ArangoDocumentReference homerId = todoListProcessor.upsertDocument(simpsons.doc(UUID.randomUUID()), homer, stage, null);
-        idsSvcForTest.upsert(stage, new IdWithAlternatives().setId(homerId.getDocumentId()).setSpace(TestObjectFactory.SIMPSONS.getName()).setAlternatives(homer.getIdentifiers()));
+        idsSvcForTest.upsert(stage, new IdWithAlternatives().setId(homerId.getDocumentId()).setSpace(TestObjectFactory.SIMPSONS.getName()).setAlternatives(homer.identifiers()));
 
         //When
         NormalizedJsonLd bartUpdate = TestObjectFactory.createJsonLd("simpsons/bart.json");
@@ -311,24 +311,24 @@ public class TodoListProcessorTest {
 
         NormalizedJsonLd homer = TestObjectFactory.createJsonLd("simpsons/homer.json");
         ArangoDocumentReference homerId = todoListProcessor.upsertDocument(simpsons.doc(UUID.randomUUID()), homer, stage, null);
-        idsSvcForTest.upsert(stage, new IdWithAlternatives().setId(homerId.getDocumentId()).setSpace(TestObjectFactory.SIMPSONS.getName()).setAlternatives(homer.getIdentifiers()));
+        idsSvcForTest.upsert(stage, new IdWithAlternatives().setId(homerId.getDocumentId()).setSpace(TestObjectFactory.SIMPSONS.getName()).setAlternatives(homer.identifiers()));
 
         //When
         NormalizedJsonLd bart = TestObjectFactory.createJsonLd("simpsons/bart.json");
         ArangoDocumentReference bartId = todoListProcessor.upsertDocument(simpsons.doc(UUID.randomUUID()), bart, stage, null);
-        idsSvcForTest.upsert(stage, new IdWithAlternatives().setId(bartId.getDocumentId()).setSpace(TestObjectFactory.SIMPSONS.getName()).setAlternatives(bart.getIdentifiers()));
+        idsSvcForTest.upsert(stage, new IdWithAlternatives().setId(bartId.getDocumentId()).setSpace(TestObjectFactory.SIMPSONS.getName()).setAlternatives(bart.identifiers()));
 
         //Then
 
     }
 
 
-    private ArangoDocumentReference uploadToDatabase(DataStage stage, Space space, String json){
+    private ArangoDocumentReference uploadToDatabase(DataStage stage, SpaceName space, String json){
         NormalizedJsonLd payload = TestObjectFactory.createJsonLd(json);
         UUID uuid = UUID.randomUUID();
         payload.setId(idUtils.buildAbsoluteUrl(uuid));
         ArangoDocumentReference id = todoListProcessor.upsertDocument(ArangoCollectionReference.fromSpace(space).doc(uuid), payload, stage, null);
-        idsSvcForTest.upsert(stage, new IdWithAlternatives().setId(id.getDocumentId()).setSpace(space.getName()).setAlternatives(payload.getIdentifiers()));
+        idsSvcForTest.upsert(stage, new IdWithAlternatives().setId(id.getDocumentId()).setSpace(space.getName()).setAlternatives(payload.identifiers()));
         return id;
     }
 
@@ -365,7 +365,7 @@ public class TodoListProcessorTest {
     private void uploadToDatabase(DataStage stage) {
         NormalizedJsonLd bart = TestObjectFactory.createJsonLd("simpsons/bart.json");
         ArangoDocumentReference bartId = todoListProcessor.upsertDocument(simpsons.doc(UUID.randomUUID()), bart, stage, null);
-        idsSvcForTest.upsert(stage, new IdWithAlternatives().setId(bartId.getDocumentId()).setSpace(TestObjectFactory.SIMPSONS.getName()).setAlternatives(bart.getIdentifiers()));
+        idsSvcForTest.upsert(stage, new IdWithAlternatives().setId(bartId.getDocumentId()).setSpace(TestObjectFactory.SIMPSONS.getName()).setAlternatives(bart.identifiers()));
     }
 
 

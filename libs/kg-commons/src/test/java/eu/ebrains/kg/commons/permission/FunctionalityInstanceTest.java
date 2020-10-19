@@ -16,7 +16,7 @@
 
 package eu.ebrains.kg.commons.permission;
 
-import eu.ebrains.kg.commons.model.Space;
+import eu.ebrains.kg.commons.model.SpaceName;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -24,7 +24,7 @@ public class FunctionalityInstanceTest {
 
     @Test
     public void getRolePatternForSpace() {
-        Space space = new Space("bar");
+        SpaceName space = new SpaceName("bar");
         Assert.assertTrue("bar:foo".matches(FunctionalityInstance.getRolePatternForSpace(space)));
         Assert.assertTrue("bar:foobar:foo".matches(FunctionalityInstance.getRolePatternForSpace(space)));
         Assert.assertFalse(":foo".matches(FunctionalityInstance.getRolePatternForSpace(space)));

@@ -21,18 +21,15 @@ import com.auth0.jwt.JWTVerifier;
 import com.auth0.jwt.algorithms.Algorithm;
 import com.auth0.jwt.exceptions.JWTVerificationException;
 import com.auth0.jwt.interfaces.Claim;
-import com.google.gson.Gson;
-import eu.ebrains.kg.authentication.AuthenticationConfig;
 import eu.ebrains.kg.authentication.model.OpenIdConfig;
 import eu.ebrains.kg.commons.AuthContext;
+import eu.ebrains.kg.commons.JsonAdapter;
 import eu.ebrains.kg.commons.exception.UnauthorizedException;
 import eu.ebrains.kg.commons.model.Client;
-import eu.ebrains.kg.commons.model.Space;
+import eu.ebrains.kg.commons.model.SpaceName;
 import eu.ebrains.kg.commons.model.User;
-import eu.ebrains.kg.commons.permission.Functionality;
-import eu.ebrains.kg.commons.permission.FunctionalityInstance;
-import eu.ebrains.kg.commons.permission.Role;
-import eu.ebrains.kg.commons.permission.SpacePermissionGroup;
+import eu.ebrains.kg.commons.permission.roles.Role;
+import eu.ebrains.kg.commons.permission.roles.RoleMapping;
 import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.admin.client.resource.RoleResource;
 import org.keycloak.admin.client.resource.UserResource;
@@ -42,12 +39,15 @@ import org.keycloak.representations.idm.RoleRepresentation;
 import org.keycloak.representations.idm.UserRepresentation;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
+import org.springframework.web.reactive.function.BodyInserters;
 import org.springframework.web.reactive.function.client.WebClient;
 
 import javax.annotation.PostConstruct;
+import javax.ws.rs.NotAuthorizedException;
 import javax.ws.rs.ProcessingException;
 import java.security.KeyFactory;
 import java.security.NoSuchAlgorithmException;
@@ -57,6 +57,7 @@ import java.security.spec.X509EncodedKeySpec;
 import java.util.*;
 import java.util.stream.Collectors;
 
+@ConditionalOnProperty(value = "eu.ebrains.kg.test", havingValue = "false", matchIfMissing = true)
 @Component
 public class KeycloakController {
 
@@ -64,29 +65,24 @@ public class KeycloakController {
 
     private final Logger logger = LoggerFactory.getLogger(getClass());
 
-    private final Gson gson;
+    private final JsonAdapter jsonAdapter;
 
-    private KeycloakClient keycloakClient;
+    private final KeycloakClient keycloakClient;
 
     private final AuthContext authContext;
-
-    private ClientScopeRepresentation profileScope;
-
-    private AuthenticationConfig authenticationConfig;
 
     private final KeycloakUsers keycloakUsers;
 
     private final JWTVerifier jwtVerifier;
 
 
-    public KeycloakController(KeycloakConfig config, KeycloakClient keycloakClient, Gson gson, AuthContext authContext, AuthenticationConfig authenticationConfig, KeycloakUsers keycloakUsers) {
+    public KeycloakController(KeycloakConfig config, KeycloakClient keycloakClient, JsonAdapter jsonAdapter, AuthContext authContext, KeycloakUsers keycloakUsers) {
         this.config = config;
-        this.gson = gson;
+        this.jsonAdapter = jsonAdapter;
         this.keycloakClient = keycloakClient;
         this.authContext = authContext;
-        this.authenticationConfig = authenticationConfig;
         this.keycloakUsers = keycloakUsers;
-        this.jwtVerifier = authenticationConfig.isDevelopMode() ? null : JWT.require(getAlgorithmFromKeycloakConfig(keycloakClient.getPublicKey())).withIssuer(config.getIssuer()).build(); //Reusable verifier instance;
+        this.jwtVerifier = JWT.require(getAlgorithmFromKeycloakConfig(keycloakClient.getPublicKey())).withIssuer(config.getIssuer()).build(); //Reusable verifier instance;
     }
 
     private OpenIdConfig openIdConfig;
@@ -98,6 +94,18 @@ public class KeycloakController {
     public String getTokenEndpoint() {
         return openIdConfig.getTokenEndpoint();
     }
+
+    public String authenticate(String clientId, String clientSecret) {
+        Map<?, ?> result = WebClient.builder().build().post().uri(openIdConfig.getTokenEndpoint()).body(BodyInserters.fromFormData("grant_type", "client_credentials").with("client_id", clientId).with("client_secret", clientSecret)).retrieve().bodyToMono(Map.class).block();
+        if (result != null) {
+            Object access_token = result.get("access_token");
+            if (access_token != null) {
+                return access_token.toString();
+            }
+        }
+        return null;
+    }
+
 
     private ClientRepresentation findClient(String clientName) {
         List<ClientRepresentation> clients = keycloakClient.getRealmResource().clients().findByClientId(clientName);
@@ -123,50 +131,47 @@ public class KeycloakController {
 
     public Client registerClient(Client client) {
         ClientRepresentation c = findClient(client.getIdentifier());
-        if (c != null) {
-            client.setServiceAccountId(keycloakClient.getRealmResource().clients().get(c.getId()).getServiceAccountUser().getId());
-        } else {
+        if (c == null) {
             //Create if it doesn't exist
             c = new ClientRepresentation();
             c.setClientId(client.getIdentifier());
-            c.setDirectAccessGrantsEnabled(true);
-            c.setImplicitFlowEnabled(false);
-            c.setStandardFlowEnabled(false);
-            c.setServiceAccountsEnabled(true);
             keycloakClient.getRealmResource().clients().create(c);
             c = findClient(client.getIdentifier());
         }
         if (c != null) {
+            c.setDirectAccessGrantsEnabled(false);
+            c.setImplicitFlowEnabled(false);
+            c.setStandardFlowEnabled(false);
+            c.setServiceAccountsEnabled(true);
+            c.setFullScopeAllowed(false);
+            keycloakClient.getRealmResource().clients().get(c.getId()).update(c);
+            List<Role> roles = Arrays.stream(RoleMapping.values()).filter(r -> r != RoleMapping.IS_CLIENT).map(p -> p.toRole(client.getSpace().getName())).collect(Collectors.toList());
+            createRoles(roles);
             ClientResource clientResource = keycloakClient.getRealmResource().clients().get(c.getId());
             String serviceAccountId = clientResource.getServiceAccountUser().getId();
-            String profileClientScopeId = getProfileClientScopeId(clientResource);
-            if (profileClientScopeId != null) {
-                clientResource.addDefaultClientScope(profileClientScopeId);
+            ClientScopeRepresentation kgClientScope = keycloakClient.getKgClientScope();
+            if(kgClientScope!=null){
+                clientResource.addDefaultClientScope(kgClientScope.getId());
             }
             UserResource userResource = keycloakClient.getRealmResource().users().get(serviceAccountId);
-            userResource.roles().clientLevel(keycloakClient.getTechnicalClientId()).add(getServiceAccountRoles(client.getSpace()));
+            userResource.roles().clientLevel(keycloakClient.getTechnicalClientId()).add(getServiceAccountRoles(client.getSpace().getName()));
             client.setServiceAccountId(serviceAccountId);
         }
         return client;
     }
 
-    private String getProfileClientScopeId(ClientResource clientResource) {
-        if (profileScope == null) {
-            profileScope = clientResource.getDefaultClientScopes().stream().filter(scope -> scope.getName().equals("profile")).findFirst().orElse(null);
-        }
-        return profileScope != null ? profileScope.getId() : null;
-    }
+    private List<RoleRepresentation> getServiceAccountRoles(SpaceName space) {
+        String ownerRole = RoleMapping.OWNER.toRole(space).getName();
+        String clientRole = RoleMapping.IS_CLIENT.toRole(null).getName();
 
-    private List<RoleRepresentation> getServiceAccountRoles(Space space) {
-        String ownerRole = SpacePermissionGroup.OWNER.toRole(space).getName();
         RoleResource ownerRoleResource = keycloakClient.getClientResource().roles().get(ownerRole);
-        String isClientRole = new FunctionalityInstance(Functionality.IS_CLIENT, null, null).toRole().getName();
-        RoleResource isClientRoleResource = keycloakClient.getClientResource().roles().get(isClientRole);
+        RoleResource isClientRoleResource = keycloakClient.getClientResource().roles().get(clientRole);
         return Arrays.asList(ownerRoleResource.toRepresentation(), isClientRoleResource.toRepresentation());
     }
 
-    public void createRoleForClient(Role role) {
-        keycloakClient.createRoleForClient(role);
+    public void createRoles(List<Role> roles){
+        roles.forEach(keycloakClient::createRoleForClient);
+        keycloakClient.syncKgScopeWithKgRoles();
     }
 
     public List<Role> getNonExistingRoles(List<Role> roles) {
@@ -192,33 +197,35 @@ public class KeycloakController {
             logger.info(String.format("Removing role %s from client %s", r.getName(), keycloakClient.getClientId()));
             keycloakClient.getClientResource().roles().deleteRole(r.getName());
         });
+        keycloakClient.syncKgScopeWithKgRoles();
     }
 
     @PostConstruct
     public void setup() {
-        if (!authenticationConfig.isDevelopMode()) {
-            if (config.getPwd() != null && !config.getPwd().isEmpty()) {
+        try {
+            keycloakClient.ensureDefaultClientAndGlobalRolesInKeycloak();
+        }
+        catch (ProcessingException ex) {
+            if (ex.getCause() instanceof NotAuthorizedException){
+                logger.error("The registered kg-core keycloak account is not authorized. Please make sure, you have the right credential (if this is a new installation, you should consider executing the setup api) ");
+            }
+            else {
                 try {
-                    keycloakClient.ensureRealmClientAndGlobalRolesInKeycloak();
-                } catch (ProcessingException ex) {
-                    try {
-                        logger.warn("Was not able to connect to keycloak - trying again in 5 secs...");
-                        Thread.sleep(5000);
-                        setup();
-                    } catch (InterruptedException e) {
-                        e.printStackTrace();
-                    }
+                    logger.warn("Was not able to connect to keycloak - trying again in 5 secs...");
+                    Thread.sleep(5000);
+                    setup();
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
                 }
             }
-            loadOpenIdConfig();
         }
+        loadOpenIdConfig();
     }
 
     private void loadOpenIdConfig() {
         String result = WebClient.builder().build().get().uri(config.getConfigUrl()).accept(MediaType.APPLICATION_JSON).retrieve().bodyToMono(String.class).block();
-        openIdConfig = gson.fromJson(result, OpenIdConfig.class);
+        openIdConfig = jsonAdapter.fromJson(result, OpenIdConfig.class);
     }
-
 
 
     @Cacheable(value = "usersByAttribute")
@@ -274,17 +281,16 @@ public class KeycloakController {
 
     Map<String, Claim> getInfo(String token) {
         String bareToken = token.substring("Bearer ".length());
-        try{
+        try {
             return jwtVerifier.verify(bareToken).getClaims();
-        }
-        catch (JWTVerificationException ex){
+        } catch (JWTVerificationException ex) {
             throw new UnauthorizedException(ex);
         }
     }
 
     private Algorithm getAlgorithmFromKeycloakConfig(String publicKey) {
         try {
-            logger.debug(String.format("Validation by public RSA key (%s) of keycloak host %s",  publicKey, config.getIssuer()));
+            logger.debug(String.format("Validation by public RSA key (%s) of keycloak host %s", publicKey, config.getIssuer()));
             byte[] buffer = Base64.getDecoder().decode(publicKey);
             KeyFactory keyFactory = KeyFactory.getInstance("RSA");
             X509EncodedKeySpec keySpec = new X509EncodedKeySpec(buffer);
@@ -315,7 +321,7 @@ public class KeycloakController {
     public List<String> buildRoleListFromKeycloak(Map<String, Claim> authInfo) {
         Claim resource_access = authInfo.get("resource_access");
         if (resource_access != null) {
-            Object kgResources = resource_access.asMap().get(config.getClientId());
+            Object kgResources = resource_access.asMap().get(config.getKgClientId());
             if (kgResources instanceof Map) {
                 Map<String, Object> kg = (Map<String, Object>) kgResources;
                 Object roles = kg.get("roles");

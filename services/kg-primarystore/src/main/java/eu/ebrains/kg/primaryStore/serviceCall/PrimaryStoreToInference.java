@@ -19,7 +19,7 @@ package eu.ebrains.kg.primaryStore.serviceCall;
 import eu.ebrains.kg.commons.AuthTokens;
 import eu.ebrains.kg.commons.ServiceCall;
 import eu.ebrains.kg.commons.model.Event;
-import eu.ebrains.kg.commons.model.Space;
+import eu.ebrains.kg.commons.model.SpaceName;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
@@ -39,7 +39,7 @@ public class PrimaryStoreToInference {
 
     private final Logger logger = LoggerFactory.getLogger(getClass());
 
-    public List<Event> infer(Space space, UUID id, AuthTokens authTokens) {
+    public List<Event> infer(SpaceName space, UUID id, AuthTokens authTokens) {
         logger.debug(String.format("Inferring instance %s/%s", space.getName(), id));
         return Arrays.asList(serviceCall.get(String.format("http://kg-inference/internal/inference/%s/%s", space.getName(), id), authTokens, Event[].class));
     }

@@ -33,6 +33,7 @@ import eu.ebrains.kg.commons.IdUtils;
 import eu.ebrains.kg.commons.exception.AmbiguousException;
 import eu.ebrains.kg.commons.exception.ForbiddenException;
 import eu.ebrains.kg.commons.jsonld.*;
+import eu.ebrains.kg.commons.markers.*;
 import eu.ebrains.kg.commons.model.*;
 import eu.ebrains.kg.commons.models.UserWithRoles;
 import eu.ebrains.kg.commons.params.ReleaseTreeScope;
@@ -47,12 +48,15 @@ import eu.ebrains.kg.graphdb.commons.controller.ArangoUtils;
 import eu.ebrains.kg.graphdb.commons.controller.PermissionsController;
 import eu.ebrains.kg.graphdb.commons.model.ArangoDocument;
 import eu.ebrains.kg.graphdb.instances.model.ArangoRelation;
+import eu.ebrains.kg.graphdb.queries.controller.QueryController;
 import eu.ebrains.kg.graphdb.queries.model.spec.GraphQueryKeys;
+import eu.ebrains.kg.graphdb.types.controller.ArangoRepositoryTypes;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
 
 import java.util.*;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 @Component
 public class ArangoRepositoryInstances {
@@ -62,23 +66,27 @@ public class ArangoRepositoryInstances {
     private final PermissionSvc permissionSvc;
     private final AuthContext authContext;
     private final ArangoUtils arangoUtils;
-
+    private final QueryController queryController;
+    private final ArangoRepositoryTypes typesRepo;
     private final ArangoDatabases databases;
-
     private final IdUtils idUtils;
 
-    public ArangoRepositoryInstances(ArangoRepositoryCommons arangoRepositoryCommons, PermissionsController permissionsController, PermissionSvc permissionSvc, AuthContext authContext, ArangoUtils arangoUtils, ArangoDatabases databases, IdUtils idUtils) {
+    public ArangoRepositoryInstances(ArangoRepositoryCommons arangoRepositoryCommons, PermissionsController permissionsController, PermissionSvc permissionSvc, AuthContext authContext, ArangoUtils arangoUtils, QueryController queryController, ArangoRepositoryTypes typesRepo, ArangoDatabases databases, IdUtils idUtils) {
         this.arangoRepositoryCommons = arangoRepositoryCommons;
         this.permissionsController = permissionsController;
         this.permissionSvc = permissionSvc;
         this.authContext = authContext;
         this.arangoUtils = arangoUtils;
+        this.queryController = queryController;
+        this.typesRepo = typesRepo;
         this.databases = databases;
         this.idUtils = idUtils;
     }
 
-    public NormalizedJsonLd getInstance(DataStage stage, Space space, UUID id, boolean embedded, boolean removeInternalProperties, boolean alternatives) {
-        if (!permissionSvc.hasPermission(authContext.getUserWithRoles(), Functionality.READ, space, id)) {
+
+    @ExposesData
+    public NormalizedJsonLd getInstance(DataStage stage, SpaceName space, UUID id, boolean embedded, boolean removeInternalProperties, boolean alternatives) {
+        if (!permissionSvc.hasPermission(authContext.getUserWithRoles(), Functionality.MINIMAL_READ, space, id)) {
             throw new ForbiddenException(String.format("You don't have read rights on the instance with the id %s", id));
         }
         ArangoDocument document = arangoRepositoryCommons.getDocument(stage, ArangoCollectionReference.fromSpace(space).doc(id));
@@ -91,7 +99,20 @@ public class ArangoRepositoryInstances {
         if (removeInternalProperties) {
             document.getDoc().removeAllInternalProperties();
         }
-        return document.getDoc();
+        NormalizedJsonLd doc = document.getDoc();
+        if (doc != null && !permissionSvc.hasPermission(authContext.getUserWithRoles(), Functionality.READ, space, id)) {
+            //The user doesn't have read rights - we need to restrict the information to minimal data
+            doc.keepPropertiesOnly(getMinimalFields(stage, doc.types()));
+        }
+        return doc;
+    }
+
+    private Set<String> getMinimalFields(DataStage stage, List<String> types) {
+        Set<String> keepProperties = typesRepo.getTypeInformation(authContext.getUserWithRoles().getClientId(), stage, types.stream().map(Type::new).collect(Collectors.toList())).stream().map(Type::getLabelProperty).collect(Collectors.toSet());
+        keepProperties.add(JsonLdConsts.ID);
+        keepProperties.add(JsonLdConsts.TYPE);
+        keepProperties.add(EBRAINSVocabulary.META_SPACE);
+        return keepProperties;
     }
 
     private void exposeRevision(List<NormalizedJsonLd> documents) {
@@ -101,10 +122,12 @@ public class ArangoRepositoryInstances {
     private void handleAlternativesAndEmbedded(List<NormalizedJsonLd> documents, DataStage stage, boolean alternatives, boolean embedded) {
         if (alternatives) {
             List<NormalizedJsonLd[]> embeddedDocuments = getEmbeddedDocuments(documents, stage, true);
-            resolveUsersForAlternatives(stage, embeddedDocuments);
+            resolveUsersForAlternatives(embeddedDocuments);
             for (NormalizedJsonLd[] embeddedDocument : embeddedDocuments) {
                 Arrays.stream(embeddedDocument).forEach(e -> {
                     e.remove(EBRAINSVocabulary.META_REVISION);
+                    //We don't need the space field of embedded instances since it's redundant
+                    e.remove(EBRAINSVocabulary.META_SPACE);
                 });
             }
             addEmbeddedInstancesToDocument(documents, embeddedDocuments);
@@ -112,12 +135,12 @@ public class ArangoRepositoryInstances {
             documents.forEach(d -> d.remove(EBRAINSVocabulary.META_ALTERNATIVE));
         }
         if (embedded) {
-            resolveUsersForDocuments(stage, documents);
+            resolveUsersForDocuments(documents);
             addEmbeddedInstancesToDocument(documents, getEmbeddedDocuments(documents, stage, false));
         }
     }
 
-    private void resolveUsersForDocuments(DataStage stage, List<NormalizedJsonLd> documents) {
+    private void resolveUsersForDocuments(List<NormalizedJsonLd> documents) {
         List<ArangoDocumentReference> userIdsToResolve = documents.stream()
                 .filter(e -> e.containsKey(EBRAINSVocabulary.META_USER) && e.get(EBRAINSVocabulary.META_USER) != null)
                 .map(d -> {
@@ -149,7 +172,7 @@ public class ArangoRepositoryInstances {
         });
     }
 
-    private void resolveUsersForAlternatives(DataStage stage, List<NormalizedJsonLd[]> alternatives) {
+    private void resolveUsersForAlternatives(List<NormalizedJsonLd[]> alternatives) {
         List<ArangoDocumentReference> userIdsToResolve = alternatives.stream().flatMap(Arrays::stream).map(d ->
                 d.keySet().stream().filter(k -> !NormalizedJsonLd.isInternalKey(k) && !JsonLdConsts.isJsonLdConst(k)).map(k -> {
                     List<NormalizedJsonLd> alternative;
@@ -240,18 +263,30 @@ public class ArangoRepositoryInstances {
         return result;
     }
 
+    @ExposesData
     public Map<UUID, Result<NormalizedJsonLd>> getDocumentsByIdList(DataStage stage, List<InstanceId> instanceIds, boolean embedded, boolean alternatives) {
         UserWithRoles userWithRoles = authContext.getUserWithRoles();
-        Map<InstanceId, Boolean> hasPermissions = instanceIds.stream().collect(Collectors.toMap(i -> i, i -> permissionSvc.hasPermission(userWithRoles, Functionality.READ, i.getSpace(), i.getUuid())));
-        List<InstanceId> instanceIdsWithAccess = hasPermissions.keySet().stream().filter(hasPermissions::get).collect(Collectors.toList());
-        List<InstanceId> instanceIdsWithoutAccess = hasPermissions.keySet().stream().filter(i -> !hasPermissions.get(i)).collect(Collectors.toList());
-        Map<UUID, Result<NormalizedJsonLd>> documentsByReferenceList = getDocumentsByReferenceList(stage, instanceIdsWithAccess.stream().map(ArangoDocumentReference::fromInstanceId).collect(Collectors.toList()), embedded, alternatives);
-        instanceIdsWithoutAccess.forEach(i -> {
+
+        Set<InstanceId> hasReadPermissions = instanceIds.stream().filter(i -> permissionSvc.hasPermission(userWithRoles, permissionsController.getReadFunctionality(stage), i.getSpace(), i.getUuid())).collect(Collectors.toSet());
+        Set<InstanceId> hasOnlyMinimalReadPermissions = instanceIds.stream().filter(i -> !hasReadPermissions.contains(i) && permissionSvc.hasPermission(userWithRoles, permissionsController.getMinimalReadFunctionality(stage), i.getSpace(), i.getUuid())).collect(Collectors.toSet());
+        Set<InstanceId> hasNoPermissions = instanceIds.stream().filter(i -> !hasReadPermissions.contains(i) && !hasOnlyMinimalReadPermissions.contains(i)).collect(Collectors.toSet());
+
+        Map<UUID, Result<NormalizedJsonLd>> documentsByReferenceList = getDocumentsByReferenceList(stage, hasReadPermissions.stream().map(ArangoDocumentReference::fromInstanceId).collect(Collectors.toList()), embedded, alternatives);
+        Map<UUID, Result<NormalizedJsonLd>> documentsByReferenceListWithMinimalReadAccess = getDocumentsByReferenceList(stage, hasOnlyMinimalReadPermissions.stream().map(ArangoDocumentReference::fromInstanceId).collect(Collectors.toList()), false, false);
+
+        //Reduce the payload to the minimal fields
+        documentsByReferenceListWithMinimalReadAccess.values().forEach(d -> d.getData().keepPropertiesOnly(getMinimalFields(stage, d.getData().types())));
+        documentsByReferenceList.putAll(documentsByReferenceListWithMinimalReadAccess);
+
+        //Define responses for no-permission instances
+        hasNoPermissions.forEach(i -> {
             documentsByReferenceList.put(i.getUuid(), Result.nok(HttpStatus.FORBIDDEN.value(), String.format("You don't have rights to read id %s", i.getUuid())));
         });
         return documentsByReferenceList;
     }
 
+    @ExposesData
+    //FIXME: Do we want to return suggested links for RELEASED stage?
     public Paginated<SuggestedLink> getSuggestionsByTypes(DataStage stage, List<Type> types, PaginationParam paginationParam, String search, List<UUID> excludeIds) {
         //Suggestions are special in terms of permissions: We even allow instances to show up which are in spaces the user doesn't have read access for. This is only acceptable because we're returning a restricted result with minimal information
         if (types == null || types.isEmpty()) {
@@ -271,7 +306,7 @@ public class ArangoRepositoryInstances {
         Paginated<NormalizedJsonLd> normalizedJsonLdPaginated = arangoRepositoryCommons.queryDocuments(databases.getByStage(stage), new AQLQuery(aql, bindVars));
         List<SuggestedLink> links = normalizedJsonLdPaginated.getData().stream().map(payload -> {
             SuggestedLink link = new SuggestedLink();
-            link.setId(idUtils.getUUID(payload.getId()));
+            link.setId(idUtils.getUUID(payload.id()));
             link.setLabel(payload.getAs(EBRAINSVocabulary.LABEL, String.class, null));
             link.setType(payload.getAs(EBRAINSVocabulary.META_TYPE, String.class, null));
             link.setSpace(payload.getAs(EBRAINSVocabulary.META_SPACE, String.class, null));
@@ -315,7 +350,9 @@ public class ArangoRepositoryInstances {
         aql.addLine(AQL.trust("]"));
     }
 
-    public List<String> getDocumentIdsBySpace(Space space) {
+    @ExposesIds
+    public List<String> getDocumentIdsBySpace(SpaceName space) {
+        //FIXME: Shouldn't those be restricted to the ones we have at least minimal read access rights?
         AQL aql = new AQL();
         Map<String, Object> bindVars = new HashMap<>();
         aql.addLine(AQL.trust("FOR doc IN @@space"));
@@ -326,7 +363,8 @@ public class ArangoRepositoryInstances {
     }
 
 
-    public Paginated<NormalizedJsonLd> getDocumentsByTypes(DataStage stage, List<Type> typesWithLabelInfo, PaginationParam paginationParam, String search, boolean embedded, boolean alternatives) {
+    @ExposesData
+    public Paginated<NormalizedJsonLd> getDocumentsByTypes(DataStage stage, List<Type> typesWithLabelInfo, SpaceName space, PaginationParam paginationParam, String search, boolean embedded, boolean alternatives) {
         //TODO find label field for type (and client) and filter by search if set.
         ArangoDatabase database = databases.getByStage(stage);
         if (database.collection(InternalSpace.TYPE_EDGE_COLLECTION.getCollectionName()).exists()) {
@@ -342,6 +380,10 @@ public class ArangoRepositoryInstances {
             if (whitelistFilter != null) {
                 aql.addDocumentFilterWithWhitelistFilter(AQL.trust("v"));
             }
+            if (space != null) {
+                aql.addLine(AQL.trust("FILTER v." + ArangoVocabulary.COLLECTION + " == @spaceFilter"));
+                bindVars.put("spaceFilter", ArangoCollectionReference.fromSpace(space).getCollectionName());
+            }
             addSearchFilter(bindVars, aql, search);
             aql.addPagination(paginationParam);
             aql.addLine(AQL.trust("RETURN v"));
@@ -355,6 +397,7 @@ public class ArangoRepositoryInstances {
         return new Paginated<>(Collections.emptyList(), 0, 0, 0);
     }
 
+    @ExposesQuery
     public Paginated<NormalizedJsonLd> getQueriesByRootType(DataStage stage, PaginationParam paginationParam, String search, boolean embedded, boolean alternatives, String typeFilter) {
         ArangoDatabase database = databases.getByStage(stage);
         if (database.collection(InternalSpace.TYPE_EDGE_COLLECTION.getCollectionName()).exists()) {
@@ -383,22 +426,29 @@ public class ArangoRepositoryInstances {
     }
 
 
-    public List<NormalizedJsonLd> getDocumentsByIncomingRelation(DataStage stage, Space space, UUID id, ArangoRelation relation, boolean useOriginalTo, boolean embedded, boolean alternatives) {
+    @ExposesData
+    public List<NormalizedJsonLd> getDocumentsByIncomingRelation(DataStage stage, SpaceName space, UUID id, ArangoRelation relation, boolean useOriginalTo, boolean embedded, boolean alternatives) {
         return getDocumentsByRelation(stage, space, id, relation, true, useOriginalTo, embedded, alternatives);
     }
 
-    public GraphEntity getNeighbors(DataStage stage, Space space, UUID id){
+    @ExposesMinimalData
+    public GraphEntity getNeighbors(DataStage stage, SpaceName space, UUID id) {
+        if(!permissionSvc.hasPermission(authContext.getUserWithRoles(), permissionsController.getReadFunctionality(stage), space, id)){
+            throw new ForbiddenException();
+        }
+        //FIXME: Do we have to restrict this to the instances with minimal read access?
         AQL aql = new AQL();
         Map<String, Object> bindVars = new HashMap<>();
         ArangoDatabase db = databases.getByStage(stage);
         Set<String> edgeCollections = db.getCollections(new CollectionsReadOptions().excludeSystem(true)).stream().filter(c ->
                 //We're only interested in edges
                 c.getType() == CollectionType.EDGES &&
-                //We want to exclude meta properties
-                !c.getName().startsWith(ArangoCollectionReference.fromSpace(new Space(EBRAINSVocabulary.META), true).getCollectionName()) &&
-                //And we want to exclude the internal ones...
-                !InternalSpace.INTERNAL_NON_META_EDGES.contains(new ArangoCollectionReference(c.getName(), true))
+                        //We want to exclude meta properties
+                        !c.getName().startsWith(ArangoCollectionReference.fromSpace(new SpaceName(EBRAINSVocabulary.META), true).getCollectionName()) &&
+                        //And we want to exclude the internal ones...
+                        !InternalSpace.INTERNAL_NON_META_EDGES.contains(new ArangoCollectionReference(c.getName(), true))
         ).map(c -> AQL.preventAqlInjection(c.getName()).getValue()).collect(Collectors.toSet());
+
 
         //The edges are injection-safe since they have been checked beforehand - so we can trust these values.
         String edges = String.join(", ", edgeCollections);
@@ -408,32 +458,36 @@ public class ArangoRepositoryInstances {
         bindVars.put("id", String.format("%s/%s", ArangoCollectionReference.fromSpace(space).getCollectionName(), id));
 
         //TODO use dynamic name label
-        aql.addLine(AQL.trust("LET inbnd = (FOR inbnd IN 1..1 INBOUND doc "+edges));
-        aql.addLine(AQL.trust("    RETURN { \"id\": inbnd._key, \"name\": inbnd.`http://schema.org/name`, \"types\": inbnd.`@type`, \"space\": inbnd.`"+EBRAINSVocabulary.META_SPACE+"`})"));
-        aql.addLine(AQL.trust("LET outbnd = (FOR outbnd IN 1..1 OUTBOUND doc " + edges));
-        aql.addLine(AQL.trust("    LET outbnd2 = (FOR outbnd2 IN 1..1 OUTBOUND outbnd " + edges));
-        aql.addLine(AQL.trust( "    RETURN {\"id\": outbnd2._key, \"name\": outbnd2.`http://schema.org/name`, \"types\": outbnd2.`@type`, \"space\": outbnd2.`"+EBRAINSVocabulary.META_SPACE+"`})"));
-        aql.addLine(AQL.trust(     "    RETURN {\"id\": outbnd._key,  \"name\": outbnd.`http://schema.org/name`, \"outbound\": outbnd2, \"types\": outbnd.`@type`, \"space\": outbnd.`"+EBRAINSVocabulary.META_SPACE+"` })"));
-        aql.addLine(AQL.trust("RETURN {\"id\": doc._key, \"name\": doc.`http://schema.org/name`, \"inbound\" : inbnd, \"outbound\": outbnd, \"types\": doc.`@type`, \"space\": doc.`"+EBRAINSVocabulary.META_SPACE+"` }"));
+        if (!edgeCollections.isEmpty()) {
+            aql.addLine(AQL.trust("LET inbnd = (FOR inbnd IN 1..1 INBOUND doc " + edges));
+            aql.addLine(AQL.trust("    RETURN { \"id\": inbnd._key, \"name\": inbnd.`http://schema.org/name`, \"types\": inbnd.`@type`, \"space\": inbnd.`" + EBRAINSVocabulary.META_SPACE + "`})"));
+            aql.addLine(AQL.trust("LET outbnd = (FOR outbnd IN 1..1 OUTBOUND doc " + edges));
+            aql.addLine(AQL.trust("    LET outbnd2 = (FOR outbnd2 IN 1..1 OUTBOUND outbnd " + edges));
+            aql.addLine(AQL.trust("    RETURN {\"id\": outbnd2._key, \"name\": outbnd2.`http://schema.org/name`, \"types\": outbnd2.`@type`, \"space\": outbnd2.`" + EBRAINSVocabulary.META_SPACE + "`})"));
+            aql.addLine(AQL.trust("    RETURN {\"id\": outbnd._key,  \"name\": outbnd.`http://schema.org/name`, \"outbound\": outbnd2, \"types\": outbnd.`@type`, \"space\": outbnd.`" + EBRAINSVocabulary.META_SPACE + "` })"));
+        } else {
+            aql.addLine(AQL.trust("LET inbnd = []"));
+            aql.addLine(AQL.trust("LET outbnd = []"));
+        }
+        aql.addLine(AQL.trust("RETURN {\"id\": doc._key, \"name\": doc.`http://schema.org/name`, \"inbound\" : inbnd, \"outbound\": outbnd, \"types\": doc.`@type`, \"space\": doc.`" + EBRAINSVocabulary.META_SPACE + "` }"));
 
         List<GraphEntity> graphEntities = db.query(aql.build().getValue(), bindVars, new AqlQueryOptions(), GraphEntity.class).asListRemaining();
-        if(graphEntities.isEmpty()){
+        if (graphEntities.isEmpty()) {
             return null;
-        }
-        else if (graphEntities.size()==1){
+        } else if (graphEntities.size() == 1) {
             return graphEntities.get(0);
-        }
-        else{
+        } else {
             throw new AmbiguousException(String.format("Did find multiple instances for the id %s", id));
         }
 
     }
 
-    public List<NormalizedJsonLd> getDocumentsByOutgoingRelation(DataStage stage, Space space, UUID id, ArangoRelation relation, boolean embedded, boolean alternatives) {
+    @ExposesData
+    public List<NormalizedJsonLd> getDocumentsByOutgoingRelation(DataStage stage, SpaceName space, UUID id, ArangoRelation relation, boolean embedded, boolean alternatives) {
         return getDocumentsByRelation(stage, space, id, relation, false, false, embedded, alternatives);
     }
 
-    private List<NormalizedJsonLd> getDocumentsByRelation(DataStage stage, Space space, UUID id, ArangoRelation relation, boolean incoming, boolean useOriginalTo, boolean embedded, boolean alternatives) {
+    private List<NormalizedJsonLd> getDocumentsByRelation(DataStage stage, SpaceName space, UUID id, ArangoRelation relation, boolean incoming, boolean useOriginalTo, boolean embedded, boolean alternatives) {
         ArangoDatabase db = databases.getByStage(stage);
 
         ArangoCollectionReference relationColl;
@@ -463,14 +517,15 @@ public class ArangoRepositoryInstances {
         return Collections.emptyList();
     }
 
-    public List<NormalizedJsonLd> getDocumentsBySharedIdentifiers(DataStage stage, Space space, UUID id, boolean embedded, boolean alternatives) {
+    @ExposesData
+    public List<NormalizedJsonLd> getDocumentsBySharedIdentifiers(DataStage stage, SpaceName space, UUID id, boolean embedded, boolean alternatives) {
         ArangoDatabase db = databases.getByStage(stage);
         ArangoCollectionReference collectionReference = ArangoCollectionReference.fromSpace(space);
         if (db.collection(collectionReference.getCollectionName()).exists()) {
             //Because Arango doesn't support indexed filtering of array in array search, we expand the (very limited) list of identifiers of the root document and state them explicitly as individual filter elements. This way, the index applies and we profit from more speed.
             NormalizedJsonLd rootDocument = db.collection(collectionReference.getCollectionName()).getDocument(id.toString(), NormalizedJsonLd.class);
             if (rootDocument != null) {
-                List<NormalizedJsonLd> result = doGetDocumentsByIdentifiers(rootDocument.getAllIdentifiersIncludingId(), stage, space);
+                List<NormalizedJsonLd> result = doGetDocumentsByIdentifiers(rootDocument.allIdentifiersIncludingId(), stage, space);
                 if (result != null) {
                     handleAlternativesAndEmbedded(result, stage, alternatives, embedded);
                     return result;
@@ -480,13 +535,14 @@ public class ArangoRepositoryInstances {
         return Collections.emptyList();
     }
 
-    public List<NormalizedJsonLd> getDocumentsByIdentifiers(Set<String> allIdentifiersIncludingId, DataStage stage, Space space, boolean embedded, boolean alternatives) {
+    @ExposesData
+    public List<NormalizedJsonLd> getDocumentsByIdentifiers(Set<String> allIdentifiersIncludingId, DataStage stage, SpaceName space, boolean embedded, boolean alternatives) {
         List<NormalizedJsonLd> normalizedJsonLds = doGetDocumentsByIdentifiers(allIdentifiersIncludingId, stage, space);
         handleAlternativesAndEmbedded(normalizedJsonLds, stage, alternatives, embedded);
         return normalizedJsonLds;
     }
 
-    private List<NormalizedJsonLd> doGetDocumentsByIdentifiers(Set<String> allIdentifiersIncludingId, DataStage stage, Space space) {
+    private List<NormalizedJsonLd> doGetDocumentsByIdentifiers(Set<String> allIdentifiersIncludingId, DataStage stage, SpaceName space) {
         ArangoDatabase db = databases.getByStage(stage);
         ArangoCollectionReference collectionReference = ArangoCollectionReference.fromSpace(space);
         if (!db.collection(collectionReference.getCollectionName()).exists()) {
@@ -514,19 +570,55 @@ public class ArangoRepositoryInstances {
         return null;
     }
 
-    public ReleaseStatus getReleaseStatus(Space space, UUID id, ReleaseTreeScope treeScope) {
+    private Set<InstanceId> fetchInvolvedInstances(ScopeElement element, Set<InstanceId> collector) {
+        collector.add(new InstanceId(element.getId(), new SpaceName(element.getSpace())));
+        if (element.getChildren() != null) {
+            element.getChildren().forEach(c -> fetchInvolvedInstances(c, collector));
+        }
+        return collector;
+    }
 
+    @ExposesReleaseStatus
+    public ReleaseStatus getReleaseStatus(SpaceName space, UUID id, ReleaseTreeScope treeScope) {
+        if(!permissionSvc.hasPermission(authContext.getUserWithRoles(), Functionality.RELEASE_STATUS, space, id)){
+            throw new ForbiddenException();
+        }
         switch (treeScope) {
             case TOP_INSTANCE_ONLY:
                 return getTopInstanceReleaseStatus(space, id);
             case CHILDREN_ONLY:
-//                return getChildrenReleaseStatus(space, id);
+                //FIXME restrict exposed release status based on permissions.
+                ScopeElement scopeForInstance = getScopeForInstance(space, id, DataStage.IN_PROGRESS, false);
+                if (scopeForInstance.getChildren() == null || scopeForInstance.getChildren().isEmpty()) {
+                    return null;
+                }
+                Set<InstanceId> instanceIds = fetchInvolvedInstances(scopeForInstance, new HashSet<>());
+                //Ignore top instance
+                instanceIds.remove(new InstanceId(id, space));
+                AQL aql = new AQL();
+                aql.addLine(AQL.trust("FOR id IN @ids"));
+                Map<String, Object> bindVars = new HashMap<>();
+                bindVars.put("ids", instanceIds.stream().map(InstanceId::serialize).collect(Collectors.toList()));
+                aql.addLine(AQL.trust("LET doc = DOCUMENT(id)"));
+                aql.addLine(AQL.trust("LET status = FIRST((FOR v IN 1..1 INBOUND  doc @@releaseStatusCollection"));
+                bindVars.put("@releaseStatusCollection", InternalSpace.RELEASE_STATUS_EDGE_COLLECTION.getCollectionName());
+                aql.addLine(AQL.trust("RETURN v.`" + SchemaOrgVocabulary.NAME + "`))"));
+                aql.addLine(AQL.trust("RETURN status"));
+                ArangoDatabase db = databases.getByStage(DataStage.IN_PROGRESS);
+                List<String> status = db.query(aql.build().getValue(), bindVars, String.class).asListRemaining();
+                if (status.contains("null") || status.contains(ReleaseStatus.UNRELEASED.name())) {
+                    return ReleaseStatus.UNRELEASED;
+                } else if (status.contains(ReleaseStatus.HAS_CHANGED.name())) {
+                    return ReleaseStatus.HAS_CHANGED;
+                } else {
+                    return ReleaseStatus.RELEASED;
+                }
             default:
                 throw new RuntimeException("Release tree scope unknown");
         }
     }
 
-    private ReleaseStatus getTopInstanceReleaseStatus(Space space, UUID id) {
+    private ReleaseStatus getTopInstanceReleaseStatus(SpaceName space, UUID id) {
         ArangoDatabase db = databases.getByStage(DataStage.IN_PROGRESS);
         ArangoCollectionReference collectionReference = ArangoCollectionReference.fromSpace(space);
         ArangoCollectionReference releaseStatusCollection = InternalSpace.RELEASE_STATUS_EDGE_COLLECTION;
@@ -559,7 +651,7 @@ public class ArangoRepositoryInstances {
 
     void addEmbeddedInstancesToDocument(List<NormalizedJsonLd> documentsToBeResolved, List<NormalizedJsonLd[]> embeddedDocuments) {
         for (int i = 0; i < documentsToBeResolved.size(); i++) {
-            Map<String, NormalizedJsonLd> embeddedDocs = Arrays.stream(embeddedDocuments.get(i)).filter(Objects::nonNull).collect(Collectors.toMap(e -> e.getId().getId(), e -> e));
+            Map<String, NormalizedJsonLd> embeddedDocs = Arrays.stream(embeddedDocuments.get(i)).filter(Objects::nonNull).collect(Collectors.toMap(e -> e.id().getId(), e -> e));
             embeddedDocs.values().forEach(e -> {
                 e.removeAllInternalProperties();
                 e.remove(JsonLdConsts.ID);
@@ -630,6 +722,7 @@ public class ArangoRepositoryInstances {
         }
     }
 
+    @ExposesMinimalData
     public Map<UUID, String> getLabelsForInstances(DataStage stage, Set<InstanceId> ids, List<Type> types) {
         if (types == null) {
             throw new IllegalArgumentException("No types are defined - please make sure you provide the list of types");
@@ -652,7 +745,9 @@ public class ArangoRepositoryInstances {
         bindVars.put("ids", ids.stream().map(InstanceId::serialize).collect(Collectors.toSet()));
         aql.indent().addLine(AQL.trust("LET doc = DOCUMENT(id)"));
         aql.addLine(AQL.trust("FILTER doc != null"));
+        aql.addLine(AQL.trust("FILTER doc.`" + JsonLdConsts.TYPE + "`"));
         aql.addLine(AQL.trust("LET labelProperty = FIRST(NOT_NULL(FOR t IN doc.`" + JsonLdConsts.TYPE + "` LET p = types[t] FILTER p!=NULL SORT p asc RETURN p))"));
+        aql.addLine(AQL.trust("FILTER labelProperty!= null"));
         aql.addLine(AQL.trust("LET label = doc[labelProperty]"));
         aql.addLine(AQL.trust("RETURN {[ id ] : label})"));
 
@@ -668,6 +763,85 @@ public class ArangoRepositoryInstances {
         }
         return Collections.emptyMap();
 
+    }
+
+    @ExposesMinimalData
+    //FIXME reduce to minimal data permission
+    public ScopeElement getScopeForInstance(SpaceName space, UUID id, DataStage stage, boolean fetchLabels) {
+        //get instance
+        NormalizedJsonLd instance = getInstance(stage, space, id, false, false, false);
+        //get scope relevant queries
+        //TODO filter user defined queries (only take client queries into account)
+        Stream<NormalizedJsonLd> typeQueries = instance.types().stream().map(type -> getQueriesByRootType(stage, null, null, false, false, type).getData()).flatMap(Collection::stream);
+        List<NormalizedJsonLd> results = typeQueries.map(q -> queryController.query(authContext.getUserWithRoles(), new KgQuery(q, stage).setIdRestrictions(Collections.singletonList(new EntityId(id.toString()))), null, null, true).getData()).flatMap(Collection::stream).collect(Collectors.toList());
+        return translateResultToScope(results, stage, fetchLabels, instance);
+    }
+
+    private ScopeElement handleSubElement(NormalizedJsonLd data, Map<String, Set<ScopeElement>> typeToUUID) {
+        String id = data.getAs("id", String.class);
+        UUID uuid = idUtils.getUUID(new JsonLdId(id));
+        List<ScopeElement> children = data.keySet().stream().filter(k -> k.startsWith("dependency_")).map(k ->
+                data.getAsListOf(k, NormalizedJsonLd.class).stream().map(d -> handleSubElement(d, typeToUUID)).collect(Collectors.toList())
+        ).flatMap(Collection::stream).collect(Collectors.toList());
+        List<String> type = data.getAsListOf("type", String.class);
+        ScopeElement element = new ScopeElement(uuid, type, children.isEmpty() ? null : children, data.getAs("internalId", String.class), data.getAs("space", String.class));
+        type.forEach(t -> {
+            typeToUUID.computeIfAbsent(t, x -> new HashSet<>()).add(element);
+        });
+        return element;
+    }
+
+    private List<ScopeElement> mergeInstancesOnSameLevel(List<ScopeElement> element) {
+        if (element != null && !element.isEmpty()) {
+            Map<UUID, List<ScopeElement>> groupedById = element.stream().collect(Collectors.groupingBy(ScopeElement::getId));
+            List<ScopeElement> result = new ArrayList<>();
+            groupedById.values().forEach(c -> {
+                if (!c.isEmpty()) {
+                    ScopeElement current = null;
+                    if (c.size() == 1) {
+                        current = c.get(0);
+                    } else {
+                        ScopeElement merged = new ScopeElement();
+                        c.forEach(merged::merge);
+                        current = merged;
+                    }
+                    if (current != null) {
+                        result.add(current);
+                        current.setChildren(mergeInstancesOnSameLevel(current.getChildren()));
+                    }
+                }
+            });
+            return result;
+        }
+        return null;
+    }
+
+    private ScopeElement translateResultToScope(List<NormalizedJsonLd> data, DataStage stage, boolean fetchLabels, NormalizedJsonLd instance) {
+        final Map<String, Set<ScopeElement>> typeToUUID = new HashMap<>();
+        ScopeElement element;
+        if (data == null || data.isEmpty()) {
+            element = new ScopeElement(idUtils.getUUID(instance.id()), instance.types(), null, instance.getAs(ArangoVocabulary.ID, String.class), instance.getAs(EBRAINSVocabulary.META_SPACE, String.class));
+            instance.types().forEach(t -> typeToUUID.computeIfAbsent(t, x -> new HashSet<>()).add(element));
+        } else {
+            element = data.stream().map(d -> handleSubElement(d, typeToUUID)).findFirst().orElse(null);
+        }
+        if (fetchLabels) {
+            List<Type> affectedTypes = typesRepo.getTypeInformation(authContext.getUserWithRoles().getClientId(), stage, typeToUUID.keySet().stream().map(Type::new).collect(Collectors.toList()));
+            Set<InstanceId> instances = typeToUUID.values().stream().flatMap(Collection::stream).map(s -> InstanceId.deserialize(s.getInternalId())).collect(Collectors.toSet());
+            Map<UUID, String> labelsForInstances = getLabelsForInstances(stage, instances, affectedTypes);
+            typeToUUID.values().stream().distinct().parallel().flatMap(Collection::stream).forEach(e -> {
+                if (e.getLabel() == null) {
+                    String label = labelsForInstances.get(e.getId());
+                    if (label != null) {
+                        e.setLabel(label);
+                    }
+                }
+            });
+        }
+        if (element == null) {
+            return null;
+        }
+        return mergeInstancesOnSameLevel(Collections.singletonList(element)).get(0);
     }
 
 }

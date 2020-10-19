@@ -17,7 +17,7 @@
 package eu.ebrains.kg.query.api;
 
 
-import com.google.gson.Gson;
+import eu.ebrains.kg.commons.JsonAdapter;
 import eu.ebrains.kg.commons.jsonld.NormalizedJsonLd;
 import eu.ebrains.kg.commons.model.DataStage;
 import eu.ebrains.kg.commons.permissions.controller.PermissionSvc;
@@ -38,7 +38,7 @@ public class QueriesAPI {
 
     private final Logger logger = LoggerFactory.getLogger(getClass());
 
-    private final Gson gson;
+    private final JsonAdapter jsonAdapter;
 
     private final QueriesToGraphDBSync graphDBSyncSvc;
 
@@ -46,8 +46,8 @@ public class QueriesAPI {
 
     private final PermissionSvc permissionSvc;
 
-    public QueriesAPI(Gson gson, QueriesToGraphDBSync graphDBSyncSvc, QueriesToGraphDBAsync graphDBAsyncSvc, PermissionSvc permissionSvc) {
-        this.gson = gson;
+    public QueriesAPI(JsonAdapter jsonAdapter, QueriesToGraphDBSync graphDBSyncSvc, QueriesToGraphDBAsync graphDBAsyncSvc, PermissionSvc permissionSvc) {
+        this.jsonAdapter = jsonAdapter;
         this.graphDBSyncSvc = graphDBSyncSvc;
         this.graphDBAsyncSvc = graphDBAsyncSvc;
         this.permissionSvc = permissionSvc;
@@ -56,7 +56,7 @@ public class QueriesAPI {
     @PostMapping
     public List<NormalizedJsonLd> listResults(@RequestBody NormalizedJsonLd query, @RequestParam("stage") DataStage stage, @RequestParam(value = "synchronous", defaultValue = "false", required = false) boolean synchronous) {
         logger.info("Executing query");
-        logger.debug(String.format("Payload: %s", gson.toJson(query)));
+        logger.debug(String.format("Payload: %s", jsonAdapter.toJson(query)));
         KgQuery kgQuery = new KgQuery(query, stage);
         return synchronous ? graphDBSyncSvc.query(kgQuery) : graphDBAsyncSvc.query(kgQuery);
     }

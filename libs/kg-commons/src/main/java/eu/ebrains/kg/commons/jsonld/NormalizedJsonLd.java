@@ -35,16 +35,21 @@ public class NormalizedJsonLd extends JsonLdDoc {
         super(m);
     }
 
-    public Set<String> getAllIdentifiersIncludingId() {
-        Set<String> identifiers = new HashSet<>(getIdentifiers());
-        if (getId() != null) {
-            identifiers.add(getId().getId());
+    public Set<String> allIdentifiersIncludingId() {
+        Set<String> identifiers = new HashSet<>(identifiers());
+        if (id() != null) {
+            identifiers.add(id().getId());
         }
         return identifiers;
     }
 
     public NormalizedJsonLd removeAllFieldsFromNamespace(String namespace){
         this.keySet().removeIf(k -> k.startsWith(namespace));
+        return this;
+    }
+
+    public NormalizedJsonLd keepPropertiesOnly(Collection<String> whiteList){
+        this.keySet().removeIf(k -> !whiteList.contains(k));
         return this;
     }
 
@@ -73,11 +78,11 @@ public class NormalizedJsonLd extends JsonLdDoc {
         return key.startsWith("_");
     }
 
-    public void setFieldUpdateTimes(Map<String, ZonedDateTime> fieldUpdateTimes) {
+    public void defineFieldUpdateTimes(Map<String, ZonedDateTime> fieldUpdateTimes) {
         put(EBRAINSVocabulary.META_PROPERTYUPDATES, serializeUpdateTimes(fieldUpdateTimes));
     }
 
-    public Map<String, ZonedDateTime> getFieldUpdateTimes() {
+    public Map<String, ZonedDateTime> fieldUpdateTimes() {
         Object o = get(EBRAINSVocabulary.META_PROPERTYUPDATES);
         if (o instanceof Map) {
             return deserializeUpdateTimes((Map) o);

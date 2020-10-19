@@ -16,7 +16,7 @@
 
 package eu.ebrains.kg.nexusv0.controller;
 
-import com.google.gson.Gson;
+import eu.ebrains.kg.commons.JsonAdapter;
 import eu.ebrains.kg.commons.exception.InstanceNotFoundException;
 import eu.ebrains.kg.commons.jsonld.JsonLdConsts;
 import eu.ebrains.kg.commons.jsonld.JsonLdDoc;
@@ -37,7 +37,7 @@ import java.util.*;
 @Component
 public class BulkImport {
 
-    private final Gson gson;
+    private final JsonAdapter json;
 
     private final PayloadNormalizer payloadNormalizer;
 
@@ -45,8 +45,8 @@ public class BulkImport {
 
     private final NexusV0Importer nexusV0Importer;
 
-    public BulkImport(Gson gson, PayloadNormalizer payloadNormalizer, CoreSvc coreSvc, NexusV0Importer nexusV0Importer) {
-        this.gson = gson;
+    public BulkImport(JsonAdapter json, PayloadNormalizer payloadNormalizer, CoreSvc coreSvc, NexusV0Importer nexusV0Importer) {
+        this.json = json;
         this.payloadNormalizer = payloadNormalizer;
         this.coreSvc = coreSvc;
         this.nexusV0Importer = nexusV0Importer;
@@ -84,10 +84,10 @@ public class BulkImport {
         }
         try {
             String[] id = uuid.split("/");
-            JsonLdDoc json = gson.fromJson(payload, JsonLdDoc.class);
-            String author = (String) ((Map) ((Map) json.get("meta")).get("author")).get("id");
-            String instant = (String) ((Map) json.get("meta")).get("instant");
-            nexusV0Importer.insertOrUpdateEvent(json.getAs("value", JsonLdDoc.class), id[0], id[1], id[2], id[3], instant, author, id[4], true, nexusEndpoint);
+            JsonLdDoc doc = json.fromJson(payload, JsonLdDoc.class);
+            String author = (String) ((Map) ((Map) doc.get("meta")).get("author")).get("id");
+            String instant = (String) ((Map) doc.get("meta")).get("instant");
+            nexusV0Importer.insertOrUpdateEvent(doc.getAs("value", JsonLdDoc.class), id[0], id[1], id[2], id[3], instant, author, id[4], true, nexusEndpoint);
         } catch (WebClientResponseException ex) {
             if (ex.getRawStatusCode() >= 400 && ex.getRawStatusCode() < 500) {
                 if (ex.getStatusCode() == HttpStatus.SERVICE_UNAVAILABLE) {
@@ -157,15 +157,15 @@ public class BulkImport {
                 String[] values = line.split(",");
                 String uuid = values[1];
                 String payload = new String(Hex.decodeHex(values[2].substring(2)), StandardCharsets.UTF_8);
-                Map<?, ?> json = gson.fromJson(payload, Map.class);
-                Object type = json.get("type");
+                Map<?, ?> map = json.fromJson(payload, Map.class);
+                Object type = map.get("type");
                 if (type != null && SUPPORTED_EVENTS.contains(type.toString())) {
                     if (type.equals("InstanceDeprecated")) {
                         deprecatedInstances.addAll(idLookup.get(uuid));
                     } else if (deprecatedInstances.contains(uuid)) {
                         handledInstances.add(uuid);
                     } else if (!handledInstances.contains(uuid)) {
-                        Object value = json.get("value");
+                        Object value = map.get("value");
                         if (value instanceof Map) {
                             Map v = (Map) value;
                             Set<String> types = getTypes(v.get(JsonLdConsts.TYPE));
@@ -203,10 +203,10 @@ public class BulkImport {
                 String payload = new String(Hex.decodeHex(values[2].substring(2)), StandardCharsets.UTF_8);
                 idLookup.computeIfAbsent(uuid, k -> new HashSet<>());
                 idLookup.get(uuid).add(uuid);
-                Map<?, ?> json = gson.fromJson(payload, Map.class);
-                Object type = json.get("type");
+                Map<?, ?> map = json.fromJson(payload, Map.class);
+                Object type = map.get("type");
                 if (type != null && SUPPORTED_EVENTS.contains(type.toString())) {
-                    Object value = json.get("value");
+                    Object value = map.get("value");
                     if (value instanceof Map) {
                         Map v = (Map) value;
                         Object extendedOrInferredInstance = v.get("https://schema.hbp.eu/inference/extends");

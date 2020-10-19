@@ -21,7 +21,7 @@ public class ResponseConfiguration {
     private boolean returnPayload = true;
     private boolean returnPermissions = false;
     private boolean returnAlternatives = false;
-    private boolean isReturnEmbedded = true;
+    private boolean returnEmbedded = true;
 
     public boolean isReturnPayload() {
         return returnPayload;
@@ -51,11 +51,11 @@ public class ResponseConfiguration {
     }
 
     public boolean isReturnEmbedded() {
-        return isReturnEmbedded;
+        return returnEmbedded;
     }
 
     public ResponseConfiguration setReturnEmbedded(boolean returnEmbedded) {
-        isReturnEmbedded = returnEmbedded;
+        this.returnEmbedded = returnEmbedded;
         return this;
     }
 }

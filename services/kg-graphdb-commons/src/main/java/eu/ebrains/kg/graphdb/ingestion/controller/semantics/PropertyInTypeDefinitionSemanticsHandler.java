@@ -19,17 +19,13 @@ package eu.ebrains.kg.graphdb.ingestion.controller.semantics;
 import eu.ebrains.kg.arango.commons.model.ArangoCollectionReference;
 import eu.ebrains.kg.arango.commons.model.ArangoDocumentReference;
 import eu.ebrains.kg.arango.commons.model.InternalSpace;
-import eu.ebrains.kg.commons.IdUtils;
 import eu.ebrains.kg.commons.TypeUtils;
 import eu.ebrains.kg.commons.jsonld.JsonLdId;
 import eu.ebrains.kg.commons.jsonld.NormalizedJsonLd;
 import eu.ebrains.kg.commons.model.DataStage;
-import eu.ebrains.kg.commons.model.Space;
 import eu.ebrains.kg.commons.semantics.vocabularies.EBRAINSVocabulary;
 import eu.ebrains.kg.graphdb.commons.model.ArangoDocument;
 import eu.ebrains.kg.graphdb.commons.model.ArangoEdge;
-import eu.ebrains.kg.graphdb.commons.model.ArangoInstance;
-import eu.ebrains.kg.graphdb.commons.model.MetaRepresentation;
 import eu.ebrains.kg.graphdb.ingestion.controller.IdFactory;
 import eu.ebrains.kg.graphdb.ingestion.controller.structure.StaticStructureController;
 import eu.ebrains.kg.graphdb.ingestion.model.DBOperation;
@@ -39,20 +35,17 @@ import org.springframework.stereotype.Component;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.Map;
 
 @Component
 public class PropertyInTypeDefinitionSemanticsHandler extends SemanticsHandler {
 
-    private final IdUtils idUtils;
-
-    public PropertyInTypeDefinitionSemanticsHandler(IdUtils idUtils) {
-        this.idUtils = idUtils;
+    public PropertyInTypeDefinitionSemanticsHandler(TypeUtils typeUtils) {
+        super(typeUtils);
     }
 
     @Override
     public List<DBOperation> createUpsertOperations(DataStage stage, ArangoDocumentReference rootDocumentRef, ArangoDocument document) {
-        if (document.getDoc().getTypes() != null && document.getDoc().getTypes().contains(EBRAINSVocabulary.META_PROPERTY_IN_TYPE_DEFINITION_TYPE)) {
+        if (document.getDoc().types() != null && document.getDoc().types().contains(EBRAINSVocabulary.META_PROPERTY_IN_TYPE_DEFINITION_TYPE)) {
             JsonLdId propertyReference = document.getDoc().getAs(EBRAINSVocabulary.META_PROPERTY, JsonLdId.class);
             JsonLdId typeReference = document.getDoc().getAs(EBRAINSVocabulary.META_TYPE, JsonLdId.class);
             if (propertyReference != null && typeReference != null) {
@@ -72,7 +65,7 @@ public class PropertyInTypeDefinitionSemanticsHandler extends SemanticsHandler {
         edge.redefineId(globalTypeToPropertyEdgeRef);
         edge.setTo(StaticStructureController.createDocumentRefForMetaRepresentation(propertyReference.getId(), ArangoCollectionReference.fromSpace(InternalSpace.PROPERTIES_SPACE)));
         edge.setFrom(StaticStructureController.createDocumentRefForMetaRepresentation(typeReference.getId(), ArangoCollectionReference.fromSpace(InternalSpace.TYPES_SPACE)));
-        return new UpsertOperation(globalTypeToPropertyEdgeRef, edge.dumpPayload(), globalTypeToPropertyEdgeRef, false, false);
+        return new UpsertOperation(globalTypeToPropertyEdgeRef, typeUtils.translate(edge.getPayload(), NormalizedJsonLd.class), globalTypeToPropertyEdgeRef, false, false);
     }
 
 }

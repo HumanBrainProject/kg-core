@@ -17,14 +17,14 @@
 package eu.ebrains.kg.commons.model;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.google.gson.annotations.SerializedName;
 import eu.ebrains.kg.commons.semantics.vocabularies.SchemaOrgVocabulary;
 
 public class Client {
 
-    @SerializedName(SchemaOrgVocabulary.NAME)
+    @JsonProperty(SchemaOrgVocabulary.NAME)
     private String name;
-    @SerializedName(SchemaOrgVocabulary.IDENTIFIER)
+
+    @JsonProperty(SchemaOrgVocabulary.IDENTIFIER)
     private String identifier;
 
     private String serviceAccountId;
@@ -41,12 +41,10 @@ public class Client {
         this.name = name;
     }
 
-    @JsonProperty(SchemaOrgVocabulary.NAME)
     public String getName() {
         return name;
     }
 
-    @JsonProperty(SchemaOrgVocabulary.IDENTIFIER)
     public String getIdentifier() {
         return identifier;
     }
@@ -60,6 +58,6 @@ public class Client {
     }
 
     public Space getSpace() {
-        return new Space(getIdentifier(), true, true);
+        return new Space(new SpaceName(getIdentifier()),  true);
     }
 }

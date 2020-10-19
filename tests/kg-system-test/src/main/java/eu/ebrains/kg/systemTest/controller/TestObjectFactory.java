@@ -18,7 +18,7 @@ package eu.ebrains.kg.systemTest.controller;
 
 import eu.ebrains.kg.commons.jsonld.JsonLdId;
 import eu.ebrains.kg.commons.jsonld.NormalizedJsonLd;
-import eu.ebrains.kg.commons.model.Space;
+import eu.ebrains.kg.commons.model.SpaceName;
 import org.springframework.stereotype.Component;
 
 @Component
@@ -26,12 +26,12 @@ public class TestObjectFactory {
 
     public static String TEST_TYPE = "http://kg.test/Test";
 
-    public Space getSpaceA(){
-        return new Space("testA");
+    public SpaceName getSpaceA(){
+        return new SpaceName("testA");
     }
 
-    public Space getSpaceB(){
-        return new Space("testB");
+    public SpaceName getSpaceB(){
+        return new SpaceName("testB");
     }
 
     public NormalizedJsonLd createSimplePayload(String id){

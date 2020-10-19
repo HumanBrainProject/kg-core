@@ -16,7 +16,7 @@
 
 package eu.ebrains.kg.graphdb.ingestion.model;
 
-import com.google.gson.annotations.SerializedName;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import eu.ebrains.kg.arango.commons.model.ArangoDocumentReference;
 import eu.ebrains.kg.graphdb.commons.model.ArangoEdge;
 
@@ -26,13 +26,13 @@ public class DocumentRelation extends ArangoEdge {
 
     public static final String TARGET_ORIGINAL_DOCUMENT = "_targetOriginalDocument";
 
-    @SerializedName("_docCollection")
+    @JsonProperty("_docCollection")
     private String docCollection;
 
-    @SerializedName("_docTypes")
+    @JsonProperty("_docTypes")
     private List<String> docTypes;
 
-    @SerializedName(TARGET_ORIGINAL_DOCUMENT)
+    @JsonProperty(TARGET_ORIGINAL_DOCUMENT)
     private String targetDocument;
 
     public String getDocCollection() {

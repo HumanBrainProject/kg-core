@@ -22,13 +22,16 @@ import eu.ebrains.kg.commons.Version;
 import eu.ebrains.kg.commons.jsonld.JsonLdConsts;
 import eu.ebrains.kg.commons.jsonld.JsonLdId;
 import eu.ebrains.kg.commons.jsonld.NormalizedJsonLd;
+import eu.ebrains.kg.commons.markers.ExposesType;
+import eu.ebrains.kg.commons.markers.WritesData;
 import eu.ebrains.kg.commons.model.*;
 import eu.ebrains.kg.commons.semantics.vocabularies.EBRAINSVocabulary;
 import eu.ebrains.kg.core.model.ExposedStage;
 import eu.ebrains.kg.core.serviceCall.CoreToPrimaryStore;
 import eu.ebrains.kg.core.serviceCall.CoreTypesToGraphDB;
-import io.swagger.annotations.ApiOperation;
-import io.swagger.annotations.ApiParam;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
+import org.springdoc.api.annotations.ParameterObject;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -57,29 +60,32 @@ public class Types {
         this.primaryStoreSvc = primaryStoreSvc;
     }
 
-    @ApiOperation("Returns the types available - either with property information or without")
+    @Operation(summary = "Returns the types available - either with property information or without")
     @GetMapping("/types")
-    public PaginatedResult<NormalizedJsonLd> getTypes(@RequestParam("stage") ExposedStage stage, @RequestParam(value = "space", required = false) String space, @RequestParam(value = "withProperties", defaultValue = "false") boolean withProperties, PaginationParam paginationParam) {
-        return PaginatedResult.ok(graphDBSvc.getTypes(stage.getStage(), space != null ? new Space(space) : null, withProperties, paginationParam));
+    @ExposesType
+    public PaginatedResult<NormalizedJsonLd> getTypes(@RequestParam("stage") ExposedStage stage, @RequestParam(value = "space", required = false) String space, @RequestParam(value = "withProperties", defaultValue = "false") boolean withProperties, @ParameterObject PaginationParam paginationParam) {
+        return PaginatedResult.ok(graphDBSvc.getTypes(stage.getStage(), space != null ? new SpaceName(space) : null, withProperties, paginationParam));
     }
 
-    @ApiOperation("Returns the types according to the list of names - either with property information or without")
+    @Operation(summary = "Returns the types according to the list of names - either with property information or without")
     @PostMapping("/typesByName")
+    @ExposesType
     public Result<Map<String, Result<NormalizedJsonLd>>> getTypesByName(@RequestBody List<String> listOfTypeNames, @RequestParam("stage") ExposedStage stage, @RequestParam(value = "withProperties", defaultValue = "false") boolean withProperties, @RequestParam(value = "space", required = false) String space) {
-        return Result.ok(graphDBSvc.getTypesByNameList(listOfTypeNames, stage.getStage(), space != null ? new Space(space) : null, withProperties));
+        return Result.ok(graphDBSvc.getTypesByNameList(listOfTypeNames, stage.getStage(), space != null ? new SpaceName(space) : null, withProperties));
     }
 
-    @ApiOperation("Define a type")
+    @Operation(summary = "Define a type")
     @PutMapping("/types")
-    public ResponseEntity<Result<Void>> defineType(@RequestBody NormalizedJsonLd payload, @ApiParam("By default, the specification is only valid for the current client. If this flag is set to true (and the client/user combination has the permission), the specification is applied for all clients (unless they have defined something by themselves)")  @RequestParam(value = "global", required = false) boolean global) {
-        Space targetSpace = global ? InternalSpace.GLOBAL_SPEC : authContext.getClientSpace();
+    @WritesData
+    public ResponseEntity<Result<Void>> defineType(@RequestBody NormalizedJsonLd payload, @Parameter(description = "By default, the specification is only valid for the current client. If this flag is set to true (and the client/user combination has the permission), the specification is applied for all clients (unless they have defined something by themselves)")  @RequestParam(value = "global", required = false) boolean global) {
+        SpaceName targetSpace = global ? InternalSpace.GLOBAL_SPEC : authContext.getClientSpace().getName();
         JsonLdId type = payload.getAs(EBRAINSVocabulary.META_TYPE, JsonLdId.class);
         if(type==null){
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Result.nok(HttpStatus.BAD_REQUEST.value(), String.format("Property \"%s\" should be specified.", EBRAINSVocabulary.META_TYPE)));
         }
         payload.setId(EBRAINSVocabulary.createIdForStructureDefinition("clients", targetSpace.getName(), "types", type.getId()));
         payload.put(JsonLdConsts.TYPE, EBRAINSVocabulary.META_TYPEDEFINITION_TYPE);
-        primaryStoreSvc.postEvent(Event.createUpsertEvent(targetSpace, UUID.nameUUIDFromBytes(payload.getId().getId().getBytes(StandardCharsets.UTF_8)), Event.Type.INSERT, payload), false, authContext.getAuthTokens());
+        primaryStoreSvc.postEvent(Event.createUpsertEvent(targetSpace, UUID.nameUUIDFromBytes(payload.id().getId().getBytes(StandardCharsets.UTF_8)), Event.Type.INSERT, payload), false, authContext.getAuthTokens());
         return ResponseEntity.ok(Result.ok());
     }
 }

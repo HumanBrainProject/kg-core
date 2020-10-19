@@ -16,7 +16,7 @@
 
 package eu.ebrains.kg.commons.models;
 
-import io.swagger.annotations.ApiParam;
+import io.swagger.v3.oas.annotations.Parameter;
 import org.springframework.format.annotation.DateTimeFormat;
 
 import java.time.ZonedDateTime;
@@ -25,9 +25,9 @@ import java.time.ZonedDateTime;
  * A data structure to pass (and override) event information from an external source (e.g. from adapters)
  */
 public class ExternalEventInformation {
-    @ApiParam("The original user of this event. This is only considered if the submitting client has the according permissions.")
+    @Parameter(description = "The original user of this event. This is only considered if the submitting client has the according permissions.")
     private String externalUserDefinition;
-    @ApiParam("The original time of this event. This is only considered if the submitting client has the according permissions.")
+    @Parameter(description = "The original time of this event. This is only considered if the submitting client has the according permissions.")
     @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME)
     private ZonedDateTime externalEventTime;
 

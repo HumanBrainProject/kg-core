@@ -21,7 +21,7 @@ import eu.ebrains.kg.arango.commons.model.ArangoDocumentReference;
 import eu.ebrains.kg.commons.jsonld.JsonLdId;
 import eu.ebrains.kg.commons.jsonld.NormalizedJsonLd;
 import eu.ebrains.kg.commons.model.DataStage;
-import eu.ebrains.kg.commons.model.Space;
+import eu.ebrains.kg.commons.model.SpaceName;
 
 import java.util.List;
 import java.util.UUID;
@@ -34,7 +34,7 @@ public class ArangoUpsertItem {
     final List<JsonLdId> mergeIds;
 
 
-    public ArangoUpsertItem(UUID originalDocumentId, Space originalSpace, NormalizedJsonLd payload, List<JsonLdId> mergeIds, DataStage stage) {
+    public ArangoUpsertItem(UUID originalDocumentId, SpaceName originalSpace, NormalizedJsonLd payload, List<JsonLdId> mergeIds, DataStage stage) {
         this.payload = payload;
         this.arangoDocumentReference = ArangoCollectionReference.fromSpace(originalSpace).doc(originalDocumentId);
         this.mergeIds = mergeIds;

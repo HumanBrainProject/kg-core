@@ -22,7 +22,7 @@ import eu.ebrains.kg.commons.jsonld.IndexedJsonLdDoc;
 import eu.ebrains.kg.commons.jsonld.NormalizedJsonLd;
 import eu.ebrains.kg.commons.model.DataStage;
 import eu.ebrains.kg.commons.model.ReleaseStatus;
-import eu.ebrains.kg.commons.model.Space;
+import eu.ebrains.kg.commons.model.SpaceName;
 import eu.ebrains.kg.commons.params.ReleaseTreeScope;
 import eu.ebrains.kg.docker.SpringDockerComposeRunner;
 import eu.ebrains.kg.release.controller.Release;
@@ -51,9 +51,7 @@ public class ReleaseTest {
     SpringDockerComposeRunner dockerComposeRunner;
 
 
-
-
-    Space space = new Space("test");
+    SpaceName space = new SpaceName("test");
     UUID docId = UUID.randomUUID();
 
     @Before

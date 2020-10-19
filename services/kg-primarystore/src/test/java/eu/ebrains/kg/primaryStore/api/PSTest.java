@@ -19,7 +19,7 @@ package eu.ebrains.kg.primaryStore.api;
 import com.netflix.discovery.EurekaClient;
 import eu.ebrains.kg.commons.jsonld.NormalizedJsonLd;
 import eu.ebrains.kg.commons.model.Event;
-import eu.ebrains.kg.commons.model.Space;
+import eu.ebrains.kg.commons.model.SpaceName;
 import eu.ebrains.kg.docker.SpringDockerComposeRunner;
 import eu.ebrains.kg.test.TestObjectFactory;
 import org.junit.Before;
@@ -51,7 +51,7 @@ public class PSTest {
     @Autowired
     PrimaryStoreEventsAPI primaryStore;
 
-    private final Space space = TestObjectFactory.SIMPSONS;
+    private final SpaceName space = TestObjectFactory.SIMPSONS;
 
     @Test
     public void postInsertionEvent() {

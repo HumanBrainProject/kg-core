@@ -19,7 +19,7 @@ package eu.ebrains.kg.jsonld.api;
 import com.apicatalog.jsonld.JsonLd;
 import com.apicatalog.jsonld.api.JsonLdError;
 import com.apicatalog.jsonld.document.JsonDocument;
-import com.google.gson.Gson;
+import eu.ebrains.kg.commons.JsonAdapter;
 import eu.ebrains.kg.commons.jsonld.JsonLdConsts;
 import eu.ebrains.kg.commons.jsonld.JsonLdDoc;
 import eu.ebrains.kg.commons.jsonld.NormalizedJsonLd;
@@ -77,9 +77,12 @@ public class JsonLdAPI {
         }
     }
 
-    private final static Gson GSON = new Gson();
+    private final JsonAdapter jsonAdapter;
     private final static JsonDocument EMPTY_DOCUMENT = JsonDocument.of(Json.createObjectBuilder().build());
 
+    public JsonLdAPI(JsonAdapter jsonAdapter) {
+        this.jsonAdapter = jsonAdapter;
+    }
 
     @PostMapping
     public NormalizedJsonLd normalize(@RequestBody JsonLdDoc payload, @RequestParam(value = "keepNullValues", required = false, defaultValue = "true") boolean keepNullValues) {
@@ -93,7 +96,7 @@ public class JsonLdAPI {
             JsonArray expanded = JsonLd.expand(JsonDocument.of(build)).get();
             JsonObject compacted = JsonLd.compact(JsonDocument.of(expanded), EMPTY_DOCUMENT).get();
             //TODO Optimize - can't we transform the compacted structure directly to a map without taking the way via the string serialization?
-            NormalizedJsonLd normalized = new NormalizedJsonLd(GSON.fromJson(compacted.toString(), LinkedHashMap.class));
+            NormalizedJsonLd normalized = new NormalizedJsonLd(jsonAdapter.fromJson(compacted.toString(), LinkedHashMap.class));
             if (keepNullValues) {
                 removeNullValuesPlaceholder(normalized);
             }

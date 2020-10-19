@@ -136,7 +136,7 @@ public class IndexedJsonLdDoc {
     }
 
     public void updateIdentifiers(){
-        getDoc().put(IDENTIFIERS, getDoc().getAllIdentifiersIncludingId());
+        getDoc().put(IDENTIFIERS, getDoc().allIdentifiersIncludingId());
     }
 
 

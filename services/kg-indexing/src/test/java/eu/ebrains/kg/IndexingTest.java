@@ -19,10 +19,7 @@ package eu.ebrains.kg;
 import com.netflix.discovery.EurekaClient;
 import eu.ebrains.kg.commons.IdUtils;
 import eu.ebrains.kg.commons.jsonld.NormalizedJsonLd;
-import eu.ebrains.kg.commons.model.DataStage;
-import eu.ebrains.kg.commons.model.Event;
-import eu.ebrains.kg.commons.model.PersistedEvent;
-import eu.ebrains.kg.commons.model.Space;
+import eu.ebrains.kg.commons.model.*;
 import eu.ebrains.kg.docker.SpringDockerComposeRunner;
 import eu.ebrains.kg.indexing.api.IndexingAPI;
 import eu.ebrains.kg.test.TestObjectFactory;
@@ -56,18 +53,18 @@ public class IndexingTest {
     @Autowired
     IdUtils idUtils;
 
-    private final Space space = TestObjectFactory.SIMPSONS;
+    private final SpaceName spaceName = TestObjectFactory.SIMPSONS;
 
     @Test
     public void synchronouslyIndexSingleInstance() {
         //Given
 
-        NormalizedJsonLd homer = TestObjectFactory.createJsonLd(space, "homer.json");
+        NormalizedJsonLd homer = TestObjectFactory.createJsonLd(spaceName, "homer.json");
 
-        Event event = new Event(space, UUID.randomUUID(), homer, Event.Type.INSERT, new Date());
+        Event event = new Event(spaceName, UUID.randomUUID(), homer, Event.Type.INSERT, new Date());
 
         //When
-        indexing.indexEvent(new PersistedEvent(event, DataStage.NATIVE, null));
+        indexing.indexEvent(new PersistedEvent(event, DataStage.NATIVE, null, new Space(spaceName, false)));
 
         //Then
 

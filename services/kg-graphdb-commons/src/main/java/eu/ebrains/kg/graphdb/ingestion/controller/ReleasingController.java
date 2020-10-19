@@ -19,6 +19,8 @@ package eu.ebrains.kg.graphdb.ingestion.controller;
 
 import eu.ebrains.kg.arango.commons.model.ArangoDocumentReference;
 import eu.ebrains.kg.arango.commons.model.InternalSpace;
+import eu.ebrains.kg.commons.TypeUtils;
+import eu.ebrains.kg.commons.jsonld.NormalizedJsonLd;
 import eu.ebrains.kg.graphdb.commons.controller.EntryHookDocuments;
 import eu.ebrains.kg.graphdb.commons.model.ArangoEdge;
 import eu.ebrains.kg.graphdb.ingestion.model.UpsertOperation;
@@ -31,9 +33,11 @@ import java.util.UUID;
 public class ReleasingController {
 
     private final EntryHookDocuments entryHookDocuments;
+    private final TypeUtils typeUtils;
 
-    public ReleasingController(EntryHookDocuments entryHookDocuments) {
+    public ReleasingController(EntryHookDocuments entryHookDocuments, TypeUtils typeUtils) {
         this.entryHookDocuments = entryHookDocuments;
+        this.typeUtils = typeUtils;
     }
 
     UpsertOperation getReleaseStatusUpdateOperation(ArangoDocumentReference documentReference, boolean doRelease) {
@@ -41,7 +45,7 @@ public class ReleasingController {
         ArangoEdge arangoEdge = entryHookDocuments.createEdgeFromHookDocument(InternalSpace.RELEASE_STATUS_EDGE_COLLECTION, documentReference, releaseDocument, null);
         ArangoDocumentReference releaseInstanceId = getReleaseStatusEdgeId(documentReference);
         arangoEdge.redefineId(releaseInstanceId);
-        return new UpsertOperation(documentReference, arangoEdge.dumpPayload(), releaseInstanceId, true, false);
+        return new UpsertOperation(documentReference, typeUtils.translate(arangoEdge.getPayload(), NormalizedJsonLd.class), releaseInstanceId, true, false);
     }
 
     public ArangoDocumentReference getReleaseStatusEdgeId(ArangoDocumentReference documentReference) {

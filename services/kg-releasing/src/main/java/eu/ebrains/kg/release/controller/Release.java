@@ -20,7 +20,7 @@ import eu.ebrains.kg.commons.jsonld.IndexedJsonLdDoc;
 import eu.ebrains.kg.commons.model.DataStage;
 import eu.ebrains.kg.commons.model.Event;
 import eu.ebrains.kg.commons.model.ReleaseStatus;
-import eu.ebrains.kg.commons.model.Space;
+import eu.ebrains.kg.commons.model.SpaceName;
 import eu.ebrains.kg.commons.params.ReleaseTreeScope;
 import eu.ebrains.kg.release.serviceCall.ReleaseToGraphDB;
 import eu.ebrains.kg.release.serviceCall.ReleaseToPrimaryStore;
@@ -42,7 +42,7 @@ public class Release {
         this.releasePrimaryStoreSvc = releasePrimaryStoreSvc;
     }
 
-    public void release(Space space, UUID id, String revision) {
+    public void release(SpaceName space, UUID id, String revision) {
         IndexedJsonLdDoc jsonLdDoc = getInstance(DataStage.IN_PROGRESS, space, id);
         if (jsonLdDoc == null) {
             throw new IllegalArgumentException(String.format("Instance %s/%s not found", space.getName(), id));
@@ -53,7 +53,7 @@ public class Release {
         releasePrimaryStoreSvc.pushToStore(new Event(space, id, jsonLdDoc.getDoc(), Event.Type.RELEASE, new Date()));
     }
 
-    public void unrelease(Space space, UUID id) {
+    public void unrelease(SpaceName space, UUID id) {
         IndexedJsonLdDoc jsonLdDoc = getInstance(DataStage.RELEASED, space, id);
         if (jsonLdDoc == null) {
             throw new IllegalArgumentException(String.format("Instance %s/%s not found", space.getName(), id));
@@ -61,11 +61,11 @@ public class Release {
         releasePrimaryStoreSvc.pushToStore(new Event(space, id, jsonLdDoc.getDoc(), Event.Type.UNRELEASE, new Date()));
     }
 
-    public ReleaseStatus getStatus(Space space, UUID id, ReleaseTreeScope treeScope) {
+    public ReleaseStatus getStatus(SpaceName space, UUID id, ReleaseTreeScope treeScope) {
         return graphDBSvc.getReleaseStatus(space, id, treeScope);
     }
 
-    private IndexedJsonLdDoc getInstance(DataStage stage, Space space, UUID id) {
+    private IndexedJsonLdDoc getInstance(DataStage stage, SpaceName space, UUID id) {
         return graphDBSvc.getWithEmbedded(stage, space, id);
     }
 }

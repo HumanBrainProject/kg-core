@@ -65,7 +65,7 @@ public class InferredJsonLdDoc {
     }
 
     public boolean hasTypes(){
-        List<String> types = asIndexed().getDoc().getTypes();
+        List<String> types = asIndexed().getDoc().types();
         return types !=null && !types.isEmpty();
     }
 

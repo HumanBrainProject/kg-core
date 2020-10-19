@@ -21,12 +21,13 @@ import eu.ebrains.kg.arango.commons.model.ArangoCollectionReference;
 import eu.ebrains.kg.arango.commons.model.ArangoDocumentReference;
 import eu.ebrains.kg.arango.commons.model.InternalSpace;
 import eu.ebrains.kg.commons.IdUtils;
+import eu.ebrains.kg.commons.TypeUtils;
 import eu.ebrains.kg.commons.jsonld.JsonLdId;
 import eu.ebrains.kg.commons.jsonld.JsonLdIdMapping;
 import eu.ebrains.kg.commons.jsonld.NormalizedJsonLd;
 import eu.ebrains.kg.commons.model.DataStage;
 import eu.ebrains.kg.commons.model.IdWithAlternatives;
-import eu.ebrains.kg.commons.model.Space;
+import eu.ebrains.kg.commons.model.SpaceName;
 import eu.ebrains.kg.commons.semantics.vocabularies.EBRAINSVocabulary;
 import eu.ebrains.kg.graphdb.commons.controller.ArangoRepositoryCommons;
 import eu.ebrains.kg.graphdb.commons.controller.ArangoUtils;
@@ -41,7 +42,6 @@ import eu.ebrains.kg.graphdb.ingestion.model.EdgeResolutionOperation;
 import eu.ebrains.kg.graphdb.ingestion.model.UpsertOperation;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import java.nio.charset.StandardCharsets;
@@ -50,24 +50,24 @@ import java.util.stream.Collectors;
 
 @Component
 public class DataController {
-    @Autowired
-    private IdUtils idUtils;
 
-    @Autowired
-    private ArangoRepositoryCommons repository;
+    private final IdUtils idUtils;
+    private final ArangoRepositoryCommons repository;
+    private final EntryHookDocuments entryHookDocuments;
+    private final ArangoUtils arangoUtils;
+    private final GraphDBToIds idLookupSvc;
+    private final ReleasingController releasingController;
+    private final TypeUtils typeUtils;
 
-
-    @Autowired
-    private EntryHookDocuments entryHookDocuments;
-
-    @Autowired
-    private ArangoUtils arangoUtils;
-
-    @Autowired
-    private GraphDBToIds idLookupSvc;
-
-    @Autowired
-    private ReleasingController releasingController;
+    public DataController(IdUtils idUtils, ArangoRepositoryCommons repository, EntryHookDocuments entryHookDocuments, ArangoUtils arangoUtils, GraphDBToIds idLookupSvc, ReleasingController releasingController, TypeUtils typeUtils) {
+        this.idUtils = idUtils;
+        this.repository = repository;
+        this.entryHookDocuments = entryHookDocuments;
+        this.arangoUtils = arangoUtils;
+        this.idLookupSvc = idLookupSvc;
+        this.releasingController = releasingController;
+        this.typeUtils = typeUtils;
+    }
 
     private final Logger logger = LoggerFactory.getLogger(getClass());
 
@@ -101,7 +101,7 @@ public class DataController {
             //Direct the found edges to the new document
             arangoEdge.setTo(rootDocumentRef);
             //Relocate the edge to the correct edge collection (according to the property label)
-            ArangoCollectionReference propertyEdgeCollection = ArangoCollectionReference.fromSpace(new Space(arangoEdge.getOriginalLabel()), true);
+            ArangoCollectionReference propertyEdgeCollection = ArangoCollectionReference.fromSpace(new SpaceName(arangoEdge.getOriginalLabel()), true);
             arangoEdge.redefineId(propertyEdgeCollection.doc(arangoEdge.getKey()));
             arangoEdge.setResolvedTargetId(idUtils.buildAbsoluteUrl(rootDocumentRef.getDocumentId()));
             result.add(new EdgeResolutionOperation(oldEdgeRef, arangoEdge));
@@ -116,9 +116,9 @@ public class DataController {
         for (ArangoInstance arangoInstance : arangoInstances) {
             if (arangoInstance instanceof ArangoDocument) {
                 ArangoDocument arangoDocument = (ArangoDocument) arangoInstance;
-                operations.addAll(arangoDocument.getDoc().getTypes().stream().map(t -> {
+                operations.addAll(arangoDocument.getDoc().types().stream().map(t -> {
                     ArangoEdge edge = entryHookDocuments.createEdgeFromHookDocument(InternalSpace.TYPE_EDGE_COLLECTION, arangoDocument.getId(), entryHookDocuments.getOrCreateTypeHookDocument(stage, t), null);
-                    return new UpsertOperation(rootDocumentRef, edge.dumpPayload(), new ArangoDocumentReference(InternalSpace.TYPE_EDGE_COLLECTION, edge.getKey()));
+                    return new UpsertOperation(rootDocumentRef, typeUtils.translate(edge.getPayload(), NormalizedJsonLd.class), new ArangoDocumentReference(InternalSpace.TYPE_EDGE_COLLECTION, edge.getKey()));
                 }).collect(Collectors.toList()));
             }
         }
@@ -144,7 +144,7 @@ public class DataController {
                         //redirect them to the new targetId
                         logger.debug(String.format("I'm redirecting the link from %s to %s due to a merge", arangoEdge.getTo().getId(), targetDocumentRef.getId()));
                         arangoEdge.setTo(targetDocumentRef);
-                        result.add(new UpsertOperation(targetDocumentRef, arangoEdge.dumpPayload(), arangoEdge.getId()));
+                        result.add(new UpsertOperation(targetDocumentRef, typeUtils.translate(arangoEdge.getPayload(), NormalizedJsonLd.class), arangoEdge.getId()));
                     }
                 }
                 //We're going to merge the instance - therefore we also need to remove the previous documents and all their dependent documents.
@@ -179,7 +179,7 @@ public class DataController {
 
         for (ArangoEdge edge : edges) {
             ArangoDocumentReference unknownTarget = ArangoDocumentReference.fromArangoId("unknown/" + UUID.nameUUIDFromBytes("unknown".getBytes(StandardCharsets.UTF_8)).toString(), false);
-            if (stage == DataStage.NATIVE || isEdgeOf(edge.getId(), InternalSpace.INFERENCE_OF_SPACE, new Space(EBRAINSVocabulary.META_USER))) {
+            if (stage == DataStage.NATIVE || isEdgeOf(edge.getId(), InternalSpace.INFERENCE_OF_SPACE, new SpaceName(EBRAINSVocabulary.META_USER))) {
                 //We are either in NATIVE stage or have a relation to inference of or user - we already know that we won't be able to resolve it (since the target instance is in a different database), so we shortcut the process.
                 logger.trace(String.format("Not resolving edge pointing to %s", edge.getOriginalTo()));
                 edge.setTo(unknownTarget);
@@ -215,14 +215,14 @@ public class DataController {
 
     public List<DBOperation> createDBUpsertOperations(ArangoDocumentReference rootDocumentRef, List<ArangoInstance> arangoDocuments) {
         logger.trace("Creating upsert operations");
-        return arangoDocuments.stream().map(i -> new UpsertOperation(rootDocumentRef, i.dumpPayload(), i.getId())).collect(Collectors.toList());
+        return arangoDocuments.stream().map(i -> new UpsertOperation(rootDocumentRef, typeUtils.translate(i.getPayload(), NormalizedJsonLd.class), i.getId())).collect(Collectors.toList());
     }
 
-    private boolean isEdgeOf(ArangoDocumentReference edge, Space... spaces) {
+    private boolean isEdgeOf(ArangoDocumentReference edge, SpaceName... spaces) {
         if(edge == null || edge.getArangoCollectionReference() == null || edge.getArangoCollectionReference().getCollectionName() == null){
             return false;
         }
-        for (Space space : spaces) {
+        for (SpaceName space : spaces) {
             if(edge.getArangoCollectionReference().getCollectionName().equals(ArangoCollectionReference.fromSpace(space, true).getCollectionName())){
                 return true;
             }

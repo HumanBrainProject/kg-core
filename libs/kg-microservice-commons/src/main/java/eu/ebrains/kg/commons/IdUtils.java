@@ -58,11 +58,15 @@ public class IdUtils {
         return UUID.nameUUIDFromBytes(String.format("%s-%s", instanceId, userId).getBytes(StandardCharsets.UTF_8));
     }
 
+    public boolean isInternalId(String id){
+        return id.startsWith(namespace);
+    }
+
     /**
      * @return the UUID extracted from the given absolute id or null if the passed JsonLdId is not an internal id of the EBRAINS KG.
      */
     public UUID getUUID(JsonLdId jsonLdId) {
-        if (jsonLdId != null && jsonLdId.getId() != null && jsonLdId.getId().startsWith(namespace)) {
+        if (jsonLdId != null && jsonLdId.getId() != null && isInternalId(jsonLdId.getId())) {
             try{
                 return UUID.fromString(jsonLdId.getId().substring(namespace.length()));
             }

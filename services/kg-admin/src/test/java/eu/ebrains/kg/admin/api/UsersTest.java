@@ -16,12 +16,12 @@
 
 package eu.ebrains.kg.admin.api;
 
-import com.google.gson.Gson;
 import com.netflix.discovery.EurekaClient;
 import eu.ebrains.kg.admin.controller.AdminUserController;
 import eu.ebrains.kg.admin.serviceCall.AdminToAuthentication;
 import eu.ebrains.kg.admin.serviceCall.AdminToGraphDB;
 import eu.ebrains.kg.commons.IdUtils;
+import eu.ebrains.kg.commons.JsonAdapter;
 import eu.ebrains.kg.commons.jsonld.JsonLdDoc;
 import eu.ebrains.kg.commons.model.User;
 import eu.ebrains.kg.docker.SpringDockerComposeRunner;
@@ -52,7 +52,7 @@ public class UsersTest {
     IdUtils idUtils;
 
     @Autowired
-    Gson gson;
+    JsonAdapter jsonAdapter;
 
     @Autowired
     AdminToGraphDB graphDBSvc;
@@ -75,7 +75,7 @@ public class UsersTest {
 
         Mockito.doReturn(responseFromAuthentication).when(authenticationSvcMock).getUser();
 
-        users = new AdminUsersAPI(authenticationSvcMock, userController, gson);
+        users = new AdminUsersAPI(authenticationSvcMock, userController, jsonAdapter);
 
     }
 

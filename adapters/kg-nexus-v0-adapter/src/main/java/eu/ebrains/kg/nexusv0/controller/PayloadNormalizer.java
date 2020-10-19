@@ -16,12 +16,12 @@
 
 package eu.ebrains.kg.nexusv0.controller;
 
-import com.google.gson.Gson;
+import eu.ebrains.kg.commons.JsonAdapter;
 import eu.ebrains.kg.commons.jsonld.JsonLdConsts;
 import eu.ebrains.kg.commons.jsonld.JsonLdDoc;
 import eu.ebrains.kg.commons.jsonld.JsonLdId;
 import eu.ebrains.kg.commons.jsonld.NormalizedJsonLd;
-import eu.ebrains.kg.commons.model.Space;
+import eu.ebrains.kg.commons.model.SpaceName;
 import eu.ebrains.kg.nexusv0.serviceCall.CoreSvc;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -35,7 +35,7 @@ import java.util.stream.Collectors;
 public class PayloadNormalizer {
 
     private final CoreSvc coreSvc;
-    private final Gson gson;
+    private final JsonAdapter json;
 
     private static final String[] removeSpaceEnding = new String[]{"editor", "editorsug", "inferred"};
 
@@ -43,22 +43,22 @@ public class PayloadNormalizer {
         return organization.endsWith("inferred");
     }
 
-    public PayloadNormalizer(CoreSvc coreSvc, Gson gson) {
+    public PayloadNormalizer(CoreSvc coreSvc, JsonAdapter json) {
         this.coreSvc = coreSvc;
-        this.gson = gson;
+        this.json = json;
     }
 
 
     private final Logger logger = LoggerFactory.getLogger(getClass());
 
     public NormalizedJsonLd normalizePayload(JsonLdDoc payload, String organization, String domain, String schema, String schemaVersion, String id, String nexusEndpoint) {
-        logger.debug(String.format("Payload received and going to normalize: \n%s", gson.toJson(payload)));
+        logger.debug(String.format("Payload received and going to normalize: \n%s", json.toJson(payload)));
         NormalizedJsonLd normalizedJsonLdDoc = coreSvc.toNormalizedJsonLd(payload);
         //set original nexus id to payload, so it can be handled appropriately.
         String absoluteNexusUrl = getAbsoluteNexusUrl(organization, domain, schema, schemaVersion, id, true, nexusEndpoint);
         //Save original id as identifier (for back-reference) if there is one
-        if (normalizedJsonLdDoc.getId() != null) {
-            normalizedJsonLdDoc.addIdentifiers(normalizedJsonLdDoc.getId().getId());
+        if (normalizedJsonLdDoc.id() != null) {
+            normalizedJsonLdDoc.addIdentifiers(normalizedJsonLdDoc.id().getId());
         }
         normalizedJsonLdDoc.put(JsonLdConsts.ID, absoluteNexusUrl);
         //If the payload contains "extends" links, we want to use them as identifiers too.
@@ -77,7 +77,7 @@ public class PayloadNormalizer {
         return normalizedJsonLdDoc;
     }
 
-    public static Space normalizeIfSuffixed(Space space) {
+    public static SpaceName normalizeIfSuffixed(SpaceName space) {
         for (String s : removeSpaceEnding) {
             if (space.getName().endsWith(s)) {
                 space.setName(space.getName().substring(0, space.getName().length() - s.length()));
@@ -87,7 +87,7 @@ public class PayloadNormalizer {
     }
 
     public String getAbsoluteNexusUrl(String organization, String domain, String schema, String version, String id, boolean removeSuffix, String nexusEndpoint) {
-        return nexusEndpoint + String.format("data/%s/%s/%s/%s/%s", removeSuffix ? normalizeIfSuffixed(new Space(organization)).getName() : organization, domain, schema, version, id);
+        return nexusEndpoint + String.format("data/%s/%s/%s/%s/%s", removeSuffix ? normalizeIfSuffixed(new SpaceName(organization)).getName() : organization, domain, schema, version, id);
     }
 
     public String getRelativeUrl(String absoluteUrl, String nexusEndpoint){
@@ -109,13 +109,13 @@ public class PayloadNormalizer {
         return absoluteUrl;
     }
 
-    public Space getSpaceFromUrl(String absoluteUrl){
+    public SpaceName getSpaceFromUrl(String absoluteUrl){
         int i = absoluteUrl.indexOf("/v0/data/");
         if(i>-1){
             String relative = absoluteUrl.substring(i + "/v0/data/".length());
             String[] split = relative.split("/");
             if(split.length>0){
-                return normalizeIfSuffixed(new Space(split[0]));
+                return normalizeIfSuffixed(new SpaceName(split[0]));
             }
         }
         return null;

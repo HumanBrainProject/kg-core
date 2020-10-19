@@ -21,7 +21,7 @@ import eu.ebrains.kg.commons.jsonld.NormalizedJsonLd;
 import eu.ebrains.kg.commons.model.DataStage;
 import eu.ebrains.kg.commons.model.Paginated;
 import eu.ebrains.kg.commons.model.PaginationParam;
-import eu.ebrains.kg.commons.model.Space;
+import eu.ebrains.kg.commons.model.SpaceName;
 import eu.ebrains.kg.commons.permissions.controller.PermissionSvc;
 import eu.ebrains.kg.commons.semantics.vocabularies.EBRAINSVocabulary;
 import eu.ebrains.kg.graphdb.spaces.controller.ArangoRepositorySpaces;
@@ -48,7 +48,7 @@ public class GraphDBSpacesAPI {
 
     @GetMapping("/spaces/{space}")
     public NormalizedJsonLd getSpace(@PathVariable("stage") DataStage stage, @PathVariable("space") String space) {
-        return repositorySpaces.getSpace(new Space(space), stage);
+        return repositorySpaces.getSpace(new SpaceName(space), stage);
     }
 
 //    @PutMapping("/spaces/{space}")

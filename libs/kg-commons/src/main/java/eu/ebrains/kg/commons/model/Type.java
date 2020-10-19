@@ -60,7 +60,7 @@ public class Type {
     }
 
     public static Type fromPayload(NormalizedJsonLd payload) {
-        Type targetType = new Type(payload.getPrimaryIdentifier());
+        Type targetType = new Type(payload.primaryIdentifier());
         targetType.setLabelProperty(payload.getAs(EBRAINSVocabulary.META_TYPE_LABEL_PROPERTY, String.class));
         return targetType;
     }

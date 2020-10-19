@@ -25,7 +25,7 @@ import eu.ebrains.kg.commons.jsonld.InferredJsonLdDoc;
 import eu.ebrains.kg.commons.jsonld.JsonLdDoc;
 import eu.ebrains.kg.commons.jsonld.JsonLdId;
 import eu.ebrains.kg.commons.jsonld.NormalizedJsonLd;
-import eu.ebrains.kg.commons.model.Space;
+import eu.ebrains.kg.commons.model.SpaceName;
 import eu.ebrains.kg.commons.query.KgQuery;
 import eu.ebrains.kg.commons.semantics.vocabularies.EBRAINSVocabulary;
 import eu.ebrains.kg.graphdb.commons.model.ArangoDocument;
@@ -42,16 +42,18 @@ public class StructureSplitter {
 
     private final IdUtils idUtils;
     private final Logger logger = LoggerFactory.getLogger(getClass());
+    private final TypeUtils typeUtils;
 
-    public StructureSplitter(IdUtils idUtils) {
+    public StructureSplitter(IdUtils idUtils, TypeUtils typeUtils) {
         this.idUtils = idUtils;
+        this.typeUtils = typeUtils;
     }
 
     public List<ArangoInstance> extractRelations(ArangoDocumentReference documentReference, NormalizedJsonLd payload) {
         ArangoDocument arangoDocument = ArangoDocument.from(payload);
         arangoDocument.setReference(documentReference);
         // if is query, we just return the document as we do not split it
-        if(payload.getTypes().contains(KgQuery.getKgQueryType())){
+        if(payload.types().contains(KgQuery.getKgQueryType())){
             return Collections.singletonList(arangoDocument);
         }
         return extractNestedInstances(arangoDocument, arangoDocument.getDoc(), documentReference, new Stack<>(), new ArrayList<>());
@@ -59,8 +61,8 @@ public class StructureSplitter {
 
     private List<ArangoInstance> extractNestedInstances(ArangoDocument parent, JsonLdDoc subTree, ArangoDocumentReference originalDocumentReference, Stack<String> keyStack, List<ArangoInstance> collector) {
         //We need to do this explicitly to ensure the parent has set its id already - otherwise, the preconditions are not met for the embedded extractions.
-        if (parent.getDoc().getId() == null) {
-            parent.getDoc().setId(subTree.getId());
+        if (parent.getDoc().id() == null) {
+            parent.getDoc().setId(subTree.id());
         }
         parent.setOriginalDocument(originalDocumentReference);
         collector.add(parent);
@@ -78,7 +80,7 @@ public class StructureSplitter {
                     for (Object individualValue : ((Collection) value)) {
                         ArangoEdge arangoEdge = null;
                         if (individualValue instanceof Map) {
-                            arangoEdge = extractEdge(parent, TypeUtils.translate(individualValue, NormalizedJsonLd.class), originalDocumentReference, keyStack, i, collector);
+                            arangoEdge = extractEdge(parent, typeUtils.translate(individualValue, NormalizedJsonLd.class), originalDocumentReference, keyStack, i, collector);
                             i++;
                         }
                         if (arangoEdge != null) {
@@ -91,7 +93,7 @@ public class StructureSplitter {
                 } else {
                     ArangoEdge arangoEdge = null;
                     if (value instanceof JsonLdId || value instanceof Map) {
-                        arangoEdge = extractEdge(parent, TypeUtils.translate(value, NormalizedJsonLd.class), originalDocumentReference, keyStack, i, collector);
+                        arangoEdge = extractEdge(parent, typeUtils.translate(value, NormalizedJsonLd.class), originalDocumentReference, keyStack, i, collector);
                     }
                     if (arangoEdge != null) {
                         parent.getDoc().addProperty(key, arangoEdge.getOriginalTo());
@@ -127,7 +129,7 @@ public class StructureSplitter {
         edge.setOriginalLabel(EBRAINSVocabulary.META_ALTERNATIVE);
         edge.setOriginalDocument(originalDocumentReference);
         edge.setFrom(parent.getId());
-        edge.redefineId(ArangoCollectionReference.fromSpace(new Space(EBRAINSVocabulary.META_ALTERNATIVE)).doc(UUID.randomUUID()));
+        edge.redefineId(ArangoCollectionReference.fromSpace(new SpaceName(EBRAINSVocabulary.META_ALTERNATIVE)).doc(UUID.randomUUID()));
         collector.add(edge);
         subTree.put(EBRAINSVocabulary.META_ALTERNATIVE, alternativeId);
     }
@@ -147,7 +149,7 @@ public class StructureSplitter {
         JsonLdId embeddedId = idUtils.buildAbsoluteUrl(embeddedDocumentId);
         JsonLdId id = null;
         try {
-            id = subTree.getId();
+            id = subTree.id();
         } catch (IllegalArgumentException e) {
             logger.warn("Found an invalid reference in a document. Skipping it...", e);
             return null;
@@ -171,7 +173,7 @@ public class StructureSplitter {
         edge.setOriginalLabel(relationName);
         edge.setOriginalDocument(originalDocumentRef);
         edge.setFrom(parent.getId());
-        edge.redefineId(ArangoCollectionReference.fromSpace(new Space(relationName)).doc(UUID.randomUUID()));
+        edge.redefineId(ArangoCollectionReference.fromSpace(new SpaceName(relationName)).doc(UUID.randomUUID()));
         if (edge.getOriginalTo() != null) {
             collector.add(edge);
             return edge;

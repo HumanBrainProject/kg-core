@@ -20,7 +20,7 @@ import eu.ebrains.kg.commons.IdUtils;
 import eu.ebrains.kg.commons.jsonld.*;
 import eu.ebrains.kg.commons.model.DataStage;
 import eu.ebrains.kg.commons.model.Event;
-import eu.ebrains.kg.commons.model.Space;
+import eu.ebrains.kg.commons.model.SpaceName;
 import eu.ebrains.kg.commons.semantics.vocabularies.EBRAINSVocabulary;
 import eu.ebrains.kg.commons.semantics.vocabularies.SchemaOrgVocabulary;
 import eu.ebrains.kg.inference.serviceCall.GraphDBSvc;
@@ -102,7 +102,7 @@ public class Reconcile {
     }
 
 
-    private InvolvedPayloads findInvolvedDocuments(Space space, UUID id, Set<UUID> handledDocumentIds, Set<UUID> handledInstanceIds, InvolvedPayloads involvedPayloads) {
+    private InvolvedPayloads findInvolvedDocuments(SpaceName space, UUID id, Set<UUID> handledDocumentIds, Set<UUID> handledInstanceIds, InvolvedPayloads involvedPayloads) {
         List<IndexedJsonLdDoc> relatedInstancesByIdentifiers = graphDBSvc.getRelatedInstancesByIdentifiers(space, id, DataStage.NATIVE, true);
         involvedPayloads.documents.addAll(relatedInstancesByIdentifiers);
         handledDocumentIds.add(id);
@@ -114,7 +114,7 @@ public class Reconcile {
         } else if (inferredInstances.size() == 1) {
             //If there is an inferred instance available, we also should take its documents into account...
             IndexedJsonLdDoc inferredInstance = inferredInstances.get(0).asIndexed();
-            UUID instanceId = idUtils.getUUID(inferredInstance.getDoc().getId());
+            UUID instanceId = idUtils.getUUID(inferredInstance.getDoc().id());
             if (!handledInstanceIds.contains(instanceId)) {
                 handledInstanceIds.add(instanceId);
                 involvedPayloads.existingInstances.add(inferredInstance);
@@ -145,7 +145,7 @@ public class Reconcile {
             ids.forEach(id -> reconcileUnits.put(id, reconcileUnit));
         });
         documents.stream().forEach(doc -> {
-            ReconcileUnit reconcileUnit = reconcileUnits.get(doc.getDoc().getAllIdentifiersIncludingId().stream().findFirst().orElse(null));
+            ReconcileUnit reconcileUnit = reconcileUnits.get(doc.getDoc().allIdentifiersIncludingId().stream().findFirst().orElse(null));
             reconcileUnit.documents.add(doc);
         });
         return new HashSet<>(reconcileUnits.values());
@@ -154,7 +154,7 @@ public class Reconcile {
     Set<Set<String>> combineIds(Set<IndexedJsonLdDoc> documents) {
         Set<Set<String>> idCombinations = new HashSet<>();
         documents.forEach(doc -> {
-            Set<String> identifiers = doc.getDoc().getAllIdentifiersIncludingId();
+            Set<String> identifiers = doc.getDoc().allIdentifiersIncludingId();
             Set<String> idCombination = new HashSet<>();
             for (String identifier : identifiers) {
                 Iterator<Set<String>> iterator = idCombinations.iterator();
@@ -185,9 +185,9 @@ public class Reconcile {
         for (InferredJsonLdDoc newInstance : newInstances) {
             newToExistingMapping.computeIfAbsent(newInstance, f-> new HashSet<>());
             IndexedJsonLdDoc newInstanceDoc = newInstance.asIndexed();
-            Set<String> allIdentifiersIncludingId = newInstanceDoc.getDoc().getAllIdentifiersIncludingId();
+            Set<String> allIdentifiersIncludingId = newInstanceDoc.getDoc().allIdentifiersIncludingId();
             existingInstances.forEach(existing -> {
-                Set<String> identifiers = new HashSet<>(existing.getDoc().getAllIdentifiersIncludingId());
+                Set<String> identifiers = new HashSet<>(existing.getDoc().allIdentifiersIncludingId());
                 identifiers.retainAll(allIdentifiersIncludingId);
                 Set<IndexedJsonLdDoc> relatedExistingInstances = newToExistingMapping.get(newInstance);
                 if (!identifiers.isEmpty()) {
@@ -220,11 +220,11 @@ public class Reconcile {
         return inferenceResult;
     }
 
-    List<Event> translateInferenceResultToEvents(Space space, InferenceResult inferenceResult) {
+    List<Event> translateInferenceResultToEvents(SpaceName space, InferenceResult inferenceResult) {
         List<Event> result = new ArrayList<>();
         for (InferredJsonLdDoc inferredJsonLdDoc : inferenceResult.toBeInserted) {
             IndexedJsonLdDoc indexedJsonLdDoc = inferredJsonLdDoc.asIndexed();
-            JsonLdId id = indexedJsonLdDoc.getDoc().getId();
+            JsonLdId id = indexedJsonLdDoc.getDoc().id();
             if(id==null){
                 //If we want to insert a new inferred instance which has not existed before, it can be that there is no ID yet. We therefore provide a new ID for this one.
                 id = idUtils.buildAbsoluteUrl(UUID.randomUUID());
@@ -236,13 +236,13 @@ public class Reconcile {
             //An update requires the uuid of the original document
             IndexedJsonLdDoc updateResult = inferredJsonLdDoc.asIndexed();
             NormalizedJsonLd previousInstance = inferenceResult.toBeUpdated.get(inferredJsonLdDoc).getDoc();
-            updateResult.getDoc().setId(previousInstance.getId());
+            updateResult.getDoc().setId(previousInstance.id());
             //Additionally, we want to ensure that all identifiers are kept (even if they have disappeared in the meantime)
-            updateResult.getDoc().addIdentifiers(previousInstance.getAllIdentifiersIncludingId().toArray(String[]::new));
-            result.add(Event.createUpsertEvent(space, idUtils.getUUID(inferenceResult.toBeUpdated.get(inferredJsonLdDoc).getDoc().getId()), Event.Type.UPDATE, inferredJsonLdDoc.asIndexed().getDoc()));
+            updateResult.getDoc().addIdentifiers(previousInstance.allIdentifiersIncludingId().toArray(String[]::new));
+            result.add(Event.createUpsertEvent(space, idUtils.getUUID(inferenceResult.toBeUpdated.get(inferredJsonLdDoc).getDoc().id()), Event.Type.UPDATE, inferredJsonLdDoc.asIndexed().getDoc()));
         }
         for (IndexedJsonLdDoc indexedJsonLdDoc : inferenceResult.toBeRemoved) {
-            result.add(Event.createDeleteEvent(space, idUtils.getUUID(indexedJsonLdDoc.getDoc().getId()), idUtils.buildAbsoluteUrl(indexedJsonLdDoc.getDocumentId())));
+            result.add(Event.createDeleteEvent(space, idUtils.getUUID(indexedJsonLdDoc.getDoc().id()), idUtils.buildAbsoluteUrl(indexedJsonLdDoc.getDocumentId())));
         }
         for (InferredJsonLdDoc inferredJsonLdDoc : inferenceResult.toBeMerged.keySet()) {
             //Add all identifiers of the previously inferred instances
@@ -250,14 +250,14 @@ public class Reconcile {
             NormalizedJsonLd doc = inferredJsonLdDoc.asIndexed().getDoc();
             UUID newUUID = UUID.randomUUID();
             doc.setId(idUtils.buildAbsoluteUrl(newUUID));
-            doc.addIdentifiers(indexedJsonLdDocs.stream().map(i -> i.getDoc().getAllIdentifiersIncludingId()).flatMap(Collection::stream).distinct().toArray(String[]::new));
+            doc.addIdentifiers(indexedJsonLdDocs.stream().map(i -> i.getDoc().allIdentifiersIncludingId()).flatMap(Collection::stream).distinct().toArray(String[]::new));
             result.add(Event.createUpsertEvent(space, newUUID, Event.Type.INSERT, doc));
         }
         return result;
     }
 
 
-    public List<Event> reconcile(Space space, UUID id) {
+    public List<Event> reconcile(SpaceName space, UUID id) {
         InvolvedPayloads involvedPayloads = findInvolvedDocuments(space, id, new HashSet<>(), new HashSet<>(), new InvolvedPayloads());
         Set<InferredJsonLdDoc> inferredJsonLdDocs = reconcileDocuments(involvedPayloads.documents);
         //Compare calculated inferred instances to already existing ones and take according action.
@@ -303,7 +303,7 @@ public class Reconcile {
                                 //We don't handle the ID merging - if there are conflicting ids, we create a new one - but this is in the responsibility of the event generation process.
                                 break;
                             case SchemaOrgVocabulary.IDENTIFIER:
-                                Set<String> identifiers = documentsForKey.stream().map(d -> d.getDoc().getIdentifiers()).flatMap(Collection::stream).collect(Collectors.toSet());
+                                Set<String> identifiers = documentsForKey.stream().map(d -> d.getDoc().identifiers()).flatMap(Collection::stream).collect(Collectors.toSet());
                                 inferredDocument.asIndexed().getDoc().put(SchemaOrgVocabulary.IDENTIFIER, identifiers);
                                 break;
                             case EBRAINSVocabulary.META_USER:
@@ -318,7 +318,7 @@ public class Reconcile {
                                 Map<Object, List<IndexedJsonLdDoc>> documentsByValue = documentsForKey.stream().collect(Collectors.groupingBy(d -> d.getDoc().get(key)));
                                 alternatives.put(key, documentsByValue.keySet().stream().map(value -> {
                                     List<IndexedJsonLdDoc> docs = documentsByValue.get(value);
-                                    return createAlternative(key, value, docs.contains(firstDoc), docs.stream().filter(d -> d.getDoc() != null && d.getDoc().getAs(EBRAINSVocabulary.META_USER, NormalizedJsonLd.class) != null).map(doc -> doc.getDoc().getAs(EBRAINSVocabulary.META_USER, NormalizedJsonLd.class).getId()).distinct().collect(Collectors.toList()));
+                                    return createAlternative(key, value, docs.contains(firstDoc), docs.stream().filter(d -> d.getDoc() != null && d.getDoc().getAs(EBRAINSVocabulary.META_USER, NormalizedJsonLd.class) != null).map(doc -> doc.getDoc().getAs(EBRAINSVocabulary.META_USER, NormalizedJsonLd.class).id()).distinct().collect(Collectors.toList()));
                                 }).filter(Objects::nonNull).collect(Collectors.toList()));
                                 break;
                         }
@@ -343,8 +343,8 @@ public class Reconcile {
 
     private void sortByFieldChangeDate(String key, List<IndexedJsonLdDoc> documentsForKey) {
         documentsForKey.sort((o1, o2) -> {
-            ZonedDateTime dateTime1 = o1 != null && o1.getDoc().getFieldUpdateTimes() != null ? o1.getDoc().getFieldUpdateTimes().get(key) : null;
-            ZonedDateTime dateTime2 = o2 != null && o2.getDoc().getFieldUpdateTimes() != null ? o2.getDoc().getFieldUpdateTimes().get(key) : null;
+            ZonedDateTime dateTime1 = o1 != null && o1.getDoc().fieldUpdateTimes() != null ? o1.getDoc().fieldUpdateTimes().get(key) : null;
+            ZonedDateTime dateTime2 = o2 != null && o2.getDoc().fieldUpdateTimes() != null ? o2.getDoc().fieldUpdateTimes().get(key) : null;
             if (dateTime1 != null) {
                 return dateTime2 == null || dateTime1.isBefore(dateTime2) ? 1 : dateTime1.equals(dateTime2) ? 0 : -1;
             }

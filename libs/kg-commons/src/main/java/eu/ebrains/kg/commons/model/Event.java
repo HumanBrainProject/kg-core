@@ -34,7 +34,7 @@ public class Event {
         }
     }
 
-    protected Space space;
+    protected SpaceName spaceName;
 
     protected UUID documentId;
 
@@ -51,12 +51,12 @@ public class Event {
     public Event() {
     }
 
-    public Event(Space space, UUID documentId, NormalizedJsonLd data, Type type, Date timeStamp) {
-        this(space, documentId, data, type, timeStamp!=null ? timeStamp.getTime() : null);
+    public Event(SpaceName spaceName, UUID documentId, NormalizedJsonLd data, Type type, Date timeStamp) {
+        this(spaceName, documentId, data, type, timeStamp!=null ? timeStamp.getTime() : null);
     }
 
-    protected Event(Space space, UUID documentId, NormalizedJsonLd data, Type type, Long timeStampInMs) {
-        this.space = space;
+    protected Event(SpaceName spaceName, UUID documentId, NormalizedJsonLd data, Type type, Long timeStampInMs) {
+        this.spaceName = spaceName;
         this.documentId = documentId;
         this.data = data;
         this.type = type;
@@ -79,23 +79,23 @@ public class Event {
         return reportedTimeStampInMs;
     }
 
-    public static Event createDeleteEvent(Space space, UUID id, JsonLdId absoluteId){
+    public static Event createDeleteEvent(SpaceName space, UUID id, JsonLdId absoluteId){
         NormalizedJsonLd normalizedJsonLd = new NormalizedJsonLd();
         normalizedJsonLd.setId(absoluteId);
         return new Event(space, id, normalizedJsonLd, Event.Type.DELETE, new Date().getTime());
     }
 
-    public static Event createUpsertEvent(Space space, UUID id, Event.Type type, NormalizedJsonLd payload){
+    public static Event createUpsertEvent(SpaceName space, UUID id, Event.Type type, NormalizedJsonLd payload){
         return new Event(space, id, payload, type, new Date().getTime());
     }
 
-    public void setInstance(Space space, UUID uuid){
-        this.space = space;
+    public void setInstance(SpaceName space, UUID uuid){
+        this.spaceName = space;
         this.documentId = uuid;
     }
 
-    public Space getSpace() {
-        return space;
+    public SpaceName getSpaceName() {
+        return spaceName;
     }
 
     public UUID getDocumentId() {

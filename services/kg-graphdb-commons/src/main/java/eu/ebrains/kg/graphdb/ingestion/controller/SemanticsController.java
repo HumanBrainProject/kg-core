@@ -40,16 +40,19 @@ public class SemanticsController {
 
     private final SpaceDefinitionSemanticsHandler spaceDefinitionSemanticsHandler;
 
-    public SemanticsController(ClientSemanticsHandler clientSemanticsHandler, TypeDefinitionSemanticsHandler typeDefinitionSemanticsHandler, PropertyDefinitionSemanticsHandler propertyDefinitionSemanticsHandler, PropertyInTypeDefinitionSemanticsHandler propertyInTypeDefinitionSemanticsHandler, SpaceDefinitionSemanticsHandler spaceDefinitionSemanticsHandler) {
+    private final TypeInSpaceDefinitionSemanticsHandler typeInSpaceDefinitionSemanticsHandler;
+
+    public SemanticsController(ClientSemanticsHandler clientSemanticsHandler, TypeDefinitionSemanticsHandler typeDefinitionSemanticsHandler, PropertyDefinitionSemanticsHandler propertyDefinitionSemanticsHandler, PropertyInTypeDefinitionSemanticsHandler propertyInTypeDefinitionSemanticsHandler, SpaceDefinitionSemanticsHandler spaceDefinitionSemanticsHandler, TypeInSpaceDefinitionSemanticsHandler typeInSpaceDefinitionSemanticsHandler) {
         this.clientSemanticsHandler = clientSemanticsHandler;
         this.typeDefinitionSemanticsHandler = typeDefinitionSemanticsHandler;
         this.propertyDefinitionSemanticsHandler = propertyDefinitionSemanticsHandler;
         this.propertyInTypeDefinitionSemanticsHandler = propertyInTypeDefinitionSemanticsHandler;
         this.spaceDefinitionSemanticsHandler = spaceDefinitionSemanticsHandler;
+        this.typeInSpaceDefinitionSemanticsHandler = typeInSpaceDefinitionSemanticsHandler;
     }
 
     List<DBOperation> createUpsertOperations(DataStage stage, ArangoDocumentReference rootDocumentRef, ArangoDocument document) {
-        List<? extends SemanticsHandler> handlers = Arrays.asList(clientSemanticsHandler, typeDefinitionSemanticsHandler, propertyDefinitionSemanticsHandler, propertyInTypeDefinitionSemanticsHandler, spaceDefinitionSemanticsHandler);
+        List<? extends SemanticsHandler> handlers = Arrays.asList(clientSemanticsHandler, typeDefinitionSemanticsHandler, propertyDefinitionSemanticsHandler, propertyInTypeDefinitionSemanticsHandler, spaceDefinitionSemanticsHandler, typeInSpaceDefinitionSemanticsHandler);
         List<DBOperation> operations = new ArrayList<>();
         for (SemanticsHandler handler : handlers) {
             operations.addAll(handler.createUpsertOperations(stage, rootDocumentRef, document));

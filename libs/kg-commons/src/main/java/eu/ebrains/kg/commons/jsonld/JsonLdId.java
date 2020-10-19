@@ -17,7 +17,6 @@
 package eu.ebrains.kg.commons.jsonld;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.google.gson.annotations.SerializedName;
 
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -51,10 +50,9 @@ public class JsonLdId {
     public JsonLdId() {
     }
 
-    @SerializedName(JsonLdConsts.ID)
+    @JsonProperty(JsonLdConsts.ID)
     private String id;
 
-    @JsonProperty(JsonLdConsts.ID)
     public String getId() {
         return id;
     }

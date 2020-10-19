@@ -21,7 +21,7 @@ import eu.ebrains.kg.commons.jsonld.JsonLdId;
 import eu.ebrains.kg.commons.jsonld.JsonLdIdMapping;
 import eu.ebrains.kg.commons.model.DataStage;
 import eu.ebrains.kg.commons.model.IdWithAlternatives;
-import eu.ebrains.kg.commons.model.Space;
+import eu.ebrains.kg.commons.model.SpaceName;
 import eu.ebrains.kg.ids.controller.IdRepository;
 import eu.ebrains.kg.ids.model.PersistedId;
 import org.slf4j.Logger;
@@ -52,8 +52,8 @@ public class IdsAPI {
         if (idWithAlternatives != null && idWithAlternatives.getId() != null) {
             logger.debug(String.format("Updating id %s%s", idWithAlternatives.getId(), idWithAlternatives.getAlternatives() != null ? "with alternatives " + String.join(", ", idWithAlternatives.getAlternatives()) : ""));
             PersistedId persistedId = new PersistedId();
-            persistedId.setId(idWithAlternatives.getId());
-            persistedId.setSpace(new Space(idWithAlternatives.getSpace()));
+            persistedId.setUUID(idWithAlternatives.getId());
+            persistedId.setSpace(new SpaceName(idWithAlternatives.getSpace()));
             persistedId.setAlternativeIds(idWithAlternatives.getAlternatives());
             return idRepository.upsert(stage, persistedId);
         }

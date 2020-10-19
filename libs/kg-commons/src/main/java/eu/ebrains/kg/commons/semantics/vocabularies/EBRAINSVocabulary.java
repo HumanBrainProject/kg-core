@@ -46,6 +46,7 @@ public class EBRAINSVocabulary {
     public static final String META_OCCURRENCES = META + "occurrences";
     public static final String META_PROPERTIES = META + "properties";
     public static final String META_PROPERTY = META + "property";
+    public static final String META_PICTURE = META + "picture";
     public static final String META_PROPERTY_TARGET_TYPES = META + "targetTypes";
     public static final String META_VALUE_TYPES = META + "valueTypes";
     public static final String META_ALTERNATIVE = META+"alternative";
@@ -68,8 +69,11 @@ public class EBRAINSVocabulary {
     public static final String META_PROPERTY_DEFINITION_TYPE = META+"PropertyDefinition";
     public static final String META_PROPERTY_IN_TYPE_DEFINITION_TYPE = META+"PropertyInTypeDefinition";
     public final static String META_TYPEDEFINITION_TYPE = META+"TypeDefinition";
+    public final static String META_TYPE_IN_SPACE_DEFINITION_TYPE = META+"TypeInSpaceDefinition";
     public final static String META_SPACEDEFINITION_TYPE = META+"SpaceDefinition";
     public final static String META_CLIENTCONFIGURATION_TYPE = META+"ClientConfiguration";
+
+    public final static String META_USER_PICTURE_TYPE = META+"UserPicture";
 
 
 }

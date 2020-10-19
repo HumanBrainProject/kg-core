@@ -21,7 +21,7 @@ import eu.ebrains.kg.arango.commons.model.ArangoCollectionReference;
 import eu.ebrains.kg.commons.jsonld.NormalizedJsonLd;
 import eu.ebrains.kg.commons.model.DataStage;
 import eu.ebrains.kg.commons.model.Paginated;
-import eu.ebrains.kg.commons.model.Space;
+import eu.ebrains.kg.commons.model.SpaceName;
 import eu.ebrains.kg.docker.SpringDockerComposeRunner;
 import eu.ebrains.kg.graphdb.ingestion.controller.TodoListProcessor;
 import eu.ebrains.kg.test.TestObjectFactory;
@@ -84,7 +84,7 @@ public class ArangoRepositoryTypesTest {
 
         //When
         Paginated<NormalizedJsonLd> allTypesForSimpsonsSpace = arangoRepositoryTypes.getTypesForSpace(CLIENT, STAGE, TestObjectFactory.SIMPSONS, true, true, null);
-        Paginated<NormalizedJsonLd> allTypesForFooBarSpace = arangoRepositoryTypes.getTypesForSpace(CLIENT, STAGE, new Space("foobar"), true, true, null);
+        Paginated<NormalizedJsonLd> allTypesForFooBarSpace = arangoRepositoryTypes.getTypesForSpace(CLIENT, STAGE, new SpaceName("foobar"), true, true, null);
 
         //Then
         assertEquals(5, allTypesForSimpsonsSpace.getSize());

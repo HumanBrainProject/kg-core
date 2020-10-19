@@ -21,7 +21,6 @@ import eu.ebrains.kg.commons.IdUtils;
 import eu.ebrains.kg.commons.exception.ForbiddenException;
 import eu.ebrains.kg.commons.jsonld.IndexedJsonLdDoc;
 import eu.ebrains.kg.commons.jsonld.JsonLdId;
-import eu.ebrains.kg.commons.jsonld.NormalizedJsonLd;
 import eu.ebrains.kg.commons.model.*;
 import eu.ebrains.kg.commons.models.UserWithRoles;
 import eu.ebrains.kg.commons.permission.Functionality;
@@ -33,7 +32,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
-import java.nio.charset.StandardCharsets;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Collections;
@@ -60,44 +58,39 @@ public class EventController {
         this.graphDBSvc = graphDBSvc;
     }
 
-    private boolean isEventOfType(PersistedEvent event, String type) {
-        return event.getData() != null && event.getData().getTypes() != null ? event.getData().getTypes().contains(type) : false;
-    }
-
-    private void checkPermission(AuthTokens authTokens, PersistedEvent event, DataStage stage, Event.Type type, Space space, UUID uuid, UserWithRoles userWithRoles) {
+    private void checkPermission(PersistedEvent event, UserWithRoles userWithRoles) {
         boolean hasPermission = false;
-        List<String> semantics = event.getData() != null && event.getData().getTypes() != null ? event.getData().getTypes() : Collections.emptyList();
+        List<String> semantics = event.getData() != null && event.getData().types() != null ? event.getData().types() : Collections.emptyList();
         Functionality functionality;
-        switch (type) {
+        switch (event.getType()) {
             case DELETE:
-                functionality = Functionality.withSemanticsForOperation(semantics, type, Functionality.DELETE);
-                hasPermission = permissionSvc.hasPermission(userWithRoles, functionality, space, uuid);
+                functionality = Functionality.withSemanticsForOperation(semantics, event.getType(), Functionality.DELETE);
+                hasPermission = permissionSvc.hasPermission(userWithRoles, functionality, event.getSpaceName(), event.getDocumentId());
                 break;
             case INSERT:
-                NormalizedJsonLd sp = graphDBSvc.getSpace(space, stage, authTokens);
-                if (sp == null) {
+                if (event.getSpace() == null) {
                     //The space doesn't exist - this means the user has to have space creation rights to execute this insertion.
-                    boolean spaceCreationPermission = permissionSvc.hasPermission(userWithRoles, Functionality.CREATE_SPACE, space);
+                    boolean spaceCreationPermission = permissionSvc.hasPermission(userWithRoles, Functionality.CREATE_SPACE, event.getSpaceName());
                     if (!spaceCreationPermission) {
-                        throw new ForbiddenException(String.format("The creation of this instance involves the creation of the non-existing space %s - you don't have the according rights to do so!", space.getName()));
+                        throw new ForbiddenException(String.format("The creation of this instance involves the creation of the non-existing space %s - you don't have the according rights to do so!", event.getSpaceName()));
                     }
                 }
-                functionality = Functionality.withSemanticsForOperation(semantics, type, Functionality.CREATE);
-                hasPermission = permissionSvc.hasPermission(userWithRoles, functionality, space, uuid);
+                functionality = Functionality.withSemanticsForOperation(semantics, event.getType(), Functionality.CREATE);
+                hasPermission = permissionSvc.hasPermission(userWithRoles, functionality, event.getSpaceName(),  event.getDocumentId());
                 break;
             case UPDATE:
-                functionality = Functionality.withSemanticsForOperation(semantics, type, Functionality.WRITE);
-                hasPermission = permissionSvc.hasPermission(userWithRoles, functionality, space, uuid);
+                functionality = Functionality.withSemanticsForOperation(semantics, event.getType(), Functionality.WRITE);
+                hasPermission = permissionSvc.hasPermission(userWithRoles, functionality, event.getSpaceName(),  event.getDocumentId());
                 if (!hasPermission && functionality == Functionality.WRITE) {
-                    hasPermission = permissionSvc.hasPermission(userWithRoles, Functionality.SUGGEST, space, uuid);
+                    hasPermission = permissionSvc.hasPermission(userWithRoles, Functionality.SUGGEST, event.getSpaceName(),  event.getDocumentId());
                     event.setSuggestion(true);
                 }
                 break;
             case RELEASE:
-                hasPermission = permissionSvc.hasPermission(userWithRoles, Functionality.withSemanticsForOperation(semantics, type, Functionality.RELEASE), space, uuid);
+                hasPermission = permissionSvc.hasPermission(userWithRoles, Functionality.withSemanticsForOperation(semantics, event.getType(), Functionality.RELEASE), event.getSpaceName(),  event.getDocumentId());
                 break;
             case UNRELEASE:
-                hasPermission = permissionSvc.hasPermission(userWithRoles, Functionality.withSemanticsForOperation(semantics, type, Functionality.UNRELEASE), space, uuid);
+                hasPermission = permissionSvc.hasPermission(userWithRoles, Functionality.withSemanticsForOperation(semantics, event.getType(), Functionality.UNRELEASE), event.getSpaceName(),  event.getDocumentId());
                 break;
         }
         if (!hasPermission) {
@@ -106,19 +99,21 @@ public class EventController {
     }
 
     public PersistedEvent persistEvent(AuthTokens authTokens, Event event, DataStage dataStage, UserWithRoles userWithRoles, User resolvedUser) {
-        PersistedEvent persistedEvent = new PersistedEvent(event, dataStage, resolvedUser);
+        PersistedEvent persistedEvent = new PersistedEvent(event, dataStage, resolvedUser, graphDBSvc.getSpace(event.getSpaceName(), dataStage, authTokens));
         ensureInternalIdInPayload(userWithRoles, persistedEvent);
-
-        checkPermission(authTokens, persistedEvent, dataStage, event.getType(), event.getSpace(), event.getDocumentId(), userWithRoles);
+        checkPermission(persistedEvent,  userWithRoles);
         if (persistedEvent.getType() == Event.Type.DELETE) {
             idsSvc.deprecateInstance(persistedEvent.getDocumentId(), authTokens);
         } else {
-            if (dataStage == DataStage.IN_PROGRESS) {
-                ensureMergeOfIdentifiers(authTokens, persistedEvent, dataStage);
-                List<JsonLdId> mergedIds = idsSvc.upsert(dataStage, new IdWithAlternatives(persistedEvent.getDocumentId(), persistedEvent.getSpace(), persistedEvent.getData().getIdentifiers()), authTokens);
-                if (mergedIds != null) {
-                    persistedEvent.setMergedIds(mergedIds);
-                }
+            switch (dataStage){
+                case IN_PROGRESS:
+                case RELEASED:
+                    ensureMergeOfIdentifiers(authTokens, persistedEvent, dataStage);
+                    List<JsonLdId> mergedIds = idsSvc.upsert(dataStage, new IdWithAlternatives(persistedEvent.getDocumentId(), persistedEvent.getSpaceName(), persistedEvent.getData().identifiers()), authTokens);
+                    if (mergedIds != null) {
+                        persistedEvent.setMergedIds(mergedIds);
+                    }
+                    break;
             }
             addMetaInformationToData(dataStage, persistedEvent);
         }
@@ -128,7 +123,7 @@ public class EventController {
 
     private void ensureInternalIdInPayload(UserWithRoles user, PersistedEvent persistedEvent) {
         if (persistedEvent.getData() != null) {
-            JsonLdId idFromPayload = persistedEvent.getData().getId();
+            JsonLdId idFromPayload = persistedEvent.getData().id();
             if (idFromPayload != null) {
                 //Save the original id as an "identifier"
                 persistedEvent.getData().addIdentifiers(idFromPayload.getId());
@@ -136,20 +131,21 @@ public class EventController {
             persistedEvent.getData().setId(idUtils.buildAbsoluteUrl(persistedEvent.getDocumentId()));
             //In the native space, we store the document separately for every user - this means the documents are actual contributions to an instance.
             if (persistedEvent.getDataStage() == DataStage.NATIVE) {
-                persistedEvent.setInstance(persistedEvent.getSpace(), UUID.nameUUIDFromBytes(String.format("%s-%s", persistedEvent.getDocumentId(), persistedEvent.getUser() != null ? persistedEvent.getUser().getNativeId() : user.getUser().getNativeId()).getBytes(StandardCharsets.UTF_8)));
+                UUID userSpecificUUID = idUtils.getDocumentIdForUserAndInstance(persistedEvent.getUser() != null ? persistedEvent.getUser().getNativeId() : user.getUser().getNativeId(), persistedEvent.getDocumentId());
+                persistedEvent.setInstance(persistedEvent.getSpaceName(), userSpecificUUID);
             }
         }
     }
 
     private void ensureMergeOfIdentifiers(AuthTokens authTokens, PersistedEvent persistedEvent, DataStage dataStage) {
         //If we're in the inProgress stage, we look up if there are merges needed
-        Set<JsonLdId> resolvedIds = idsSvc.resolveIds(dataStage, persistedEvent.getDocumentId(), persistedEvent.getData().getIdentifiers(), persistedEvent.getSpace(), authTokens);
+        Set<JsonLdId> resolvedIds = idsSvc.resolveIds(dataStage, persistedEvent.getDocumentId(), persistedEvent.getData().identifiers(), persistedEvent.getSpaceName(), authTokens);
         if (resolvedIds != null && !resolvedIds.isEmpty()) {
             if (resolvedIds.size() > 1) {
                 logger.debug("Found an ambiguous id - this means a new instance id will be created and the ids will be merged...");
                 persistedEvent.getData().addIdentifiers(idUtils.buildAbsoluteUrl(persistedEvent.getDocumentId()).getId());
                 persistedEvent.getData().addIdentifiers(resolvedIds.stream().map(JsonLdId::getId).distinct().toArray(String[]::new));
-                persistedEvent.setInstance(persistedEvent.getSpace(), UUID.randomUUID());
+                persistedEvent.setInstance(persistedEvent.getSpaceName(), UUID.randomUUID());
             }
         }
     }

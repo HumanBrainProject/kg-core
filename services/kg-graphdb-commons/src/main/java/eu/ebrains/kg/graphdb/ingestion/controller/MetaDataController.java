@@ -54,9 +54,14 @@ public class MetaDataController {
         this.repository = repository;
     }
 
+
+    public void handleMetaDataSync(DataStage stage, ArangoDocumentReference rootDocumentRef, NormalizedJsonLd payload, List<ArangoInstance> arangoInstances, List<EdgeResolutionOperation> lazyIdResolutionOperations, List<UUID> mergeIds) {
+        repository.executeTransactionalOnMeta(stage, createUpsertOperations(stage, rootDocumentRef, payload.types(), arangoInstances, lazyIdResolutionOperations, mergeIds));
+    }
+
     @Async
-    public void handleMetaData(DataStage stage, ArangoDocumentReference rootDocumentRef, NormalizedJsonLd payload, List<ArangoInstance> arangoInstances, List<EdgeResolutionOperation> lazyIdResolutionOperations, List<UUID> mergeIds) {
-        repository.executeTransactionalOnMeta(stage, createUpsertOperations(stage, rootDocumentRef, payload.getTypes(), arangoInstances, lazyIdResolutionOperations, mergeIds));
+    public void handleMetaDataAsync(DataStage stage, ArangoDocumentReference rootDocumentRef, NormalizedJsonLd payload, List<ArangoInstance> arangoInstances, List<EdgeResolutionOperation> lazyIdResolutionOperations, List<UUID> mergeIds) {
+        repository.executeTransactionalOnMeta(stage, createUpsertOperations(stage, rootDocumentRef, payload.types(), arangoInstances, lazyIdResolutionOperations, mergeIds));
     }
 
     public List<DBOperation> createUpsertOperations(DataStage stage, ArangoDocumentReference rootDocumentRef, List<String> types, List<ArangoInstance> arangoInstances, List<EdgeResolutionOperation> resolvedEdges, List<UUID> mergedIds) {

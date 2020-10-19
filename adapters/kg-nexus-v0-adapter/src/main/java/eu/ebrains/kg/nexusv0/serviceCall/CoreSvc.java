@@ -41,7 +41,7 @@ public class CoreSvc {
         this.serviceCallWithClientSecret = serviceCallWithClientSecret;
     }
 
-    public void inferInstance(Space space, String identifier){
+    public void inferInstance(SpaceName space, String identifier){
         serviceCallWithClientSecret.post(String.format("%s/extra/inference/%s?identifier=%s", SERVICE_URL, space.getName(), identifier), null, new AuthTokens(), String.class);
     }
     public void inferDeferred(){
@@ -52,7 +52,7 @@ public class CoreSvc {
         return serviceCallWithClientSecret.post(String.format("%s/instancesByIdentifiers?stage=IN_PROGRESS&returnEmbedded=false", SERVICE_URL), identifiers, new AuthTokens(), ResultOfDocuments.class);
     }
 
-    public Result<?> createInstance(JsonLdDoc payload, Space space, String user, ZonedDateTime dateTime, boolean deferInference){
+    public Result<?> createInstance(JsonLdDoc payload, SpaceName space, String user, ZonedDateTime dateTime, boolean deferInference){
         return serviceCallWithClientSecret.post(String.format("%s/instances?space=%s&returnPayload=false&returnEmbedded=false&externalUserDefinition=%s&externalEventTime=%s&deferInference=%b", SERVICE_URL, space.getName(), user!=null ? user : "", dateTime!=null ? dateTime.format(DateTimeFormatter.ISO_INSTANT) : "", deferInference), payload, new AuthTokens(), Result.class);
     }
 

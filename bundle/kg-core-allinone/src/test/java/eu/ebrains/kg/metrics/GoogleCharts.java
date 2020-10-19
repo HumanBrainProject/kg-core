@@ -16,7 +16,9 @@
 
 package eu.ebrains.kg.metrics;
 
-import com.google.gson.Gson;
+
+import eu.ebrains.kg.commons.JsonAdapter;
+import eu.ebrains.kg.test.JsonAdapter4Test;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -47,7 +49,7 @@ public class GoogleCharts {
 
     private StringBuilder source = new StringBuilder();
     private List<String> plots = new ArrayList<>();
-    private Gson gson = new Gson();
+    private JsonAdapter json = new JsonAdapter4Test();
 
     public synchronized void addSection(String title){
         this.plots.add(String.format("<h2>%s</h2>", title));
@@ -131,9 +133,9 @@ public class GoogleCharts {
         sb.append("let chart").append(plotCounter).append(" = new google.visualization.Timeline(plot").append(plotCounter).append(");\n");
         sb.append("let dataTable").append(plotCounter).append(" = new google.visualization.DataTable();\n");
         for (Column column : columns) {
-            sb.append("dataTable").append(plotCounter).append(".addColumn(").append(gson.toJson(column)).append(");\n");
+            sb.append("dataTable").append(plotCounter).append(".addColumn(").append(json.toJson(column)).append(");\n");
         }
-        sb.append("dataTable").append(plotCounter).append(".addRows(").append(gson.toJson(values.stream().map(Value::asSimpleList).collect(Collectors.toList()))).append(");\n");
+        sb.append("dataTable").append(plotCounter).append(".addRows(").append(json.toJson(values.stream().map(Value::asSimpleList).collect(Collectors.toList()))).append(");\n");
         sb.append("chart").append(plotCounter).append(".draw(dataTable").append(plotCounter).append(", {\n" +
                 "      timeline: { showBarLabels: ").append(showBarLabels).append(", showRowLabels:").append(showRowLabels).append("}\n" +
                 "    });\n" +

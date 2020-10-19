@@ -19,10 +19,10 @@ package eu.ebrains.kg.core.api;
 
 import com.netflix.discovery.EurekaClient;
 import eu.ebrains.kg.commons.IdUtils;
-import eu.ebrains.kg.commons.model.Space;
+import eu.ebrains.kg.commons.model.SpaceName;
 import eu.ebrains.kg.docker.SpringDockerComposeRunner;
-import eu.ebrains.kg.test.TestToGraphDB;
 import eu.ebrains.kg.test.TestObjectFactory;
+import eu.ebrains.kg.test.TestToGraphDB;
 import org.junit.Before;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -49,7 +49,7 @@ public class TypeTest {
     @Autowired
     TestToGraphDB graphDBSyncSvcForTest;
 
-    private final Space space = TestObjectFactory.SIMPSONS;
+    private final SpaceName space = TestObjectFactory.SIMPSONS;
 
     @Before
     public void setup() {

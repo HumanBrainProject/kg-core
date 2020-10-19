@@ -41,8 +41,8 @@ public class CoreQueryController {
         this.instanceController = instanceController;
     }
 
-    public ResponseEntity<Result<NormalizedJsonLd>> createNewQuery(NormalizedJsonLd query, UUID queryId, Space space){
-        return instanceController.createNewInstance(query, queryId, space.getName(), new ResponseConfiguration(), new IngestConfiguration().setNormalizePayload(false), null);
+    public ResponseEntity<Result<NormalizedJsonLd>> createNewQuery(NormalizedJsonLd query, UUID queryId, SpaceName space){
+        return instanceController.createNewInstance(query, queryId, space, new ResponseConfiguration(), new IngestConfiguration().setNormalizePayload(false), null);
     }
 
     public ResponseEntity<Result<NormalizedJsonLd>> updateQuery(NormalizedJsonLd query, InstanceId instanceId){
@@ -57,7 +57,7 @@ public class CoreQueryController {
         return graphDB4InstancesSvc.getQueriesByType(DataStage.IN_PROGRESS, paginationParam, search, false, type);
     }
 
-    public KgQuery fetchQueryById(UUID queryId, Space space, DataStage stage){
+    public KgQuery fetchQueryById(UUID queryId, SpaceName space, DataStage stage){
         NormalizedJsonLd instance = graphDB4InstancesSvc.getInstance(DataStage.IN_PROGRESS, new InstanceId(queryId, space), true, false);
         return new KgQuery(instance, stage);
     }

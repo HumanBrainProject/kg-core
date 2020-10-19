@@ -16,6 +16,7 @@
 
 package eu.ebrains.kg.authentication.keycloak;
 
+import org.keycloak.OAuth2Constants;
 import org.keycloak.admin.client.Keycloak;
 import org.keycloak.admin.client.KeycloakBuilder;
 import org.springframework.beans.factory.annotation.Value;
@@ -26,8 +27,8 @@ import org.springframework.context.annotation.Configuration;
 public class KeycloakConfig {
 
     @Bean
-    public Keycloak createKeycloakAdmin(KeycloakConfig config) {
-        return KeycloakBuilder.builder().username(config.getUser()).password(config.getPwd()).serverUrl(config.getServerUrl()).realm("master").clientId("admin-cli").build();
+    public Keycloak createKeycloak(KeycloakConfig config) {
+        return KeycloakBuilder.builder().grantType(OAuth2Constants.CLIENT_CREDENTIALS).clientSecret(config.getKgCoreClientSecret()).clientId(config.getKgCoreClientId()).serverUrl(config.getServerUrl()).realm(config.getRealm()).build();
     }
 
     @Value("${eu.ebrains.kg.https}")
@@ -36,20 +37,17 @@ public class KeycloakConfig {
     @Value("${eu.ebrains.kg.ip}")
     String ip;
 
-    @Value("${eu.ebrains.kg.authentication.keycloak.clientId}")
-    String clientId;
+    @Value("${eu.ebrains.kg.authentication.keycloak.kg.clientId}")
+    String kgClientId;
 
-    @Value("${eu.ebrains.kg.authentication.keycloak.clientSecret}")
-    String clientSecret;
+    @Value("${eu.ebrains.kg.authentication.keycloak.kgCore.clientSecret}")
+    String kgCoreClientSecret;
+
+    @Value("${eu.ebrains.kg.authentication.keycloak.kgCore.clientId}")
+    String kgCoreClientId;
 
     @Value("${eu.ebrains.kg.authentication.keycloak.serverUrl}")
     String serverUrl;
-
-    @Value("${eu.ebrains.kg.authentication.keycloak.user}")
-    String user;
-
-    @Value("${eu.ebrains.kg.authentication.keycloak.pwd}")
-    String pwd;
 
     @Value("${eu.ebrains.kg.authentication.keycloak.realm}")
     String realm;
@@ -67,24 +65,20 @@ public class KeycloakConfig {
         return ip;
     }
 
-    public String getClientId() {
-        return clientId;
+    public String getKgClientId() {
+        return kgClientId;
     }
 
-    public String getClientSecret() {
-        return clientSecret;
+    public String getKgCoreClientSecret() {
+        return kgCoreClientSecret;
     }
 
     public String getServerUrl() {
         return serverUrl;
     }
 
-    public String getUser() {
-        return user;
-    }
-
-    public String getPwd() {
-        return pwd;
+    public String getKgCoreClientId() {
+        return kgCoreClientId;
     }
 
     public String getRealm() {

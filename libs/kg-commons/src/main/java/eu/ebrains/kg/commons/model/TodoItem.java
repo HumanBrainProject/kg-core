@@ -28,7 +28,7 @@ public class TodoItem {
     private String eventId;
     private Event.Type type;
     private NormalizedJsonLd payload;
-    private Space space;
+    private SpaceName space;
     private List<JsonLdId> mergeIds;
     private User user;
 
@@ -36,10 +36,10 @@ public class TodoItem {
     }
 
     public static TodoItem fromEvent(PersistedEvent event){
-        return new TodoItem(event.getEventId(), event.getDocumentId(), event.getSpace(), event.getType(), event.getData(), event.getMergedIds(), event.getUser());
+        return new TodoItem(event.getEventId(), event.getDocumentId(), event.getSpaceName(), event.getType(), event.getData(), event.getMergedIds(), event.getUser());
     }
 
-    public TodoItem(String eventId, UUID documentId, Space space, Event.Type type, NormalizedJsonLd payload, List<JsonLdId> mergeIds, User user) {
+    public TodoItem(String eventId, UUID documentId, SpaceName space, Event.Type type, NormalizedJsonLd payload, List<JsonLdId> mergeIds, User user) {
         this.documentId = documentId;
         this.eventId = eventId;
         this.space = space;
@@ -65,7 +65,7 @@ public class TodoItem {
         return mergeIds;
     }
 
-    public Space getSpace() {
+    public SpaceName getSpace() {
         return space;
     }
 

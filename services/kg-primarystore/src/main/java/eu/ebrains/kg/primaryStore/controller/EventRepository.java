@@ -18,12 +18,12 @@ package eu.ebrains.kg.primaryStore.controller;
 
 import com.arangodb.ArangoCollection;
 import com.arangodb.model.*;
-import com.google.gson.Gson;
 import eu.ebrains.kg.arango.commons.aqlBuilder.AQL;
 import eu.ebrains.kg.arango.commons.model.ArangoDatabaseProxy;
+import eu.ebrains.kg.commons.JsonAdapter;
 import eu.ebrains.kg.commons.model.DataStage;
 import eu.ebrains.kg.commons.model.PersistedEvent;
-import eu.ebrains.kg.commons.model.Space;
+import eu.ebrains.kg.commons.model.SpaceName;
 import eu.ebrains.kg.primaryStore.model.DeferredInference;
 import eu.ebrains.kg.primaryStore.model.FailedEvent;
 import org.slf4j.Logger;
@@ -38,19 +38,19 @@ import java.util.stream.Collectors;
 public class EventRepository {
     private final ArangoDatabaseProxy arangoDatabase;
 
-    private final Gson gson;
+    private final JsonAdapter jsonAdapter;
 
     private final Logger logger = LoggerFactory.getLogger(getClass());
 
-    public EventRepository(@Qualifier("primaryStoreDB") ArangoDatabaseProxy arangoDatabase, Gson gson) {
+    public EventRepository(@Qualifier("primaryStoreDB") ArangoDatabaseProxy arangoDatabase, JsonAdapter jsonAdapter) {
         this.arangoDatabase = arangoDatabase;
-        this.gson = gson;
+        this.jsonAdapter = jsonAdapter;
     }
 
     void recordFailedEvent(FailedEvent e) {
         try {
             ArangoCollection events = getOrCreateFailuresCollection(e.getPersistedEvent().getDataStage());
-            events.insertDocument(gson.toJson(e));
+            events.insertDocument(jsonAdapter.toJson(e));
         } catch (Exception recordingException) {
             //We don't want any failure recording issue to abort the rest of the logic - but we need to be notified about these events nevertheless...
             logger.error(String.format("Was not able to record failed event for %s! ", e.getPersistedEvent().getEventId()), recordingException);
@@ -59,17 +59,17 @@ public class EventRepository {
 
     void recordDeferredInference(DeferredInference e) {
         ArangoCollection events = getOrCreateDeferredInferenceCollection(DataStage.IN_PROGRESS);
-        events.insertDocument(gson.toJson(e), new DocumentCreateOptions().overwrite(true));
+        events.insertDocument(jsonAdapter.toJson(e), new DocumentCreateOptions().overwrite(true));
     }
 
-    List<DeferredInference> getDeferredInferences(Space space, int pageSize) {
+    List<DeferredInference> getDeferredInferences(SpaceName space, int pageSize) {
         HashMap<String, Object> bindVars = new HashMap<>();
         bindVars.put("@collection", getOrCreateDeferredInferenceCollection(DataStage.IN_PROGRESS).name());
         bindVars.put("space", space.getName());
         bindVars.put("pageSize", pageSize);
         AQL aql = new AQL();
         aql.addLine(AQL.trust("FOR doc IN @@collection FILTER doc.space.name == @space LIMIT @pageSize RETURN doc"));
-        return arangoDatabase.getOrCreate().query(aql.build().getValue(), bindVars, new AqlQueryOptions(), String.class).asListRemaining().stream().map(d -> gson.fromJson(d, DeferredInference.class)).collect(Collectors.toList());
+        return arangoDatabase.getOrCreate().query(aql.build().getValue(), bindVars, new AqlQueryOptions(), String.class).asListRemaining().stream().map(d -> jsonAdapter.fromJson(d, DeferredInference.class)).collect(Collectors.toList());
     }
 
     void removeDeferredInference(DeferredInference inference) {
@@ -78,7 +78,7 @@ public class EventRepository {
 
     void insert(PersistedEvent e) {
         ArangoCollection events = getOrCreateCollection(e.getDataStage());
-        events.insertDocument(gson.toJson(e));
+        events.insertDocument(jsonAdapter.toJson(e));
     }
 
     public long count(DataStage stage) {

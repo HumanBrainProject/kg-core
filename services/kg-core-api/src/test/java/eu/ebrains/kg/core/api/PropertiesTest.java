@@ -20,7 +20,7 @@ import eu.ebrains.kg.commons.AuthContext;
 import eu.ebrains.kg.commons.jsonld.JsonLdId;
 import eu.ebrains.kg.commons.jsonld.NormalizedJsonLd;
 import eu.ebrains.kg.commons.model.Result;
-import eu.ebrains.kg.commons.model.Space;
+import eu.ebrains.kg.commons.model.SpaceName;
 import eu.ebrains.kg.commons.semantics.vocabularies.EBRAINSVocabulary;
 import eu.ebrains.kg.core.serviceCall.CoreToPrimaryStore;
 import org.junit.Assert;
@@ -36,7 +36,7 @@ public class PropertiesTest {
 
     @Before
     public void init() {
-        Mockito.doReturn(new Space("foobar")).when(authContext).getClientSpace();
+        Mockito.doReturn(new SpaceName("foobar")).when(authContext).getClientSpace();
     }
 
     @Test

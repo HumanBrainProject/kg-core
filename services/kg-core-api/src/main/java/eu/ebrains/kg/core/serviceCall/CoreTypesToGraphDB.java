@@ -44,11 +44,11 @@ public class CoreTypesToGraphDB {
         return serviceCall.get(String.format(BASE_URL + "/%s/instances/%s", stage.name(), instanceId.serialize()), authContext.getAuthTokens(), JsonLdDoc.class);
     }
 
-    public Map<String, Result<NormalizedJsonLd>> getTypesByNameList(List<String> types, DataStage stage, Space space, boolean withProperties) {
+    public Map<String, Result<NormalizedJsonLd>> getTypesByNameList(List<String> types, DataStage stage, SpaceName space, boolean withProperties) {
         return serviceCall.post(BASE_URL + String.format("/%s/%s?space=%s", stage.name(), withProperties ? "typesWithPropertiesByName": "typesByName",  space != null ? space.getName() : ""), types, authContext.getAuthTokens(), StringPayloadMapping.class);
     }
 
-    public Paginated<NormalizedJsonLd> getTypes(DataStage stage, Space space, boolean withProperties, PaginationParam paginationParam) {
+    public Paginated<NormalizedJsonLd> getTypes(DataStage stage, SpaceName space, boolean withProperties, PaginationParam paginationParam) {
         String relativeUrl = String.format("/%s/%s?space=%s&from=%d&size=%s", stage.name(),  withProperties ? "typesWithProperties" : "types", space != null ? space.getName() : "", paginationParam.getFrom(), paginationParam.getSize() != null ? String.valueOf(paginationParam.getSize()) : "");
         return serviceCall.get(BASE_URL + relativeUrl, authContext.getAuthTokens(), PaginatedDocuments.class);
     }

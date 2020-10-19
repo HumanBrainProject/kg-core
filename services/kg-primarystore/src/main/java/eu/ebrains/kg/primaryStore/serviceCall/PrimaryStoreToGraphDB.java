@@ -21,6 +21,7 @@ import eu.ebrains.kg.commons.ServiceCall;
 import eu.ebrains.kg.commons.jsonld.NormalizedJsonLd;
 import eu.ebrains.kg.commons.model.DataStage;
 import eu.ebrains.kg.commons.model.Space;
+import eu.ebrains.kg.commons.model.SpaceName;
 import org.springframework.stereotype.Component;
 
 @Component
@@ -33,9 +34,9 @@ public class PrimaryStoreToGraphDB {
         this.serviceCall = serviceCall;
     }
 
-    public NormalizedJsonLd getSpace(Space space, DataStage stage, AuthTokens authTokens) {
+    public Space getSpace(SpaceName space, DataStage stage, AuthTokens authTokens) {
         String relativeUrl = String.format("/%s/spaces/%s", stage.name(), space.getName());
-        return serviceCall.get(BASE_URL + relativeUrl, authTokens, NormalizedJsonLd.class);
+        return Space.fromJsonLd(serviceCall.get(BASE_URL + relativeUrl, authTokens, NormalizedJsonLd.class));
     }
 
 }

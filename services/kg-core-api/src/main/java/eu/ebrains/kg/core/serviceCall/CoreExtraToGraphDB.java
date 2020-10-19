@@ -40,11 +40,11 @@ public class CoreExtraToGraphDB {
 
     private final static String BASE_URL = "http://kg-graphdb-sync/internal/graphdb";
 
-    public List<IndexedJsonLdDoc> getRelatedInstancesByIdentifiers(Space space, String identifier, DataStage stage, AuthTokens authTokens) {
+    public List<IndexedJsonLdDoc> getRelatedInstancesByIdentifiers(SpaceName space, String identifier, DataStage stage, AuthTokens authTokens) {
         return Arrays.stream(serviceCall.get(String.format("%s/%s/instancesByIdentifier/%s?identifier=%s", BASE_URL, stage.name(), space.getName(), identifier), authTokens, NormalizedJsonLd[].class)).map(IndexedJsonLdDoc::from).collect(Collectors.toList());
     }
 
-    public List<String> getDocumentIdsBySpace(Space space, AuthTokens authTokens) {
+    public List<String> getDocumentIdsBySpace(SpaceName space, AuthTokens authTokens) {
         return Arrays.asList(serviceCall.get(String.format("%s/documentIds/%s", BASE_URL, space.getName()), authTokens, String[].class));
     }
 

@@ -22,7 +22,9 @@ import eu.ebrains.kg.arango.commons.aqlBuilder.ArangoVocabulary;
 import eu.ebrains.kg.arango.commons.model.ArangoCollectionReference;
 import eu.ebrains.kg.arango.commons.model.ArangoDocumentReference;
 import eu.ebrains.kg.arango.commons.model.InternalSpace;
+import eu.ebrains.kg.commons.TypeUtils;
 import eu.ebrains.kg.commons.jsonld.IndexedJsonLdDoc;
+import eu.ebrains.kg.commons.jsonld.NormalizedJsonLd;
 import eu.ebrains.kg.commons.model.DataStage;
 import eu.ebrains.kg.commons.semantics.vocabularies.SchemaOrgVocabulary;
 import eu.ebrains.kg.graphdb.commons.controller.ArangoDatabases;
@@ -43,20 +45,21 @@ import java.util.stream.Collectors;
 @Component
 public class StructureTracker {
 
-
     private final ArangoRepositoryCommons arangoRepositoryCommons;
 
     private final ArangoDatabases databases;
 
     private final StaticStructureController staticStructureController;
 
+    private final TypeUtils typeUtils;
+
     private final Logger logger = LoggerFactory.getLogger(getClass());
 
-
-    public StructureTracker(ArangoRepositoryCommons arangoRepositoryCommons, ArangoDatabases databases, StaticStructureController staticStructureController) {
+    public StructureTracker(ArangoRepositoryCommons arangoRepositoryCommons, ArangoDatabases databases, StaticStructureController staticStructureController, TypeUtils typeUtils) {
         this.arangoRepositoryCommons = arangoRepositoryCommons;
         this.databases = databases;
         this.staticStructureController = staticStructureController;
+        this.typeUtils = typeUtils;
     }
 
     public List<DBOperation> createUpsertOperations(DataStage stage, ArangoDocumentReference originalDocumentRef, ArangoDocument arangoDocument) {
@@ -66,7 +69,7 @@ public class StructureTracker {
         logger.debug("Handle updated types");
         allOperations.addAll(handleUpdatedTypes(originalDocumentRef.getArangoCollectionReference(), arangoDocument, stage));
         logger.debug("Add new edges of document contributions");
-        List<DBOperation> newDocumentContributionsToBeAdded = addNewEdgesOfDocumentContributions(originalDocumentRef, arangoInstances, arangoDocument.getDoc().getTypes(), null, true);
+        List<DBOperation> newDocumentContributionsToBeAdded = addNewEdgesOfDocumentContributions(originalDocumentRef, arangoInstances, arangoDocument.getDoc().types(), null, true);
         allOperations.addAll(newDocumentContributionsToBeAdded);
         logger.debug(String.format("Found %d operations for structure", allOperations.size()));
         return allOperations;
@@ -79,7 +82,7 @@ public class StructureTracker {
         List<DBOperation> allOperations = new ArrayList<>();
         //This code assumes that there are no links to embedded instances (which is a general constraint of the graph)
         if (!arangoDocument.asIndexedDoc().isEmbedded()) {
-            List<String> newSpaceTypeIds = arangoDocument.getDoc().getTypes().stream().map(type -> IdFactory.createDocumentRefForSpaceToTypeEdge(collection.getCollectionName(), type).getId()).collect(Collectors.toList());
+            List<String> newSpaceTypeIds = arangoDocument.getDoc().types().stream().map(type -> IdFactory.createDocumentRefForSpaceToTypeEdge(collection.getCollectionName(), type).getId()).collect(Collectors.toList());
             Set<String> existingSpaceTypeIds = findIncomingSpaceTypeIds(arangoDocument.getOriginalDocument(), stage);
             cleanUpRemovedLinks(arangoDocument.getId(), stage, allOperations, newSpaceTypeIds, existingSpaceTypeIds);
             createLinksToNewTypes(arangoDocument.getId(), stage, newSpaceTypeIds, existingSpaceTypeIds, allOperations);
@@ -94,7 +97,7 @@ public class StructureTracker {
             incomingProperties.stream().map(incomingProperty -> {
                 ArangoDocumentReference rootDocumentRef = ArangoDocumentReference.fromArangoId(incomingProperty.getOrigin(), false);
                 ArangoDocument originalDoc = arangoRepositoryCommons.getDocument(stage, rootDocumentRef);
-                List<ArangoInstance> arangoInstances = staticStructureController.ensureStaticPropertyToTypeEdges(stage, rootDocumentRef.getArangoCollectionReference(), targetDocumentRef.getArangoCollectionReference(), incomingProperty.getProperty(), originalDoc.getDoc().getTypes(), spaceTypesToBeLinked, allOperations);
+                List<ArangoInstance> arangoInstances = staticStructureController.ensureStaticPropertyToTypeEdges(stage, rootDocumentRef.getArangoCollectionReference(), targetDocumentRef.getArangoCollectionReference(), incomingProperty.getProperty(), originalDoc.getDoc().types(), spaceTypesToBeLinked, allOperations);
                 allOperations.addAll(addNewEdgesOfDocumentContributions(rootDocumentRef, arangoInstances, incomingProperty.getDocTypes(), targetDocumentRef, false));
                 return arangoInstances;
             }).flatMap(Collection::stream).collect(Collectors.toList());
@@ -121,8 +124,8 @@ public class StructureTracker {
         if(fromDocument.asIndexedDoc().isEmbedded()){
             fromRootDocument = arangoRepositoryCommons.getDocument(stage, fromDocument.getOriginalDocument());
         }
-        List<ArangoInstance> arangoInstances = staticStructureController.ensureStaticPropertyToTypeEdges(stage, fromRootDocument.getId().getArangoCollectionReference(), targetDocument.getId().getArangoCollectionReference(), propertyName, fromRootDocument.getDoc().getTypes(), targetDocument.getDoc().getTypes(), dbOperations);
-        dbOperations.addAll(addNewEdgesOfDocumentContributions(fromRootDocument.getOriginalDocument(), arangoInstances, fromRootDocument.getDoc().getTypes(), targetDocument.getOriginalDocument(), false));
+        List<ArangoInstance> arangoInstances = staticStructureController.ensureStaticPropertyToTypeEdges(stage, fromRootDocument.getId().getArangoCollectionReference(), targetDocument.getId().getArangoCollectionReference(), propertyName, fromRootDocument.getDoc().types(), targetDocument.getDoc().types(), dbOperations);
+        dbOperations.addAll(addNewEdgesOfDocumentContributions(fromRootDocument.getOriginalDocument(), arangoInstances, fromRootDocument.getDoc().types(), targetDocument.getOriginalDocument(), false));
         return dbOperations;
     }
 
@@ -131,11 +134,11 @@ public class StructureTracker {
         List<DBOperation> allOperations = new ArrayList<>();
         ArangoDocument toDocument = arangoRepositoryCommons.getDocument(stage, edge.getTo());
         if (toDocument != null) {
-            List<String> targetTypes = toDocument.getDoc().getTypes();
+            List<String> targetTypes = toDocument.getDoc().types();
             if (types != null) {
                 //Create all edges from document to the structural edges it contributes to.
                 List<ArangoInstance> arangoInstances = staticStructureController.ensureStaticPropertyToTypeEdges(stage, originalDocumentRef.getArangoCollectionReference(), toDocument.getId().getArangoCollectionReference(), edge.getOriginalLabel(), types, targetTypes, allOperations);
-                allOperations.addAll(addNewEdgesOfDocumentContributions(originalDocumentRef, arangoInstances, arangoRepositoryCommons.getDocument(stage, edge.getFrom()).getDoc().getTypes(), toDocument.getOriginalDocument(), true));
+                allOperations.addAll(addNewEdgesOfDocumentContributions(originalDocumentRef, arangoInstances, arangoRepositoryCommons.getDocument(stage, edge.getFrom()).getDoc().types(), toDocument.getOriginalDocument(), true));
             }
         }
         return allOperations;
@@ -160,7 +163,7 @@ public class StructureTracker {
             UUID edgeFromDocId = UUID.randomUUID();
             ArangoDocumentReference edgeDocumentReference = InternalSpace.DOCUMENT_RELATION_EDGE_COLLECTION.doc(edgeFromDocId);
             edgeFromDocumentToStructuralEdge.redefineId(edgeDocumentReference);
-            return new UpsertOperation(rootDocumentRef, edgeFromDocumentToStructuralEdge.dumpPayload(), edgeDocumentReference, true, attachToOriginalDocument);
+            return new UpsertOperation(rootDocumentRef, typeUtils.translate(edgeFromDocumentToStructuralEdge.getPayload(), NormalizedJsonLd.class), edgeDocumentReference, true, attachToOriginalDocument);
         }).collect(Collectors.toList());
     }
 

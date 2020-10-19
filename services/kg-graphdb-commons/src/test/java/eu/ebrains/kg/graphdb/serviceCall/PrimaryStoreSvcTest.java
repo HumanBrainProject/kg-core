@@ -19,7 +19,7 @@ package eu.ebrains.kg.graphdb.serviceCall;
 import eu.ebrains.kg.commons.AuthTokens;
 import eu.ebrains.kg.commons.ServiceCall;
 import eu.ebrains.kg.commons.model.Event;
-import eu.ebrains.kg.commons.model.Space;
+import eu.ebrains.kg.commons.model.SpaceName;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
@@ -32,7 +32,7 @@ public class PrimaryStoreSvcTest {
 
     private static final String BASE_URL = "http://kg-primarystore/internal/primaryStore/events";
 
-    public void postEventWithSpace(Space space, Event payload){
+    public void postEventWithSpace(SpaceName space, Event payload){
         serviceCall.post(String.format("%s/%s", BASE_URL, space.getName()), payload, new AuthTokens(), Void.class);
     }
 

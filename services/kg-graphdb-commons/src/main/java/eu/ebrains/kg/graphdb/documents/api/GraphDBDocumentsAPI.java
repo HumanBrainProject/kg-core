@@ -16,7 +16,8 @@
 
 package eu.ebrains.kg.graphdb.documents.api;
 
-import eu.ebrains.kg.commons.model.Space;
+import eu.ebrains.kg.commons.markers.ExposesIds;
+import eu.ebrains.kg.commons.model.SpaceName;
 import eu.ebrains.kg.graphdb.instances.controller.ArangoRepositoryInstances;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -36,8 +37,9 @@ public class GraphDBDocumentsAPI {
     }
 
     @GetMapping("documentIds/{space}")
+    @ExposesIds
     public List<String> getDocumentIdsBySpace(@PathVariable("space") String space) {
-        return repository.getDocumentIdsBySpace(new Space(space));
+        return repository.getDocumentIdsBySpace(new SpaceName(space));
     }
 
 }

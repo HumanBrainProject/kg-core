@@ -17,19 +17,21 @@
 package eu.ebrains.kg.core.api;
 
 import eu.ebrains.kg.commons.AuthContext;
-import eu.ebrains.kg.commons.ExtraApi;
 import eu.ebrains.kg.commons.Version;
 import eu.ebrains.kg.commons.jsonld.InstanceId;
 import eu.ebrains.kg.commons.jsonld.JsonLdDoc;
 import eu.ebrains.kg.commons.jsonld.NormalizedJsonLd;
+import eu.ebrains.kg.commons.markers.ExposesInputWithoutEnrichedSensitiveData;
+import eu.ebrains.kg.commons.markers.ExposesMinimalData;
+import eu.ebrains.kg.commons.markers.ExposesMinimalUserInfo;
 import eu.ebrains.kg.commons.model.*;
 import eu.ebrains.kg.core.controller.CoreInferenceController;
-import eu.ebrains.kg.core.controller.CoreSpaceController;
 import eu.ebrains.kg.core.model.ExposedStage;
 import eu.ebrains.kg.core.serviceCall.*;
-import io.swagger.annotations.ApiOperation;
+import io.swagger.v3.oas.annotations.Operation;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springdoc.api.annotations.ParameterObject;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -41,7 +43,6 @@ import java.util.UUID;
  */
 @RestController
 @RequestMapping(Version.API)
-@ExtraApi
 public class Extra {
     private final CoreToJsonLd coreToJsonLd;
     private final AuthContext authContext;
@@ -49,74 +50,77 @@ public class Extra {
     private final CoreToIds idsSvc;
     private final CoreExtraToGraphDB graphDB4ExtraSvc;
     private final CoreToAuthentication authenticationSvc;
-    private final CoreSpaceController spaceController;
     private final CoreToAdmin coreToAdmin;
 
     private final Logger logger = LoggerFactory.getLogger(getClass());
 
-    public Extra(CoreToJsonLd coreToJsonLd, AuthContext authContext, CoreInferenceController inferenceController, CoreToIds idsSvc, CoreExtraToGraphDB graphDB4ExtraSvc, CoreToAuthentication authenticationSvc, CoreSpaceController spaceController, CoreToAdmin coreToAdmin) {
+    public Extra(CoreToJsonLd coreToJsonLd, AuthContext authContext, CoreInferenceController inferenceController, CoreToIds idsSvc, CoreExtraToGraphDB graphDB4ExtraSvc, CoreToAuthentication authenticationSvc, CoreToAdmin coreToAdmin) {
         this.coreToJsonLd = coreToJsonLd;
         this.authContext = authContext;
         this.inferenceController = inferenceController;
         this.idsSvc = idsSvc;
         this.graphDB4ExtraSvc = graphDB4ExtraSvc;
         this.authenticationSvc = authenticationSvc;
-        this.spaceController = spaceController;
         this.coreToAdmin = coreToAdmin;
     }
 
-    @ApiOperation("Triggers the inference of all documents of the given space")
+    @Operation(summary = "Triggers the inference of all documents of the given space")
     @PostMapping("/extra/inference/{space}")
     public void triggerInference(@PathVariable(value = "space") String space, @RequestParam(value = "identifier", required = false) String identifier, @RequestParam(value = "async", required = false, defaultValue = "false") boolean async) {
         if (async) {
-            inferenceController.asyncTriggerInference(new Space(space), identifier, authContext.getAuthTokens());
+            inferenceController.asyncTriggerInference(new SpaceName(space), identifier, authContext.getAuthTokens());
         } else {
-            inferenceController.triggerInference(new Space(space), identifier, authContext.getAuthTokens());
+            inferenceController.triggerInference(new SpaceName(space), identifier, authContext.getAuthTokens());
         }
     }
 
-    @ApiOperation("Triggers the inference of all documents which have been tagged to be deferred as part of their creation/contribution")
+    @Operation(summary = "Triggers the inference of all documents which have been tagged to be deferred as part of their creation/contribution")
     @PostMapping("/extra/inference/deferred/{space}")
     public void triggerDeferredInference(@RequestParam(value = "sync", required = false, defaultValue = "false") boolean sync, @PathVariable(value = "space") String space) {
-        inferenceController.triggerDeferredInference(authContext.getAuthTokens(), new Space(space), sync);
+        inferenceController.triggerDeferredInference(authContext.getAuthTokens(), new SpaceName(space), sync);
     }
 
-    @ApiOperation("Normalizes the passed payload according to the EBRAINS KG conventions")
+    @Operation(summary = "Normalizes the passed payload according to the EBRAINS KG conventions")
     @PostMapping("/extra/normalizedPayload")
+    @ExposesInputWithoutEnrichedSensitiveData
     public NormalizedJsonLd normalizePayload(@RequestBody JsonLdDoc payload) {
         return coreToJsonLd.toNormalizedJsonLd(payload);
     }
 
-    @ApiOperation(value = "Returns suggestions for an instance to be linked by the given property (e.g. for the KG Editor)")
+    @Operation(summary = "Returns suggestions for an instance to be linked by the given property (e.g. for the KG Editor)")
     @GetMapping("/extra/instances/{id}/suggestedLinksForProperty")
-    public Result<SuggestionResult> getSuggestedLinksForProperty(@RequestParam("stage") ExposedStage stage, @PathVariable("id") UUID id, @RequestParam(value = "property") String propertyName, @RequestParam(value = "type", required = false) String type, @RequestParam(value = "search", required = false) String search, PaginationParam paginationParam) {
+    @ExposesMinimalData
+    public Result<SuggestionResult> getSuggestedLinksForProperty(@RequestParam("stage") ExposedStage stage, @PathVariable("id") UUID id, @RequestParam(value = "property") String propertyName, @RequestParam(value = "type", required = false) String type, @RequestParam(value = "search", required = false) String search, @ParameterObject PaginationParam paginationParam) {
         return getSuggestedLinksForProperty(null, stage, propertyName, id, type, search, paginationParam);
     }
 
-    @ApiOperation(value = "Returns suggestions for an instance to be linked by the given property (e.g. for the KG Editor) - and takes into account the passed payload (already chosen values, reflection on dependencies between properties - e.g. providing only parcellations for an already chosen brain atlas)")
+    @Operation(summary = "Returns suggestions for an instance to be linked by the given property (e.g. for the KG Editor) - and takes into account the passed payload (already chosen values, reflection on dependencies between properties - e.g. providing only parcellations for an already chosen brain atlas)")
     @PostMapping("/extra/instances/{id}/suggestedLinksForProperty")
-    public Result<SuggestionResult> getSuggestedLinksForProperty(@RequestBody NormalizedJsonLd payload, @RequestParam("stage") ExposedStage stage, @RequestParam(value = "property") String propertyName, @PathVariable("id") UUID id, @RequestParam(value = "type", required = false) String type, @RequestParam(value = "search", required = false) String search, PaginationParam paginationParam) {
+    @ExposesMinimalData
+    public Result<SuggestionResult> getSuggestedLinksForProperty(@RequestBody NormalizedJsonLd payload, @RequestParam("stage") ExposedStage stage, @RequestParam(value = "property") String propertyName, @PathVariable("id") UUID id, @RequestParam(value = "type", required = false) String type, @RequestParam(value = "search", required = false) String search, @ParameterObject PaginationParam paginationParam) {
         InstanceId instanceId = idsSvc.resolveId(DataStage.IN_PROGRESS, id);
         return Result.ok(graphDB4ExtraSvc.getSuggestedLinksForProperty(payload, stage.getStage(), instanceId, id, propertyName, type != null && !type.isBlank() ? new Type(type) : null, search, paginationParam, authContext.getAuthTokens()));
     }
 
-    @ApiOperation("Retrieve user information based on a keycloak attribute (excluding detailed information such as e-mail address)")
+    @Operation(summary = "Retrieve user information based on a keycloak attribute (excluding detailed information such as e-mail address)")
     @GetMapping("/extra/users/byAttribute/{attribute}/{value}")
+    @ExposesMinimalUserInfo
     public ResponseEntity<List<User>> getUsersByAttribute(@PathVariable("attribute") String attribute, @PathVariable("value") String value) {
         List<User> users = authenticationSvc.getUsersByAttribute(attribute, value);
         return users != null ? ResponseEntity.ok(users) : ResponseEntity.notFound().build();
     }
 
-    @ApiOperation("Register a client in EBRAINS KG")
+    @Operation(summary = "Register a client in EBRAINS KG")
     @PutMapping("/extra/clients/{id}")
+    //FIXME: Change return type
     public ResponseEntity<String> addClient(@PathVariable("id") String id) {
         coreToAdmin.addClient(id);
         return ResponseEntity.ok(String.format("Successfully inserted the client with id %s", id));
     }
 
-
-    @ApiOperation("Define a space")
-    @PutMapping("/{space}")
+    @Operation(summary = "Define a space")
+    @PutMapping("/extra/spaces/{space}")
+    @ExposesInputWithoutEnrichedSensitiveData
     public Result<NormalizedJsonLd> defineSpace(@PathVariable(value = "space") String space, @RequestParam("autorelease") boolean autoRelease) {
         return Result.ok(coreToAdmin.addSpace(space, autoRelease).toJsonLd());
     }

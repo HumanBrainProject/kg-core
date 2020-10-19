@@ -60,7 +60,7 @@ public class QueryControllerTest {
     @Autowired
     IdUtils idUtils;
 
-    private final Space space = TestObjectFactory.SIMPSONS;
+    private final SpaceName space = TestObjectFactory.SIMPSONS;
     private final DataStage stage = DataStage.IN_PROGRESS;
     private final ArangoCollectionReference simpsons = ArangoCollectionReference.fromSpace(TestObjectFactory.SIMPSONS);
     private final UserWithRoles userWithRoles = Mockito.mock(UserWithRoles.class);
@@ -150,13 +150,13 @@ public class QueryControllerTest {
     private void prepareHomerMargeAndMaggie() {
         NormalizedJsonLd homer = TestObjectFactory.createJsonLd("simpsons/homer.json");
         ArangoDocumentReference homerDocumentId = todoListProcessor.upsertDocument(simpsons.doc(UUID.randomUUID()), homer, stage, null);
-        idsSvcForTest.upsert(stage, new IdWithAlternatives().setId(homerDocumentId.getDocumentId()).setSpace(TestObjectFactory.SIMPSONS.getName()).setAlternatives(homer.getIdentifiers()));
+        idsSvcForTest.upsert(stage, new IdWithAlternatives().setId(homerDocumentId.getDocumentId()).setSpace(TestObjectFactory.SIMPSONS.getName()).setAlternatives(homer.identifiers()));
         NormalizedJsonLd maggie = TestObjectFactory.createJsonLd("simpsons/maggie.json");
         ArangoDocumentReference maggieDocumentId = todoListProcessor.upsertDocument(simpsons.doc(UUID.randomUUID()), maggie, stage, null);
-        idsSvcForTest.upsert(stage, new IdWithAlternatives().setId(maggieDocumentId.getDocumentId()).setSpace(TestObjectFactory.SIMPSONS.getName()).setAlternatives(maggie.getIdentifiers()));
+        idsSvcForTest.upsert(stage, new IdWithAlternatives().setId(maggieDocumentId.getDocumentId()).setSpace(TestObjectFactory.SIMPSONS.getName()).setAlternatives(maggie.identifiers()));
         NormalizedJsonLd marge = TestObjectFactory.createJsonLd("simpsons/marge.json");
         ArangoDocumentReference margeDocumentId = todoListProcessor.upsertDocument(simpsons.doc(UUID.randomUUID()), marge, stage, null);
-        idsSvcForTest.upsert(stage, new IdWithAlternatives().setId(margeDocumentId.getDocumentId()).setSpace(TestObjectFactory.SIMPSONS.getName()).setAlternatives(marge.getIdentifiers()));
+        idsSvcForTest.upsert(stage, new IdWithAlternatives().setId(margeDocumentId.getDocumentId()).setSpace(TestObjectFactory.SIMPSONS.getName()).setAlternatives(marge.identifiers()));
     }
 
 

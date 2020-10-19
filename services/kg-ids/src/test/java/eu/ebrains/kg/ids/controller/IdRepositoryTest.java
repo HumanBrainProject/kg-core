@@ -17,13 +17,13 @@
 package eu.ebrains.kg.ids.controller;
 
 import com.arangodb.ArangoCollection;
-import com.google.gson.Gson;
 import eu.ebrains.kg.arango.commons.model.ArangoDatabaseProxy;
 import eu.ebrains.kg.commons.IdUtils;
 import eu.ebrains.kg.commons.jsonld.JsonLdId;
 import eu.ebrains.kg.commons.model.DataStage;
-import eu.ebrains.kg.commons.model.Space;
+import eu.ebrains.kg.commons.model.SpaceName;
 import eu.ebrains.kg.ids.model.PersistedId;
+import eu.ebrains.kg.test.JsonAdapter4Test;
 import org.junit.Assert;
 import org.junit.Test;
 import org.mockito.Mockito;
@@ -41,29 +41,29 @@ public class IdRepositoryTest {
     public void upsertWithMerge() {
         //Given
         String namespace = "http://test/";
-        Space foo = new Space("foo");
+        SpaceName foo = new SpaceName("foo");
         IdUtils idUtils = new IdUtils(namespace);
 
-        IdRepository idRepository = Mockito.spy(new IdRepository(Mockito.mock(ArangoDatabaseProxy.class), new Gson(), idUtils));
+        IdRepository idRepository = Mockito.spy(new IdRepository(Mockito.mock(ArangoDatabaseProxy.class), new JsonAdapter4Test(), idUtils));
         ArangoCollection collection = Mockito.mock(ArangoCollection.class);
         Mockito.doReturn(collection).when(idRepository).getOrCreateCollection(Mockito.any());
 
         //We start with two instances in the "database": the first doc with one alternative...
         PersistedId existingPersistedId = new PersistedId();
-        existingPersistedId.setId(UUID.randomUUID());
-        existingPersistedId.setSpace(new Space("foo"));
+        existingPersistedId.setUUID(UUID.randomUUID());
+        existingPersistedId.setSpace(new SpaceName("foo"));
         existingPersistedId.setAlternativeIds(new HashSet<>(Arrays.asList("http://bar/foo")));
         Mockito.doReturn(existingPersistedId).when(collection).getDocument(Mockito.any(), Mockito.any());
 
         //And a second mimicked one
         PersistedId secondId = new PersistedId();
-        secondId.setId(UUID.randomUUID());
-        String secondAbsoluteId = idUtils.buildAbsoluteUrl(secondId.getId()).getId();
-        Mockito.doReturn(true).when(collection).documentExists(Mockito.eq(secondId.getId().toString()));
+        secondId.setUUID(UUID.randomUUID());
+        String secondAbsoluteId = idUtils.buildAbsoluteUrl(secondId.getUUID()).getId();
+        Mockito.doReturn(true).when(collection).documentExists(Mockito.eq(secondId.getUUID().toString()));
 
         //We now update the first one: We introduce a link between the two instances and don't provide the previous alternative identifier anymore
         PersistedId newPersistedId = new PersistedId();
-        newPersistedId.setId(existingPersistedId.getId());
+        newPersistedId.setUUID(existingPersistedId.getUUID());
         newPersistedId.setAlternativeIds(new HashSet<>(Arrays.asList(secondAbsoluteId)));
 
         //When
@@ -74,9 +74,9 @@ public class IdRepositoryTest {
         //We assume the second doc id to be registered as a "mergedId"...
         assertEquals(secondAbsoluteId, mergedIds.get(0).getId());
         //... it also should have been removed from the id database
-        Mockito.verify(collection, Mockito.times(1)).deleteDocument(Mockito.eq(secondId.getId().toString()));
+        Mockito.verify(collection, Mockito.times(1)).deleteDocument(Mockito.eq(secondId.getUUID().toString()));
         //... and the update should have been added to the database
-        Mockito.verify(collection, Mockito.times(1)).insertDocument(Mockito.eq(new Gson().toJson(newPersistedId)), Mockito.any());
+        Mockito.verify(collection, Mockito.times(1)).insertDocument(Mockito.eq(new JsonAdapter4Test().toJson(newPersistedId)), Mockito.any());
         //Also, the new persisted id should now contain some alternativeIds
         Assert.assertEquals(2, newPersistedId.getAlternativeIds().size());
         //... the old identifier should be kept although it's not there anymore...
