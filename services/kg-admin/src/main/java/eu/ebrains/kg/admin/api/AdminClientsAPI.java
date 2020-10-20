@@ -43,12 +43,12 @@ public class AdminClientsAPI {
 
     @Operation(summary = "Register a client in EBRAINS KG")
     @PutMapping("/{id}")
-    public ResponseEntity<String> addClient(@PathVariable("id") String id) {
+    public ResponseEntity<Client> addClient(@PathVariable("id") String id) {
         try {
             Client client = new Client(id);
             spaceController.createSpace(client.getSpace(), false);
             authenticationSvc.registerClient(client);
-            return ResponseEntity.ok(String.format("Successfully inserted the client with id %s", id));
+            return ResponseEntity.status(HttpStatus.CREATED).body(client);
         } catch (ArangoDBException ex) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
         }
@@ -58,12 +58,12 @@ public class AdminClientsAPI {
 
     @Operation(summary = "Remove a registered client")
     @DeleteMapping("/{id}")
-    public ResponseEntity<String> deleteClient(@PathVariable("id") String id) {
+    public ResponseEntity<Client> deleteClient(@PathVariable("id") String id) {
         try {
             Client client = new Client(id);
             spaceController.removeSpace(client.getSpace().getName());
             authenticationSvc.unregisterClient(id);
-            return ResponseEntity.ok(String.format("Successfully deleted the client with id %s", id));
+            return ResponseEntity.ok(client);
         } catch (ArangoDBException ex) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
         }

@@ -32,6 +32,7 @@ import io.swagger.v3.oas.annotations.Operation;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springdoc.api.annotations.ParameterObject;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -112,10 +113,9 @@ public class Extra {
 
     @Operation(summary = "Register a client in EBRAINS KG")
     @PutMapping("/extra/clients/{id}")
-    //FIXME: Change return type
-    public ResponseEntity<String> addClient(@PathVariable("id") String id) {
-        coreToAdmin.addClient(id);
-        return ResponseEntity.ok(String.format("Successfully inserted the client with id %s", id));
+    public ResponseEntity<Client> addClient(@PathVariable("id") String id) {
+        Client client = coreToAdmin.addClient(id);
+        return ResponseEntity.status(HttpStatus.CREATED).body(client);
     }
 
     @Operation(summary = "Define a space")

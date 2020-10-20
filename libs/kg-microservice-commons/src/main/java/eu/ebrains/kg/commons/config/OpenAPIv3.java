@@ -25,6 +25,7 @@ import io.swagger.v3.oas.models.security.OAuthFlow;
 import io.swagger.v3.oas.models.security.OAuthFlows;
 import io.swagger.v3.oas.models.security.SecurityRequirement;
 import io.swagger.v3.oas.models.security.SecurityScheme;
+import io.swagger.v3.oas.models.servers.Server;
 import org.springdoc.core.GroupedOpenApi;
 import org.springdoc.core.customizers.OpenApiCustomiser;
 import org.springframework.beans.factory.annotation.Value;
@@ -33,10 +34,10 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 import java.util.Arrays;
+import java.util.Collections;
 
 @Configuration
 public class OpenAPIv3 {
-
 
     @Bean
     public GroupedOpenApi coreApi() {
@@ -74,7 +75,7 @@ public class OpenAPIv3 {
 
 
     @Bean
-    public OpenAPI customOpenAPI(@Value("${spring.application.name}") String applicationName, @Value("${eu.ebrains.kg.login.endpoint}") String loginEndpoint, @Value("${eu.ebrains.kg.api.basePath}") String basePath, @Value("${eu.ebrains.kg.api.versioned}") boolean versioned) {
+    public OpenAPI customOpenAPI(@Value("${spring.application.name}") String applicationName, @Value("${eu.ebrains.kg.login.endpoint}") String loginEndpoint, @Value("${eu.ebrains.kg.api.basePath}") String basePath, @Value("${eu.ebrains.kg.api.versioned}") boolean versioned, @Value("${eu.ebrains.kg.server}") String server) {
         SecurityScheme clientId = new SecurityScheme().name("Client ID").type(SecurityScheme.Type.APIKEY).in(SecurityScheme.In.HEADER).name("Client-Id").description("The client-id for the proxied client-authentication. To be provided with \"client-secret\" and either \"client-serviceAccount-secret\" or the \"user-token\"");
         SecurityScheme clientSecret = new SecurityScheme().name("clientSecret").type(SecurityScheme.Type.APIKEY).in(SecurityScheme.In.HEADER).name("Client-Secret").description("The client-secret for the proxied client-authentication. To be provided with \"client-id\" and either \"client-serviceAccount-secret\" or the \"user-token\"");
         SecurityScheme clientServiceAccountSecret = new SecurityScheme().name("clientServiceAccountSecret").type(SecurityScheme.Type.APIKEY).in(SecurityScheme.In.HEADER).name("Client-ServiceAccount-Secret").description("Provide the client-secret a second time to authenticate as the service account with the full authentication mechanisms. To be provided with \"client-id\" and \"client-secret\"");
@@ -85,8 +86,11 @@ public class OpenAPIv3 {
         OAuthFlow oAuthFlow = new OAuthFlow();
         oAuthFlow.authorizationUrl(loginEndpoint);
         SecurityScheme userToken = new SecurityScheme().name("userToken").type(SecurityScheme.Type.OAUTH2).flows(new OAuthFlows().implicit(oAuthFlow)).description("The browser-based user authentication.");
-
-        return new OpenAPI().openapi("3.0.3").info(new Info().version(Version.API).title(String.format("This is the %s API", applicationName)).license(new License().name("Apache 2.0").url("https://www.apache.org/licenses/LICENSE-2.0.html")).termsOfService("https://kg.ebrains.eu/search-terms-of-use.html")).components(new Components()).schemaRequirement("clientId", clientId).schemaRequirement("clientSecret", clientSecret).schemaRequirement("clientServiceAccountSecret", clientServiceAccountSecret).schemaRequirement("clientToken", clientToken).schemaRequirement("userToken", userToken)
+        OpenAPI openapi = new OpenAPI().openapi("3.0.3");
+        Server srvr = new Server();
+        srvr.setUrl(server);
+        openapi.servers(Collections.singletonList(srvr));
+        return openapi.info(new Info().version(Version.API).title(String.format("This is the %s API", applicationName)).license(new License().name("Apache 2.0").url("https://www.apache.org/licenses/LICENSE-2.0.html")).termsOfService("https://kg.ebrains.eu/search-terms-of-use.html")).components(new Components()).schemaRequirement("clientId", clientId).schemaRequirement("clientSecret", clientSecret).schemaRequirement("clientServiceAccountSecret", clientServiceAccountSecret).schemaRequirement("clientToken", clientToken).schemaRequirement("userToken", userToken)
                 .security(Arrays.asList(clientTokenReq, clientSecretUserReq, clientSecretSaReq));
     }
 }
