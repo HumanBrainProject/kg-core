@@ -47,21 +47,21 @@ public class AdminSpacesAPI {
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<String> deleteSpace(@PathVariable("id") String id) {
+    public ResponseEntity<Void> deleteSpace(@PathVariable("id") String id) {
         try {
             spaceController.removeSpace(new SpaceName(id));
-            return ResponseEntity.ok(String.format("Successfully removed space %s", id));
+            return ResponseEntity.status(HttpStatus.OK).build();
         } catch (ArangoDBException ex) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
         }
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<String> addSpace(@PathVariable("id") String id, @RequestParam("autorelease") boolean autoRelease) {
+    public ResponseEntity<Space> addSpace(@PathVariable("id") String id, @RequestParam("autorelease") boolean autoRelease) {
         try {
             Space space = new Space(new SpaceName(id), autoRelease);
             spaceController.createSpace(space, true);
-            return ResponseEntity.ok(String.format("Successfully created space %s", space));
+            return ResponseEntity.ok(space);
         } catch (ArangoDBException ex) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
         }

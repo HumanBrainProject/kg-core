@@ -21,15 +21,15 @@ import eu.ebrains.kg.commons.jsonld.JsonLdId;
 import eu.ebrains.kg.commons.jsonld.NormalizedJsonLd;
 import eu.ebrains.kg.commons.model.*;
 import eu.ebrains.kg.commons.models.UserWithRoles;
+import eu.ebrains.kg.commons.permission.roles.Role;
 import eu.ebrains.kg.commons.permission.roles.RoleMapping;
 import eu.ebrains.kg.commons.serviceCall.ToAuthentication;
 import org.junit.Assert;
 import org.mockito.Mockito;
 import org.springframework.http.ResponseEntity;
 
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
+import java.util.*;
+import java.util.stream.Collectors;
 
 import static org.springframework.util.Assert.*;
 
@@ -46,15 +46,19 @@ public abstract class AbstractTest {
     private final static List<String> ADMIN_ROLE = Collections.singletonList(RoleMapping.ADMIN.toRole(null).getName());
     private final static List<String> ADMIN_CLIENT_ROLE = Arrays.asList(RoleMapping.ADMIN.toRole(null).getName(), RoleMapping.IS_CLIENT.toRole(null).getName());
 
-    private RoleMapping currentRole;
+    private List<Role> currentRoles;
     private final ToAuthentication authenticationSvc;
-    private final RoleMapping[] roles;
+    private final Collection<List<Role>> roleCollections;
     private final ArangoDB.Builder database;
 
-    public AbstractTest(ArangoDB.Builder database, ToAuthentication authenticationSvc, RoleMapping[] roles) {
+    public AbstractTest(ArangoDB.Builder database, ToAuthentication authenticationSvc, RoleMapping[] roleMappings) {
+        this(database, authenticationSvc, Arrays.stream(roleMappings).map(r -> Collections.singletonList(r.toRole(null))).collect(Collectors.toSet()));
+    }
+
+    public AbstractTest(ArangoDB.Builder database, ToAuthentication authenticationSvc, Collection<List<Role>> roleCollections) {
         this.authenticationSvc = authenticationSvc;
         this.database = database;
-        this.roles = roles;
+        this.roleCollections = roleCollections;
     }
 
     protected void beAdmin() {
@@ -64,20 +68,20 @@ public abstract class AbstractTest {
     }
 
     protected void beInCurrentRole() {
-        if (currentRole == null) {
+        if (currentRoles == null || currentRoles.isEmpty()) {
             beUnauthorized();
-        } else if (currentRole == RoleMapping.ADMIN) {
+        } else if (currentRoles.size()==1 && currentRoles.get(0).equals(RoleMapping.ADMIN.toRole(null))) {
             beAdmin();
         } else {
-            User user = new User("alice" + currentRole.getName(), "Alice " + currentRole.getName(), "fake" + currentRole.getName() + "@ebrains.eu", "Alice ", currentRole.getName(), currentRole.getName());
-            UserWithRoles userWithRoles = new UserWithRoles(user, Collections.singletonList(currentRole.toRole(null).getName()), ADMIN_CLIENT_ROLE, "testClient");
+            User user = new User("alice", "Alice ", "fakeAlice@ebrains.eu", "Alice", "User", "alice");
+            UserWithRoles userWithRoles = new UserWithRoles(user, currentRoles.stream().filter(Objects::nonNull).map(Role::getName).collect(Collectors.toList()), ADMIN_CLIENT_ROLE, "testClient");
             Mockito.doAnswer(a -> userWithRoles).when(authenticationSvc).getUserWithRoles();
         }
     }
 
     protected void beUnauthorized() {
         User user = new User("joeCantDoAThing", "Joe Cant Do A Thing", "fakeUnauthorized@ebrains.eu", "Joe Cant Do A", "Thing", "unauthorized");
-        //It's the user not having any rights - the client is still the same with full rights
+        //It's the user not having any righexts - the client is still the same with full rights
         UserWithRoles userWithRoles = new UserWithRoles(user, Collections.emptyList(), ADMIN_CLIENT_ROLE, "testClient");
         Mockito.doAnswer(a -> userWithRoles).when(authenticationSvc).getUserWithRoles();
     }
@@ -95,8 +99,8 @@ public abstract class AbstractTest {
     }
 
     private void execute(Assertion assertion, Class<? extends Exception> expectedException) {
-        for (RoleMapping role : roles) {
-            currentRole = role;
+        for (List<Role> roles : roleCollections) {
+            currentRoles = roles;
             clearDatabase();
             beAdmin();
             setup();
@@ -111,7 +115,7 @@ public abstract class AbstractTest {
                 }
             } catch (Exception e) {
                 if(!e.getClass().equals(expectedException)){
-                    throw new RuntimeException(String.format("Failing test with role %s", currentRole), e);
+                    throw new RuntimeException(String.format("Failing test with role %s", currentRoles), e);
                 }
             }
         }

@@ -31,7 +31,7 @@ public class CreateInstanceTest extends AbstractInstanceTest {
     public JsonLdDoc testData = TestDataFactory.createTestData(smallPayload, 1, true);
     public ResponseEntity<Result<NormalizedJsonLd>> response;
 
-    public CreateInstanceTest(ArangoDB.Builder database, ToAuthentication authenticationSvc, Instances instances, RoleMapping... roles) {
+    public CreateInstanceTest(ArangoDB.Builder database, ToAuthentication authenticationSvc, Instances instances, RoleMapping[] roles) {
         super(database, authenticationSvc, instances, roles);
     }
 
