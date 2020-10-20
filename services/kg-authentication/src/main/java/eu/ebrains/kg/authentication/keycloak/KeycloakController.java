@@ -200,25 +200,38 @@ public class KeycloakController {
         keycloakClient.syncKgScopeWithKgRoles();
     }
 
+    private final int maxTries = 10;
+
+    private void retryConnectingToKeycloak(int connectionTry){
+        if(config.getKgCoreClientSecret()==null || config.getKgCoreClientSecret().isBlank()){
+            logger.error("You haven't provided the kg-core client secret. If this is a new installation, you should consider executing the setup api");
+        }
+        else {
+            if (maxTries > connectionTry) {
+                try {
+                    keycloakClient.ensureDefaultClientAndGlobalRolesInKeycloak();
+                } catch (ProcessingException ex) {
+                    if (ex.getCause() instanceof NotAuthorizedException) {
+                        logger.error("The registered kg-core keycloak account is not authorized. Please make sure, you have the right credential (if this is a new installation, you should consider executing the setup api) ");
+                    } else {
+                        try {
+                            logger.warn("Was not able to connect to keycloak - trying again in 5 secs...");
+                            Thread.sleep(5000);
+                            retryConnectingToKeycloak(connectionTry + 1);
+                        } catch (InterruptedException e) {
+                            e.printStackTrace();
+                        }
+                    }
+                }
+            } else {
+                logger.error(String.format("Gave up to connect to Keycloak after %d attempts - maybe the authentication system is not properly set up", maxTries));
+            }
+        }
+    }
+
     @PostConstruct
     public void setup() {
-        try {
-            keycloakClient.ensureDefaultClientAndGlobalRolesInKeycloak();
-        }
-        catch (ProcessingException ex) {
-            if (ex.getCause() instanceof NotAuthorizedException){
-                logger.error("The registered kg-core keycloak account is not authorized. Please make sure, you have the right credential (if this is a new installation, you should consider executing the setup api) ");
-            }
-            else {
-                try {
-                    logger.warn("Was not able to connect to keycloak - trying again in 5 secs...");
-                    Thread.sleep(5000);
-                    setup();
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
-            }
-        }
+        retryConnectingToKeycloak(0);
         loadOpenIdConfig();
     }
 

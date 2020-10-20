@@ -36,10 +36,7 @@ import org.springframework.web.reactive.function.client.WebClient;
 import javax.ws.rs.ForbiddenException;
 import javax.ws.rs.NotFoundException;
 import javax.ws.rs.core.Response;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -141,6 +138,7 @@ public class KeycloakClient {
             clientRepresentation.setPublicClient(true);
             getClientResource().addDefaultClientScope(clientScope.getId());
             Map<String, String> attributes = new HashMap<>();
+            attributes.put("display.on.consent.screen", "true");
             attributes.put("access.token.lifespan", "1800");
             attributes.put("consent.screen.text", "By using the EBRAINS Knowledge Graph, you agree to the according terms of use available at https://kg.ebrains.eu/search-terms-of-use.html");
             clientRepresentation.setAttributes(attributes);
@@ -171,7 +169,12 @@ public class KeycloakClient {
         attrs.put("consent.screen.text", "You agree to share user information (user name, family and given name as well as your e-mail address) with the EBRAINS KG");
         clientScope.setAttributes(attrs);
         String roleMapperName = "client roles";
-        ProtocolMapperRepresentation mapper = clientScope.getProtocolMappers().stream().filter(p -> p.getName().equals(roleMapperName)).findFirst().orElse(null);
+        List<ProtocolMapperRepresentation> protocolMappers = clientScope.getProtocolMappers();
+        if(protocolMappers==null){
+            protocolMappers = new ArrayList<>();
+            clientScope.setProtocolMappers(protocolMappers);
+        }
+        ProtocolMapperRepresentation mapper = protocolMappers.stream().filter(p -> p.getName().equals(roleMapperName)).findFirst().orElse(null);
         if(mapper == null){
             mapper = new ProtocolMapperRepresentation();
         }
@@ -199,7 +202,8 @@ public class KeycloakClient {
         }
         clientScope = getKgClientScope();
         if ( clientScope != null) {
-            List<String> existingMappers = clientScope.getProtocolMappers().stream().map(ProtocolMapperRepresentation::getName).collect(Collectors.toList());
+            List<ProtocolMapperRepresentation> reloadedProtocolMappers = clientScope.getProtocolMappers();
+            List<String> existingMappers = reloadedProtocolMappers==null ? new ArrayList<>() : reloadedProtocolMappers.stream().map(ProtocolMapperRepresentation::getName).collect(Collectors.toList());
             List<String> builtinProtocolMappers = Stream.of("given name", "full name", "family name", "email", "username").filter(l -> !existingMappers.contains(l)).collect(Collectors.toList());
             List<ProtocolMapperRepresentation> mappers = kgKeycloak.serverInfo().getInfo().getBuiltinProtocolMappers().get("openid-connect").stream().filter(p -> builtinProtocolMappers.contains(p.getName())).collect(Collectors.toList());
             getRealmResource().clientScopes().get(clientScope.getId()).getProtocolMappers().createMapper(mappers);
