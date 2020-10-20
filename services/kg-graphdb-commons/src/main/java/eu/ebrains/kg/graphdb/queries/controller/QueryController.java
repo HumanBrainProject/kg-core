@@ -22,8 +22,7 @@ import com.arangodb.entity.CollectionType;
 import com.arangodb.model.AqlQueryOptions;
 import eu.ebrains.kg.arango.commons.model.AQLQuery;
 import eu.ebrains.kg.arango.commons.model.ArangoCollectionReference;
-import eu.ebrains.kg.commons.AuthContext;
-import eu.ebrains.kg.commons.IdUtils;
+import eu.ebrains.kg.arango.commons.model.InternalSpace;
 import eu.ebrains.kg.commons.jsonld.NormalizedJsonLd;
 import eu.ebrains.kg.commons.model.EntityId;
 import eu.ebrains.kg.commons.model.Paginated;
@@ -32,6 +31,7 @@ import eu.ebrains.kg.commons.models.UserWithRoles;
 import eu.ebrains.kg.commons.query.KgQuery;
 import eu.ebrains.kg.graphdb.commons.controller.ArangoDatabases;
 import eu.ebrains.kg.graphdb.commons.controller.ArangoRepositoryCommons;
+import eu.ebrains.kg.graphdb.commons.controller.ArangoUtils;
 import eu.ebrains.kg.graphdb.commons.controller.PermissionsController;
 import eu.ebrains.kg.graphdb.queries.model.spec.Specification;
 import org.slf4j.Logger;
@@ -53,19 +53,17 @@ public class QueryController {
 
     private final ArangoRepositoryCommons arangoRepositoryCommons;
     private final PermissionsController permissionsController;
-    private final AuthContext authContext;
 
     private final ArangoDatabases arangoDatabases;
 
-    private final IdUtils idUtils;
+    private final ArangoUtils arangoUtils;
 
-    public QueryController(SpecificationInterpreter specificationInterpreter, ArangoDatabases arangoDatabases, IdUtils idUtils, ArangoRepositoryCommons arangoRepositoryCommons, PermissionsController permissionsController, AuthContext authContext) {
+    public QueryController(SpecificationInterpreter specificationInterpreter, ArangoDatabases arangoDatabases, ArangoRepositoryCommons arangoRepositoryCommons, PermissionsController permissionsController, ArangoUtils arangoUtils) {
         this.specificationInterpreter = specificationInterpreter;
         this.arangoDatabases = arangoDatabases;
-        this.idUtils = idUtils;
+        this.arangoUtils = arangoUtils;
         this.arangoRepositoryCommons = arangoRepositoryCommons;
         this.permissionsController = permissionsController;
-        this.authContext = authContext;
     }
 
 
@@ -76,6 +74,8 @@ public class QueryController {
             specification = new SpecificationToScopeQueryAdapter(specification).translate();
         }
         Map<String, Object> whitelistFilter = permissionsController.whitelistFilterForReadInstances(userWithRoles, query.getStage());
+        arangoUtils.getOrCreateArangoCollection(database, ArangoCollectionReference.fromSpace(InternalSpace.TYPE_SPACE));
+        arangoUtils.getOrCreateArangoCollection(database, InternalSpace.TYPE_EDGE_COLLECTION);
         AQLQuery aql = new DataQueryBuilder(specification, paginationParam, whitelistFilter, filterValues, database.getCollections().stream().map(c -> new ArangoCollectionReference(c.getName(), c.getType() == CollectionType.EDGES)).collect(Collectors.toList())).build();
         aql.addBindVar("idRestriction", query.getIdRestrictions() == null ? Collections.emptyList() : query.getIdRestrictions().stream().map(EntityId::getId).collect(Collectors.toList()));
         try {
