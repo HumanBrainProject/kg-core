@@ -42,7 +42,7 @@
         <docker.image.prefix>registry.humanbrainproject.org/humanbrainproject/kg-core</docker.image.prefix>
         <spring-webflux.version>2.3.4.RELEASE</spring-webflux.version>
         <java.version>11</java.version>
-        <spring-cloud.version>Greenwich.SR1</spring-cloud.version>
+        <spring-cloud.version>Hoxton.SR8</spring-cloud.version>
     </properties>
 
     <dependencyManagement>
