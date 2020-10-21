@@ -52,7 +52,7 @@ public abstract class AbstractTest {
     private final ArangoDB.Builder database;
 
     public AbstractTest(ArangoDB.Builder database, ToAuthentication authenticationSvc, RoleMapping[] roleMappings) {
-        this(database, authenticationSvc, Arrays.stream(roleMappings).map(r -> Collections.singletonList(r.toRole(null))).collect(Collectors.toSet()));
+        this(database, authenticationSvc, Arrays.stream(roleMappings).filter(Objects::nonNull).map(r -> Collections.singletonList(r.toRole(null))).collect(Collectors.toSet()));
     }
 
     public AbstractTest(ArangoDB.Builder database, ToAuthentication authenticationSvc, Collection<List<Role>> roleCollections) {

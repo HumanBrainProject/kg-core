@@ -207,6 +207,7 @@ public class ArangoRepositoryTypes {
         if(withProperties){
             aql.addLine(AQL.trust("LET globalPropertyDefinitionsByType = (FOR prop IN 1..1 OUTBOUND type @@globalType"));
             bindVars.put("@globalType", InternalSpace.GLOBAL_TYPE_TO_PROPERTY_EDGE_COLLECTION.getCollectionName());
+            aql.addLine(AQL.trust("FILTER prop.`"+SchemaOrgVocabulary.IDENTIFIER+"` != null"));
             aql.addLine(AQL.trust("RETURN prop.`"+SchemaOrgVocabulary.IDENTIFIER+"`)"));
         }
         aql.addLine(AQL.trust("LET globalTypeDef = ("));
