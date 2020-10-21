@@ -26,8 +26,10 @@ import eu.ebrains.kg.core.api.Instances;
 import eu.ebrains.kg.core.api.Queries;
 import eu.ebrains.kg.core.api.queries.tests.TestSimpleQueryTest;
 import eu.ebrains.kg.core.model.ExposedStage;
+import eu.ebrains.kg.testutils.APITest;
 import eu.ebrains.kg.testutils.AbstractFunctionalityTest;
 import org.junit.Test;
+import org.junit.experimental.categories.Category;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import java.io.IOException;
@@ -40,8 +42,7 @@ import java.util.stream.Stream;
 
 import static org.junit.Assert.*;
 
-//FIXME check what is wrong with those tests in CI
-//@Category(APITest.class)
+@Category(APITest.class)
 public class QueriesTest extends AbstractFunctionalityTest {
 
     @Autowired
