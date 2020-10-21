@@ -204,6 +204,11 @@ public class ArangoRepositoryTypes {
         aql.outdent().addLine(AQL.trust(")"));
         bindVars.put("@typeDefinition", ArangoCollectionReference.fromSpace(new SpaceName(EBRAINSVocabulary.META_TYPE)).getCollectionName());
         aql.addNewline();
+        if(withProperties){
+            aql.addLine(AQL.trust("LET globalPropertyDefinitionsByType = (FOR prop IN 1..1 OUTBOUND type @@globalType"));
+            bindVars.put("@globalType", InternalSpace.GLOBAL_TYPE_TO_PROPERTY_EDGE_COLLECTION.getCollectionName());
+            aql.addLine(AQL.trust("RETURN prop.`"+SchemaOrgVocabulary.IDENTIFIER+"`)"));
+        }
         aql.addLine(AQL.trust("LET globalTypeDef = ("));
         aql.addLine(AQL.trust("FOR g IN 1..1 INBOUND type @@typeDefinition"));
         aql.indent().addLine(AQL.trust("FILTER IS_SAME_COLLECTION(@globalSpace, g._id)"));
@@ -223,7 +228,7 @@ public class ArangoRepositoryTypes {
         if (withProperties) {
             aql.indent();
             aql.addComment("We want to know about the properties existing for this type in this space...");
-            aql.addLine(AQL.trust("LET properties = (FOR spaceType2property, spaceType2propertyEdge IN 1..1 OUTBOUND space2type @@typeToProperty"));
+            aql.addLine(AQL.trust("LET propertiesByReflection = (FOR spaceType2property, spaceType2propertyEdge IN 1..1 OUTBOUND space2type @@typeToProperty"));
             bindVars.put("@typeToProperty", InternalSpace.TYPE_TO_PROPERTY_EDGE_COLLECTION.getCollectionName());
             if (withCount) {
                 aql.addComment("To be able to count the occurrences of the property, we need to find the contributing documents");
@@ -294,6 +299,19 @@ public class ArangoRepositoryTypes {
             aql.outdent();
             aql.addLine(AQL.trust(")"));
             aql.addNewline();
+
+            aql.addComment("Since the above information is all reflected on the data, it could still happen that some properties are not shown because they are specified and are not used (yet) -> contract first. Let's add those.");
+            aql.addLine(AQL.trust("LET missingProperties = (FOR missingProp IN REMOVE_VALUES(globalPropertyDefinitionsByType, (FOR p IN propertiesByReflection RETURN p.`"+SchemaOrgVocabulary.IDENTIFIER+"`))"));
+            aql.addLine(AQL.trust("RETURN {"));
+            aql.addLine(AQL.trust("\"_tempSpace\": space.`"+SchemaOrgVocabulary.IDENTIFIER+"`,"));
+            aql.addLine(AQL.trust("\""+SchemaOrgVocabulary.IDENTIFIER+"\": missingProp"));
+            if (withCount) {
+                aql.addLine(AQL.trust(", \"" + EBRAINSVocabulary.META_OCCURRENCES + "\": 0,"));
+                aql.addLine(AQL.trust("\"" + EBRAINSVocabulary.META_PROPERTY_TARGET_TYPES + "\": []"));
+            }
+            aql.addLine(AQL.trust("})"));
+            aql.addNewline();
+            aql.addLine(AQL.trust("LET properties = APPEND(propertiesByReflection, missingProperties)"));
         }
         if (withCount) {
             aql.addComment("We now are combining the type in space information (such as occurrences)");
@@ -331,7 +349,6 @@ public class ArangoRepositoryTypes {
             aql.addComment("... and we collect the specifications on the global (space-independent) level which can either be client&type specific, client-only specific, type-only specific or global");
             aql.indent();
 
-            bindVars.put("@globalType", InternalSpace.GLOBAL_TYPE_TO_PROPERTY_EDGE_COLLECTION.getCollectionName());
             aql.addLine(AQL.trust("LET globalTypeProperties = (FOR g, gRel IN 1..1 INBOUND property @@globalType"));
             aql.addLine(AQL.trust("FILTER g.`" + SchemaOrgVocabulary.IDENTIFIER + "`==type.`" + SchemaOrgVocabulary.IDENTIFIER + "`"));
             aql.addLine(AQL.trust("RETURN gRel)"));

@@ -21,23 +21,30 @@ import eu.ebrains.kg.arango.commons.model.ArangoDocumentReference;
 import eu.ebrains.kg.arango.commons.model.InternalSpace;
 import eu.ebrains.kg.commons.TypeUtils;
 import eu.ebrains.kg.commons.jsonld.JsonLdId;
+import eu.ebrains.kg.commons.jsonld.NormalizedJsonLd;
 import eu.ebrains.kg.commons.model.DataStage;
 import eu.ebrains.kg.commons.model.SpaceName;
 import eu.ebrains.kg.commons.semantics.vocabularies.EBRAINSVocabulary;
+import eu.ebrains.kg.graphdb.commons.controller.ArangoDatabases;
 import eu.ebrains.kg.graphdb.commons.model.ArangoDocument;
+import eu.ebrains.kg.graphdb.commons.model.MetaRepresentation;
 import eu.ebrains.kg.graphdb.ingestion.controller.structure.StaticStructureController;
 import eu.ebrains.kg.graphdb.ingestion.model.DBOperation;
+import eu.ebrains.kg.graphdb.ingestion.model.UpsertOperation;
 import org.springframework.stereotype.Component;
 
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 
 @Component
 public class PropertyDefinitionSemanticsHandler extends SemanticsHandler {
+    private final ArangoDatabases databases;
 
-    public PropertyDefinitionSemanticsHandler(TypeUtils typeUtils) {
+    public PropertyDefinitionSemanticsHandler(TypeUtils typeUtils, ArangoDatabases databases) {
         super(typeUtils);
+        this.databases = databases;
     }
 
     @Override
@@ -45,8 +52,12 @@ public class PropertyDefinitionSemanticsHandler extends SemanticsHandler {
         if (document.getDoc().types() != null && document.getDoc().types().contains(EBRAINSVocabulary.META_PROPERTY_DEFINITION_TYPE)) {
             JsonLdId propertyReference = document.getDoc().getAs(EBRAINSVocabulary.META_PROPERTY, JsonLdId.class);
             if (propertyReference != null) {
-                ArangoDocumentReference propertyRef = StaticStructureController.createDocumentRefForMetaRepresentation(propertyReference.getId(), ArangoCollectionReference.fromSpace(InternalSpace.PROPERTIES_SPACE));
+                MetaRepresentation propertyMetaRepresentation = StaticStructureController.createMetaRepresentation(propertyReference.getId(), ArangoCollectionReference.fromSpace(InternalSpace.PROPERTIES_SPACE));
+                ArangoDocumentReference propertyRef = propertyMetaRepresentation.getIdRef();
                 List<DBOperation> dbOperations = new ArrayList<>();
+                if (!databases.getByStage(stage).collection(propertyRef.getArangoCollectionReference().getCollectionName()).documentExists(propertyRef.getDocumentId().toString())) {
+                    dbOperations.add(new UpsertOperation(null, new NormalizedJsonLd(typeUtils.translate(propertyMetaRepresentation, Map.class)), propertyMetaRepresentation.getIdRef(), false, false));
+                }
                 dbOperations.addAll(handleOverrideReference(rootDocumentRef, document, propertyReference, propertyRef, ArangoCollectionReference.fromSpace(new SpaceName(EBRAINSVocabulary.META_PROPERTY), true)));
                 dbOperations.addAll(handleExplicitlyStatedTargetTypes(document, propertyRef));
                 return dbOperations;
