@@ -169,11 +169,18 @@ public class ArangoRepositoryTypes {
             aql.addLine(AQL.trust("LET rootProperty = DOCUMENT(@propertyId)"));
             ArangoDocumentReference propRef = StaticStructureController.createDocumentRefForMetaRepresentation(targetTypesForProperty.getPropertyName(), ArangoCollectionReference.fromSpace(InternalSpace.PROPERTIES_SPACE));
             bindVars.put("propertyId", propRef.getId());
-            aql.addLine(AQL.trust("FOR originalType, originalTypeToRootProperty IN 1..1 INBOUND rootProperty " + InternalSpace.TYPE_TO_PROPERTY_EDGE_COLLECTION.getCollectionName()));
-            aql.indent().addLine(AQL.trust("FILTER DOCUMENT(originalType._to).`" + SchemaOrgVocabulary.IDENTIFIER + "` IN @originalTypeFilter"));
+
+            aql.addLine(AQL.trust("LET targetTypesBySpaces = ("));
+            aql.addLine(AQL.trust("FOR originalType, originalTypeToRootProperty IN 1..1 INBOUND rootProperty "+ InternalSpace.TYPE_TO_PROPERTY_EDGE_COLLECTION.getCollectionName()));
+            aql.addLine(AQL.trust("FILTER DOCUMENT(originalType._to).`"+SchemaOrgVocabulary.IDENTIFIER+"` IN @originalTypeFilter"));
             bindVars.put("originalTypeFilter", targetTypesForProperty.getOriginalTypes());
             aql.addLine(AQL.trust("FOR targetTypeForRootProperty IN 1..1 OUTBOUND originalTypeToRootProperty " + InternalSpace.PROPERTY_TO_TYPE_EDGE_COLLECTION.getCollectionName()));
-            aql.indent().addLine(AQL.trust("LET type = DOCUMENT(targetTypeForRootProperty._to)"));
+            aql.addLine(AQL.trust("RETURN DOCUMENT(targetTypeForRootProperty._to))"));
+
+            //The following query for global target types works without any filter since only the global specifications are actually linked to the rootProperty directly. All space-based entries are originating from a type2property indirection.
+            aql.addLine(AQL.trust("LET globalTargetTypes = (FOR targetTypeForRootProperty IN 1..1 OUTBOUND rootProperty "+ InternalSpace.PROPERTY_TO_TYPE_EDGE_COLLECTION.getCollectionName()+" FILTER targetTypeForRootProperty!=NULL RETURN targetTypeForRootProperty)"));
+
+            aql.addLine(AQL.trust("FOR type IN UNION_DISTINCT(targetTypesBySpaces, globalTargetTypes)"));
         } else if (types == null || types.isEmpty()) {
             if (space != null) {
                 bindVars.put("space", space.getName());
