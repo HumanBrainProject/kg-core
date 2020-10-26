@@ -337,9 +337,9 @@ public class ArangoRepositoryCommons {
         logger.debug(String.format("Done processing the Arango result - received %d results in %dms total", mappedResult.size(), new Date().getTime() - launch));
         if (aql.getPaginationParam() != null && aql.getPaginationParam().getSize() == null && (int) aql.getPaginationParam().getFrom() > 0 && (int) aql.getPaginationParam().getFrom() < mappedResult.size()) {
             List<T> mappedResultWithOffset = mappedResult.subList((int) aql.getPaginationParam().getFrom(), mappedResult.size());
-            return new Paginated<>(mappedResultWithOffset, totalCount, mappedResult.size(), aql.getPaginationParam().getFrom());
+            return new Paginated<>(mappedResultWithOffset, totalCount == null ? mappedResultWithOffset.size() : totalCount, mappedResult.size(), aql.getPaginationParam().getFrom());
         }
-        return new Paginated<>(mappedResult, totalCount, mappedResult.size(), aql.getPaginationParam() != null ? aql.getPaginationParam().getFrom() : 0);
+        return new Paginated<>(mappedResult, totalCount == null ? mappedResult.size() : totalCount, mappedResult.size(), aql.getPaginationParam() != null ? aql.getPaginationParam().getFrom() : 0);
     }
 
 }

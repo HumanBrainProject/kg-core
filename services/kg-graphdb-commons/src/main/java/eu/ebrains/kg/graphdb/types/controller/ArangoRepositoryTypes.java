@@ -22,7 +22,6 @@ import eu.ebrains.kg.arango.commons.aqlBuilder.AQL;
 import eu.ebrains.kg.arango.commons.aqlBuilder.ArangoVocabulary;
 import eu.ebrains.kg.arango.commons.model.AQLQuery;
 import eu.ebrains.kg.arango.commons.model.ArangoCollectionReference;
-import eu.ebrains.kg.arango.commons.model.ArangoDocumentReference;
 import eu.ebrains.kg.arango.commons.model.InternalSpace;
 import eu.ebrains.kg.commons.jsonld.IndexedJsonLdDoc;
 import eu.ebrains.kg.commons.jsonld.InferredJsonLdDoc;
@@ -34,7 +33,6 @@ import eu.ebrains.kg.commons.semantics.vocabularies.SchemaOrgVocabulary;
 import eu.ebrains.kg.graphdb.commons.controller.ArangoDatabases;
 import eu.ebrains.kg.graphdb.commons.controller.ArangoRepositoryCommons;
 import eu.ebrains.kg.graphdb.commons.controller.ArangoUtils;
-import eu.ebrains.kg.graphdb.ingestion.controller.structure.StaticStructureController;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
@@ -68,10 +66,12 @@ public class ArangoRepositoryTypes {
     }
 
 
-    public Paginated<NormalizedJsonLd> getTargetTypesForProperty(String client, DataStage stage, TargetsForProperties targetTypesForProperty, boolean withProperties, boolean withCount, PaginationParam pagination) {
+    public List<NormalizedJsonLd> getTargetTypesForProperty(String client, DataStage stage, List<Type> types, String propertyName, boolean withProperties, boolean withCount, PaginationParam pagination) {
         ArangoDatabase db = databases.getMetaByStage(stage);
-        AQLQuery typeStructureQuery = createTypeStructureQuery(db, client, null, targetTypesForProperty, null, withProperties, withCount, pagination);
-        return arangoRepositoryCommons.queryDocuments(db, typeStructureQuery);
+        AQLQuery typeStructureQuery = createTypeStructureQuery(db, client, types, propertyName, null, withProperties, withCount, pagination);
+        Paginated<NormalizedJsonLd> documents = arangoRepositoryCommons.queryDocuments(db, typeStructureQuery);
+        List<Type> targetTypes = documents.getData().stream().map(t -> t.getAsListOf(EBRAINSVocabulary.META_PROPERTIES, NormalizedJsonLd.class)).flatMap(Collection::stream).map(p -> p.getAsListOf(EBRAINSVocabulary.META_PROPERTY_TARGET_TYPES, String.class)).flatMap(Collection::stream).distinct().map(Type::new).collect(Collectors.toList());
+        return getTypes(client, stage, targetTypes, false, false);
     }
 
     public Paginated<NormalizedJsonLd> getAllTypes(String client, DataStage stage, boolean withProperties, boolean withCount, PaginationParam pagination) {
@@ -139,7 +139,7 @@ public class ArangoRepositoryTypes {
         }
     }
 
-    private AQLQuery createTypeStructureQuery(ArangoDatabase db, String client, Collection<Type> types, TargetsForProperties targetTypesForProperty, SpaceName space, boolean withProperties, boolean withCount, PaginationParam paginationParam) {
+    private AQLQuery createTypeStructureQuery(ArangoDatabase db, String client, Collection<Type> types, String propertyName, SpaceName space, boolean withProperties, boolean withCount, PaginationParam paginationParam) {
         ensureTypeStructureCollections(db, withProperties);
         Map<String, Object> bindVars = new HashMap<>();
         AQL aql = new AQL();
@@ -163,70 +163,53 @@ public class ArangoRepositoryTypes {
         bindVars.put("propertiesToRemove", propertiesToRemove);
         bindVars.put("propertiesToRemoveForOverrides", Arrays.asList(JsonLdConsts.TYPE, SchemaOrgVocabulary.IDENTIFIER));
         bindVars.put("clientName", ArangoCollectionReference.fromSpace(new Client(client).getSpace().getName()).getCollectionName());
-        bindVars.put("globalSpace", ArangoCollectionReference.fromSpace(InternalSpace.GLOBAL_SPEC).getCollectionName());
-        if (targetTypesForProperty != null && !targetTypesForProperty.getPropertyName().isBlank()) {
-            aql.addComment("We're interested in the target types of a property. We query the list of types matching.");
-            aql.addLine(AQL.trust("LET rootProperty = DOCUMENT(@propertyId)"));
-            ArangoDocumentReference propRef = StaticStructureController.createDocumentRefForMetaRepresentation(targetTypesForProperty.getPropertyName(), ArangoCollectionReference.fromSpace(InternalSpace.PROPERTIES_SPACE));
-            bindVars.put("propertyId", propRef.getId());
-
-            aql.addLine(AQL.trust("LET targetTypesBySpaces = ("));
-            aql.addLine(AQL.trust("FOR originalType, originalTypeToRootProperty IN 1..1 INBOUND rootProperty " + InternalSpace.TYPE_TO_PROPERTY_EDGE_COLLECTION.getCollectionName()));
-            aql.addLine(AQL.trust("FILTER DOCUMENT(originalType._to).`" + SchemaOrgVocabulary.IDENTIFIER + "` IN @originalTypeFilter"));
-            bindVars.put("originalTypeFilter", targetTypesForProperty.getOriginalTypes());
-            aql.addLine(AQL.trust("FOR targetTypeForRootProperty IN 1..1 OUTBOUND originalTypeToRootProperty " + InternalSpace.PROPERTY_TO_TYPE_EDGE_COLLECTION.getCollectionName()));
-            aql.addLine(AQL.trust("RETURN DOCUMENT(targetTypeForRootProperty._to))"));
-
-            //The following query for global target types works without any filter since only the global specifications are actually linked to the rootProperty directly. All space-based entries are originating from a type2property indirection.
-            aql.addLine(AQL.trust("LET globalTargetTypes = (FOR targetTypeForRootProperty IN 1..1 OUTBOUND rootProperty " + InternalSpace.PROPERTY_TO_TYPE_EDGE_COLLECTION.getCollectionName() + " FILTER targetTypeForRootProperty!=NULL RETURN targetTypeForRootProperty)"));
-
-            aql.addLine(AQL.trust("FOR type IN UNION_DISTINCT(targetTypesBySpaces, globalTargetTypes)"));
-        } else if (types == null || types.isEmpty()) {
+        if (types == null || types.isEmpty()) {
             if (space != null) {
                 bindVars.put("space", space.getName());
                 aql.addComment("We're fetching the space based on the restriction and lookup the types which are existing for this space.");
-                aql.addLine(AQL.trust("LET sp = FIRST(FOR s IN @@spaces FILTER s.`" + SchemaOrgVocabulary.IDENTIFIER + "`== @space RETURN s)"));
-                aql.addLine(AQL.trust("FOR type IN (FOR t IN 1..1 OUTBOUND sp @@spaceToType RETURN t)"));
-                bindVars.put("@spaceToType", InternalSpace.SPACE_TO_TYPE_EDGE_COLLECTION.getCollectionName());
-                bindVars.put("@spaces", ArangoCollectionReference.fromSpace(InternalSpace.SPACES_SPACE).getCollectionName());
+                aql.addLine(AQL.trust("LET sp = FIRST(FOR s IN `" + ArangoCollectionReference.fromSpace(InternalSpace.SPACES_SPACE).getCollectionName() + "` FILTER s.`" + SchemaOrgVocabulary.IDENTIFIER + "`== @space RETURN s)"));
+                aql.addLine(AQL.trust("FOR type IN (FOR t IN 1..1 OUTBOUND sp `" + InternalSpace.SPACE_TO_TYPE_EDGE_COLLECTION.getCollectionName() + "` RETURN t)"));
             } else {
                 aql.addComment("We're fetching all available types.");
-                aql.addLine(AQL.trust("FOR type IN (FOR t IN @@types RETURN t)"));
-                bindVars.put("@types", ArangoCollectionReference.fromSpace(InternalSpace.TYPES_SPACE).getCollectionName());
+                aql.addLine(AQL.trust("FOR type IN (FOR t IN `" + ArangoCollectionReference.fromSpace(InternalSpace.TYPES_SPACE).getCollectionName() + "` RETURN t)"));
             }
         } else {
             aql.addComment("We're fetching all available types which are matching our filter criteria.");
-            aql.addLine(AQL.trust("FOR type IN @@typesSpace"));
+            aql.addLine(AQL.trust("FOR type IN `" + ArangoCollectionReference.fromSpace(InternalSpace.TYPES_SPACE).getCollectionName() + "`"));
             aql.addLine(AQL.trust("FILTER TO_ARRAY(type.`" + SchemaOrgVocabulary.IDENTIFIER + "`) ANY IN @types"));
             bindVars.put("types", types.stream().map(Type::getName).collect(Collectors.toList()));
-            bindVars.put("@typesSpace", ArangoCollectionReference.fromSpace(InternalSpace.TYPES_SPACE).getCollectionName());
         }
 
         aql.addNewline();
         aql.addComment("First, we fetch the specification for the type - this can either be defined by client or globally. The results will be appended to the result document at the very end.");
         aql.addLine(AQL.trust("LET clientSpecific = ("));
-        aql.addLine(AQL.trust("FOR g IN 1..1 INBOUND type @@typeDefinition"));
+        aql.addLine(AQL.trust("FOR g IN 1..1 INBOUND type `" + ArangoCollectionReference.fromSpace(new SpaceName(EBRAINSVocabulary.META_TYPE)).getCollectionName() + "`"));
         aql.indent().addLine(AQL.trust("FILTER IS_SAME_COLLECTION(@clientName, g._id)"));
         aql.addLine(AQL.trust("RETURN UNSET(g, propertiesToRemoveForOverrides)"));
         aql.outdent().addLine(AQL.trust(")"));
-        bindVars.put("@typeDefinition", ArangoCollectionReference.fromSpace(new SpaceName(EBRAINSVocabulary.META_TYPE)).getCollectionName());
         aql.addNewline();
         aql.addLine(AQL.trust("LET globalTypeDef = ("));
-        aql.addLine(AQL.trust("FOR g IN 1..1 INBOUND type @@typeDefinition"));
-        aql.indent().addLine(AQL.trust("FILTER IS_SAME_COLLECTION(@globalSpace, g._id)"));
+        aql.addLine(AQL.trust("FOR g IN 1..1 INBOUND type `" + ArangoCollectionReference.fromSpace(new SpaceName(EBRAINSVocabulary.META_TYPE)).getCollectionName() + "`"));
+        aql.indent().addLine(AQL.trust("FILTER IS_SAME_COLLECTION(\"" + ArangoCollectionReference.fromSpace(InternalSpace.GLOBAL_SPEC).getCollectionName() + "\", g._id)"));
         aql.addLine(AQL.trust("RETURN UNSET(g, propertiesToRemoveForOverrides)"));
         aql.outdent().addLine(AQL.trust(")"));
         aql.addNewline();
         if (withProperties) {
             aql.addComment("We're looking for the properties involved - there are some global sources, we can already fetch before knowing the space...");
-            aql.addLine(AQL.trust("LET globalPropertyDefinitionsByType = (FOR prop IN 1..1 OUTBOUND type @@globalType"));
-            bindVars.put("@globalType", InternalSpace.GLOBAL_TYPE_TO_PROPERTY_EDGE_COLLECTION.getCollectionName());
+            aql.addLine(AQL.trust("LET globalPropertyDefinitionsByType = (FOR prop IN 1..1 OUTBOUND type `" + InternalSpace.GLOBAL_TYPE_TO_PROPERTY_EDGE_COLLECTION.getCollectionName() + "`"));
             aql.addLine(AQL.trust("FILTER prop.`" + SchemaOrgVocabulary.IDENTIFIER + "` != null"));
+            if (propertyName != null) {
+                aql.addLine(AQL.trust("FILTER prop.`" + SchemaOrgVocabulary.IDENTIFIER + "` == @propertyName"));
+                bindVars.put("propertyName", propertyName);
+            }
             aql.addLine(AQL.trust("RETURN prop)"));
             aql.addNewline();
-            aql.addLine(AQL.trust("LET typeSpecificProperties = MERGE(FOR globalProp, globaltype2prop IN 1..1 OUTBOUND type @@globalType"));
+            aql.addLine(AQL.trust("LET typeSpecificProperties = MERGE(FOR globalProp, globaltype2prop IN 1..1 OUTBOUND type `" + InternalSpace.GLOBAL_TYPE_TO_PROPERTY_EDGE_COLLECTION.getCollectionName() + "`"));
             aql.addLine(AQL.trust("FILTER globalProp.`" + SchemaOrgVocabulary.IDENTIFIER + "` != null"));
-            aql.addLine(AQL.trust("LET targetTypes = (FOR targetType IN 1..1 OUTBOUND globaltype2prop @@property2type"));
+            if (propertyName != null) {
+                aql.addLine(AQL.trust("FILTER globalProp.`" + SchemaOrgVocabulary.IDENTIFIER + "` == @propertyName"));
+            }
+            aql.addLine(AQL.trust("LET targetTypes = (FOR targetType IN 1..1 OUTBOUND globaltype2prop `" + InternalSpace.PROPERTY_TO_TYPE_EDGE_COLLECTION.getCollectionName() + "`"));
             aql.addLine(AQL.trust("RETURN DISTINCT targetType.`" + SchemaOrgVocabulary.IDENTIFIER + "`)"));
             aql.addLine(AQL.trust("FILTER targetTypes != []"));
             aql.addLine(AQL.trust("RETURN {[ globalProp.`" + SchemaOrgVocabulary.IDENTIFIER + "` ] : {"));
@@ -236,9 +219,8 @@ public class ArangoRepositoryTypes {
         }
 
         aql.addComment("Now, we're investigating the edge which contextualizes the type in a specific space (since we keep the information on this granularity). This means, we first query the numbers for every space-type combination and aggregate them later for the global view.");
-        aql.addLine(AQL.trust("LET spaces = (FOR space, space2type IN 1..1 INBOUND type @@spaceToType"));
+        aql.addLine(AQL.trust("LET spaces = (FOR space, space2type IN 1..1 INBOUND type `" + InternalSpace.SPACE_TO_TYPE_EDGE_COLLECTION.getCollectionName() + "`"));
         aql.addLine(AQL.trust("FILTER @space == NULL OR space.`http://schema.org/identifier` == @space"));
-        bindVars.put("@spaceToType", InternalSpace.SPACE_TO_TYPE_EDGE_COLLECTION.getCollectionName());
         bindVars.put("space", space == null ? null : space.getName());
         aql.addNewline();
         if (!withProperties) {
@@ -250,37 +232,46 @@ public class ArangoRepositoryTypes {
         if (withProperties) {
             aql.indent();
             aql.addComment("Let's investigate on where we're getting the property information from. Since they can either be reflected or defined by contract-first, there's multiple souces involved");
-            aql.addLine(AQL.trust("LET allProperties = UNION_DISTINCT((FOR p IN 1..1 OUTBOUND space2type @@typeToProperty FILTER p.`" + SchemaOrgVocabulary.IDENTIFIER + "` != NULL RETURN p), globalPropertyDefinitionsByType)"));
-            bindVars.put("@typeToProperty", InternalSpace.TYPE_TO_PROPERTY_EDGE_COLLECTION.getCollectionName());
+
+            aql.addLine(AQL.trust("LET allProperties = UNION_DISTINCT((FOR p IN 1..1 OUTBOUND space2type `" + InternalSpace.TYPE_TO_PROPERTY_EDGE_COLLECTION.getCollectionName() + "`"));
+            if (propertyName != null) {
+                aql.addLine(AQL.trust("FILTER p.`" + SchemaOrgVocabulary.IDENTIFIER + "` == @propertyName"));
+            } else {
+                aql.addLine(AQL.trust("FILTER p.`" + SchemaOrgVocabulary.IDENTIFIER + "` != NULL"));
+            }
+            aql.addLine(AQL.trust("RETURN p), globalPropertyDefinitionsByType)"));
+
             aql.addNewline();
             aql.addLine(AQL.trust("LET globalProperties = MERGE(FOR globalProp IN allProperties"));
             aql.addLine(AQL.trust("FILTER globalProp.`" + SchemaOrgVocabulary.IDENTIFIER + "` != null"));
-            aql.addLine(AQL.trust("LET targetTypes = (FOR targetType IN 1..1 OUTBOUND globalProp @@property2type RETURN DISTINCT targetType.`" + SchemaOrgVocabulary.IDENTIFIER + "`)"));
+            aql.addLine(AQL.trust("LET targetTypes = (FOR targetType IN 1..1 OUTBOUND globalProp `" + InternalSpace.PROPERTY_TO_TYPE_EDGE_COLLECTION.getCollectionName() + "` RETURN DISTINCT targetType.`" + SchemaOrgVocabulary.IDENTIFIER + "`)"));
             aql.addLine(AQL.trust("FILTER targetTypes != []"));
             aql.addLine(AQL.trust("RETURN {"));
             aql.addLine(AQL.trust("[ globalProp.`" + SchemaOrgVocabulary.IDENTIFIER + "` ] : {"));
             aql.addLine(AQL.trust("\"" + EBRAINSVocabulary.META_PROPERTY_TARGET_TYPES + "\": targetTypes"));
             aql.addLine(AQL.trust("}})"));
             aql.addNewline();
-            aql.addLine(AQL.trust("LET spaceSpecificProperties = MERGE(FOR spaceType2property, spaceType2propertyEdge IN 1..1 OUTBOUND space2type @@typeToProperty"));
+            aql.addLine(AQL.trust("LET spaceSpecificProperties = MERGE(FOR spaceType2property, spaceType2propertyEdge IN 1..1 OUTBOUND space2type `" + InternalSpace.TYPE_TO_PROPERTY_EDGE_COLLECTION.getCollectionName() + "`"));
+            if (propertyName != null) {
+                aql.addLine(AQL.trust("FILTER DOCUMENT(spaceType2property._to).`" + SchemaOrgVocabulary.IDENTIFIER + "`==@propertyName"));
+            }
             if (withCount) {
                 aql.addComment("To be able to count the occurrences of the property, we need to find the contributing documents");
-                aql.addLine(AQL.trust("LET docsContributingToSpace2Property = FIRST(FOR docContributingToSpace2Property IN 1..1 INBOUND spaceType2propertyEdge @@documentRelation"));
+                aql.addLine(AQL.trust("LET docsContributingToSpace2Property = FIRST(FOR docContributingToSpace2Property IN 1..1 INBOUND spaceType2propertyEdge `" + InternalSpace.DOCUMENT_RELATION_EDGE_COLLECTION.getCollectionName() + "`"));
                 aql.addLine(AQL.trust("COLLECT WITH COUNT INTO numberOfContributingDocs"));
                 aql.addLine(AQL.trust("RETURN numberOfContributingDocs)"));
                 aql.addNewline();
                 aql.indent();
             }
             aql.addComment("We're also interested in the target types of the property in this space-type combination...");
-            aql.addLine(AQL.trust("LET targets = (FOR target, targetEdge IN 1..1 OUTBOUND spaceType2propertyEdge @@property2type"));
-            bindVars.put("@property2type", InternalSpace.PROPERTY_TO_TYPE_EDGE_COLLECTION.getCollectionName());
+            aql.addLine(AQL.trust("LET targets = (FOR target, targetEdge IN 1..1 OUTBOUND spaceType2propertyEdge `" + InternalSpace.PROPERTY_TO_TYPE_EDGE_COLLECTION.getCollectionName() + "`"));
             aql.addNewline();
             aql.indent();
             aql.addLine(AQL.trust(" LET targetSpace = DOCUMENT(target._from)"));
             aql.addLine(AQL.trust(" LET targetType = DOCUMENT(target._to)"));
             if (withCount) {
                 aql.addComment("And of course, we also count those target occurrences...");
-                aql.addLine(AQL.trust(" LET countTargetOccurrences = @space == null OR space.`" + SchemaOrgVocabulary.IDENTIFIER + "`==@space ? FIRST(FOR targetRel IN 1..1 INBOUND targetEdge @@documentRelation "));
+                aql.addLine(AQL.trust(" LET countTargetOccurrences = @space == null OR space.`" + SchemaOrgVocabulary.IDENTIFIER + "`==@space ? FIRST(FOR targetRel IN 1..1 INBOUND targetEdge `" + InternalSpace.DOCUMENT_RELATION_EDGE_COLLECTION.getCollectionName() + "`"));
                 aql.addLine(AQL.trust(" COLLECT WITH COUNT INTO occurrenceOfTarget"));
                 aql.addLine(AQL.trust(" RETURN occurrenceOfTarget) : 0"));
             }
@@ -365,11 +356,10 @@ public class ArangoRepositoryTypes {
         }
         if (withCount) {
             aql.addComment("We now are combining the type in space information (such as occurrences)");
-            aql.addLine(AQL.trust("LET occurrenceBySpace = @space == null OR space.`" + SchemaOrgVocabulary.IDENTIFIER + "`==@space ? FIRST(FOR rel IN @@documentRelation"));
+            aql.addLine(AQL.trust("LET occurrenceBySpace = @space == null OR space.`" + SchemaOrgVocabulary.IDENTIFIER + "`==@space ? FIRST(FOR rel IN `" + InternalSpace.DOCUMENT_RELATION_EDGE_COLLECTION.getCollectionName() + "`"));
             aql.addLine(AQL.trust("    FILTER rel._to==space2type._id"));
             aql.addLine(AQL.trust("    COLLECT WITH COUNT INTO occurrenceBySpaceCount"));
             aql.addLine(AQL.trust("    RETURN occurrenceBySpaceCount) : 0"));
-            bindVars.put("@documentRelation", InternalSpace.DOCUMENT_RELATION_EDGE_COLLECTION.getCollectionName());
         }
         if (withProperties) {
             aql.addLine(AQL.trust("RETURN {"));
@@ -393,39 +383,35 @@ public class ArangoRepositoryTypes {
             aql.addLine(AQL.trust("COLLECT globalPropertyName = props.`" + SchemaOrgVocabulary.IDENTIFIER + "` INTO groupedGlobalProperties"));
 
             aql.addComment("We still need to query some global information for the property (such as specifications), so we have to get a reference to the property object");
-            aql.addLine(AQL.trust("LET property = FIRST(FOR p IN @@properties FILTER p.`" + SchemaOrgVocabulary.IDENTIFIER + "` == globalPropertyName RETURN p)"));
-            bindVars.put("@properties", ArangoCollectionReference.fromSpace(InternalSpace.PROPERTIES_SPACE).getCollectionName());
+            aql.addLine(AQL.trust("LET property = FIRST(FOR p IN `" + ArangoCollectionReference.fromSpace(InternalSpace.PROPERTIES_SPACE).getCollectionName() + "` FILTER p.`" + SchemaOrgVocabulary.IDENTIFIER + "` == globalPropertyName RETURN p)"));
 
             aql.addComment("... and we collect the specifications on the global (space-independent) level which can either be client&type specific, client-only specific, type-only specific or global");
             aql.indent();
 
-            aql.addLine(AQL.trust("LET globalTypeProperties = (FOR g, gRel IN 1..1 INBOUND property @@globalType"));
+            aql.addLine(AQL.trust("LET globalTypeProperties = (FOR g, gRel IN 1..1 INBOUND property `" + InternalSpace.GLOBAL_TYPE_TO_PROPERTY_EDGE_COLLECTION.getCollectionName() + "`"));
             aql.addLine(AQL.trust("FILTER g.`" + SchemaOrgVocabulary.IDENTIFIER + "`==type.`" + SchemaOrgVocabulary.IDENTIFIER + "`"));
             aql.addLine(AQL.trust("RETURN gRel)"));
 
-            bindVars.put("@metaProperty", ArangoCollectionReference.fromSpace(new SpaceName(EBRAINSVocabulary.META_PROPERTY)).getCollectionName());
-            bindVars.put("@clientTypeProperty", InternalSpace.CLIENT_TYPE_PROPERTY_EDGE_COLLECTION.getCollectionName());
-
             aql.addComment("First, we check for the property specifications which are defined for this client AND the type");
             aql.addLine(AQL.trust("LET clientSpecificTypePropertySpec = NOT_NULL(FIRST(FOR typeProperty IN globalTypeProperties"));
-            aql.addLine(AQL.trust("RETURN NOT_NULL(FIRST(FOR clientTypeProperty IN 1..1 INBOUND typeProperty @@clientTypeProperty"));
+            aql.addLine(AQL.trust("RETURN NOT_NULL(FIRST(FOR clientTypeProperty IN 1..1 INBOUND typeProperty `" + InternalSpace.CLIENT_TYPE_PROPERTY_EDGE_COLLECTION.getCollectionName() + "`"));
             aql.addLine(AQL.trust("FILTER IS_SAME_COLLECTION(@clientName, clientTypeProperty._id)"));
             aql.addLine(AQL.trust("RETURN UNSET(clientTypeProperty, propertiesToRemoveForOverrides)), {})), {})"));
 
             aql.addComment("Second, we go for the specification defined for the current client independent of the type");
-            aql.addLine(AQL.trust("LET clientSpecificGlobalPropertySpec = NOT_NULL(FIRST(FOR g IN 1..1 INBOUND property @@metaProperty"));
+            aql.addLine(AQL.trust("LET clientSpecificGlobalPropertySpec = NOT_NULL(FIRST(FOR g IN 1..1 INBOUND property `" + ArangoCollectionReference.fromSpace(new SpaceName(EBRAINSVocabulary.META_PROPERTY)).getCollectionName() + "`"));
             aql.addLine(AQL.trust("FILTER IS_SAME_COLLECTION(@clientName, g._id)"));
             aql.addLine(AQL.trust("RETURN UNSET(g, propertiesToRemoveForOverrides)), {})"));
 
             aql.addComment("Third, we look up the specification declared for this type - regardless of the requesting client");
             aql.addLine(AQL.trust("LET globalTypePropertySpec = NOT_NULL(FIRST(FOR typeProperty IN globalTypeProperties"));
-            aql.addLine(AQL.trust("RETURN NOT_NULL(FIRST(FOR clientTypeProperty IN 1..1 INBOUND typeProperty @@clientTypeProperty"));
-            aql.addLine(AQL.trust("FILTER IS_SAME_COLLECTION(@globalSpace, clientTypeProperty._id)"));
+            aql.addLine(AQL.trust("RETURN NOT_NULL(FIRST(FOR clientTypeProperty IN 1..1 INBOUND typeProperty `" + InternalSpace.CLIENT_TYPE_PROPERTY_EDGE_COLLECTION.getCollectionName() + "`"));
+            aql.addLine(AQL.trust("FILTER IS_SAME_COLLECTION(\"" + ArangoCollectionReference.fromSpace(InternalSpace.GLOBAL_SPEC).getCollectionName() + "\", clientTypeProperty._id)"));
             aql.addLine(AQL.trust("RETURN UNSET(clientTypeProperty, propertiesToRemoveForOverrides)), {})), {})"));
 
             aql.addComment("Fourth, we query the global and non-type-specific specifications");
-            aql.addLine(AQL.trust("LET globalPropertySpec = NOT_NULL(FIRST(FOR g IN 1..1 INBOUND property @@metaProperty"));
-            aql.addLine(AQL.trust("FILTER IS_SAME_COLLECTION(@globalSpace, g._id)"));
+            aql.addLine(AQL.trust("LET globalPropertySpec = NOT_NULL(FIRST(FOR g IN 1..1 INBOUND property `" + ArangoCollectionReference.fromSpace(new SpaceName(EBRAINSVocabulary.META_PROPERTY)).getCollectionName() + "`"));
+            aql.addLine(AQL.trust("FILTER IS_SAME_COLLECTION(\"" + ArangoCollectionReference.fromSpace(InternalSpace.GLOBAL_SPEC).getCollectionName() + "\", g._id)"));
             aql.addLine(AQL.trust("RETURN UNSET(g, propertiesToRemoveForOverrides)), {})"));
 
             aql.outdent();
