@@ -139,7 +139,7 @@ public class GraphDBInstancesAPI {
             payload = repository.getInstance(stage, new SpaceName(space), id, true, true, false);
         }
         SuggestionResult suggestionResult = new SuggestionResult();
-        List<NormalizedJsonLd> targetTypesForProperty = typeRepository.getTargetTypesForProperty(authContext.getUserWithRoles().getClientId(), stage, payload.types().stream().map(t -> new Type(t)).collect(Collectors.toList()), propertyName, true, false, null);
+        List<NormalizedJsonLd> targetTypesForProperty = typeRepository.getTargetTypesForProperty(authContext.getUserWithRoles().getClientId(), stage, payload.types().stream().map(t -> new Type(t)).collect(Collectors.toList()), propertyName);
         List<Type> typesWithLabelInfo = ArangoRepositoryTypes.extractExtendedTypeInformationFromPayload(targetTypesForProperty);
         suggestionResult.setTypes(targetTypesForProperty.stream().collect(Collectors.toMap(JsonLdDoc::primaryIdentifier, t -> t)));
         List<UUID> existingLinks = payload.getAsListOf(propertyName, JsonLdId.class, true).stream().map(idUtils::getUUID).filter(Objects::nonNull).collect(Collectors.toList());
