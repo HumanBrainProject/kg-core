@@ -86,7 +86,7 @@ public class ArangoRepositoryTypes {
         return arangoRepositoryCommons.queryDocuments(db, typeStructureQuery);
     }
 
-    public List<Type> getTypeInformation(String client, DataStage stage, Collection<Type> types){
+    public List<Type> getTypeInformation(String client, DataStage stage, Collection<Type> types) {
         return getTypes(client, stage, types, false, false).stream().map(Type::fromPayload).collect(Collectors.toList());
     }
 
@@ -171,14 +171,14 @@ public class ArangoRepositoryTypes {
             bindVars.put("propertyId", propRef.getId());
 
             aql.addLine(AQL.trust("LET targetTypesBySpaces = ("));
-            aql.addLine(AQL.trust("FOR originalType, originalTypeToRootProperty IN 1..1 INBOUND rootProperty "+ InternalSpace.TYPE_TO_PROPERTY_EDGE_COLLECTION.getCollectionName()));
-            aql.addLine(AQL.trust("FILTER DOCUMENT(originalType._to).`"+SchemaOrgVocabulary.IDENTIFIER+"` IN @originalTypeFilter"));
+            aql.addLine(AQL.trust("FOR originalType, originalTypeToRootProperty IN 1..1 INBOUND rootProperty " + InternalSpace.TYPE_TO_PROPERTY_EDGE_COLLECTION.getCollectionName()));
+            aql.addLine(AQL.trust("FILTER DOCUMENT(originalType._to).`" + SchemaOrgVocabulary.IDENTIFIER + "` IN @originalTypeFilter"));
             bindVars.put("originalTypeFilter", targetTypesForProperty.getOriginalTypes());
             aql.addLine(AQL.trust("FOR targetTypeForRootProperty IN 1..1 OUTBOUND originalTypeToRootProperty " + InternalSpace.PROPERTY_TO_TYPE_EDGE_COLLECTION.getCollectionName()));
             aql.addLine(AQL.trust("RETURN DOCUMENT(targetTypeForRootProperty._to))"));
 
             //The following query for global target types works without any filter since only the global specifications are actually linked to the rootProperty directly. All space-based entries are originating from a type2property indirection.
-            aql.addLine(AQL.trust("LET globalTargetTypes = (FOR targetTypeForRootProperty IN 1..1 OUTBOUND rootProperty "+ InternalSpace.PROPERTY_TO_TYPE_EDGE_COLLECTION.getCollectionName()+" FILTER targetTypeForRootProperty!=NULL RETURN targetTypeForRootProperty)"));
+            aql.addLine(AQL.trust("LET globalTargetTypes = (FOR targetTypeForRootProperty IN 1..1 OUTBOUND rootProperty " + InternalSpace.PROPERTY_TO_TYPE_EDGE_COLLECTION.getCollectionName() + " FILTER targetTypeForRootProperty!=NULL RETURN targetTypeForRootProperty)"));
 
             aql.addLine(AQL.trust("FOR type IN UNION_DISTINCT(targetTypesBySpaces, globalTargetTypes)"));
         } else if (types == null || types.isEmpty()) {
@@ -211,23 +211,37 @@ public class ArangoRepositoryTypes {
         aql.outdent().addLine(AQL.trust(")"));
         bindVars.put("@typeDefinition", ArangoCollectionReference.fromSpace(new SpaceName(EBRAINSVocabulary.META_TYPE)).getCollectionName());
         aql.addNewline();
-        if(withProperties){
-            aql.addLine(AQL.trust("LET globalPropertyDefinitionsByType = (FOR prop IN 1..1 OUTBOUND type @@globalType"));
-            bindVars.put("@globalType", InternalSpace.GLOBAL_TYPE_TO_PROPERTY_EDGE_COLLECTION.getCollectionName());
-            aql.addLine(AQL.trust("FILTER prop.`"+SchemaOrgVocabulary.IDENTIFIER+"` != null"));
-            aql.addLine(AQL.trust("RETURN prop.`"+SchemaOrgVocabulary.IDENTIFIER+"`)"));
-        }
         aql.addLine(AQL.trust("LET globalTypeDef = ("));
         aql.addLine(AQL.trust("FOR g IN 1..1 INBOUND type @@typeDefinition"));
         aql.indent().addLine(AQL.trust("FILTER IS_SAME_COLLECTION(@globalSpace, g._id)"));
         aql.addLine(AQL.trust("RETURN UNSET(g, propertiesToRemoveForOverrides)"));
         aql.outdent().addLine(AQL.trust(")"));
+        aql.addNewline();
+        if (withProperties) {
+            aql.addComment("We're looking for the properties involved - there are some global sources, we can already fetch before knowing the space...");
+            aql.addLine(AQL.trust("LET globalPropertyDefinitionsByType = (FOR prop IN 1..1 OUTBOUND type @@globalType"));
+            bindVars.put("@globalType", InternalSpace.GLOBAL_TYPE_TO_PROPERTY_EDGE_COLLECTION.getCollectionName());
+            aql.addLine(AQL.trust("FILTER prop.`" + SchemaOrgVocabulary.IDENTIFIER + "` != null"));
+            aql.addLine(AQL.trust("RETURN prop)"));
+            aql.addNewline();
+            aql.addLine(AQL.trust("LET typeSpecificProperties = MERGE(FOR globalProp, globaltype2prop IN 1..1 OUTBOUND type @@globalType"));
+            aql.addLine(AQL.trust("FILTER globalProp.`" + SchemaOrgVocabulary.IDENTIFIER + "` != null"));
+            aql.addLine(AQL.trust("LET targetTypes = (FOR targetType IN 1..1 OUTBOUND globaltype2prop @@property2type"));
+            aql.addLine(AQL.trust("RETURN DISTINCT targetType.`" + SchemaOrgVocabulary.IDENTIFIER + "`)"));
+            aql.addLine(AQL.trust("FILTER targetTypes != []"));
+            aql.addLine(AQL.trust("RETURN {[ globalProp.`" + SchemaOrgVocabulary.IDENTIFIER + "` ] : {"));
+            aql.addLine(AQL.trust("\"" + EBRAINSVocabulary.META_PROPERTY_TARGET_TYPES + "\": targetTypes"));
+            aql.addLine(AQL.trust("}"));
+            aql.addLine(AQL.trust("})"));
+        }
+
         aql.addComment("Now, we're investigating the edge which contextualizes the type in a specific space (since we keep the information on this granularity). This means, we first query the numbers for every space-type combination and aggregate them later for the global view.");
         aql.addLine(AQL.trust("LET spaces = (FOR space, space2type IN 1..1 INBOUND type @@spaceToType"));
+        aql.addLine(AQL.trust("FILTER @space == NULL OR space.`http://schema.org/identifier` == @space"));
         bindVars.put("@spaceToType", InternalSpace.SPACE_TO_TYPE_EDGE_COLLECTION.getCollectionName());
         bindVars.put("space", space == null ? null : space.getName());
         aql.addNewline();
-        if(!withProperties){
+        if (!withProperties) {
             //If we don't ask for properties, we only want the space information back
             aql.addLine(AQL.trust(" RETURN {"));
             aql.addLine(AQL.trust("\"" + EBRAINSVocabulary.META_SPACE + "\": space.`" + SchemaOrgVocabulary.IDENTIFIER + "`"));
@@ -235,91 +249,119 @@ public class ArangoRepositoryTypes {
         }
         if (withProperties) {
             aql.indent();
-            aql.addComment("We want to know about the properties existing for this type in this space...");
-            aql.addLine(AQL.trust("LET propertiesByReflection = (FOR spaceType2property, spaceType2propertyEdge IN 1..1 OUTBOUND space2type @@typeToProperty"));
+            aql.addComment("Let's investigate on where we're getting the property information from. Since they can either be reflected or defined by contract-first, there's multiple souces involved");
+            aql.addLine(AQL.trust("LET allProperties = UNION_DISTINCT((FOR p IN 1..1 OUTBOUND space2type @@typeToProperty FILTER p.`" + SchemaOrgVocabulary.IDENTIFIER + "` != NULL RETURN p), globalPropertyDefinitionsByType)"));
             bindVars.put("@typeToProperty", InternalSpace.TYPE_TO_PROPERTY_EDGE_COLLECTION.getCollectionName());
+            aql.addNewline();
+            aql.addLine(AQL.trust("LET globalProperties = MERGE(FOR globalProp IN allProperties"));
+            aql.addLine(AQL.trust("FILTER globalProp.`" + SchemaOrgVocabulary.IDENTIFIER + "` != null"));
+            aql.addLine(AQL.trust("LET targetTypes = (FOR targetType IN 1..1 OUTBOUND globalProp @@property2type RETURN DISTINCT targetType.`" + SchemaOrgVocabulary.IDENTIFIER + "`)"));
+            aql.addLine(AQL.trust("FILTER targetTypes != []"));
+            aql.addLine(AQL.trust("RETURN {"));
+            aql.addLine(AQL.trust("[ globalProp.`" + SchemaOrgVocabulary.IDENTIFIER + "` ] : {"));
+            aql.addLine(AQL.trust("\"" + EBRAINSVocabulary.META_PROPERTY_TARGET_TYPES + "\": targetTypes"));
+            aql.addLine(AQL.trust("}})"));
+            aql.addNewline();
+            aql.addLine(AQL.trust("LET spaceSpecificProperties = MERGE(FOR spaceType2property, spaceType2propertyEdge IN 1..1 OUTBOUND space2type @@typeToProperty"));
             if (withCount) {
                 aql.addComment("To be able to count the occurrences of the property, we need to find the contributing documents");
                 aql.addLine(AQL.trust("LET docsContributingToSpace2Property = FIRST(FOR docContributingToSpace2Property IN 1..1 INBOUND spaceType2propertyEdge @@documentRelation"));
                 aql.addLine(AQL.trust("COLLECT WITH COUNT INTO numberOfContributingDocs"));
                 aql.addLine(AQL.trust("RETURN numberOfContributingDocs)"));
-
                 aql.addNewline();
                 aql.indent();
-                aql.addComment("We're also interested in the target types of the property in this space-type combination...");
-                aql.addLine(AQL.trust("LET targets = (FOR target, targetEdge IN 1..1 OUTBOUND spaceType2propertyEdge @@property2type"));
-                bindVars.put("@property2type", InternalSpace.PROPERTY_TO_TYPE_EDGE_COLLECTION.getCollectionName());
-                aql.addNewline();
-                aql.indent();
+            }
+            aql.addComment("We're also interested in the target types of the property in this space-type combination...");
+            aql.addLine(AQL.trust("LET targets = (FOR target, targetEdge IN 1..1 OUTBOUND spaceType2propertyEdge @@property2type"));
+            bindVars.put("@property2type", InternalSpace.PROPERTY_TO_TYPE_EDGE_COLLECTION.getCollectionName());
+            aql.addNewline();
+            aql.indent();
+            aql.addLine(AQL.trust(" LET targetSpace = DOCUMENT(target._from)"));
+            aql.addLine(AQL.trust(" LET targetType = DOCUMENT(target._to)"));
+            if (withCount) {
                 aql.addComment("And of course, we also count those target occurrences...");
                 aql.addLine(AQL.trust(" LET countTargetOccurrences = @space == null OR space.`" + SchemaOrgVocabulary.IDENTIFIER + "`==@space ? FIRST(FOR targetRel IN 1..1 INBOUND targetEdge @@documentRelation "));
                 aql.addLine(AQL.trust(" COLLECT WITH COUNT INTO occurrenceOfTarget"));
                 aql.addLine(AQL.trust(" RETURN occurrenceOfTarget) : 0"));
-                aql.addLine(AQL.trust(" LET targetSpace = DOCUMENT(target._from)"));
-                aql.addLine(AQL.trust(" LET targetType = DOCUMENT(target._to)"));
-                aql.addLine(AQL.trust(" RETURN {"));
-                aql.addLine(AQL.trust("\"" + EBRAINSVocabulary.META_TYPE + "\": targetType.`" + SchemaOrgVocabulary.IDENTIFIER + "`,"));
-                aql.addLine(AQL.trust("\"" + EBRAINSVocabulary.META_SPACE + "\": targetSpace.`" + SchemaOrgVocabulary.IDENTIFIER + "`,"));
-                aql.addLine(AQL.trust("\"" + EBRAINSVocabulary.META_OCCURRENCES + "\": countTargetOccurrences"));
-                aql.addLine(AQL.trust("  })"));
-                aql.outdent();
-                aql.addNewline();
-                aql.outdent();
-
-                aql.addComment("Now we collect the found targets and return them");
-                aql.addLine(AQL.trust("LET targetsByType = (FOR targetT IN targets"));
-                aql.addLine(AQL.trust(" COLLECT targetType = targetT.`" + EBRAINSVocabulary.META_TYPE + "` INTO tByType"));
-                aql.addLine(AQL.trust("  RETURN {"));
-                aql.addLine(AQL.trust("\"" + EBRAINSVocabulary.META_TYPE + "\": targetType,"));
-                aql.addLine(AQL.trust("\"" + EBRAINSVocabulary.META_SPACES + "\": tByType[*].targetT"));
-                aql.addLine(AQL.trust("  })"));
-                aql.addNewline();
-                aql.outdent();
             }
-            bindVars.put("@metaProperty", ArangoCollectionReference.fromSpace(new SpaceName(EBRAINSVocabulary.META_PROPERTY)).getCollectionName());
-            bindVars.put("@clientTypeProperty", InternalSpace.CLIENT_TYPE_PROPERTY_EDGE_COLLECTION.getCollectionName());
-
-            aql.addComment("Now, we need to figure out the property specification");
-            aql.addLine(AQL.trust("LET globalPropertySpec = NOT_NULL(FIRST(")).indent();
-            aql.addLine(AQL.trust("FOR g IN 1..1 INBOUND spaceType2property @@metaProperty"));
-            aql.addLine(AQL.trust("FILTER IS_SAME_COLLECTION(@globalSpace, g._id)"));
-            aql.addLine(AQL.trust("RETURN UNSET(UNSET(g, propertiesToRemoveForOverrides), propertiesToRemove)"));
-            aql.outdent().addLine(AQL.trust("), {})"));
-
+            aql.addLine(AQL.trust(" RETURN {"));
+            aql.addLine(AQL.trust("\"" + EBRAINSVocabulary.META_TYPE + "\": targetType.`" + SchemaOrgVocabulary.IDENTIFIER + "`,"));
+            aql.addLine(AQL.trust("\"" + EBRAINSVocabulary.META_SPACE + "\": targetSpace.`" + SchemaOrgVocabulary.IDENTIFIER + "`"));
+            if (withCount) {
+                aql.addLine(AQL.trust(", \"" + EBRAINSVocabulary.META_OCCURRENCES + "\": countTargetOccurrences"));
+            }
+            aql.addLine(AQL.trust("  })"));
+            aql.outdent();
+            aql.addNewline();
+            aql.addComment("Now we collect the found targets and return them");
+            aql.addLine(AQL.trust("LET targetsByType = (FOR targetT IN targets"));
+            aql.addLine(AQL.trust(" COLLECT targetType = targetT.`" + EBRAINSVocabulary.META_TYPE + "` INTO tByType"));
+            aql.addLine(AQL.trust("  RETURN {"));
+            aql.addLine(AQL.trust("\"" + EBRAINSVocabulary.META_TYPE + "\": targetType,"));
+            aql.addLine(AQL.trust("\"" + EBRAINSVocabulary.META_SPACES + "\": tByType[*].targetT"));
+            aql.addLine(AQL.trust("  })"));
+            aql.addNewline();
+            aql.outdent();
             if (withCount) {
                 aql.addComment("Finally, we count the target occurrences and sum them for a total number of all target occurrences.");
                 aql.addLine(AQL.trust("LET targetsByTypeWithCount = (FOR targetByTypeWithCount IN targetsByType"));
                 aql.addLine(AQL.trust("LET countOccurrences = @space == null OR space.`" + SchemaOrgVocabulary.IDENTIFIER + "`==@space ? SUM(targetByTypeWithCount.`" + EBRAINSVocabulary.META_SPACES + "`[*].`" + EBRAINSVocabulary.META_OCCURRENCES + "`) : 0"));
                 aql.addLine(AQL.trust("RETURN MERGE({\"" + EBRAINSVocabulary.META_OCCURRENCES + "\": countOccurrences}, targetByTypeWithCount))"));
-                aql.addNewline();
-                aql.outdent();
             }
-
-            aql.addComment("Last but not least, we now combine all the found information about the property in the space-type context and return it as an object.");
-            aql.addLine(AQL.trust("  RETURN MERGE({"));
-            aql.addLine(AQL.trust("\"_tempSpace\": space.`"+SchemaOrgVocabulary.IDENTIFIER+"`,"));
-            aql.addLine(AQL.trust("\"" + SchemaOrgVocabulary.IDENTIFIER + "\": spaceType2property.`" + SchemaOrgVocabulary.IDENTIFIER + "`"));
+            aql.addNewline();
+            aql.outdent();
+            aql.addComment("We now combine all the found information about the property in the space-type context and return it as an object.");
+            aql.addLine(AQL.trust("  RETURN {"));
+            aql.addLine(AQL.trust("[ spaceType2property.`" + SchemaOrgVocabulary.IDENTIFIER + "` ] : {"));
             if (withCount) {
-                aql.addLine(AQL.trust(", \"" + EBRAINSVocabulary.META_OCCURRENCES + "\": docsContributingToSpace2Property,"));
+                aql.addLine(AQL.trust("\"" + EBRAINSVocabulary.META_OCCURRENCES + "\": docsContributingToSpace2Property,"));
                 aql.addLine(AQL.trust("\"" + EBRAINSVocabulary.META_PROPERTY_TARGET_TYPES + "\": targetsByTypeWithCount"));
             }
-            aql.addLine(AQL.trust("  }, globalPropertySpec)"));
+            aql.addLine(AQL.trust("  }}"));
             aql.outdent();
             aql.addLine(AQL.trust(")"));
             aql.addNewline();
 
-            aql.addComment("Since the above information is all reflected on the data, it could still happen that some properties are not shown because they are specified and are not used (yet) -> contract first. Let's add those.");
-            aql.addLine(AQL.trust("LET missingProperties = (FOR missingProp IN REMOVE_VALUES(globalPropertyDefinitionsByType, (FOR p IN propertiesByReflection RETURN p.`"+SchemaOrgVocabulary.IDENTIFIER+"`))"));
+            aql.addComment("Now that we've defined the specifications in the different levels, we're going to merge them for having a single result.");
+
+            aql.addLine(AQL.trust("LET properties = (FOR p IN allProperties"));
+
+            aql.addLine(AQL.trust("LET spaceSpecific = spaceSpecificProperties[p.`" + SchemaOrgVocabulary.IDENTIFIER + "`]"));
+            aql.addLine(AQL.trust("LET typeSpecific = typeSpecificProperties[p.`" + SchemaOrgVocabulary.IDENTIFIER + "`]"));
+            aql.addLine(AQL.trust("LET global = globalProperties[p.`" + SchemaOrgVocabulary.IDENTIFIER + "`]"));
+
+            aql.addLine(AQL.trust("LET targetTypesFromSpaceDef = NOT_NULL(spaceSpecific.`" + EBRAINSVocabulary.META_PROPERTY_TARGET_TYPES + "`, [])"));
+            aql.addLine(AQL.trust("LET targetTypesFromTypeDef = NOT_NULL(typeSpecific.`" + EBRAINSVocabulary.META_PROPERTY_TARGET_TYPES + "`, [])"));
+            aql.addLine(AQL.trust("LET targetTypesFromGlobalDef = NOT_NULL(global.`" + EBRAINSVocabulary.META_PROPERTY_TARGET_TYPES + "`, [])"));
+
+            aql.addLine(AQL.trust("LET spaceDefinedTargetTypes = (FOR t IN targetTypesFromSpaceDef RETURN t.`" + EBRAINSVocabulary.META_TYPE + "`)"));
+
+            aql.addLine(AQL.trust("LET targetTypesWithTypeDef = APPEND(targetTypesFromSpaceDef, (FOR t IN targetTypesFromTypeDef"));
+            aql.addLine(AQL.trust("FILTER t NOT IN spaceDefinedTargetTypes"));
             aql.addLine(AQL.trust("RETURN {"));
-            aql.addLine(AQL.trust("\"_tempSpace\": space.`"+SchemaOrgVocabulary.IDENTIFIER+"`,"));
-            aql.addLine(AQL.trust("\""+SchemaOrgVocabulary.IDENTIFIER+"\": missingProp"));
+            aql.addLine(AQL.trust("\"" + EBRAINSVocabulary.META_OCCURRENCES + "\": 0,"));
+            aql.addLine(AQL.trust("\"" + EBRAINSVocabulary.META_TYPE + "\": t"));
+            aql.addLine(AQL.trust("}"));
+            aql.addLine(AQL.trust("))"));
+
+            aql.addLine(AQL.trust("LET spaceAndTypeDefinedTargetTypes = UNION_DISTINCT(spaceDefinedTargetTypes, targetTypesFromTypeDef)"));
+
+            aql.addLine(AQL.trust("LET targetTypes = APPEND(targetTypesWithTypeDef, (FOR t IN targetTypesFromGlobalDef"));
+            aql.addLine(AQL.trust("FILTER t NOT IN spaceAndTypeDefinedTargetTypes"));
+            aql.addLine(AQL.trust("RETURN {"));
+            aql.addLine(AQL.trust("\"" + EBRAINSVocabulary.META_OCCURRENCES + "\": 0,"));
+            aql.addLine(AQL.trust("\"" + EBRAINSVocabulary.META_TYPE + "\": t"));
+            aql.addLine(AQL.trust(" }))"));
+
+            aql.addLine(AQL.trust(" RETURN {"));
+            aql.addLine(AQL.trust("\"_tempSpace\": space.`" + SchemaOrgVocabulary.IDENTIFIER + "`,"));
+            aql.addLine(AQL.trust("\"" + SchemaOrgVocabulary.IDENTIFIER + "\": p.`" + SchemaOrgVocabulary.IDENTIFIER + "`,"));
             if (withCount) {
-                aql.addLine(AQL.trust(", \"" + EBRAINSVocabulary.META_OCCURRENCES + "\": 0,"));
-                aql.addLine(AQL.trust("\"" + EBRAINSVocabulary.META_PROPERTY_TARGET_TYPES + "\": []"));
+                aql.addLine(AQL.trust("\"" + EBRAINSVocabulary.META_OCCURRENCES + "\": NOT_NULL(spaceSpecific.`" + EBRAINSVocabulary.META_OCCURRENCES + "`, 0),"));
             }
+            aql.addLine(AQL.trust("\"" + EBRAINSVocabulary.META_PROPERTY_TARGET_TYPES + "\": targetTypes"));
             aql.addLine(AQL.trust("})"));
             aql.addNewline();
-            aql.addLine(AQL.trust("LET properties = APPEND(propertiesByReflection, missingProperties)"));
         }
         if (withCount) {
             aql.addComment("We now are combining the type in space information (such as occurrences)");
@@ -329,11 +371,11 @@ public class ArangoRepositoryTypes {
             aql.addLine(AQL.trust("    RETURN occurrenceBySpaceCount) : 0"));
             bindVars.put("@documentRelation", InternalSpace.DOCUMENT_RELATION_EDGE_COLLECTION.getCollectionName());
         }
-        if(withProperties){
+        if (withProperties) {
             aql.addLine(AQL.trust("RETURN {"));
             aql.addLine(AQL.trust("\"" + EBRAINSVocabulary.META_SPACE + "\": space.`" + SchemaOrgVocabulary.NAME + "`,"));
             aql.addLine(AQL.trust("\"" + EBRAINSVocabulary.META_PROPERTIES + "\": properties"));
-            if(withCount) {
+            if (withCount) {
                 aql.addLine(AQL.trust(", \"" + EBRAINSVocabulary.META_OCCURRENCES + "\": occurrenceBySpace"));
             }
             aql.addLine(AQL.trust("})"));
@@ -360,6 +402,9 @@ public class ArangoRepositoryTypes {
             aql.addLine(AQL.trust("LET globalTypeProperties = (FOR g, gRel IN 1..1 INBOUND property @@globalType"));
             aql.addLine(AQL.trust("FILTER g.`" + SchemaOrgVocabulary.IDENTIFIER + "`==type.`" + SchemaOrgVocabulary.IDENTIFIER + "`"));
             aql.addLine(AQL.trust("RETURN gRel)"));
+
+            bindVars.put("@metaProperty", ArangoCollectionReference.fromSpace(new SpaceName(EBRAINSVocabulary.META_PROPERTY)).getCollectionName());
+            bindVars.put("@clientTypeProperty", InternalSpace.CLIENT_TYPE_PROPERTY_EDGE_COLLECTION.getCollectionName());
 
             aql.addComment("First, we check for the property specifications which are defined for this client AND the type");
             aql.addLine(AQL.trust("LET clientSpecificTypePropertySpec = NOT_NULL(FIRST(FOR typeProperty IN globalTypeProperties"));
@@ -389,7 +434,7 @@ public class ArangoRepositoryTypes {
             aql.addLine(AQL.trust("LET targetTypes = (FOR globalPropertyBySpace IN groupedGlobalProperties[*].props[**].`" + EBRAINSVocabulary.META_PROPERTY_TARGET_TYPES + "`[**].`" + EBRAINSVocabulary.META_SPACES + "`[**]"));
             aql.addLine(AQL.trust("COLLECT globalType = globalPropertyBySpace.`" + EBRAINSVocabulary.META_TYPE + "` INTO globalTypeBySpace"));
             if (withCount) {
-                aql.addLine(AQL.trust("LET globalTypeCount = SUM((FOR p IN globalTypeBySpace[*].globalPropertyBySpace[**] FILTER @space == null OR  p.`"+EBRAINSVocabulary.META_SPACE+"`==@space RETURN p).`" + EBRAINSVocabulary.META_OCCURRENCES + "`[**])"));
+                aql.addLine(AQL.trust("LET globalTypeCount = SUM((FOR p IN globalTypeBySpace[*].globalPropertyBySpace[**] FILTER @space == null OR  p.`" + EBRAINSVocabulary.META_SPACE + "`==@space RETURN p).`" + EBRAINSVocabulary.META_OCCURRENCES + "`[**])"));
             }
             aql.addLine(AQL.trust("RETURN {"));
             aql.addLine(AQL.trust("\"" + EBRAINSVocabulary.META_TYPE + "\": globalType,"));
@@ -407,9 +452,8 @@ public class ArangoRepositoryTypes {
             aql.addLine(AQL.trust("\"" + EBRAINSVocabulary.META_PROPERTY_TARGET_TYPES + "\": targetTypes"));
             aql.addLine(AQL.trust("}, globalPropertySpec, globalTypePropertySpec, clientSpecificGlobalPropertySpec, clientSpecificTypePropertySpec)"));
             aql.addLine(AQL.trust(")}]"));
-            aql.addLine(AQL.trust("LET filteredSpaces = (FOR s IN spaces RETURN MERGE(s, {\""+EBRAINSVocabulary.META_PROPERTIES+"\": (FOR p IN s.`"+EBRAINSVocabulary.META_PROPERTIES+"` RETURN UNSET(p, \"_tempSpace\"))}))"));
-        }
-        else{
+            aql.addLine(AQL.trust("LET filteredSpaces = (FOR s IN spaces RETURN MERGE(s, {\"" + EBRAINSVocabulary.META_PROPERTIES + "\": (FOR p IN s.`" + EBRAINSVocabulary.META_PROPERTIES + "` RETURN UNSET(p, \"_tempSpace\"))}))"));
+        } else {
             aql.addLine(AQL.trust("LET filteredSpaces = spaces"));
         }
 
