@@ -56,18 +56,18 @@ public abstract class AbstractServiceCall {
 
     public <T> T post(String uri, Object payload, AuthTokens authTokens, Class<T> returnType) {
         logger.trace("Sending a post");
-        return executeRequest(loadBalancedWebClient.build().post().uri(uri).contentType(MediaType.APPLICATION_JSON).body(payload == null ? BodyInserters.empty() : BodyInserters.fromObject(payload)), MediaType.APPLICATION_JSON, authTokens, returnType);
+        return executeRequest(loadBalancedWebClient.build().post().uri(uri).contentType(MediaType.APPLICATION_JSON).body(payload == null ? BodyInserters.empty() : BodyInserters.fromValue(payload)), MediaType.APPLICATION_JSON, authTokens, returnType);
     }
 
     public <T> T put(String uri, Object payload, AuthTokens authTokens, Class<T> returnType) {
         logger.trace("Sending a put");
-        return executeRequest(loadBalancedWebClient.build().put().uri(uri).contentType(MediaType.APPLICATION_JSON).body(payload == null ? BodyInserters.empty() : BodyInserters.fromObject(payload)), MediaType.APPLICATION_JSON, authTokens, returnType);
+        return executeRequest(loadBalancedWebClient.build().put().uri(uri).contentType(MediaType.APPLICATION_JSON).body(payload == null ? BodyInserters.empty() : BodyInserters.fromValue(payload)), MediaType.APPLICATION_JSON, authTokens, returnType);
     }
 
 
     public <T> T patch(String uri, Object payload, AuthTokens authTokens, Class<T> returnType) {
         logger.trace("Sending a put");
-        return executeRequest(loadBalancedWebClient.build().patch().uri(uri).contentType(MediaType.APPLICATION_JSON).body(payload == null ? BodyInserters.empty() : BodyInserters.fromObject(payload)), MediaType.APPLICATION_JSON, authTokens, returnType);
+        return executeRequest(loadBalancedWebClient.build().patch().uri(uri).contentType(MediaType.APPLICATION_JSON).body(payload == null ? BodyInserters.empty() : BodyInserters.fromValue(payload)), MediaType.APPLICATION_JSON, authTokens, returnType);
     }
 
     public <T> T delete(String uri, AuthTokens authTokens, Class<T> returnType) {

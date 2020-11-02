@@ -18,12 +18,12 @@ package eu.ebrains.kg.commons.config;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.cloud.client.loadbalancer.LoadBalancerClient;
-import org.springframework.cloud.client.loadbalancer.reactive.LoadBalancerExchangeFilterFunction;
+import org.springframework.cloud.client.loadbalancer.LoadBalanced;
 import org.springframework.cloud.netflix.eureka.EnableEurekaClient;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.MediaType;
+import org.springframework.http.codec.ClientCodecConfigurer;
 import org.springframework.http.codec.json.Jackson2JsonDecoder;
 import org.springframework.http.codec.json.Jackson2JsonEncoder;
 import org.springframework.web.reactive.function.client.ExchangeStrategies;
@@ -39,15 +39,18 @@ public class WebClientConf {
     private ExchangeStrategies createExchangeStrategy(ObjectMapper objectMapper){
         return ExchangeStrategies.builder()
                 .codecs(config -> {
-                    config.defaultCodecs().jackson2JsonEncoder(new Jackson2JsonEncoder(objectMapper, MediaType.APPLICATION_JSON));
-                    config.defaultCodecs().jackson2JsonDecoder(new Jackson2JsonDecoder(objectMapper, MediaType.APPLICATION_JSON));
+                    ClientCodecConfigurer.ClientDefaultCodecs clientDefaultCodecs = config.defaultCodecs();
+                    clientDefaultCodecs.maxInMemorySize(16 * 1024 * 1024);
+                    clientDefaultCodecs.jackson2JsonEncoder(new Jackson2JsonEncoder(objectMapper, MediaType.APPLICATION_JSON));
+                    clientDefaultCodecs.jackson2JsonDecoder(new Jackson2JsonDecoder(objectMapper, MediaType.APPLICATION_JSON));
                 }).build();
     }
 
     @Bean
     @Qualifier("loadbalanced")
-    WebClient.Builder webClient(LoadBalancerClient loadBalancerClient, ObjectMapper objectMapper) {
-        return WebClient.builder().exchangeStrategies(createExchangeStrategy(objectMapper)).filter(new LoadBalancerExchangeFilterFunction(loadBalancerClient));
+    @LoadBalanced
+    WebClient.Builder webClient(ObjectMapper objectMapper) {
+        return WebClient.builder().exchangeStrategies(createExchangeStrategy(objectMapper));
     }
 
     @Bean

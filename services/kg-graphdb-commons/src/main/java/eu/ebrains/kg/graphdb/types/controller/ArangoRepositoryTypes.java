@@ -471,7 +471,7 @@ public class ArangoRepositoryTypes {
             aql.add(AQL.trust(", globalProperties"));
         }
         aql.add(AQL.trust("))"));
-        logger.info(aql.buildSimpleDebugQuery(bindVars));
+        logger.debug(aql.buildSimpleDebugQuery(bindVars));
 
         return new AQLQuery(aql, bindVars);
     }
