@@ -95,6 +95,7 @@ public class ArangoRepositoryInstances {
         }
         List<NormalizedJsonLd> singleDoc = Collections.singletonList(document.getDoc());
         handleAlternativesAndEmbedded(singleDoc, stage, alternatives, embedded);
+        resolveUsersForDocuments(singleDoc);
         exposeRevision(singleDoc);
         if (removeInternalProperties) {
             document.getDoc().removeAllInternalProperties();
@@ -135,7 +136,6 @@ public class ArangoRepositoryInstances {
             documents.forEach(d -> d.remove(EBRAINSVocabulary.META_ALTERNATIVE));
         }
         if (embedded) {
-            resolveUsersForDocuments(documents);
             addEmbeddedInstancesToDocument(documents, getEmbeddedDocuments(documents, stage, false));
         }
     }
@@ -246,6 +246,7 @@ public class ArangoRepositoryInstances {
             }
         }
         handleAlternativesAndEmbedded(normalizedJsonLds, stage, alternatives, embedded);
+        resolveUsersForDocuments(normalizedJsonLds);
         exposeRevision(normalizedJsonLds);
         normalizedJsonLds.forEach(NormalizedJsonLd::removeAllInternalProperties);
         return result;
@@ -390,6 +391,7 @@ public class ArangoRepositoryInstances {
             bindVars.put("@typeRelationCollection", InternalSpace.TYPE_EDGE_COLLECTION.getCollectionName());
             Paginated<NormalizedJsonLd> normalizedJsonLdPaginated = arangoRepositoryCommons.queryDocuments(database, new AQLQuery(aql, bindVars));
             handleAlternativesAndEmbedded(normalizedJsonLdPaginated.getData(), stage, alternatives, embedded);
+            resolveUsersForDocuments(normalizedJsonLdPaginated.getData());
             exposeRevision(normalizedJsonLdPaginated.getData());
             normalizedJsonLdPaginated.getData().forEach(NormalizedJsonLd::removeAllInternalProperties);
             return normalizedJsonLdPaginated;
@@ -418,6 +420,7 @@ public class ArangoRepositoryInstances {
             bindVars.put("@typeRelationCollection", InternalSpace.TYPE_EDGE_COLLECTION.getCollectionName());
             Paginated<NormalizedJsonLd> normalizedJsonLdPaginated = arangoRepositoryCommons.queryDocuments(database, new AQLQuery(aql, bindVars));
             handleAlternativesAndEmbedded(normalizedJsonLdPaginated.getData(), stage, alternatives, embedded);
+            resolveUsersForDocuments(normalizedJsonLdPaginated.getData());
             exposeRevision(normalizedJsonLdPaginated.getData());
             normalizedJsonLdPaginated.getData().forEach(NormalizedJsonLd::removeAllInternalProperties);
             return normalizedJsonLdPaginated;
@@ -511,6 +514,7 @@ public class ArangoRepositoryInstances {
             bindVars.put("id", useOriginalTo ? idUtils.buildAbsoluteUrl(id).getId() : space.getName() + "/" + id);
             List<NormalizedJsonLd> result = db.query(aql, bindVars, new AqlQueryOptions(), NormalizedJsonLd.class).asListRemaining();
             handleAlternativesAndEmbedded(result, stage, alternatives, embedded);
+            resolveUsersForDocuments(result);
             exposeRevision(result);
             return result;
         }
@@ -528,6 +532,7 @@ public class ArangoRepositoryInstances {
                 List<NormalizedJsonLd> result = doGetDocumentsByIdentifiers(rootDocument.allIdentifiersIncludingId(), stage, space);
                 if (result != null) {
                     handleAlternativesAndEmbedded(result, stage, alternatives, embedded);
+                    resolveUsersForDocuments(result);
                     return result;
                 }
             }
@@ -539,6 +544,7 @@ public class ArangoRepositoryInstances {
     public List<NormalizedJsonLd> getDocumentsByIdentifiers(Set<String> allIdentifiersIncludingId, DataStage stage, SpaceName space, boolean embedded, boolean alternatives) {
         List<NormalizedJsonLd> normalizedJsonLds = doGetDocumentsByIdentifiers(allIdentifiersIncludingId, stage, space);
         handleAlternativesAndEmbedded(normalizedJsonLds, stage, alternatives, embedded);
+        resolveUsersForDocuments(normalizedJsonLds);
         return normalizedJsonLds;
     }
 
