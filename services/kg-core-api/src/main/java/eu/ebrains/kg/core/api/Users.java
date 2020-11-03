@@ -116,15 +116,15 @@ public class Users {
 
 
     @Operation(summary = "Get a picture for a specific user")
-    @GetMapping(value = "/{id}/picture", produces = MediaType.IMAGE_JPEG_VALUE)
+    @GetMapping(value = "/{id}/picture")
     @ExposesUserPicture
-    public ResponseEntity<byte[]> getUserPicture(@PathVariable("id") UUID userId) {
+    public ResponseEntity<String> getUserPicture(@PathVariable("id") UUID userId) {
         SpaceName targetSpace = InternalSpace.USERS_PICTURE_SPACE;
         NormalizedJsonLd instance = coreInstancesToGraphDB.getInstance(DataStage.IN_PROGRESS, new InstanceId(createUserPictureId(userId), targetSpace), false, false);
         if(instance!=null){
             String picture = instance.getAs(EBRAINSVocabulary.META_PICTURE, String.class);
             if(picture!=null){
-                return ResponseEntity.ok(Base64.decode(picture));
+                return ResponseEntity.ok("data:image/jpeg;base64,"+picture);
             }
         }
         return ResponseEntity.notFound().build();
