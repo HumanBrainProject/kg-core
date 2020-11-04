@@ -245,10 +245,12 @@ public class ArangoRepositoryInstances {
                 }
             }
         }
-        handleAlternativesAndEmbedded(normalizedJsonLds, stage, alternatives, embedded);
-        resolveUsersForDocuments(normalizedJsonLds);
-        exposeRevision(normalizedJsonLds);
-        normalizedJsonLds.forEach(NormalizedJsonLd::removeAllInternalProperties);
+        if(!normalizedJsonLds.isEmpty()) {
+            handleAlternativesAndEmbedded(normalizedJsonLds, stage, alternatives, embedded);
+            resolveUsersForDocuments(normalizedJsonLds);
+            exposeRevision(normalizedJsonLds);
+            normalizedJsonLds.forEach(NormalizedJsonLd::removeAllInternalProperties);
+        }
         return result;
     }
 
