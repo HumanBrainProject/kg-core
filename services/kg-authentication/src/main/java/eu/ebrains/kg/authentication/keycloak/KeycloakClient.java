@@ -37,6 +37,7 @@ import javax.ws.rs.ForbiddenException;
 import javax.ws.rs.NotFoundException;
 import javax.ws.rs.core.Response;
 import java.util.*;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -226,8 +227,21 @@ public class KeycloakClient {
     }
 
     private void syncKgScopeWithKgRoles(String clientScopeId){
-        List<RoleRepresentation> kgRoles = getRealmResource().clients().get(getClient().getId()).roles().list();
-        getRealmResource().clientScopes().get(clientScopeId).getScopeMappings().clientLevel(getClient().getId()).add(kgRoles);
+        List<RoleRepresentation> existingRoles = getRealmResource().clientScopes().get(clientScopeId).getScopeMappings().clientLevel(getClient().getId()).listAll();
+        Set<String> existingRoleNames = existingRoles.stream().map(RoleRepresentation::getName).collect(Collectors.toSet());
+        List<RoleRepresentation> clientRoles = getRealmResource().clients().get(getClient().getId()).roles().list();
+        final AtomicInteger counter = new AtomicInteger();
+        //We need to make sure that there are not too many roles reported at once. This is why we split the number of roles into chunks.
+        Collection<List<RoleRepresentation>> newRolesChunks = clientRoles.stream().filter(r -> !existingRoleNames.contains(r.getName())).collect(Collectors.groupingBy(it -> counter.getAndIncrement() / 100)).values();
+        newRolesChunks.forEach(newRoles -> {
+            getRealmResource().clientScopes().get(clientScopeId).getScopeMappings().clientLevel(getClient().getId()).add(newRoles);
+        });
+        Set<String> clientRoleNames = clientRoles.stream().map(RoleRepresentation::getName).collect(Collectors.toSet());
+        Collection<List<RoleRepresentation>> outdatedRolesChunks = existingRoles.stream().filter(r -> !clientRoleNames.contains(r.getName())).collect(Collectors.groupingBy(it -> counter.getAndIncrement() / 100)).values();
+        outdatedRolesChunks.forEach(outdatedRoles -> {
+            getRealmResource().clientScopes().get(clientScopeId).getScopeMappings().clientLevel(getClient().getId()).remove(outdatedRoles);
+        });
+
     }
 
     private void createDefaultClient() {
