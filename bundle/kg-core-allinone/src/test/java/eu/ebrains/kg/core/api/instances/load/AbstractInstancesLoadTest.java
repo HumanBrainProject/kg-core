@@ -19,7 +19,7 @@ package eu.ebrains.kg.core.api.instances.load;
 import eu.ebrains.kg.commons.jsonld.NormalizedJsonLd;
 import eu.ebrains.kg.commons.model.IngestConfiguration;
 import eu.ebrains.kg.commons.model.Result;
-import eu.ebrains.kg.core.api.Extra;
+import eu.ebrains.kg.core.api.Inference;
 import eu.ebrains.kg.core.api.Instances;
 import eu.ebrains.kg.core.model.ExposedStage;
 import eu.ebrains.kg.metrics.PerformanceTestUtils;
@@ -39,7 +39,7 @@ public class AbstractInstancesLoadTest extends AbstractLoadTest {
     protected Instances instances;
 
     @Autowired
-    protected Extra extra;
+    protected Inference inference;
 
 
     // INSERTION
@@ -87,7 +87,7 @@ public class AbstractInstancesLoadTest extends AbstractLoadTest {
     protected void triggerDeferredInference() {
         Instant start = Instant.now();
         System.out.println("Trigger inference");
-        extra.triggerDeferredInference(true, "test");
+        inference.triggerDeferredInference(true, "test");
         Instant end = Instant.now();
         System.out.printf("Inference handled in %d ms%n", Duration.between(start, end).toMillis());
     }

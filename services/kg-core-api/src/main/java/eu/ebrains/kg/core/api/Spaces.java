@@ -19,8 +19,11 @@ package eu.ebrains.kg.core.api;
 import eu.ebrains.kg.arango.commons.model.InternalSpace;
 import eu.ebrains.kg.commons.AuthContext;
 import eu.ebrains.kg.commons.Version;
+import eu.ebrains.kg.commons.config.openApiGroups.Admin;
+import eu.ebrains.kg.commons.config.openApiGroups.Advanced;
 import eu.ebrains.kg.commons.jsonld.JsonLdId;
 import eu.ebrains.kg.commons.jsonld.NormalizedJsonLd;
+import eu.ebrains.kg.commons.markers.ExposesInputWithoutEnrichedSensitiveData;
 import eu.ebrains.kg.commons.markers.ExposesSpace;
 import eu.ebrains.kg.commons.markers.WritesData;
 import eu.ebrains.kg.commons.model.*;
@@ -31,6 +34,7 @@ import eu.ebrains.kg.commons.semantics.vocabularies.EBRAINSVocabulary;
 import eu.ebrains.kg.core.controller.CoreSpaceController;
 import eu.ebrains.kg.core.model.ExposedStage;
 import eu.ebrains.kg.core.serviceCall.CoreSpacesToGraphDB;
+import eu.ebrains.kg.core.serviceCall.CoreToAdmin;
 import eu.ebrains.kg.core.serviceCall.CoreToPrimaryStore;
 import io.swagger.v3.oas.annotations.Operation;
 import org.springdoc.api.annotations.ParameterObject;
@@ -54,16 +58,19 @@ public class Spaces {
     private final CoreSpaceController spaceController;
     private final AuthContext authContext;
     private final CoreToPrimaryStore primaryStoreSvc;
+    private final CoreToAdmin coreToAdmin;
 
-    public Spaces(CoreSpacesToGraphDB graphDbSvc, CoreSpaceController spaceController, AuthContext authContext, CoreToPrimaryStore primaryStoreSvc) {
+    public Spaces(CoreSpacesToGraphDB graphDbSvc, CoreSpaceController spaceController, AuthContext authContext, CoreToPrimaryStore primaryStoreSvc, CoreToAdmin coreToAdmin) {
         this.graphDbSvc = graphDbSvc;
         this.spaceController = spaceController;
         this.authContext = authContext;
         this.primaryStoreSvc = primaryStoreSvc;
+        this.coreToAdmin = coreToAdmin;
     }
 
     @GetMapping("{space}")
     @ExposesSpace
+    @Advanced
     public Result<NormalizedJsonLd> getSpace(@RequestParam("stage") ExposedStage stage, @PathVariable("space") String space, @RequestParam(value = "permissions", defaultValue = "false") boolean permissions) {
         NormalizedJsonLd s = spaceController.getSpace(stage, space, permissions);
         if(s!=null){
@@ -74,6 +81,7 @@ public class Spaces {
 
     @GetMapping
     @ExposesSpace
+    @Advanced
     public PaginatedResult<NormalizedJsonLd> getSpaces(@RequestParam("stage") ExposedStage stage, @ParameterObject PaginationParam paginationParam, @RequestParam(value = "permissions", defaultValue = "false") boolean permissions) {
         Paginated<NormalizedJsonLd> spaces = graphDbSvc.getSpaces(stage.getStage(), paginationParam);
         if (permissions) {
@@ -91,6 +99,7 @@ public class Spaces {
     @Operation(summary = "Assign a type to a space")
     @PutMapping("{space}/types")
     @WritesData
+    @Admin
     public ResponseEntity<Result<Void>> assignTypeToSpace(@RequestParam("stage") ExposedStage stage, @PathVariable("space") String space, @RequestParam("type") String type) {
         NormalizedJsonLd payload = new NormalizedJsonLd();
         payload.addTypes(EBRAINSVocabulary.META_TYPE_IN_SPACE_DEFINITION_TYPE);
@@ -100,6 +109,16 @@ public class Spaces {
         payload.setId(EBRAINSVocabulary.createIdForStructureDefinition("type2space", space, t.getName()));
         primaryStoreSvc.postEvent(Event.createUpsertEvent(InternalSpace.GLOBAL_SPEC, UUID.nameUUIDFromBytes(payload.id().getId().getBytes(StandardCharsets.UTF_8)), Event.Type.INSERT, payload), false, authContext.getAuthTokens());
         return ResponseEntity.ok(Result.ok());
+    }
+
+
+    @Operation(summary = "Define a space")
+    //In theory, this could also go into {space} only. But since Swagger doesn't allow the discrimination of groups with the same path (there is already the same path registered as GET for simple), we want to discriminate it properly
+    @PutMapping("{space}/specification")
+    @Admin
+    @ExposesInputWithoutEnrichedSensitiveData
+    public Result<NormalizedJsonLd> defineSpace(@PathVariable(value = "space") String space, @RequestParam("autorelease") boolean autoRelease) {
+        return Result.ok(coreToAdmin.addSpace(space, autoRelease).toJsonLd());
     }
 
 }

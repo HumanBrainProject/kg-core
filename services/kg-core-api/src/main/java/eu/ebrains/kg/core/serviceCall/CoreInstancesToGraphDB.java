@@ -17,6 +17,7 @@
 package eu.ebrains.kg.core.serviceCall;
 
 import eu.ebrains.kg.commons.AuthContext;
+import eu.ebrains.kg.commons.AuthTokens;
 import eu.ebrains.kg.commons.ServiceCall;
 import eu.ebrains.kg.commons.jsonld.InstanceId;
 import eu.ebrains.kg.commons.jsonld.JsonLdDoc;
@@ -79,5 +80,9 @@ public class CoreInstancesToGraphDB {
 
     public UUIDtoString getLabels(Set<InstanceId> ids, DataStage stage) {
         return serviceCall.post(BASE_URL+String.format("/%s/instancesByIds/labels", stage.name()), ids.stream().map(InstanceId::serialize).collect(Collectors.toList()), authContext.getAuthTokens(), UUIDtoString.class);
+    }
+
+    public SuggestionResult getSuggestedLinksForProperty(NormalizedJsonLd payload, DataStage stage, InstanceId instanceId, UUID originalId, String propertyName, Type type, String search, PaginationParam paginationParam, AuthTokens authTokens) {
+        return serviceCall.post(BASE_URL + String.format("/%s/instances/%s/suggestedLinksForProperty?property=%s&type=%s&search=%s&from=%d&size=%s", stage.name(), instanceId != null ? instanceId.serialize() : String.format("unknown/%s", originalId), propertyName, type != null ? type.getEncodedName() : "", search != null ? search : "", paginationParam.getFrom(), paginationParam.getSize() != null ? String.valueOf(paginationParam.getSize()) : ""), payload, authTokens, SuggestionResult.class);
     }
 }

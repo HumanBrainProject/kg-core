@@ -19,6 +19,9 @@ package eu.ebrains.kg.core.api;
 import eu.ebrains.kg.arango.commons.model.InternalSpace;
 import eu.ebrains.kg.commons.AuthContext;
 import eu.ebrains.kg.commons.Version;
+import eu.ebrains.kg.commons.config.openApiGroups.Admin;
+import eu.ebrains.kg.commons.config.openApiGroups.Advanced;
+import eu.ebrains.kg.commons.config.openApiGroups.Simple;
 import eu.ebrains.kg.commons.jsonld.JsonLdConsts;
 import eu.ebrains.kg.commons.jsonld.JsonLdId;
 import eu.ebrains.kg.commons.jsonld.NormalizedJsonLd;
@@ -63,6 +66,7 @@ public class Types {
     @Operation(summary = "Returns the types available - either with property information or without")
     @GetMapping("/types")
     @ExposesType
+    @Simple
     public PaginatedResult<NormalizedJsonLd> getTypes(@RequestParam("stage") ExposedStage stage, @RequestParam(value = "space", required = false) String space, @RequestParam(value = "withProperties", defaultValue = "false") boolean withProperties, @ParameterObject PaginationParam paginationParam) {
         return PaginatedResult.ok(graphDBSvc.getTypes(stage.getStage(), space != null ? new SpaceName(space) : null, withProperties, paginationParam));
     }
@@ -70,13 +74,16 @@ public class Types {
     @Operation(summary = "Returns the types according to the list of names - either with property information or without")
     @PostMapping("/typesByName")
     @ExposesType
+    @Advanced
     public Result<Map<String, Result<NormalizedJsonLd>>> getTypesByName(@RequestBody List<String> listOfTypeNames, @RequestParam("stage") ExposedStage stage, @RequestParam(value = "withProperties", defaultValue = "false") boolean withProperties, @RequestParam(value = "space", required = false) String space) {
         return Result.ok(graphDBSvc.getTypesByNameList(listOfTypeNames, stage.getStage(), space != null ? new SpaceName(space) : null, withProperties));
     }
 
     @Operation(summary = "Define a type")
-    @PutMapping("/types")
+    //In theory, this could also go into /types only. But since Swagger doesn't allow the discrimination of groups with the same path (there is already the same path registered as GET for simple), we want to discriminate it properly
+    @PutMapping("/types/specification")
     @WritesData
+    @Admin
     public ResponseEntity<Result<Void>> defineType(@RequestBody NormalizedJsonLd payload, @Parameter(description = "By default, the specification is only valid for the current client. If this flag is set to true (and the client/user combination has the permission), the specification is applied for all clients (unless they have defined something by themselves)")  @RequestParam(value = "global", required = false) boolean global) {
         SpaceName targetSpace = global ? InternalSpace.GLOBAL_SPEC : authContext.getClientSpace().getName();
         JsonLdId type = payload.getAs(EBRAINSVocabulary.META_TYPE, JsonLdId.class);
