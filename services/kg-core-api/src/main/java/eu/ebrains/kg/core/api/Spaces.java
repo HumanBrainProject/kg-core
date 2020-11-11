@@ -30,6 +30,7 @@ import eu.ebrains.kg.commons.model.*;
 import eu.ebrains.kg.commons.models.UserWithRoles;
 import eu.ebrains.kg.commons.permission.Functionality;
 import eu.ebrains.kg.commons.permission.FunctionalityInstance;
+import eu.ebrains.kg.commons.permissions.controller.PermissionSvc;
 import eu.ebrains.kg.commons.semantics.vocabularies.EBRAINSVocabulary;
 import eu.ebrains.kg.core.controller.CoreSpaceController;
 import eu.ebrains.kg.core.model.ExposedStage;
@@ -38,6 +39,7 @@ import eu.ebrains.kg.core.serviceCall.CoreToAdmin;
 import eu.ebrains.kg.core.serviceCall.CoreToPrimaryStore;
 import io.swagger.v3.oas.annotations.Operation;
 import org.springdoc.api.annotations.ParameterObject;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -59,13 +61,15 @@ public class Spaces {
     private final AuthContext authContext;
     private final CoreToPrimaryStore primaryStoreSvc;
     private final CoreToAdmin coreToAdmin;
+    private final PermissionSvc permissionSvc;
 
-    public Spaces(CoreSpacesToGraphDB graphDbSvc, CoreSpaceController spaceController, AuthContext authContext, CoreToPrimaryStore primaryStoreSvc, CoreToAdmin coreToAdmin) {
+    public Spaces(CoreSpacesToGraphDB graphDbSvc, CoreSpaceController spaceController, AuthContext authContext, CoreToPrimaryStore primaryStoreSvc, CoreToAdmin coreToAdmin, PermissionSvc permissionSvc) {
         this.graphDbSvc = graphDbSvc;
         this.spaceController = spaceController;
         this.authContext = authContext;
         this.primaryStoreSvc = primaryStoreSvc;
         this.coreToAdmin = coreToAdmin;
+        this.permissionSvc = permissionSvc;
     }
 
     @GetMapping("{space}")
@@ -100,7 +104,7 @@ public class Spaces {
     @PutMapping("{space}/types")
     @WritesData
     @Admin
-    public ResponseEntity<Result<Void>> assignTypeToSpace(@RequestParam("stage") ExposedStage stage, @PathVariable("space") String space, @RequestParam("type") String type) {
+    public ResponseEntity<Result<Void>> assignTypeToSpace(@PathVariable("space") String space, @RequestParam("type") String type) {
         NormalizedJsonLd payload = new NormalizedJsonLd();
         payload.addTypes(EBRAINSVocabulary.META_TYPE_IN_SPACE_DEFINITION_TYPE);
         Type t = new Type(type);
@@ -112,13 +116,30 @@ public class Spaces {
     }
 
 
-    @Operation(summary = "Define a space")
-    //In theory, this could also go into {space} only. But since Swagger doesn't allow the discrimination of groups with the same path (there is already the same path registered as GET for simple), we want to discriminate it properly
+    @Operation(summary = "Specify a space")
     @PutMapping("{space}/specification")
     @Admin
     @ExposesInputWithoutEnrichedSensitiveData
-    public Result<NormalizedJsonLd> defineSpace(@PathVariable(value = "space") String space, @RequestParam("autorelease") boolean autoRelease) {
-        return Result.ok(coreToAdmin.addSpace(space, autoRelease).toJsonLd());
+    public ResponseEntity<Result<NormalizedJsonLd>> defineSpace(@PathVariable(value = "space") String space, @RequestParam(value = "autorelease", required = false, defaultValue = "false") boolean autoRelease) {
+        if(permissionSvc.hasGlobalPermission(authContext.getUserWithRoles(), Functionality.CREATE_SPACE)) {
+            return ResponseEntity.ok(Result.ok(coreToAdmin.addSpace(space, autoRelease).toJsonLd()));
+        }
+        else{
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+        }
     }
 
+
+    @Operation(summary = "Remove a space specification")
+    @DeleteMapping("{space}/specification")
+    @Admin
+    public ResponseEntity<Void> removeSpaceSpecification(@PathVariable(value = "space") String space) {
+        if(permissionSvc.hasGlobalPermission(authContext.getUserWithRoles(), Functionality.DELETE_SPACE)) {
+            coreToAdmin.removeSpace(space);
+            return ResponseEntity.status(HttpStatus.OK).build();
+        }
+        else{
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+        }
+    }
 }

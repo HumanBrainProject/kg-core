@@ -38,6 +38,10 @@ public class CoreToAdmin {
         return serviceCall.put(String.format("%s/spaces/%s?autorelease=%b", ADMIN_ENDPOINT, id, autoRelease), null, authContext.getAuthTokens(), Space.class);
     }
 
+    public void removeSpace(String id) {
+        serviceCall.delete(String.format("%s/spaces/%s", ADMIN_ENDPOINT, id), authContext.getAuthTokens(), Space.class);
+    }
+
     public Space getSpace(String id) {
         return serviceCall.get(String.format("%s/spaces/%s", ADMIN_ENDPOINT, id), authContext.getAuthTokens(), Space.class);
     }
