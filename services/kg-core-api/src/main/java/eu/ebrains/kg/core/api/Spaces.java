@@ -25,17 +25,17 @@ import eu.ebrains.kg.commons.jsonld.JsonLdId;
 import eu.ebrains.kg.commons.jsonld.NormalizedJsonLd;
 import eu.ebrains.kg.commons.markers.ExposesInputWithoutEnrichedSensitiveData;
 import eu.ebrains.kg.commons.markers.ExposesSpace;
+import eu.ebrains.kg.commons.markers.ExposesType;
 import eu.ebrains.kg.commons.markers.WritesData;
 import eu.ebrains.kg.commons.model.*;
 import eu.ebrains.kg.commons.models.UserWithRoles;
 import eu.ebrains.kg.commons.permission.Functionality;
 import eu.ebrains.kg.commons.permission.FunctionalityInstance;
-import eu.ebrains.kg.commons.permissions.controller.PermissionSvc;
 import eu.ebrains.kg.commons.semantics.vocabularies.EBRAINSVocabulary;
+import eu.ebrains.kg.commons.semantics.vocabularies.SchemaOrgVocabulary;
 import eu.ebrains.kg.core.controller.CoreSpaceController;
 import eu.ebrains.kg.core.model.ExposedStage;
 import eu.ebrains.kg.core.serviceCall.CoreSpacesToGraphDB;
-import eu.ebrains.kg.core.serviceCall.CoreToAdmin;
 import eu.ebrains.kg.core.serviceCall.CoreToPrimaryStore;
 import io.swagger.v3.oas.annotations.Operation;
 import org.springdoc.api.annotations.ParameterObject;
@@ -44,6 +44,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
@@ -60,16 +61,12 @@ public class Spaces {
     private final CoreSpaceController spaceController;
     private final AuthContext authContext;
     private final CoreToPrimaryStore primaryStoreSvc;
-    private final CoreToAdmin coreToAdmin;
-    private final PermissionSvc permissionSvc;
 
-    public Spaces(CoreSpacesToGraphDB graphDbSvc, CoreSpaceController spaceController, AuthContext authContext, CoreToPrimaryStore primaryStoreSvc, CoreToAdmin coreToAdmin, PermissionSvc permissionSvc) {
+    public Spaces(CoreSpacesToGraphDB graphDbSvc, CoreSpaceController spaceController, AuthContext authContext, CoreToPrimaryStore primaryStoreSvc) {
         this.graphDbSvc = graphDbSvc;
         this.spaceController = spaceController;
         this.authContext = authContext;
         this.primaryStoreSvc = primaryStoreSvc;
-        this.coreToAdmin = coreToAdmin;
-        this.permissionSvc = permissionSvc;
     }
 
     @GetMapping("{space}")
@@ -116,30 +113,66 @@ public class Spaces {
     }
 
 
-    @Operation(summary = "Specify a space")
+    @Operation(summary = "Explicitly specify a space (incl. creation of roles in the authentication system)")
     @PutMapping("{space}/specification")
     @Admin
     @ExposesInputWithoutEnrichedSensitiveData
-    public ResponseEntity<Result<NormalizedJsonLd>> defineSpace(@PathVariable(value = "space") String space, @RequestParam(value = "autorelease", required = false, defaultValue = "false") boolean autoRelease) {
-        if(permissionSvc.hasGlobalPermission(authContext.getUserWithRoles(), Functionality.CREATE_SPACE)) {
-            return ResponseEntity.ok(Result.ok(coreToAdmin.addSpace(space, autoRelease).toJsonLd()));
-        }
-        else{
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
-        }
+    public ResponseEntity<Result<NormalizedJsonLd>> createSpaceDefinition(@PathVariable(value = "space") String space, @RequestParam(value = "autorelease", required = false, defaultValue = "false") boolean autoRelease) {
+        return ResponseEntity.ok(Result.ok(spaceController.createSpaceDefinition(new Space(new SpaceName(space), autoRelease), true)));
     }
 
 
-    @Operation(summary = "Remove a space specification")
+    @Operation(summary = "Remove a space definition (this does not mean that its links are removed - it therefore can still appear in the type queries)")
     @DeleteMapping("{space}/specification")
     @Admin
-    public ResponseEntity<Void> removeSpaceSpecification(@PathVariable(value = "space") String space) {
-        if(permissionSvc.hasGlobalPermission(authContext.getUserWithRoles(), Functionality.DELETE_SPACE)) {
-            coreToAdmin.removeSpace(space);
-            return ResponseEntity.status(HttpStatus.OK).build();
-        }
-        else{
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
-        }
+    @ExposesInputWithoutEnrichedSensitiveData
+    public ResponseEntity<Result<Void>> removeSpaceDefinition(@PathVariable(value = "space") String space, @RequestParam(value = "removeRoles", required = false, defaultValue = "false") boolean removeRoles) {
+        spaceController.removeSpaceDefinition(new SpaceName(space), removeRoles);
+        return ResponseEntity.ok(Result.ok());
     }
+
+
+    @Operation(summary = "Remove all links of a space (if it is empty) so it is disappearing from the meta database. This does not remove the explicit specifications but keeps them e.g. if it is going to be reintroudced).")
+    @DeleteMapping("{space}/links")
+    @Admin
+    public void removeSpaceLinks(@PathVariable(value = "space") String space) {
+        spaceController.removeSpaceLinks(new SpaceName(space));
+    }
+
+
+    @Operation(summary = "List candidate spaces for removal", description = "Returns a list of spaces which potentially could be removed because they are not in use (have no types)")
+    @GetMapping("/candidates/forRemoval")
+    @ExposesType
+    @Admin
+    public Result<List<String>> candidatesForDeprecation() {
+        List<NormalizedJsonLd> allSpaces = getSpaces(ExposedStage.IN_PROGRESS, new PaginationParam(), false).getData();
+        if(allSpaces!=null){
+            return Result.ok(allSpaces.stream().map(space -> space.getAs(SchemaOrgVocabulary.IDENTIFIER, String.class)).filter(spaceController::isSpaceEmpty).collect(Collectors.toList()));
+        }
+        return Result.ok(Collections.emptyList());
+    }
+
+
+    @Operation(summary = "Remove candidates", description = "Remove all candidates (instances without occurrences) in one go")
+    @DeleteMapping("/candidates/forRemoval")
+    @WritesData
+    @Admin
+    public ResponseEntity<List<Result<String>>> deprecateAllCandidates(@RequestParam(value = "removeRoles", required = false, defaultValue = "false") boolean removeRoles) {
+        Result<List<String>> listResult = candidatesForDeprecation();
+        if (listResult != null && listResult.getData() != null) {
+            List<Result<String>> result = new ArrayList<>();
+            listResult.getData().forEach(d -> {
+                try {
+                    removeSpaceLinks(d);
+                    removeSpaceDefinition(d, removeRoles);
+                    result.add(Result.ok(d));
+                } catch (Exception e) {
+                    result.add(Result.nok(HttpStatus.CONFLICT.value(), String.format("%s - %s", d, e.getMessage())));
+                }
+            });
+            return ResponseEntity.ok(result);
+        }
+        return ResponseEntity.notFound().build();
+    }
+
 }

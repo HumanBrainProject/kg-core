@@ -121,6 +121,10 @@ public class TodoListProcessor {
                     logger.info("Releasing a document");
                     releaseDocument(rootDocumentReference, todoItem.getPayload());
                     break;
+                case META_DEPRECATION:
+                    deprecateMetaStructure(todoItem.getPayload());
+                    logger.info("Handle meta deprecation");
+
             }
             logger.debug("Updating last seen event id");
             eventTracker.updateLastSeenEventId(stage, todoItem.getEventId());
@@ -144,6 +148,13 @@ public class TodoListProcessor {
         deleteDocument(DataStage.RELEASED, rootDocumentReference);
         repository.executeTransactional(DataStage.IN_PROGRESS, Collections.singletonList(new DeleteInstanceOperation(releasingController.getReleaseStatusEdgeId(rootDocumentReference))));
     }
+
+
+    private void deprecateMetaStructure(NormalizedJsonLd payload) {
+        repository.executeTransactionalOnMeta(DataStage.IN_PROGRESS, metaDataController.createMetaStructureDeprecationOperations(payload));
+        //TODO What about RELEASED stage? In theory, released should be cleaned up automatically (in released, there is no reason for having schemas not in use)
+    }
+
 
     private void releaseDocument(ArangoDocumentReference rootDocumentReference, NormalizedJsonLd payload) {
         // Releasing a specific revision

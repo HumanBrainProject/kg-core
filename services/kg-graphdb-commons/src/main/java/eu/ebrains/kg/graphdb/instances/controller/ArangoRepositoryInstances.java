@@ -493,34 +493,11 @@ public class ArangoRepositoryInstances {
     }
 
     private List<NormalizedJsonLd> getDocumentsByRelation(DataStage stage, SpaceName space, UUID id, ArangoRelation relation, boolean incoming, boolean useOriginalTo, boolean embedded, boolean alternatives) {
-        ArangoDatabase db = databases.getByStage(stage);
-
-        ArangoCollectionReference relationColl;
-        if (relation.isInternal()) {
-            relationColl = ArangoCollectionReference.fromSpace(new InternalSpace(relation.getRelationField()), true);
-        } else {
-            relationColl = new ArangoCollectionReference(relation.getRelationField(), true);
-        }
-        ArangoCollectionReference documentSpace = ArangoCollectionReference.fromSpace(space);
-        if (documentSpace != null && db.collection(relationColl.getCollectionName()).exists() && db.collection(documentSpace.getCollectionName()).exists()) {
-            String aql = "LET docs = (FOR d IN @@relation\n" +
-                    "    FILTER d." + (incoming ? useOriginalTo ? IndexedJsonLdDoc.ORIGINAL_TO : ArangoVocabulary.TO : ArangoVocabulary.FROM) + " == @id \n" +
-                    "    LET doc = DOCUMENT(d." + (incoming ? ArangoVocabulary.FROM : ArangoVocabulary.TO) + ") \n" +
-                    "    FILTER IS_SAME_COLLECTION(@@space, doc) \n" +
-                    "    RETURN doc) \n" +
-                    "    FOR doc IN docs" +
-                    "       RETURN DISTINCT doc";
-            Map<String, Object> bindVars = new HashMap<>();
-            bindVars.put("@relation", relationColl.getCollectionName());
-            bindVars.put("@space", documentSpace.getCollectionName());
-            bindVars.put("id", useOriginalTo ? idUtils.buildAbsoluteUrl(id).getId() : space.getName() + "/" + id);
-            List<NormalizedJsonLd> result = db.query(aql, bindVars, new AqlQueryOptions(), NormalizedJsonLd.class).asListRemaining();
-            handleAlternativesAndEmbedded(result, stage, alternatives, embedded);
-            resolveUsersForDocuments(result);
-            exposeRevision(result);
-            return result;
-        }
-        return Collections.emptyList();
+        List<NormalizedJsonLd> result = arangoUtils.getDocumentsByRelation(databases.getByStage(stage), space, id, relation, incoming, useOriginalTo);
+        handleAlternativesAndEmbedded(result, stage, alternatives, embedded);
+        resolveUsersForDocuments(result);
+        exposeRevision(result);
+        return result;
     }
 
     @ExposesData

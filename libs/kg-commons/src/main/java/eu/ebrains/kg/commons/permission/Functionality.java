@@ -58,6 +58,9 @@ public enum Functionality {
     //Users
     LIST_USERS(Permission.Level.GLOBAL_ONLY, FunctionalityGroup.USERS, DataStage.NATIVE, null, null),
 
+    //Types
+    DEFINE_TYPES(Permission.Level.GLOBAL_ONLY, FunctionalityGroup.TYPES, null, null, null),
+
     // Client mgmt
     READ_CLIENT(Permission.Level.GLOBAL_AND_SPACE, FunctionalityGroup.CLIENT, null, null, null),
     CONFIGURE_CLIENT(Permission.Level.GLOBAL_AND_SPACE, FunctionalityGroup.CLIENT, null, Event.Type.UPDATE, EBRAINSVocabulary.META_CLIENTCONFIGURATION_TYPE),
@@ -110,6 +113,6 @@ public enum Functionality {
     }
 
     public enum FunctionalityGroup{
-        INSTANCE, CLIENT, QUERY, PERMISSIONS, SPACES, USERS
+        INSTANCE, CLIENT, QUERY, PERMISSIONS, SPACES, USERS, TYPES
     }
 }

@@ -31,6 +31,7 @@ import eu.ebrains.kg.graphdb.commons.model.ArangoDocument;
 import eu.ebrains.kg.graphdb.commons.model.MetaRepresentation;
 import eu.ebrains.kg.graphdb.ingestion.controller.structure.StaticStructureController;
 import eu.ebrains.kg.graphdb.ingestion.model.DBOperation;
+import eu.ebrains.kg.graphdb.ingestion.model.DeleteInstanceOperation;
 import eu.ebrains.kg.graphdb.ingestion.model.UpsertOperation;
 import org.springframework.stereotype.Component;
 
@@ -49,6 +50,17 @@ public class SpaceDefinitionSemanticsHandler extends SemanticsHandler {
         super(typeUtils);
         this.databases = databases;
         this.idUtils = idUtils;
+    }
+
+    @Override
+    public List<DBOperation> createMetaDeprecateOperations(NormalizedJsonLd document) {
+        if(document.types()!=null && document.types().contains(EBRAINSVocabulary.META_SPACEDEFINITION_TYPE)){
+            String spaceToBeDeprecated = document.getAs(EBRAINSVocabulary.META_SPACE, String.class);
+            ArangoDocumentReference spaceReference = StaticStructureController.createDocumentRefForMetaRepresentation(spaceToBeDeprecated, ArangoCollectionReference.fromSpace(InternalSpace.SPACES_SPACE));
+            //We don't check for dependent resources since only spaces without any types (and therefore without any instances) can be deprecated.
+            return Collections.singletonList(new DeleteInstanceOperation(spaceReference));
+        }
+        return Collections.emptyList();
     }
 
     @Override

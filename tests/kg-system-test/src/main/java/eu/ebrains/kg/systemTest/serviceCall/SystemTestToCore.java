@@ -121,6 +121,6 @@ public class SystemTestToCore {
     }
 
     public void inferInstance(SpaceName space, UUID uuid, boolean async) {
-        serviceCallWithClientSecret.post(String.format("%s/extra/inference/%s?identifier=%s&async=%b", SERVICE_URL, space.getName(), idUtils.buildAbsoluteUrl(uuid).getId(), async), null, new AuthTokens(), String.class);
+        serviceCallWithClientSecret.post(String.format("%s/inference/%s?identifier=%s&async=%b", SERVICE_URL, space.getName(), idUtils.buildAbsoluteUrl(uuid).getId(), async), null, new AuthTokens(), String.class);
     }
 }

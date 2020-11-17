@@ -40,7 +40,6 @@ public class EBRAINSVocabulary {
 
 
     public static final String META = NAMESPACE+"meta/";
-
     public static final String META_SPACES = META + "spaces";
     public static final String META_USER = META+"user";
     public static final String META_OCCURRENCES = META + "occurrences";
@@ -74,6 +73,9 @@ public class EBRAINSVocabulary {
     public final static String META_CLIENTCONFIGURATION_TYPE = META+"ClientConfiguration";
 
     public final static String META_USER_PICTURE_TYPE = META+"UserPicture";
+
+    public static final String META_REMOVE_SPECS = META + "removeSpecs";
+
 
 
 }

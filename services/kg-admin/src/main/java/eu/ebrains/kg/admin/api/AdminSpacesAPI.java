@@ -16,16 +16,12 @@
 
 package eu.ebrains.kg.admin.api;
 
-import com.arangodb.ArangoDBException;
 import eu.ebrains.kg.admin.controller.AdminSpaceController;
 import eu.ebrains.kg.admin.controller.AdminUserController;
-import eu.ebrains.kg.commons.model.Space;
 import eu.ebrains.kg.commons.model.SpaceName;
 import eu.ebrains.kg.commons.model.User;
 import eu.ebrains.kg.commons.permission.roles.RoleMapping;
 import io.swagger.v3.oas.annotations.Operation;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -44,27 +40,6 @@ public class AdminSpacesAPI {
     public AdminSpacesAPI(AdminSpaceController spaceController, AdminUserController userController) {
         this.spaceController = spaceController;
         this.userController = userController;
-    }
-
-    @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteSpace(@PathVariable("id") String id) {
-        try {
-            spaceController.removeSpace(new SpaceName(id));
-            return ResponseEntity.status(HttpStatus.OK).build();
-        } catch (ArangoDBException ex) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
-        }
-    }
-
-    @PutMapping("/{id}")
-    public ResponseEntity<Space> addSpace(@PathVariable("id") String id, @RequestParam("autorelease") boolean autoRelease) {
-        try {
-            Space space = new Space(new SpaceName(id), autoRelease);
-            spaceController.createSpace(space, true);
-            return ResponseEntity.ok(space);
-        } catch (ArangoDBException ex) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
-        }
     }
 
     @Operation(summary = "Get the available permission groups for a space")

@@ -16,33 +16,51 @@
 
 package eu.ebrains.kg.core.controller;
 
+import eu.ebrains.kg.arango.commons.model.InternalSpace;
 import eu.ebrains.kg.commons.AuthContext;
+import eu.ebrains.kg.commons.exception.ForbiddenException;
+import eu.ebrains.kg.commons.jsonld.JsonLdId;
 import eu.ebrains.kg.commons.jsonld.NormalizedJsonLd;
-import eu.ebrains.kg.commons.model.SpaceName;
+import eu.ebrains.kg.commons.model.*;
 import eu.ebrains.kg.commons.models.UserWithRoles;
 import eu.ebrains.kg.commons.permission.Functionality;
 import eu.ebrains.kg.commons.permission.FunctionalityInstance;
+import eu.ebrains.kg.commons.permission.roles.RoleMapping;
+import eu.ebrains.kg.commons.permissions.controller.PermissionSvc;
 import eu.ebrains.kg.commons.semantics.vocabularies.EBRAINSVocabulary;
 import eu.ebrains.kg.commons.semantics.vocabularies.SchemaOrgVocabulary;
 import eu.ebrains.kg.core.model.ExposedStage;
 import eu.ebrains.kg.core.serviceCall.CoreSpacesToGraphDB;
+import eu.ebrains.kg.core.serviceCall.CoreToAuthentication;
 import eu.ebrains.kg.core.serviceCall.CoreToPrimaryStore;
+import eu.ebrains.kg.core.serviceCall.CoreTypesToGraphDB;
 import org.springframework.stereotype.Component;
 
+import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
+import java.util.Date;
 import java.util.List;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 @Component
 public class CoreSpaceController {
 
+
+    private final CoreTypesToGraphDB typesGraphDBSvc;
     private final CoreToPrimaryStore primaryStoreSvc;
     private final CoreSpacesToGraphDB graphDbSvc;
     private final AuthContext authContext;
+    private final PermissionSvc permissionSvc;
+    private final CoreToAuthentication coreToAuthentication;
 
-    public CoreSpaceController(CoreToPrimaryStore primaryStoreSvc, CoreSpacesToGraphDB graphDbSvc, AuthContext authContext) {
+    public CoreSpaceController(CoreTypesToGraphDB typesGraphDBSvc, CoreToPrimaryStore primaryStoreSvc, CoreSpacesToGraphDB graphDbSvc, AuthContext authContext, PermissionSvc permissionSvc, CoreToAuthentication coreToAuthentication) {
+        this.typesGraphDBSvc = typesGraphDBSvc;
         this.primaryStoreSvc = primaryStoreSvc;
-        this.authContext = authContext;
         this.graphDbSvc = graphDbSvc;
+        this.authContext = authContext;
+        this.permissionSvc = permissionSvc;
+        this.coreToAuthentication = coreToAuthentication;
     }
 
     public NormalizedJsonLd getSpace(ExposedStage stage, String space, boolean permissions) {
@@ -56,6 +74,54 @@ public class CoreSpaceController {
             }
         }
         return sp;
+    }
+
+
+    public NormalizedJsonLd createSpaceDefinition(Space space, boolean global) {
+        if(permissionSvc.hasGlobalPermission(authContext.getUserWithRoles(), Functionality.CREATE_SPACE)) {
+            NormalizedJsonLd spacePayload = space.toJsonLd();
+            primaryStoreSvc.postEvent(Event.createUpsertEvent(global ? InternalSpace.GLOBAL_SPEC : space.getName(), UUID.nameUUIDFromBytes(spacePayload.id().getId().getBytes(StandardCharsets.UTF_8)), Event.Type.INSERT, spacePayload), false, authContext.getAuthTokens());
+            coreToAuthentication.createRoles(Arrays.stream(RoleMapping.values()).filter(r -> r != RoleMapping.IS_CLIENT).map(r -> r.toRole(space.getName())).collect(Collectors.toList()));
+            return spacePayload;
+        }
+        else{
+           throw new ForbiddenException();
+        }
+    }
+
+    public void removeSpaceDefinition(SpaceName space, boolean removeRoles) {
+        if(permissionSvc.hasGlobalPermission(authContext.getUserWithRoles(), Functionality.DELETE_SPACE)) {
+            if(removeRoles) {
+                coreToAuthentication.removeRoles(FunctionalityInstance.getRolePatternForSpace(space));
+            }
+            JsonLdId id = Space.createId(space);
+            primaryStoreSvc.postEvent(Event.createDeleteEvent(InternalSpace.GLOBAL_SPEC, UUID.nameUUIDFromBytes(id.getId().getBytes(StandardCharsets.UTF_8)), id), false, authContext.getAuthTokens());
+        }
+        else{
+            throw new ForbiddenException();
+        }
+    }
+
+    public void removeSpaceLinks(SpaceName space) {
+        //For this, we need global permissions for both - deleting spaces and reading (the latter to ensure that we actually can see all potential values)
+        if(permissionSvc.hasGlobalPermission(authContext.getUserWithRoles(), Functionality.DELETE_SPACE) && permissionSvc.hasGlobalPermission(authContext.getUserWithRoles(), Functionality.READ)) {
+            if(!isSpaceEmpty(space.getName())){
+                throw new IllegalStateException("Space is not empty");
+            }
+            NormalizedJsonLd payload = new NormalizedJsonLd();
+            payload.addTypes(EBRAINSVocabulary.META_SPACEDEFINITION_TYPE);
+            payload.put(EBRAINSVocabulary.META_SPACE, space);
+            Event deprecateSpace = new Event(space, UUID.nameUUIDFromBytes(EBRAINSVocabulary.createIdForStructureDefinition("spaces", space.getName()).getId().getBytes(StandardCharsets.UTF_8)), payload, Event.Type.META_DEPRECATION, new Date());
+            primaryStoreSvc.postEvent(deprecateSpace, false, authContext.getAuthTokens());
+        }
+        else{
+            throw new ForbiddenException();
+        }
+    }
+
+
+    public boolean isSpaceEmpty(String space){
+        return typesGraphDBSvc.getTypes(DataStage.IN_PROGRESS, new SpaceName(space), false, false, new PaginationParam()).getTotalResults() == 0;
     }
 
 }

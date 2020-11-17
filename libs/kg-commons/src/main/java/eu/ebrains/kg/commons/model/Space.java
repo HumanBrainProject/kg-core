@@ -17,6 +17,7 @@
 package eu.ebrains.kg.commons.model;
 
 import eu.ebrains.kg.commons.jsonld.JsonLdConsts;
+import eu.ebrains.kg.commons.jsonld.JsonLdId;
 import eu.ebrains.kg.commons.jsonld.NormalizedJsonLd;
 import eu.ebrains.kg.commons.permission.Functionality;
 import eu.ebrains.kg.commons.semantics.vocabularies.EBRAINSVocabulary;
@@ -72,13 +73,18 @@ public class Space {
     public NormalizedJsonLd toJsonLd() {
         NormalizedJsonLd payload = new NormalizedJsonLd();
         payload.put(JsonLdConsts.TYPE, EBRAINSVocabulary.META_SPACEDEFINITION_TYPE);
-        payload.setId(EBRAINSVocabulary.createIdForStructureDefinition("spaces", name.getName()));
+        payload.setId(createId(name));
         payload.put(SchemaOrgVocabulary.NAME, getName());
         payload.put(SchemaOrgVocabulary.IDENTIFIER, getName());
         payload.put(EBRAINSVocabulary.META_SPACE, getName());
         payload.put(EBRAINSVocabulary.META_AUTORELEASE_SPACE, isAutoRelease());
         return payload;
     }
+
+    public static JsonLdId createId(SpaceName name){
+        return EBRAINSVocabulary.createIdForStructureDefinition("spaces", name.getName());
+    }
+
 
     public boolean isAutoRelease() {
         return autoRelease;

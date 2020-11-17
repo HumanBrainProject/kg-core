@@ -17,51 +17,19 @@
 package eu.ebrains.kg.admin.controller;
 
 import eu.ebrains.kg.admin.serviceCall.AdminToAuthentication;
-import eu.ebrains.kg.admin.serviceCall.AdminToPrimaryStore;
-import eu.ebrains.kg.arango.commons.model.InternalSpace;
-import eu.ebrains.kg.commons.jsonld.InstanceId;
-import eu.ebrains.kg.commons.jsonld.NormalizedJsonLd;
-import eu.ebrains.kg.commons.model.Event;
-import eu.ebrains.kg.commons.model.Space;
 import eu.ebrains.kg.commons.model.SpaceName;
 import eu.ebrains.kg.commons.model.User;
-import eu.ebrains.kg.commons.permission.FunctionalityInstance;
-import eu.ebrains.kg.commons.permission.roles.Role;
 import eu.ebrains.kg.commons.permission.roles.RoleMapping;
 import org.springframework.stereotype.Component;
 
-import java.nio.charset.StandardCharsets;
-import java.util.Arrays;
 import java.util.List;
-import java.util.UUID;
-import java.util.stream.Collectors;
 
 @Component
 public class AdminSpaceController {
-    private final AdminToPrimaryStore adminToPrimaryStore;
     private final AdminToAuthentication authenticationSvc;
 
-    public AdminSpaceController(AdminToPrimaryStore adminToPrimaryStore, AdminToAuthentication authenticationSvc) {
-        this.adminToPrimaryStore = adminToPrimaryStore;
+    public AdminSpaceController(AdminToAuthentication authenticationSvc) {
         this.authenticationSvc = authenticationSvc;
-    }
-
-    private List<Role> findRoles(SpaceName space, RoleMapping group, List<Role> collector){
-        if(group.getChildRole()!=null){
-            findRoles(space, group.getChildRole(), collector);
-        }
-        collector.add(group.toRole(space));
-        return collector;
-    }
-
-    public InstanceId createSpace(Space space, boolean global) {
-        List<InstanceId> instanceIds = defineSpace(space, global);
-        authenticationSvc.createRoles(Arrays.stream(RoleMapping.values()).filter(r -> r != RoleMapping.IS_CLIENT).map(r -> r.toRole(space.getName())).collect(Collectors.toList()));
-        return instanceIds.size()==1 ? instanceIds.get(0) : null;
-    }
-
-    public void removeSpace(SpaceName space) {
-        authenticationSvc.removeRoles(FunctionalityInstance.getRolePatternForSpace(space));
     }
 
     public List<User> getUsersByPermissionGroup(SpaceName space, RoleMapping group) {
@@ -70,11 +38,6 @@ public class AdminSpaceController {
 
     public void addUserToSpace(String nativeUserId, SpaceName space, RoleMapping permissionGroup) {
         authenticationSvc.addUserToRole(permissionGroup.toRole(space).getName(), nativeUserId);
-    }
-
-    public  List<InstanceId> defineSpace(Space space, boolean global) {
-        NormalizedJsonLd payload = space.toJsonLd();
-        return adminToPrimaryStore.postEvent(Event.createUpsertEvent(global ? InternalSpace.GLOBAL_SPEC : space.getName(), UUID.nameUUIDFromBytes(payload.id().getId().getBytes(StandardCharsets.UTF_8)), Event.Type.INSERT, payload), false);
     }
 
 }

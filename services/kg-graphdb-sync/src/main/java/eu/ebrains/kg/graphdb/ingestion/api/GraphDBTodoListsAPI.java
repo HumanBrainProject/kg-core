@@ -16,9 +16,7 @@
 
 package eu.ebrains.kg.graphdb.ingestion.api;
 
-import eu.ebrains.kg.arango.commons.model.ArangoCollectionReference;
 import eu.ebrains.kg.commons.model.DataStage;
-import eu.ebrains.kg.commons.model.SpaceName;
 import eu.ebrains.kg.commons.model.TodoItem;
 import eu.ebrains.kg.graphdb.ingestion.controller.TodoListProcessor;
 import org.slf4j.Logger;
@@ -26,7 +24,6 @@ import org.slf4j.LoggerFactory;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
-import java.util.UUID;
 
 @RestController
 @RequestMapping("/internal/graphdb/{stage}")
@@ -46,9 +43,4 @@ public class GraphDBTodoListsAPI {
         todoListProcessor.doProcessTodoList(todoList, stage);
     }
 
-
-    @DeleteMapping("instances-extra/meta/{space}/{id}")
-    public void silentRemovalOfInstanceFromMetaDatabase(@PathVariable("stage") DataStage stage, @PathVariable("space") String space, @PathVariable("id") UUID id){
-        todoListProcessor.removeDocumentFromMetaDatabase(stage, ArangoCollectionReference.fromSpace(new SpaceName(space)).doc(id));
-    }
 }

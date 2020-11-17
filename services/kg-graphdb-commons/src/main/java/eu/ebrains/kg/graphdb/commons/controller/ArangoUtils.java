@@ -19,23 +19,23 @@ package eu.ebrains.kg.graphdb.commons.controller;
 import com.arangodb.ArangoCollection;
 import com.arangodb.ArangoDatabase;
 import com.arangodb.entity.CollectionType;
-import com.arangodb.model.CollectionCreateOptions;
-import com.arangodb.model.CollectionsReadOptions;
-import com.arangodb.model.HashIndexOptions;
-import com.arangodb.model.SkiplistIndexOptions;
+import com.arangodb.model.*;
 import eu.ebrains.kg.arango.commons.aqlBuilder.ArangoVocabulary;
 import eu.ebrains.kg.arango.commons.model.ArangoCollectionReference;
 import eu.ebrains.kg.arango.commons.model.InternalSpace;
 import eu.ebrains.kg.commons.IdUtils;
 import eu.ebrains.kg.commons.jsonld.IndexedJsonLdDoc;
 import eu.ebrains.kg.commons.jsonld.JsonLdConsts;
+import eu.ebrains.kg.commons.jsonld.NormalizedJsonLd;
+import eu.ebrains.kg.commons.model.SpaceName;
 import eu.ebrains.kg.graphdb.ingestion.model.DocumentRelation;
+import eu.ebrains.kg.graphdb.instances.model.ArangoRelation;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
-import java.util.Collections;
+import java.util.*;
 
 @Component
 public class ArangoUtils {
@@ -82,5 +82,30 @@ public class ArangoUtils {
 
     public boolean isInternalCollection(ArangoCollectionReference collectionReference) {
         return collectionReference.getCollectionName().startsWith("internal");
+    }
+
+    public List<NormalizedJsonLd> getDocumentsByRelation(ArangoDatabase db, SpaceName space, UUID id, ArangoRelation relation, boolean incoming, boolean useOriginalTo) {
+        ArangoCollectionReference relationColl;
+        if (relation.isInternal()) {
+            relationColl = ArangoCollectionReference.fromSpace(new InternalSpace(relation.getRelationField()), true);
+        } else {
+            relationColl = new ArangoCollectionReference(relation.getRelationField(), true);
+        }
+        ArangoCollectionReference documentSpace = ArangoCollectionReference.fromSpace(space);
+        if (documentSpace != null && db.collection(relationColl.getCollectionName()).exists() && db.collection(documentSpace.getCollectionName()).exists()) {
+            String aql = "LET docs = (FOR d IN @@relation\n" +
+                    "    FILTER d." + (incoming ? useOriginalTo ? IndexedJsonLdDoc.ORIGINAL_TO : ArangoVocabulary.TO : ArangoVocabulary.FROM) + " == @id \n" +
+                    "    LET doc = DOCUMENT(d." + (incoming ? ArangoVocabulary.FROM : ArangoVocabulary.TO) + ") \n" +
+                    "    FILTER IS_SAME_COLLECTION(@@space, doc) \n" +
+                    "    RETURN doc) \n" +
+                    "    FOR doc IN docs" +
+                    "       RETURN DISTINCT doc";
+            Map<String, Object> bindVars = new HashMap<>();
+            bindVars.put("@relation", relationColl.getCollectionName());
+            bindVars.put("@space", documentSpace.getCollectionName());
+            bindVars.put("id", useOriginalTo ? idUtils.buildAbsoluteUrl(id).getId() : space.getName() + "/" + id);
+            return db.query(aql, bindVars, new AqlQueryOptions(), NormalizedJsonLd.class).asListRemaining();
+        }
+        return Collections.emptyList();
     }
 }

@@ -18,10 +18,14 @@ package eu.ebrains.kg.core.serviceCall;
 
 import eu.ebrains.kg.commons.AuthContext;
 import eu.ebrains.kg.commons.ServiceCall;
+import eu.ebrains.kg.commons.model.Client;
 import eu.ebrains.kg.commons.model.User;
+import eu.ebrains.kg.commons.permission.roles.Role;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
 
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.List;
 
@@ -30,24 +34,43 @@ public class CoreToAuthentication {
     private final ServiceCall serviceCall;
     private final AuthContext authContext;
 
+    public static final String SPACE = "http://kg-authentication/internal/authentication";
+
     public CoreToAuthentication(ServiceCall serviceCall, AuthContext authContext) {
         this.serviceCall = serviceCall;
         this.authContext = authContext;
     }
 
     public User getMyUserProfile(){
-        return serviceCall.get("http://kg-authentication/internal/authentication/users/me", authContext.getAuthTokens(), User.class);
+        return serviceCall.get(String.format("%s/users/me", SPACE), authContext.getAuthTokens(), User.class);
     }
 
     public String endpoint() {
-        return serviceCall.get("http://kg-authentication/internal/authentication/users/authorization/endpoint", MediaType.TEXT_PLAIN,  authContext.getAuthTokens(), String.class);
+        return serviceCall.get(String.format("%s/users/authorization/endpoint", SPACE), MediaType.TEXT_PLAIN,  authContext.getAuthTokens(), String.class);
     }
 
     public String tokenEndpoint() {
-        return serviceCall.get("http://kg-authentication/internal/authentication/users/authorization/tokenEndpoint", MediaType.TEXT_PLAIN,  authContext.getAuthTokens(), String.class);
+        return serviceCall.get(String.format("%s/users/authorization/tokenEndpoint", SPACE), MediaType.TEXT_PLAIN,  authContext.getAuthTokens(), String.class);
     }
 
     public List<User> getUsersByAttribute(String attribute, String value){
-        return Arrays.asList(serviceCall.get(String.format("http://kg-authentication/internal/authentication/users/profiles/byAttribute/%s/%s", attribute, value), authContext.getAuthTokens(), User[].class));
+        return Arrays.asList(serviceCall.get(String.format("%s/users/profiles/byAttribute/%s/%s", SPACE, attribute, value), authContext.getAuthTokens(), User[].class));
     }
+
+    public void createRoles(List<Role> roles) {
+        serviceCall.post(String.format("%s/roles", SPACE), roles, authContext.getAuthTokens(), Void.class);
+    }
+
+    public void removeRoles(String pattern) {
+        serviceCall.delete(String.format("%s/roles/%s", SPACE, URLEncoder.encode(pattern, StandardCharsets.UTF_8)), authContext.getAuthTokens(), Void.class);
+    }
+
+    public Client registerClient(Client client) {
+        return serviceCall.put(String.format("%s/clients", SPACE), client, authContext.getAuthTokens(), Client.class);
+    }
+
+    public Client unregisterClient(String clientName) {
+        return serviceCall.delete(String.format("%s/clients/%s", SPACE, clientName), authContext.getAuthTokens(), Client.class);
+    }
+
 }

@@ -16,17 +16,15 @@
 
 package eu.ebrains.kg.core.api;
 
+import com.arangodb.ArangoDBException;
 import eu.ebrains.kg.commons.Version;
 import eu.ebrains.kg.commons.config.openApiGroups.Admin;
 import eu.ebrains.kg.commons.model.Client;
-import eu.ebrains.kg.core.serviceCall.CoreToAdmin;
+import eu.ebrains.kg.core.controller.CoreClientController;
 import io.swagger.v3.oas.annotations.Operation;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PutMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 /**
  * The spaces API provides information about existing KG spaces
@@ -36,18 +34,32 @@ import org.springframework.web.bind.annotation.RestController;
 @Admin
 public class Clients {
 
-    private final CoreToAdmin coreToAdmin;
+    private final CoreClientController coreClientController;
 
-    public Clients(CoreToAdmin coreToAdmin) {
-        this.coreToAdmin = coreToAdmin;
+    public Clients(CoreClientController coreClientController) {
+        this.coreClientController = coreClientController;
     }
 
     @Operation(summary = "Register a client in EBRAINS KG")
     @PutMapping("/{id}")
     public ResponseEntity<Client> addClient(@PathVariable("id") String id) {
-        Client client = coreToAdmin.addClient(id);
-        return ResponseEntity.status(HttpStatus.CREATED).body(client);
+        try {
+            Client client = coreClientController.addClient(id);
+            return ResponseEntity.status(HttpStatus.CREATED).body(client);
+        } catch (ArangoDBException ex) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
+        }
     }
 
+
+    @Operation(summary = "Remove a registered client")
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Client> deleteClient(@PathVariable("id") String id) {
+        try {
+            return ResponseEntity.ok(coreClientController.deleteClient(id));
+        } catch (ArangoDBException ex) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
+        }
+    }
 
 }

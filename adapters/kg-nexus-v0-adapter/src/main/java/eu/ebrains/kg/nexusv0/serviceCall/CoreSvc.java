@@ -42,10 +42,10 @@ public class CoreSvc {
     }
 
     public void inferInstance(SpaceName space, String identifier){
-        serviceCallWithClientSecret.post(String.format("%s/extra/inference/%s?identifier=%s", SERVICE_URL, space.getName(), identifier), null, new AuthTokens(), String.class);
+        serviceCallWithClientSecret.post(String.format("%s/inference/%s?identifier=%s", SERVICE_URL, space.getName(), identifier), null, new AuthTokens(), String.class);
     }
     public void inferDeferred(){
-        serviceCallWithClientSecret.post(String.format("%s/extra/inference/deferred", SERVICE_URL), null, new AuthTokens(), String.class);
+        serviceCallWithClientSecret.post(String.format("%s/inference/deferred", SERVICE_URL), null, new AuthTokens(), String.class);
     }
 
     public Result<List<NormalizedJsonLd>> getInstancesByIdentifiers(Set<String> identifiers){
@@ -69,11 +69,8 @@ public class CoreSvc {
     }
 
     public NormalizedJsonLd toNormalizedJsonLd(JsonLdDoc payload) {
-        return serviceCallWithClientSecret.post(String.format("%s/extra/normalizedPayload", SERVICE_URL), payload, new AuthTokens(), NormalizedJsonLd.class);
+        return serviceCallWithClientSecret.post(String.format("%s/normalizedPayload", SERVICE_URL), payload, new AuthTokens(), NormalizedJsonLd.class);
     }
-//    public void deleteInstance(UUID uuid){
-//        serviceCall.delete(String.format("%s/instances/%s", SERVICE_URL, uuid), null, authContext.getAuthTokens(), Result.class);
-//    }
 
     public User getUserByMidId(String midId){
         User[] users = serviceCallWithClientSecret.get(String.format("%s/users/byAttribute/mid.id/%s", SERVICE_URL, midId), new AuthTokens(), User[].class);
