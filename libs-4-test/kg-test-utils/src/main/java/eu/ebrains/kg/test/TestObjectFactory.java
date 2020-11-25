@@ -37,8 +37,6 @@ public class TestObjectFactory {
     public static final SpaceName KGEDITOR = new SpaceName("kgeditor");
 
 
-
-
     public static NormalizedJsonLd overrideId(NormalizedJsonLd jsonLd, JsonLdId id) {
         jsonLd.addIdentifiers(jsonLd.id().getId());
         jsonLd.setId(id);
