@@ -95,13 +95,15 @@ public class TodoListProcessor {
         Set<User> handledUsers = new HashSet<>();
         for (TodoItem todoItem : todoList) {
             ArangoDocumentReference rootDocumentReference = ArangoCollectionReference.fromSpace(todoItem.getSpace()).doc(todoItem.getDocumentId());
-            User user = getUserForItem(todoItem);
-            InstanceId userId = getUserInstanceId(user);
-            if (!handledUsers.contains(user)) {
-                handleUserRepresentation(user, userId);
-                handledUsers.add(user);
+            if(stage == DataStage.NATIVE){
+                User user = getUserForItem(todoItem);
+                InstanceId userId = getUserInstanceId(user);
+                if (!handledUsers.contains(user)) {
+                    handleUserRepresentation(user, userId);
+                    handledUsers.add(user);
+                }
+                todoItem.getPayload().put(EBRAINSVocabulary.META_USER, idUtils.buildAbsoluteUrl(userId.getUuid()));
             }
-            todoItem.getPayload().put(EBRAINSVocabulary.META_USER, idUtils.buildAbsoluteUrl(userId.getUuid()));
             switch (todoItem.getType()) {
                 case UPDATE:
                 case INSERT:
