@@ -332,17 +332,9 @@ public class KeycloakController {
     }
 
     public List<String> buildRoleListFromKeycloak(Map<String, Claim> authInfo) {
-        Claim resource_access = authInfo.get("resource_access");
+        Claim resource_access = authInfo.get("kg-roles");
         if (resource_access != null) {
-            Object kgResources = resource_access.asMap().get(config.getKgClientId());
-            if (kgResources instanceof Map) {
-                Map<String, Object> kg = (Map<String, Object>) kgResources;
-                Object roles = kg.get("roles");
-                if (roles instanceof List) {
-                    //We're only interested in roles of our client
-                    return (List<String>) roles;
-                }
-            }
+            return resource_access.asList(String.class);
         }
         return Collections.emptyList();
     }

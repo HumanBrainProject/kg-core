@@ -184,7 +184,7 @@ public class KeycloakClient {
         mapper.setName("client roles");
         Map<String, String> c = new HashMap<>();
         c.put("access.token.claim", "true");
-        c.put("claim.name", "resource_access.${client_id}.roles");
+        c.put("claim.name", "kg-roles");
         c.put("id.token.claim", "false");
         c.put("jsonType.label", "String");
         c.put("multivalued", "true");
