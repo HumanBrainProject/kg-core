@@ -67,8 +67,8 @@ public class Types {
     @GetMapping("/types")
     @ExposesType
     @Simple
-    public PaginatedResult<NormalizedJsonLd> getTypes(@RequestParam("stage") ExposedStage stage, @RequestParam(value = "space", required = false) String space, @RequestParam(value = "withProperties", defaultValue = "false") boolean withProperties, @ParameterObject PaginationParam paginationParam) {
-        return PaginatedResult.ok(graphDBSvc.getTypes(stage.getStage(), space != null ? new SpaceName(space) : null, withProperties, withProperties, paginationParam));
+    public PaginatedResult<NormalizedJsonLd> getTypes(@RequestParam("stage") ExposedStage stage, @RequestParam(value = "space", required = false) String space, @RequestParam(value = "withProperties", defaultValue = "false") boolean withProperties, @RequestParam(value = "withIncomingLinks", defaultValue = "false") boolean withIncomingLinks, @ParameterObject PaginationParam paginationParam) {
+        return PaginatedResult.ok(graphDBSvc.getTypes(stage.getStage(), space != null ? new SpaceName(space) : null, withProperties, withIncomingLinks, withProperties, paginationParam));
     }
 
     @Operation(summary = "Returns the types according to the list of names - either with property information or without")
@@ -102,7 +102,7 @@ public class Types {
     @ExposesType
     @Admin
     public Result<List<NormalizedJsonLd>> candidatesForDeprecation() {
-        Paginated<NormalizedJsonLd> types = graphDBSvc.getTypes(DataStage.IN_PROGRESS, null, true, true, new PaginationParam());
+        Paginated<NormalizedJsonLd> types = graphDBSvc.getTypes(DataStage.IN_PROGRESS, null, true, false, true, new PaginationParam());
         return Result.ok(types.getData().stream().filter(type -> type.getAs(EBRAINSVocabulary.META_OCCURRENCES, Double.class).intValue() == 0).collect(Collectors.toList()));
     }
 

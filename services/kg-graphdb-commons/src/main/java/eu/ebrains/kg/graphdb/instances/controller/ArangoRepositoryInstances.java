@@ -823,9 +823,6 @@ public class ArangoRepositoryInstances {
                 }
             });
         }
-        if (element == null) {
-            return null;
-        }
         return mergeInstancesOnSameLevel(Collections.singletonList(element)).get(0);
     }
 
