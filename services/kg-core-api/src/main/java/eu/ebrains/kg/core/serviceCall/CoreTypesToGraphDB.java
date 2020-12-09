@@ -48,8 +48,8 @@ public class CoreTypesToGraphDB {
         return serviceCall.post(BASE_URL + String.format("/%s/%s?space=%s", stage.name(), withProperties ? "typesWithPropertiesByName": "typesByName",  space != null ? space.getName() : ""), types, authContext.getAuthTokens(), StringPayloadMapping.class);
     }
 
-    public Paginated<NormalizedJsonLd> getTypes(DataStage stage, SpaceName space, boolean withProperties, boolean withCounts,  PaginationParam paginationParam) {
-        String relativeUrl = String.format("/%s/%s?space=%s&from=%d&size=%s&withCounts=%b", stage.name(),  withProperties ? "typesWithProperties" : "types", space != null ? space.getName() : "", paginationParam.getFrom(), paginationParam.getSize() != null ? String.valueOf(paginationParam.getSize()) : "", withCounts);
+    public Paginated<NormalizedJsonLd> getTypes(DataStage stage, SpaceName space, boolean withProperties, boolean withIncomingLinks, boolean withCounts,  PaginationParam paginationParam) {
+        String relativeUrl = String.format("/%s/%s?space=%s&from=%d&size=%s&withCounts=%b&withIncomingLinks=%b", stage.name(),  withProperties ? "typesWithProperties" : "types", space != null ? space.getName() : "", paginationParam.getFrom(), paginationParam.getSize() != null ? String.valueOf(paginationParam.getSize()) : "", withCounts, withIncomingLinks);
         return serviceCall.get(BASE_URL + relativeUrl, authContext.getAuthTokens(), PaginatedDocuments.class);
     }
 

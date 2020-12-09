@@ -68,42 +68,42 @@ public class ArangoRepositoryTypes {
 
     public List<NormalizedJsonLd> getTargetTypesForProperty(String client, DataStage stage, List<Type> types, String propertyName) {
         ArangoDatabase db = databases.getMetaByStage(stage);
-        AQLQuery typeStructureQuery = createTypeStructureQuery(db, client, types, propertyName, null, true, true, null);
+        AQLQuery typeStructureQuery = createTypeStructureQuery(db, client, types, propertyName, null, true, false, true, null);
         Paginated<NormalizedJsonLd> documents = arangoRepositoryCommons.queryDocuments(db, typeStructureQuery);
         List<Type> targetTypes = documents.getData().stream().map(t -> t.getAsListOf(EBRAINSVocabulary.META_PROPERTIES, NormalizedJsonLd.class)).flatMap(Collection::stream).map(p -> p.getAsListOf(EBRAINSVocabulary.META_PROPERTY_TARGET_TYPES, NormalizedJsonLd.class)).flatMap(Collection::stream).map(targetType -> targetType.getAs(EBRAINSVocabulary.META_TYPE, String.class)).distinct().map(Type::new).collect(Collectors.toList());
-        if(targetTypes.isEmpty()){
+        if (targetTypes.isEmpty()) {
             //This is important since an empty target type list would result in an non-existing filter and would return all types in the next step
             return Collections.emptyList();
         }
-        return getTypes(client, stage, targetTypes, false, false);
+        return getTypes(client, stage, targetTypes, false, false, false);
     }
 
-    public Paginated<NormalizedJsonLd> getAllTypes(String client, DataStage stage, boolean withProperties, boolean withCount, PaginationParam pagination) {
+    public Paginated<NormalizedJsonLd> getAllTypes(String client, DataStage stage, boolean withProperties, boolean withIncomingLinks, boolean withCount, PaginationParam pagination) {
         ArangoDatabase db = databases.getMetaByStage(stage);
-        AQLQuery typeStructureQuery = createTypeStructureQuery(db, client, null, null, null, withProperties, withCount, pagination);
+        AQLQuery typeStructureQuery = createTypeStructureQuery(db, client, null, null, null, withProperties, withIncomingLinks,  withCount, pagination);
         return arangoRepositoryCommons.queryDocuments(db, typeStructureQuery);
     }
 
-    public Paginated<NormalizedJsonLd> getTypesForSpace(String client, DataStage stage, SpaceName space, boolean withProperties, boolean withCount, PaginationParam pagination) {
+    public Paginated<NormalizedJsonLd> getTypesForSpace(String client, DataStage stage, SpaceName space, boolean withProperties, boolean withIncomingLinks, boolean withCount, PaginationParam pagination) {
         ArangoDatabase db = databases.getMetaByStage(stage);
-        AQLQuery typeStructureQuery = createTypeStructureQuery(db, client, null, null, space, withProperties, withCount, pagination);
+        AQLQuery typeStructureQuery = createTypeStructureQuery(db, client, null, null, space, withProperties, withIncomingLinks, withCount, pagination);
         return arangoRepositoryCommons.queryDocuments(db, typeStructureQuery);
     }
 
     public List<Type> getTypeInformation(String client, DataStage stage, Collection<Type> types) {
-        return getTypes(client, stage, types, false, false).stream().map(Type::fromPayload).collect(Collectors.toList());
+        return getTypes(client, stage, types, false, false, false).stream().map(Type::fromPayload).collect(Collectors.toList());
     }
 
-    public List<NormalizedJsonLd> getTypes(String client, DataStage stage, Collection<Type> types, boolean withProperties, boolean withCount) {
+    public List<NormalizedJsonLd> getTypes(String client, DataStage stage, Collection<Type> types, boolean withProperties, boolean withIncomingLinks, boolean withCount) {
         ArangoDatabase db = databases.getMetaByStage(stage);
-        AQLQuery typeStructureQuery = createTypeStructureQuery(db, client, types, null, null, withProperties, withCount, null);
+        AQLQuery typeStructureQuery = createTypeStructureQuery(db, client, types, null, null, withProperties, withIncomingLinks, withCount, null);
         return db.query(typeStructureQuery.getAql().build().getValue(), typeStructureQuery.getBindVars(), new AqlQueryOptions(), NormalizedJsonLd.class).asListRemaining();
 
     }
 
-    public List<NormalizedJsonLd> getTypesForSpace(String client, DataStage stage, SpaceName space, List<Type> types, boolean withProperties, boolean withCount) {
+    public List<NormalizedJsonLd> getTypesForSpace(String client, DataStage stage, SpaceName space, List<Type> types, boolean withProperties, boolean withIncomingLinks, boolean withCount) {
         ArangoDatabase db = databases.getMetaByStage(stage);
-        AQLQuery typeStructureQuery = createTypeStructureQuery(db, client, types, null, space, withProperties, withCount, null);
+        AQLQuery typeStructureQuery = createTypeStructureQuery(db, client, types, null, space, withProperties, withIncomingLinks, withCount, null);
         return db.query(typeStructureQuery.getAql().build().getValue(), typeStructureQuery.getBindVars(), new AqlQueryOptions(), NormalizedJsonLd.class).asListRemaining();
     }
 
@@ -143,7 +143,7 @@ public class ArangoRepositoryTypes {
         }
     }
 
-    private AQLQuery createTypeStructureQuery(ArangoDatabase db, String client, Collection<Type> types, String propertyName, SpaceName space, boolean withProperties, boolean withCount, PaginationParam paginationParam) {
+    private AQLQuery createTypeStructureQuery(ArangoDatabase db, String client, Collection<Type> types, String propertyName, SpaceName space, boolean withProperties, boolean withIncomingLinks, boolean withCount, PaginationParam paginationParam) {
         ensureTypeStructureCollections(db, withProperties);
         Map<String, Object> bindVars = new HashMap<>();
         AQL aql = new AQL();
@@ -183,6 +183,61 @@ public class ArangoRepositoryTypes {
             aql.addLine(AQL.trust("FILTER TO_ARRAY(type.`" + SchemaOrgVocabulary.IDENTIFIER + "`) ANY IN @types"));
             bindVars.put("types", types.stream().map(Type::getName).collect(Collectors.toList()));
         }
+
+        if (withIncomingLinks) {
+            aql.addComment("For incoming links, we have to handle the following combinations for property2type:");
+            aql.addComment("1. _from: properties, _to: types");
+            aql.addComment("2. _from: globaltype2property, _to: types");
+            aql.addComment("3. _from: type2property, _to: space2type");
+            aql.addComment("");
+            aql.addComment("First we take care of the \"contract first\" incoming links -> they have by default a count of 0 (otherwise they will appear in the space specific incoming links");
+            aql.addLine(AQL.trust("LET globalIncomingLinks = (FOR p IN 1..1 INBOUND type `" + InternalSpace.PROPERTY_TO_TYPE_EDGE_COLLECTION.getCollectionName() + "` RETURN p)"));
+            aql.addLine(AQL.trust("LET typeSpecificIncomingLinks = FLATTEN(UNIQUE(FOR p IN globalIncomingLinks"));
+            aql.addLine(AQL.trust("FILTER IS_SAME_COLLECTION(\"" + InternalSpace.GLOBAL_TYPE_TO_PROPERTY_EDGE_COLLECTION.getCollectionName() + "\", p._id)"));
+            aql.addComment("//Let's expand on all spaces the type is registered for");
+            aql.addLine(AQL.trust("FILTER IS_SAME_COLLECTION(\"" + InternalSpace.GLOBAL_TYPE_TO_PROPERTY_EDGE_COLLECTION.getCollectionName() + "\", p._id)"));
+            aql.addLine(AQL.trust("RETURN (FOR space IN 1..1 INBOUND p._from `" + InternalSpace.SPACE_TO_TYPE_EDGE_COLLECTION.getCollectionName() + "` RETURN {\"type\": DOCUMENT(p._from).`" + SchemaOrgVocabulary.IDENTIFIER + "`, \"space\": space.`" + SchemaOrgVocabulary.IDENTIFIER + "`, \"property\": DOCUMENT(p._to).`" + SchemaOrgVocabulary.IDENTIFIER + "`})))\n"));
+            aql.addLine(AQL.trust("LET propertySpecificIncomingLinks = (FOR p IN globalIncomingLinks"));
+//TODO global properties themselves are meaningless without a type, so we have to investigate which types are providing this property. -> We have to walk through the type2property to figure out all potential types and probably through space2type for finding all potential spaces too
+//
+//                    FILTER IS_SAME_COLLECTION("properties", p._id)
+//
+//                    LET globalTypes = FLATTEN(FOR t IN 1..1 INBOUND p `globaltype2property`
+//                                        RETURN (FOR s IN 1..1 INBOUND t  `space2type` RETURN {"type": t.`http://schema.org/identifier`, "space": s.`http://schema.org/identifier`, "property": p.`http://schema.org/identifier`}))
+//                    LET spaceTypes = FLATTEN(FOR space2type IN 1..1 INBOUND p `type2property` RETURN {"type": DOCUMENT(space2type._to).`http://schema.org/identifier`, "space": DOCUMENT(space2type_from).`http://schema.org/identifier`, "property": p.`http://schema.org/identifier`})
+//
+//                    RETURN UNION_DISTINCT(spaceTypes, globalTypes)
+            aql.addLine(AQL.trust("RETURN []"));
+            aql.addLine(AQL.trust(")"));
+            aql.addLine(AQL.trust("LET allIncomingLinks = FLATTEN(FOR space, space2type IN 1..1 INBOUND type `" + InternalSpace.SPACE_TO_TYPE_EDGE_COLLECTION.getCollectionName() + "`"));
+            aql.addComment("Here's the links created by data and therefore the only relevant one for the count.");
+            aql.addLine(AQL.trust("LET incomingLinks = (FOR type2property IN 1..1 INBOUND space2type `" + InternalSpace.PROPERTY_TO_TYPE_EDGE_COLLECTION.getCollectionName() + "`"));
+            aql.addLine(AQL.trust("LET originalSpaceType = DOCUMENT(type2property._from)"));
+            aql.addLine(AQL.trust("RETURN {\"type\": DOCUMENT(originalSpaceType._to).`" + SchemaOrgVocabulary.IDENTIFIER + "`, \"space\":  DOCUMENT(originalSpaceType._from).`" + SchemaOrgVocabulary.IDENTIFIER + "`, \"property\": DOCUMENT(type2property._to).`" + SchemaOrgVocabulary.IDENTIFIER + "`}\n"));
+            aql.addLine(AQL.trust(")"));
+
+            aql.addLine(AQL.trust("LET allLinks = UNION_DISTINCT(incomingLinks, typeSpecificIncomingLinks, propertySpecificIncomingLinks)"));
+            aql.addLine(AQL.trust("FILTER allLinks != []"));
+            aql.addLine(AQL.trust("RETURN allLinks"));
+            aql.addLine(AQL.trust(")"));
+
+            aql.addLine(AQL.trust("LET incomingLinks = [{\""+EBRAINSVocabulary.META_INCOMING_LINKS+"\": ("));
+            aql.addLine(AQL.trust("FOR l in allIncomingLinks"));
+            aql.addLine(AQL.trust("COLLECT property = l.property INTO linksByProperties"));
+            aql.addLine(AQL.trust("LET sourceTypes = (FOR i in linksByProperties"));
+            aql.addLine(AQL.trust("COLLECT t = i.l.type INTO spaces"));
+            aql.addLine(AQL.trust("RETURN {"));
+            aql.addLine(AQL.trust("\"" + EBRAINSVocabulary.META_TYPE + "\": t,"));
+            aql.addLine(AQL.trust("\"" + EBRAINSVocabulary.META_SPACES + "\": (FOR s IN spaces RETURN {\"" + EBRAINSVocabulary.META_SPACE + "\": s.i.l.space})"));
+            aql.addLine(AQL.trust("})"));
+            aql.addLine(AQL.trust("FILTER property!=NULL"));
+
+            aql.addLine(AQL.trust("RETURN {"));
+            aql.addLine(AQL.trust("\"" + SchemaOrgVocabulary.IDENTIFIER + "\": property,"));
+            aql.addLine(AQL.trust("\"" + EBRAINSVocabulary.META_PROPERTY_SOURCE_TYPES + "\": sourceTypes"));
+            aql.addLine(AQL.trust("})}]"));
+        }
+
 
         aql.addNewline();
         aql.addComment("First, we fetch the specification for the type - this can either be defined by client or globally. The results will be appended to the result document at the very end.");
@@ -311,8 +366,7 @@ public class ArangoRepositoryTypes {
             if (withCount) {
                 aql.addLine(AQL.trust("\"" + EBRAINSVocabulary.META_OCCURRENCES + "\": docsContributingToSpace2Property,"));
                 aql.addLine(AQL.trust("\"" + EBRAINSVocabulary.META_PROPERTY_TARGET_TYPES + "\": targetsByTypeWithCount"));
-            }
-            else{
+            } else {
                 aql.addLine(AQL.trust("\"" + EBRAINSVocabulary.META_PROPERTY_TARGET_TYPES + "\": targetsByType"));
             }
             aql.addLine(AQL.trust("  }}"));
@@ -426,15 +480,15 @@ public class ArangoRepositoryTypes {
             aql.addComment("Now we're aggregating the information from the spaces queries above.");
 
             //We need to treat the types with 0-occurrences (usually contract-first) different from the others because they can - by nature - not be part of any space and therefore wouldn't be properly reflected.
-            aql.addLine(AQL.trust("LET targetTypesWithZeroOccurrences = (FOR typeWithNoOccurrences IN groupedGlobalProperties[*].props[**].`"+EBRAINSVocabulary.META_PROPERTY_TARGET_TYPES+"`[**]"));
-            aql.addLine(AQL.trust("FILTER typeWithNoOccurrences.`"+EBRAINSVocabulary.META_OCCURRENCES+"`==0"));
-            aql.addLine(AQL.trust("RETURN {\""+EBRAINSVocabulary.META_TYPE+"\": typeWithNoOccurrences.`"+EBRAINSVocabulary.META_TYPE+"`"));
-            if(withCount){
-                aql.addLine(AQL.trust(", \""+EBRAINSVocabulary.META_OCCURRENCES+"\": 0"));
+            aql.addLine(AQL.trust("LET targetTypesWithZeroOccurrences = (FOR typeWithNoOccurrences IN groupedGlobalProperties[*].props[**].`" + EBRAINSVocabulary.META_PROPERTY_TARGET_TYPES + "`[**]"));
+            aql.addLine(AQL.trust("FILTER typeWithNoOccurrences.`" + EBRAINSVocabulary.META_OCCURRENCES + "`==0"));
+            aql.addLine(AQL.trust("RETURN {\"" + EBRAINSVocabulary.META_TYPE + "\": typeWithNoOccurrences.`" + EBRAINSVocabulary.META_TYPE + "`"));
+            if (withCount) {
+                aql.addLine(AQL.trust(", \"" + EBRAINSVocabulary.META_OCCURRENCES + "\": 0"));
             }
             aql.addLine(AQL.trust("})"));
             aql.addLine(AQL.trust("LET targetTypes = APPEND(targetTypesWithZeroOccurrences, (FOR globalPropertyBySpace IN groupedGlobalProperties[*].props[**].`" + EBRAINSVocabulary.META_PROPERTY_TARGET_TYPES + "`[**].`" + EBRAINSVocabulary.META_SPACES + "`[**]"));
-            aql.addLine(AQL.trust("FILTER globalPropertyBySpace.`"+EBRAINSVocabulary.META_OCCURRENCES+"`>0"));
+            aql.addLine(AQL.trust("FILTER globalPropertyBySpace.`" + EBRAINSVocabulary.META_OCCURRENCES + "`>0"));
             aql.addLine(AQL.trust("COLLECT globalType = globalPropertyBySpace.`" + EBRAINSVocabulary.META_TYPE + "` INTO globalTypeBySpace"));
             if (withCount) {
                 aql.addLine(AQL.trust("LET globalTypeCount = SUM((FOR p IN globalTypeBySpace[*].globalPropertyBySpace[**] FILTER @space == null OR  p.`" + EBRAINSVocabulary.META_SPACE + "`==@space RETURN p)[**].`" + EBRAINSVocabulary.META_OCCURRENCES + "`)"));
@@ -464,6 +518,9 @@ public class ArangoRepositoryTypes {
             aql.addPagination(paginationParam);
         }
         aql.addLine(AQL.trust("RETURN DISTINCT MERGE(UNION([UNSET(type, propertiesToRemove)], globalTypeDef, clientSpecific, [{\"" + EBRAINSVocabulary.META_SPACES + "\": (FOR s IN filteredSpaces FILTER @space == null OR s.`" + EBRAINSVocabulary.META_SPACE + "`==@space RETURN DISTINCT s)}]"));
+        if (withIncomingLinks){
+            aql.add(AQL.trust(", incomingLinks"));
+        }
         if (withCount) {
             aql.add(AQL.trust(", globalOccurrences"));
         }

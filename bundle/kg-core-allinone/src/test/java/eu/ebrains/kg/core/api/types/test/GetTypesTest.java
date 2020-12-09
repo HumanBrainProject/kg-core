@@ -27,20 +27,22 @@ import eu.ebrains.kg.core.api.Types;
 import eu.ebrains.kg.core.model.ExposedStage;
 import eu.ebrains.kg.testutils.TestDataFactory;
 
-public class GetTypesTest  extends AbstractTest {
+public class GetTypesTest extends AbstractTest {
     private final Types types;
     private final Instances instances;
     private final SpaceName spaceName;
     private final boolean withProperties;
+    private final boolean withIncomingLinks;
 
     public PaginatedResult<NormalizedJsonLd> response;
 
-    public GetTypesTest(ArangoDB.Builder database, ToAuthentication authenticationSvc, SpaceName spaceName, boolean withProperties, RoleMapping[] roles, Types types, Instances instances) {
+    public GetTypesTest(ArangoDB.Builder database, ToAuthentication authenticationSvc, SpaceName spaceName, boolean withProperties, boolean withIncomingLinks, RoleMapping[] roles, Types types, Instances instances) {
         super(database, authenticationSvc, roles);
         this.instances = instances;
         this.types = types;
         this.spaceName = spaceName;
         this.withProperties = withProperties;
+        this.withIncomingLinks = withIncomingLinks;
     }
 
     @Override
@@ -52,6 +54,6 @@ public class GetTypesTest  extends AbstractTest {
 
     @Override
     protected void run() {
-         response = this.types.getTypes(ExposedStage.IN_PROGRESS, spaceName == null ? null : spaceName.getName(), withProperties, new PaginationParam());
+        response = this.types.getTypes(ExposedStage.IN_PROGRESS, spaceName == null ? null : spaceName.getName(), withProperties, withIncomingLinks, new PaginationParam());
     }
 }

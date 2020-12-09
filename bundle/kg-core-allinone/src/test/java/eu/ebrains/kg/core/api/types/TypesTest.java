@@ -85,7 +85,7 @@ public class TypesTest extends AbstractFunctionalityTest {
     @Test
     public void getTypesOk() {
         //Given
-        GetTypesTest test = new GetTypesTest(database, authenticationSvc, null, false, READ_TYPES_IN_PROGRESS_ROLES, types, instances);
+        GetTypesTest test = new GetTypesTest(database, authenticationSvc, null, false, false, READ_TYPES_IN_PROGRESS_ROLES, types, instances);
 
         //When
         test.execute(() -> {
@@ -98,7 +98,7 @@ public class TypesTest extends AbstractFunctionalityTest {
     @Test
     public void getTypesForbidden() {
         //Given
-        GetTypesTest test = new GetTypesTest(database, authenticationSvc, null, false, NON_READ_TYPES_IN_PROGRESS_ROLES, types, instances);
+        GetTypesTest test = new GetTypesTest(database, authenticationSvc, null, false, false, NON_READ_TYPES_IN_PROGRESS_ROLES, types, instances);
 
         //When
         test.execute(() -> {
@@ -112,7 +112,7 @@ public class TypesTest extends AbstractFunctionalityTest {
     @Test
     public void getTypesBySpaceOk() {
         //Given
-        GetTypesTest test = new GetTypesTest(database, authenticationSvc, new SpaceName("functionalityTest"), false, READ_TYPES_IN_PROGRESS_ROLES, types, instances);
+        GetTypesTest test = new GetTypesTest(database, authenticationSvc, new SpaceName("functionalityTest"), false, false, READ_TYPES_IN_PROGRESS_ROLES, types, instances);
 
         //When
         test.execute(() -> {
@@ -127,7 +127,7 @@ public class TypesTest extends AbstractFunctionalityTest {
     @Test
     public void getTypesBySpaceForbidden() {
         //Given
-        GetTypesTest test = new GetTypesTest(database, authenticationSvc, new SpaceName("functionalityTest"), false, NON_READ_TYPES_IN_PROGRESS_ROLES, types, instances);
+        GetTypesTest test = new GetTypesTest(database, authenticationSvc, new SpaceName("functionalityTest"), false, false, NON_READ_TYPES_IN_PROGRESS_ROLES, types, instances);
 
         //When
         test.execute(() -> {
@@ -142,7 +142,7 @@ public class TypesTest extends AbstractFunctionalityTest {
     @Test
     public void getTypesWithPropertiesOk() {
         //Given
-        GetTypesTest test = new GetTypesTest(database, authenticationSvc, null, true, READ_TYPES_IN_PROGRESS_ROLES, types, instances);
+        GetTypesTest test = new GetTypesTest(database, authenticationSvc, null, true, false, READ_TYPES_IN_PROGRESS_ROLES, types, instances);
 
         //When
         test.execute(() -> {
@@ -159,7 +159,7 @@ public class TypesTest extends AbstractFunctionalityTest {
     @Test
     public void getTypesWithPropertiesForbidden() {
         //Given
-        GetTypesTest test = new GetTypesTest(database, authenticationSvc, null, true, NON_READ_TYPES_IN_PROGRESS_ROLES, types, instances);
+        GetTypesTest test = new GetTypesTest(database, authenticationSvc, null, true, false, NON_READ_TYPES_IN_PROGRESS_ROLES, types, instances);
 
         //When
         test.execute(() -> {
@@ -173,7 +173,7 @@ public class TypesTest extends AbstractFunctionalityTest {
     @Test
     public void getTypesBySpaceWithPropertiesOk() {
         //Given
-        GetTypesTest test = new GetTypesTest(database, authenticationSvc, new SpaceName("functionalityTest"), true, READ_TYPES_IN_PROGRESS_ROLES, types, instances);
+        GetTypesTest test = new GetTypesTest(database, authenticationSvc, new SpaceName("functionalityTest"), true, false, READ_TYPES_IN_PROGRESS_ROLES, types, instances);
 
         //When
         test.execute(() -> {
@@ -187,7 +187,7 @@ public class TypesTest extends AbstractFunctionalityTest {
     @Test
     public void getTypesBySpaceWithPropertiesForbidden() {
         //Given
-        GetTypesTest test = new GetTypesTest(database, authenticationSvc, new SpaceName("functionalityTest"), true, NON_READ_TYPES_IN_PROGRESS_ROLES, types, instances);
+        GetTypesTest test = new GetTypesTest(database, authenticationSvc, new SpaceName("functionalityTest"), true, false, NON_READ_TYPES_IN_PROGRESS_ROLES, types, instances);
 
         //When
         test.execute(() -> {

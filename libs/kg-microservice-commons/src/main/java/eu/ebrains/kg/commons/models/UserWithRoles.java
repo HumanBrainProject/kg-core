@@ -16,6 +16,7 @@
 
 package eu.ebrains.kg.commons.models;
 
+import eu.ebrains.kg.commons.model.SpaceName;
 import eu.ebrains.kg.commons.model.User;
 import eu.ebrains.kg.commons.permission.Functionality;
 import eu.ebrains.kg.commons.permission.FunctionalityInstance;
@@ -25,6 +26,7 @@ import org.slf4j.LoggerFactory;
 
 import java.util.*;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * A composite containing user information together with the assigned roles in the context of a client (originating from the authentication system)
@@ -77,6 +79,10 @@ public class UserWithRoles {
         return serviceAccount;
     }
 
+    private SpaceName getPrivateSpace(){
+        return new SpaceName("private-"+user.getNativeId());
+    }
+
     /**
      * Evaluates the roles of a user in the context of a client by combining the roles of both
      *
@@ -90,8 +96,10 @@ public class UserWithRoles {
         if (!clientRoleNames.contains(CLIENT_ROLE_NAME)) {
             throw new IllegalArgumentException("The client authorization credentials you've passed doesn't belong to a service account. This is not allowed!");
         }
+        //Add an implicit role for the user private space.
+        String privateSpaceRole = RoleMapping.OWNER.toRole(getPrivateSpace()).getName();
         Map<Functionality, List<FunctionalityInstance>> clientFunctionalities = clientRoleNames.stream().map(RoleMapping::fromRole).flatMap(Collection::stream).distinct().collect(Collectors.groupingBy(FunctionalityInstance::getFunctionality));
-        Set<FunctionalityInstance> userFunctionalities = userRoleNames.stream().map(RoleMapping::fromRole).flatMap(Collection::stream).collect(Collectors.toSet());
+        Set<FunctionalityInstance> userFunctionalities = Stream.concat(Stream.of(privateSpaceRole), userRoleNames.stream()).map(RoleMapping::fromRole).flatMap(Collection::stream).collect(Collectors.toSet());
         List<FunctionalityInstance> result = new ArrayList<>();
         //Filter the user roles by the client permissions (only those user permissions are guaranteed which are also allowed by the client)
         for (FunctionalityInstance userRole : userFunctionalities) {
@@ -141,6 +149,7 @@ public class UserWithRoles {
                 }
             }
         }
+        //TODO reduce the result list by removing subpermissions if there are existing in upper hierarchies.
         logger.trace(String.format("Available roles for user %s in client %s: %s", user != null ? user.getUserName() : "anonymous", clientId, String.join(", ", result.stream().map(Object::toString).collect(Collectors.toSet()))));
         return result;
     }
