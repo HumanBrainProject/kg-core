@@ -109,9 +109,9 @@ public class KeycloakClient {
     }
 
     public void ensureDefaultClientAndGlobalRolesInKeycloak() {
+        try {
         getRealmResource().toRepresentation();
         try {
-            try {
                 boolean initialCreation = false;
                 if (getClient() == null) {
                     createDefaultClient();
@@ -184,7 +184,7 @@ public class KeycloakClient {
         mapper.setName("client roles");
         Map<String, String> c = new HashMap<>();
         c.put("access.token.claim", "true");
-        c.put("claim.name", "kg-roles");
+        c.put("claim.name", "resource_access.kg.roles");
         c.put("id.token.claim", "false");
         c.put("jsonType.label", "String");
         c.put("multivalued", "true");
