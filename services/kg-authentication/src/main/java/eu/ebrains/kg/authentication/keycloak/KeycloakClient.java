@@ -110,8 +110,8 @@ public class KeycloakClient {
 
     public void ensureDefaultClientAndGlobalRolesInKeycloak() {
         try {
-            getRealmResource().toRepresentation();
-            try {
+        getRealmResource().toRepresentation();
+        try {
                 boolean initialCreation = false;
                 if (getClient() == null) {
                     createDefaultClient();
