@@ -20,6 +20,7 @@ import eu.ebrains.kg.commons.exception.*;
 import eu.ebrains.kg.commons.model.IngestConfiguration;
 import eu.ebrains.kg.commons.model.PaginationParam;
 import eu.ebrains.kg.commons.model.ResponseConfiguration;
+import eu.ebrains.kg.commons.model.Result;
 import eu.ebrains.kg.commons.permission.ClientAuthToken;
 import eu.ebrains.kg.commons.permission.UserAuthToken;
 import eu.ebrains.kg.commons.serviceCall.ToAuthentication;
@@ -127,5 +128,10 @@ public class RestControllerAdvice {
     @ExceptionHandler({ServiceNotAvailableException.class})
     protected ResponseEntity<?> handleServiceNotFound(RuntimeException ex, WebRequest request) {
         return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).body(ex.getMessage());
+    }
+
+    @ExceptionHandler({IllegalStateException.class})
+    protected ResponseEntity<?> handleIllegalState(RuntimeException ex, WebRequest request) {
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(Result.nok(HttpStatus.CONFLICT.value(), ex.getMessage()));
     }
 }

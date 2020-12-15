@@ -46,7 +46,7 @@ import java.util.stream.Collectors;
 @Component
 public class CoreSpaceController {
 
-
+    private final CoreInstanceController instanceController;
     private final CoreTypesToGraphDB typesGraphDBSvc;
     private final CoreToPrimaryStore primaryStoreSvc;
     private final CoreSpacesToGraphDB graphDbSvc;
@@ -54,7 +54,8 @@ public class CoreSpaceController {
     private final PermissionSvc permissionSvc;
     private final CoreToAuthentication coreToAuthentication;
 
-    public CoreSpaceController(CoreTypesToGraphDB typesGraphDBSvc, CoreToPrimaryStore primaryStoreSvc, CoreSpacesToGraphDB graphDbSvc, AuthContext authContext, PermissionSvc permissionSvc, CoreToAuthentication coreToAuthentication) {
+    public CoreSpaceController(CoreInstanceController instanceController, CoreTypesToGraphDB typesGraphDBSvc, CoreToPrimaryStore primaryStoreSvc, CoreSpacesToGraphDB graphDbSvc, AuthContext authContext, PermissionSvc permissionSvc, CoreToAuthentication coreToAuthentication) {
+        this.instanceController = instanceController;
         this.typesGraphDBSvc = typesGraphDBSvc;
         this.primaryStoreSvc = primaryStoreSvc;
         this.graphDbSvc = graphDbSvc;
@@ -78,26 +79,24 @@ public class CoreSpaceController {
 
 
     public NormalizedJsonLd createSpaceDefinition(Space space, boolean global) {
-        if(permissionSvc.hasGlobalPermission(authContext.getUserWithRoles(), Functionality.CREATE_SPACE)) {
+        if (permissionSvc.hasGlobalPermission(authContext.getUserWithRoles(), Functionality.CREATE_SPACE)) {
             NormalizedJsonLd spacePayload = space.toJsonLd();
             primaryStoreSvc.postEvent(Event.createUpsertEvent(global ? InternalSpace.GLOBAL_SPEC : space.getName(), UUID.nameUUIDFromBytes(spacePayload.id().getId().getBytes(StandardCharsets.UTF_8)), Event.Type.INSERT, spacePayload), false, authContext.getAuthTokens());
             coreToAuthentication.createRoles(Arrays.stream(RoleMapping.values()).filter(r -> r != RoleMapping.IS_CLIENT).map(r -> r.toRole(space.getName())).collect(Collectors.toList()));
             return spacePayload;
-        }
-        else{
-           throw new ForbiddenException();
+        } else {
+            throw new ForbiddenException();
         }
     }
 
     public void removeSpaceDefinition(SpaceName space, boolean removeRoles) {
-        if(permissionSvc.hasGlobalPermission(authContext.getUserWithRoles(), Functionality.DELETE_SPACE)) {
-            if(removeRoles) {
+        if (permissionSvc.hasGlobalPermission(authContext.getUserWithRoles(), Functionality.DELETE_SPACE)) {
+            if (removeRoles) {
                 coreToAuthentication.removeRoles(FunctionalityInstance.getRolePatternForSpace(space));
             }
             JsonLdId id = Space.createId(space);
             primaryStoreSvc.postEvent(Event.createDeleteEvent(InternalSpace.GLOBAL_SPEC, UUID.nameUUIDFromBytes(id.getId().getBytes(StandardCharsets.UTF_8)), id), false, authContext.getAuthTokens());
-        }
-        else{
+        } else {
             throw new ForbiddenException();
         }
     }
@@ -105,7 +104,10 @@ public class CoreSpaceController {
 
     public void removeTypeInSpaceLink(SpaceName space, Type type) {
         //For this, we need the permission to define types in the given space
-        if(permissionSvc.hasPermission(authContext.getUserWithRoles(), Functionality.DEFINE_TYPES, space)){
+        if (permissionSvc.hasPermission(authContext.getUserWithRoles(), Functionality.DEFINE_TYPES, space) && permissionSvc.hasPermission(authContext.getUserWithRoles(), Functionality.READ, space)) {
+            if (!isTypeInSpaceEmpty(space, type)) {
+                throw new IllegalStateException("Type in space is not empty");
+            }
             NormalizedJsonLd payload = new NormalizedJsonLd();
             payload.addTypes(EBRAINSVocabulary.META_TYPE_IN_SPACE_DEFINITION_TYPE);
             payload.put(EBRAINSVocabulary.META_SPACE, space);
@@ -114,8 +116,8 @@ public class CoreSpaceController {
             UUID id = UUID.nameUUIDFromBytes(type2space.getId().getBytes(StandardCharsets.UTF_8));
             Event deprecateSpace = new Event(space, id, payload, Event.Type.META_DEPRECATION, new Date());
             primaryStoreSvc.postEvent(deprecateSpace, false, authContext.getAuthTokens());
-        }
-        else{
+
+        } else {
             throw new ForbiddenException();
         }
     }
@@ -123,8 +125,8 @@ public class CoreSpaceController {
 
     public void removeSpaceLinks(SpaceName space) {
         //For this, we need global permissions for both - deleting spaces and reading (the latter to ensure that we actually can see all potential values)
-        if(permissionSvc.hasGlobalPermission(authContext.getUserWithRoles(), Functionality.DELETE_SPACE) && permissionSvc.hasGlobalPermission(authContext.getUserWithRoles(), Functionality.READ)) {
-            if(!isSpaceEmpty(space.getName())){
+        if (permissionSvc.hasGlobalPermission(authContext.getUserWithRoles(), Functionality.DELETE_SPACE) && permissionSvc.hasGlobalPermission(authContext.getUserWithRoles(), Functionality.READ)) {
+            if (!isSpaceEmpty(space.getName())) {
                 throw new IllegalStateException("Space is not empty");
             }
             NormalizedJsonLd payload = new NormalizedJsonLd();
@@ -132,15 +134,18 @@ public class CoreSpaceController {
             payload.put(EBRAINSVocabulary.META_SPACE, space);
             Event deprecateSpace = new Event(space, UUID.nameUUIDFromBytes(EBRAINSVocabulary.createIdForStructureDefinition("spaces", space.getName()).getId().getBytes(StandardCharsets.UTF_8)), payload, Event.Type.META_DEPRECATION, new Date());
             primaryStoreSvc.postEvent(deprecateSpace, false, authContext.getAuthTokens());
-        }
-        else{
+        } else {
             throw new ForbiddenException();
         }
     }
 
+    public boolean isTypeInSpaceEmpty(SpaceName space, Type type) {
+        return instanceController.getInstances(DataStage.IN_PROGRESS, type, space, null, new ResponseConfiguration().setReturnPayload(false), new PaginationParam().setFrom(0).setSize(0L)).getTotalResults() == 0;
 
-    public boolean isSpaceEmpty(String space){
-        return typesGraphDBSvc.getTypes(DataStage.IN_PROGRESS, new SpaceName(space), false, false, false, new PaginationParam()).getTotalResults() == 0;
+    }
+
+    public boolean isSpaceEmpty(String space) {
+        return typesGraphDBSvc.getTypes(DataStage.IN_PROGRESS, new SpaceName(space), false, false, new PaginationParam()).getTotalResults() == 0;
     }
 
 }
