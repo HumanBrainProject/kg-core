@@ -18,6 +18,7 @@ package eu.ebrains.kg.core.api;
 
 import eu.ebrains.kg.arango.commons.model.InternalSpace;
 import eu.ebrains.kg.commons.AuthContext;
+import eu.ebrains.kg.commons.IdUtils;
 import eu.ebrains.kg.commons.Version;
 import eu.ebrains.kg.commons.config.openApiGroups.Admin;
 import eu.ebrains.kg.commons.config.openApiGroups.Advanced;
@@ -61,12 +62,14 @@ public class Spaces {
     private final CoreSpaceController spaceController;
     private final AuthContext authContext;
     private final CoreToPrimaryStore primaryStoreSvc;
+    private final IdUtils idUtils;
 
-    public Spaces(CoreSpacesToGraphDB graphDbSvc, CoreSpaceController spaceController, AuthContext authContext, CoreToPrimaryStore primaryStoreSvc) {
+    public Spaces(CoreSpacesToGraphDB graphDbSvc, CoreSpaceController spaceController, AuthContext authContext, CoreToPrimaryStore primaryStoreSvc, IdUtils idUtils) {
         this.graphDbSvc = graphDbSvc;
         this.spaceController = spaceController;
         this.authContext = authContext;
         this.primaryStoreSvc = primaryStoreSvc;
+        this.idUtils = idUtils;
     }
 
     @GetMapping("{space}")
@@ -74,7 +77,7 @@ public class Spaces {
     @Advanced
     public Result<NormalizedJsonLd> getSpace(@RequestParam("stage") ExposedStage stage, @PathVariable("space") String space, @RequestParam(value = "permissions", defaultValue = "false") boolean permissions) {
         NormalizedJsonLd s = spaceController.getSpace(stage, space, permissions);
-        if(s!=null){
+        if (s != null) {
             s.removeAllInternalProperties();
         }
         return Result.ok(s);
@@ -103,12 +106,22 @@ public class Spaces {
     @Admin
     public ResponseEntity<Result<Void>> assignTypeToSpace(@PathVariable("space") String space, @RequestParam("type") String type) {
         NormalizedJsonLd payload = new NormalizedJsonLd();
+        SpaceName sp = new SpaceName(space);
         payload.addTypes(EBRAINSVocabulary.META_TYPE_IN_SPACE_DEFINITION_TYPE);
         Type t = new Type(type);
         payload.addProperty(EBRAINSVocabulary.META_TYPE, new JsonLdId(t.getName()));
-        payload.addProperty(EBRAINSVocabulary.META_SPACES, Collections.singletonList(space));
-        payload.setId(EBRAINSVocabulary.createIdForStructureDefinition("type2space", space, t.getName()));
+        payload.addProperty(EBRAINSVocabulary.META_SPACES, Collections.singletonList(sp.getName()));
+        payload.setId(EBRAINSVocabulary.createIdForStructureDefinition("type2space", sp.getName(), t.getName()));
         primaryStoreSvc.postEvent(Event.createUpsertEvent(InternalSpace.GLOBAL_SPEC, UUID.nameUUIDFromBytes(payload.id().getId().getBytes(StandardCharsets.UTF_8)), Event.Type.INSERT, payload), false, authContext.getAuthTokens());
+        return ResponseEntity.ok(Result.ok());
+    }
+
+    @Operation(summary = "Remove a type in space definition")
+    @DeleteMapping("{space}/types")
+    @WritesData
+    @Admin
+    public ResponseEntity<Result<Void>> removeTypeFromSpace(@PathVariable("space") String space, @RequestParam("type") String type) {
+        spaceController.removeTypeInSpaceLink(new SpaceName(space), new Type(type));
         return ResponseEntity.ok(Result.ok());
     }
 
@@ -118,7 +131,7 @@ public class Spaces {
     @Admin
     @ExposesInputWithoutEnrichedSensitiveData
     public ResponseEntity<Result<NormalizedJsonLd>> createSpaceDefinition(@PathVariable(value = "space") String space, @RequestParam(value = "autorelease", required = false, defaultValue = "false") boolean autoRelease) {
-        return ResponseEntity.ok(Result.ok(spaceController.createSpaceDefinition(new Space(new SpaceName(space), autoRelease), true)));
+        return ResponseEntity.ok(Result.ok(spaceController.createSpaceDefinition(new Space(new SpaceName(space), autoRelease, false), true)));
     }
 
 
@@ -146,7 +159,7 @@ public class Spaces {
     @Admin
     public Result<List<String>> candidatesForDeprecation() {
         List<NormalizedJsonLd> allSpaces = getSpaces(ExposedStage.IN_PROGRESS, new PaginationParam(), false).getData();
-        if(allSpaces!=null){
+        if (allSpaces != null) {
             return Result.ok(allSpaces.stream().map(space -> space.getAs(SchemaOrgVocabulary.IDENTIFIER, String.class)).filter(spaceController::isSpaceEmpty).collect(Collectors.toList()));
         }
         return Result.ok(Collections.emptyList());

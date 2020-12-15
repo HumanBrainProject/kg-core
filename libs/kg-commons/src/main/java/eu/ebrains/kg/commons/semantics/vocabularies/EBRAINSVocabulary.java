@@ -61,6 +61,7 @@ public class EBRAINSVocabulary {
     public static final String META_FIRST_RELEASED_AT = META+"firstReleasedAt";
     public static final String META_FIRST_RELEASED_BY = META+"firstReleasedBy";
     public static final String META_SPACE = META + "space";
+    public static final String META_INTERNAL_SPACE = META_SPACE + "/internalSpace";
     public static final String META_CLIENT_SPACE = META_SPACE + "/clientSpace";
     public static final String META_AUTORELEASE_SPACE = META_SPACE + "/autorelease";
 

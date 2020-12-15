@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package eu.ebrains.kg.authentication.model;
+package eu.ebrains.kg.commons.model;
 
 public class Credential {
     private String user;

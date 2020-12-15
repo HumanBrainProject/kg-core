@@ -102,6 +102,25 @@ public class CoreSpaceController {
         }
     }
 
+
+    public void removeTypeInSpaceLink(SpaceName space, Type type) {
+        //For this, we need the permission to define types in the given space
+        if(permissionSvc.hasPermission(authContext.getUserWithRoles(), Functionality.DEFINE_TYPES, space)){
+            NormalizedJsonLd payload = new NormalizedJsonLd();
+            payload.addTypes(EBRAINSVocabulary.META_TYPE_IN_SPACE_DEFINITION_TYPE);
+            payload.put(EBRAINSVocabulary.META_SPACE, space);
+            payload.put(EBRAINSVocabulary.META_TYPE, new JsonLdId(type.getName()));
+            JsonLdId type2space = EBRAINSVocabulary.createIdForStructureDefinition("type2space", space.getName(), type.getName());
+            UUID id = UUID.nameUUIDFromBytes(type2space.getId().getBytes(StandardCharsets.UTF_8));
+            Event deprecateSpace = new Event(space, id, payload, Event.Type.META_DEPRECATION, new Date());
+            primaryStoreSvc.postEvent(deprecateSpace, false, authContext.getAuthTokens());
+        }
+        else{
+            throw new ForbiddenException();
+        }
+    }
+
+
     public void removeSpaceLinks(SpaceName space) {
         //For this, we need global permissions for both - deleting spaces and reading (the latter to ensure that we actually can see all potential values)
         if(permissionSvc.hasGlobalPermission(authContext.getUserWithRoles(), Functionality.DELETE_SPACE) && permissionSvc.hasGlobalPermission(authContext.getUserWithRoles(), Functionality.READ)) {

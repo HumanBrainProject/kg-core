@@ -19,6 +19,7 @@ package eu.ebrains.kg.core.serviceCall;
 import eu.ebrains.kg.commons.AuthContext;
 import eu.ebrains.kg.commons.ServiceCall;
 import eu.ebrains.kg.commons.model.Client;
+import eu.ebrains.kg.commons.model.Credential;
 import eu.ebrains.kg.commons.model.User;
 import eu.ebrains.kg.commons.permission.roles.Role;
 import org.springframework.http.MediaType;
@@ -72,5 +73,10 @@ public class CoreToAuthentication {
     public Client unregisterClient(String clientName) {
         return serviceCall.delete(String.format("%s/clients/%s", SPACE, clientName), authContext.getAuthTokens(), Client.class);
     }
+
+    public void setupAuthentication(Credential credential){
+        serviceCall.put(String.format("%s/setup", SPACE), credential, null, Void.class);
+    }
+
 
 }

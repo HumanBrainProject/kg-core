@@ -17,7 +17,7 @@
 package eu.ebrains.kg.authentication.api;
 
 import eu.ebrains.kg.authentication.keycloak.KeycloakInitialSetup;
-import eu.ebrains.kg.authentication.model.Credential;
+import eu.ebrains.kg.commons.model.Credential;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
