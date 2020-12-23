@@ -145,7 +145,7 @@ public class CoreSpaceController {
     }
 
     public boolean isSpaceEmpty(String space) {
-        return typesGraphDBSvc.getTypes(DataStage.IN_PROGRESS, new SpaceName(space), false, false, new PaginationParam()).getTotalResults() == 0;
+        return typesGraphDBSvc.getTypes(DataStage.IN_PROGRESS, new SpaceName(space), false, false, false, new PaginationParam()).getTotalResults() == 0;
     }
 
 }
