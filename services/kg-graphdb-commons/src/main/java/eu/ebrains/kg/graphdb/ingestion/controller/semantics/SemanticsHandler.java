@@ -46,6 +46,11 @@ public abstract class SemanticsHandler {
         return Collections.emptyList();
     }
 
+    public List<DBOperation> createMetaDeprecateOperations(NormalizedJsonLd document){
+        return Collections.emptyList();
+    }
+
+
     List<DBOperation> handleOverrideReference(ArangoDocumentReference rootDocumentRef, ArangoDocument document, JsonLdId originalTo, ArangoDocumentReference targetEdge, ArangoCollectionReference edgeCollection) {
         ArangoEdge edge = new ArangoEdge();
         edge.setTo(targetEdge);

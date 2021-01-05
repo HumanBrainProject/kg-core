@@ -95,7 +95,6 @@ public class ArangoRepositoryInstances {
         }
         List<NormalizedJsonLd> singleDoc = Collections.singletonList(document.getDoc());
         handleAlternativesAndEmbedded(singleDoc, stage, alternatives, embedded);
-        resolveUsersForDocuments(singleDoc);
         exposeRevision(singleDoc);
         if (removeInternalProperties) {
             document.getDoc().removeAllInternalProperties();
@@ -140,37 +139,6 @@ public class ArangoRepositoryInstances {
         }
     }
 
-    private void resolveUsersForDocuments(List<NormalizedJsonLd> documents) {
-        List<ArangoDocumentReference> userIdsToResolve = documents.stream()
-                .filter(e -> e.containsKey(EBRAINSVocabulary.META_USER) && e.get(EBRAINSVocabulary.META_USER) != null)
-                .map(d -> {
-                    Map<String, Object> userObj = d.getAs(EBRAINSVocabulary.META_USER, Map.class);
-                    UUID uuid = idUtils.getUUID(new JsonLdId(userObj.get(JsonLdConsts.ID).toString()));
-                    return ArangoCollectionReference.fromSpace(InternalSpace.USERS_SPACE).doc(uuid);
-                }).filter(Objects::nonNull).distinct().collect(Collectors.toList());
-
-        Map<UUID, Result<NormalizedJsonLd>> usersById = getDocumentsByReferenceList(DataStage.NATIVE, userIdsToResolve, false, false);
-        documents.forEach(e -> {
-            if (e.containsKey(EBRAINSVocabulary.META_USER)) {
-                Map<String, Object> userObj = e.getAs(EBRAINSVocabulary.META_USER, Map.class);
-                if (userObj.containsKey(JsonLdConsts.ID)) {
-                    String absoluteId = userObj.get(JsonLdConsts.ID).toString();
-                    UUID uuid = idUtils.getUUID(new JsonLdId(absoluteId));
-                    Result<NormalizedJsonLd> userResult = null;
-                    if (uuid != null) {
-                        userResult = usersById.get(uuid);
-                    }
-                    NormalizedJsonLd user = userResult != null && userResult.getData() != null ? userResult.getData() : null;
-                    NormalizedJsonLd reducedUser = new NormalizedJsonLd();
-                    reducedUser.put(SchemaOrgVocabulary.NAME, user != null ? user.get(SchemaOrgVocabulary.NAME) : "Unknown");
-                    reducedUser.put(SchemaOrgVocabulary.ALTERNATE_NAME, user != null ? user.get(SchemaOrgVocabulary.ALTERNATE_NAME) : "unknown");
-                    reducedUser.put(SchemaOrgVocabulary.IDENTIFIER, user != null ? user.get(SchemaOrgVocabulary.IDENTIFIER) : Collections.emptyList());
-                    reducedUser.put(JsonLdConsts.ID, absoluteId);
-                    e.put(EBRAINSVocabulary.META_USER, reducedUser);
-                }
-            }
-        });
-    }
 
     private void resolveUsersForAlternatives(List<NormalizedJsonLd[]> alternatives) {
         List<ArangoDocumentReference> userIdsToResolve = alternatives.stream().flatMap(Arrays::stream).map(d ->
@@ -247,7 +215,6 @@ public class ArangoRepositoryInstances {
         }
         if(!normalizedJsonLds.isEmpty()) {
             handleAlternativesAndEmbedded(normalizedJsonLds, stage, alternatives, embedded);
-            resolveUsersForDocuments(normalizedJsonLds);
             exposeRevision(normalizedJsonLds);
             normalizedJsonLds.forEach(NormalizedJsonLd::removeAllInternalProperties);
         }
@@ -393,7 +360,6 @@ public class ArangoRepositoryInstances {
             bindVars.put("@typeRelationCollection", InternalSpace.TYPE_EDGE_COLLECTION.getCollectionName());
             Paginated<NormalizedJsonLd> normalizedJsonLdPaginated = arangoRepositoryCommons.queryDocuments(database, new AQLQuery(aql, bindVars));
             handleAlternativesAndEmbedded(normalizedJsonLdPaginated.getData(), stage, alternatives, embedded);
-            resolveUsersForDocuments(normalizedJsonLdPaginated.getData());
             exposeRevision(normalizedJsonLdPaginated.getData());
             normalizedJsonLdPaginated.getData().forEach(NormalizedJsonLd::removeAllInternalProperties);
             return normalizedJsonLdPaginated;
@@ -422,7 +388,6 @@ public class ArangoRepositoryInstances {
             bindVars.put("@typeRelationCollection", InternalSpace.TYPE_EDGE_COLLECTION.getCollectionName());
             Paginated<NormalizedJsonLd> normalizedJsonLdPaginated = arangoRepositoryCommons.queryDocuments(database, new AQLQuery(aql, bindVars));
             handleAlternativesAndEmbedded(normalizedJsonLdPaginated.getData(), stage, alternatives, embedded);
-            resolveUsersForDocuments(normalizedJsonLdPaginated.getData());
             exposeRevision(normalizedJsonLdPaginated.getData());
             normalizedJsonLdPaginated.getData().forEach(NormalizedJsonLd::removeAllInternalProperties);
             return normalizedJsonLdPaginated;
@@ -493,34 +458,10 @@ public class ArangoRepositoryInstances {
     }
 
     private List<NormalizedJsonLd> getDocumentsByRelation(DataStage stage, SpaceName space, UUID id, ArangoRelation relation, boolean incoming, boolean useOriginalTo, boolean embedded, boolean alternatives) {
-        ArangoDatabase db = databases.getByStage(stage);
-
-        ArangoCollectionReference relationColl;
-        if (relation.isInternal()) {
-            relationColl = ArangoCollectionReference.fromSpace(new InternalSpace(relation.getRelationField()), true);
-        } else {
-            relationColl = new ArangoCollectionReference(relation.getRelationField(), true);
-        }
-        ArangoCollectionReference documentSpace = ArangoCollectionReference.fromSpace(space);
-        if (documentSpace != null && db.collection(relationColl.getCollectionName()).exists() && db.collection(documentSpace.getCollectionName()).exists()) {
-            String aql = "LET docs = (FOR d IN @@relation\n" +
-                    "    FILTER d." + (incoming ? useOriginalTo ? IndexedJsonLdDoc.ORIGINAL_TO : ArangoVocabulary.TO : ArangoVocabulary.FROM) + " == @id \n" +
-                    "    LET doc = DOCUMENT(d." + (incoming ? ArangoVocabulary.FROM : ArangoVocabulary.TO) + ") \n" +
-                    "    FILTER IS_SAME_COLLECTION(@@space, doc) \n" +
-                    "    RETURN doc) \n" +
-                    "    FOR doc IN docs" +
-                    "       RETURN DISTINCT doc";
-            Map<String, Object> bindVars = new HashMap<>();
-            bindVars.put("@relation", relationColl.getCollectionName());
-            bindVars.put("@space", documentSpace.getCollectionName());
-            bindVars.put("id", useOriginalTo ? idUtils.buildAbsoluteUrl(id).getId() : space.getName() + "/" + id);
-            List<NormalizedJsonLd> result = db.query(aql, bindVars, new AqlQueryOptions(), NormalizedJsonLd.class).asListRemaining();
-            handleAlternativesAndEmbedded(result, stage, alternatives, embedded);
-            resolveUsersForDocuments(result);
-            exposeRevision(result);
-            return result;
-        }
-        return Collections.emptyList();
+        List<NormalizedJsonLd> result = arangoUtils.getDocumentsByRelation(databases.getByStage(stage), space, id, relation, incoming, useOriginalTo);
+        handleAlternativesAndEmbedded(result, stage, alternatives, embedded);
+        exposeRevision(result);
+        return result;
     }
 
     @ExposesData
@@ -534,7 +475,6 @@ public class ArangoRepositoryInstances {
                 List<NormalizedJsonLd> result = doGetDocumentsByIdentifiers(rootDocument.allIdentifiersIncludingId(), stage, space);
                 if (result != null) {
                     handleAlternativesAndEmbedded(result, stage, alternatives, embedded);
-                    resolveUsersForDocuments(result);
                     return result;
                 }
             }
@@ -546,7 +486,6 @@ public class ArangoRepositoryInstances {
     public List<NormalizedJsonLd> getDocumentsByIdentifiers(Set<String> allIdentifiersIncludingId, DataStage stage, SpaceName space, boolean embedded, boolean alternatives) {
         List<NormalizedJsonLd> normalizedJsonLds = doGetDocumentsByIdentifiers(allIdentifiersIncludingId, stage, space);
         handleAlternativesAndEmbedded(normalizedJsonLds, stage, alternatives, embedded);
-        resolveUsersForDocuments(normalizedJsonLds);
         return normalizedJsonLds;
     }
 
@@ -845,9 +784,6 @@ public class ArangoRepositoryInstances {
                     }
                 }
             });
-        }
-        if (element == null) {
-            return null;
         }
         return mergeInstancesOnSameLevel(Collections.singletonList(element)).get(0);
     }

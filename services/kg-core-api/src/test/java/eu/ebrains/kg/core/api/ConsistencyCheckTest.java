@@ -84,8 +84,8 @@ public class ConsistencyCheckTest {
             System.out.println(String.format("Created instance %s", id.getId()));
         }
         Assert.assertEquals(createInstances, getAllInstancesFromInProgress(ExposedStage.IN_PROGRESS).size());
-        Assert.assertEquals(1, types.getTypes(ExposedStage.IN_PROGRESS, null, false, EMPTY_PAGINATION).getSize());
-        List<NormalizedJsonLd> typeWithProperties = types.getTypes(ExposedStage.IN_PROGRESS, null, true, EMPTY_PAGINATION).getData();
+        Assert.assertEquals(1, types.getTypes(ExposedStage.IN_PROGRESS, null, false, false, EMPTY_PAGINATION).getSize());
+        List<NormalizedJsonLd> typeWithProperties = types.getTypes(ExposedStage.IN_PROGRESS, null, true, true, EMPTY_PAGINATION).getData();
         Assert.assertEquals(1, typeWithProperties.size());
         NormalizedJsonLd typeWithProperty = typeWithProperties.get(0);
         Assert.assertEquals(type, typeWithProperty.get(SchemaOrgVocabulary.IDENTIFIER));

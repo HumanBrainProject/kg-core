@@ -19,6 +19,9 @@ package eu.ebrains.kg.core.api;
 import eu.ebrains.kg.arango.commons.model.InternalSpace;
 import eu.ebrains.kg.commons.AuthContext;
 import eu.ebrains.kg.commons.Version;
+import eu.ebrains.kg.commons.config.openApiGroups.Admin;
+import eu.ebrains.kg.commons.config.openApiGroups.Advanced;
+import eu.ebrains.kg.commons.config.openApiGroups.Simple;
 import eu.ebrains.kg.commons.jsonld.JsonLdConsts;
 import eu.ebrains.kg.commons.jsonld.JsonLdId;
 import eu.ebrains.kg.commons.jsonld.NormalizedJsonLd;
@@ -26,6 +29,7 @@ import eu.ebrains.kg.commons.markers.ExposesType;
 import eu.ebrains.kg.commons.markers.WritesData;
 import eu.ebrains.kg.commons.model.*;
 import eu.ebrains.kg.commons.semantics.vocabularies.EBRAINSVocabulary;
+import eu.ebrains.kg.commons.semantics.vocabularies.SchemaOrgVocabulary;
 import eu.ebrains.kg.core.model.ExposedStage;
 import eu.ebrains.kg.core.serviceCall.CoreToPrimaryStore;
 import eu.ebrains.kg.core.serviceCall.CoreTypesToGraphDB;
@@ -37,9 +41,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.nio.charset.StandardCharsets;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
+import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  * The types API allows to get information about the available types of instances including statistical values
@@ -63,29 +66,88 @@ public class Types {
     @Operation(summary = "Returns the types available - either with property information or without")
     @GetMapping("/types")
     @ExposesType
-    public PaginatedResult<NormalizedJsonLd> getTypes(@RequestParam("stage") ExposedStage stage, @RequestParam(value = "space", required = false) String space, @RequestParam(value = "withProperties", defaultValue = "false") boolean withProperties, @ParameterObject PaginationParam paginationParam) {
-        return PaginatedResult.ok(graphDBSvc.getTypes(stage.getStage(), space != null ? new SpaceName(space) : null, withProperties, paginationParam));
+    @Simple
+    public PaginatedResult<NormalizedJsonLd> getTypes(@RequestParam("stage") ExposedStage stage, @RequestParam(value = "space", required = false) String space, @RequestParam(value = "withProperties", defaultValue = "false") boolean withProperties, @RequestParam(value = "withIncomingLinks", defaultValue = "false") boolean withIncomingLinks, @ParameterObject PaginationParam paginationParam) {
+        return PaginatedResult.ok(graphDBSvc.getTypes(stage.getStage(), space != null ? new SpaceName(space) : null, withProperties, withIncomingLinks, withProperties, paginationParam));
     }
 
     @Operation(summary = "Returns the types according to the list of names - either with property information or without")
     @PostMapping("/typesByName")
     @ExposesType
+    @Advanced
     public Result<Map<String, Result<NormalizedJsonLd>>> getTypesByName(@RequestBody List<String> listOfTypeNames, @RequestParam("stage") ExposedStage stage, @RequestParam(value = "withProperties", defaultValue = "false") boolean withProperties, @RequestParam(value = "space", required = false) String space) {
         return Result.ok(graphDBSvc.getTypesByNameList(listOfTypeNames, stage.getStage(), space != null ? new SpaceName(space) : null, withProperties));
     }
 
-    @Operation(summary = "Define a type")
-    @PutMapping("/types")
+    @Operation(summary = "Specify a type")
+    //In theory, this could also go into /types only. But since Swagger doesn't allow the discrimination of groups with the same path (there is already the same path registered as GET for simple), we want to discriminate it properly
+    @PutMapping("/types/specification")
     @WritesData
-    public ResponseEntity<Result<Void>> defineType(@RequestBody NormalizedJsonLd payload, @Parameter(description = "By default, the specification is only valid for the current client. If this flag is set to true (and the client/user combination has the permission), the specification is applied for all clients (unless they have defined something by themselves)")  @RequestParam(value = "global", required = false) boolean global) {
+    @Admin
+    public ResponseEntity<Result<Void>> defineType(@RequestBody NormalizedJsonLd payload, @Parameter(description = "By default, the specification is only valid for the current client. If this flag is set to true (and the client/user combination has the permission), the specification is applied for all clients (unless they have defined something by themselves)") @RequestParam(value = "global", required = false) boolean global) {
         SpaceName targetSpace = global ? InternalSpace.GLOBAL_SPEC : authContext.getClientSpace().getName();
         JsonLdId type = payload.getAs(EBRAINSVocabulary.META_TYPE, JsonLdId.class);
-        if(type==null){
+        if (type == null) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Result.nok(HttpStatus.BAD_REQUEST.value(), String.format("Property \"%s\" should be specified.", EBRAINSVocabulary.META_TYPE)));
         }
         payload.setId(EBRAINSVocabulary.createIdForStructureDefinition("clients", targetSpace.getName(), "types", type.getId()));
         payload.put(JsonLdConsts.TYPE, EBRAINSVocabulary.META_TYPEDEFINITION_TYPE);
         primaryStoreSvc.postEvent(Event.createUpsertEvent(targetSpace, UUID.nameUUIDFromBytes(payload.id().getId().getBytes(StandardCharsets.UTF_8)), Event.Type.INSERT, payload), false, authContext.getAuthTokens());
         return ResponseEntity.ok(Result.ok());
+    }
+
+
+    @Operation(summary = "List candidate types for deprecation", description = "Returns a list of types which potentially could be deprecated because they are not in use yet")
+    @GetMapping("/types/candidates/forDeprecation")
+    @ExposesType
+    @Admin
+    public Result<List<NormalizedJsonLd>> candidatesForDeprecation() {
+        Paginated<NormalizedJsonLd> types = graphDBSvc.getTypes(DataStage.IN_PROGRESS, null, true, false, true, new PaginationParam());
+        return Result.ok(types.getData().stream().filter(type -> type.getAs(EBRAINSVocabulary.META_OCCURRENCES, Double.class).intValue() == 0).collect(Collectors.toList()));
+    }
+
+
+    @Operation(summary = "Deprecate a type", description = "Allows to deprecate a specified type but only if there is no data existing (the data would have to be removed first)")
+    @DeleteMapping("/types/specification")
+    @WritesData
+    @Admin
+    public ResponseEntity<Result<Void>> deprecateType(@RequestParam(value = "type", required = false) String type) {
+        Result<NormalizedJsonLd> typeStats = graphDBSvc.getTypesByNameList(Collections.singletonList(type), DataStage.IN_PROGRESS, null, true).get(type);
+        if (typeStats == null || typeStats.getData() == null) {
+            return ResponseEntity.notFound().build();
+        } else if (typeStats.getData().getAs(EBRAINSVocabulary.META_OCCURRENCES, Double.class).intValue() == 0) {
+            SpaceName spaceName = InternalSpace.GLOBAL_SPEC;
+            UUID typeId = UUID.nameUUIDFromBytes(EBRAINSVocabulary.createIdForStructureDefinition("clients", spaceName.getName(), "types", type).getId().getBytes(StandardCharsets.UTF_8));
+            NormalizedJsonLd payload = new NormalizedJsonLd();
+            payload.addTypes(EBRAINSVocabulary.META_TYPEDEFINITION_TYPE);
+            payload.put(EBRAINSVocabulary.META_TYPE, type);
+            Event deprecateType = new Event(spaceName, typeId, payload, Event.Type.META_DEPRECATION, new Date());
+            primaryStoreSvc.postEvent(deprecateType, false, authContext.getAuthTokens());
+            return ResponseEntity.ok(Result.ok());
+        } else {
+            return ResponseEntity.status(HttpStatus.CONFLICT).body(Result.nok(HttpStatus.CONFLICT.value(), "Was not able to deprecate type %s because it occurs %d times in the database"));
+        }
+    }
+
+    @Operation(summary = "Deprecate candidates", description = "Deprecate all candidates (instances without occurrences) in one go")
+    @DeleteMapping("/types/candidates/forDeprecation")
+    @WritesData
+    @Admin
+    public ResponseEntity<List<Result<String>>> deprecateAllCandidates() {
+        Result<List<NormalizedJsonLd>> listResult = candidatesForDeprecation();
+        if (listResult != null && listResult.getData() != null) {
+            List<Result<String>> result = new ArrayList<>();
+            listResult.getData().forEach(d -> {
+                String identifier = d.getAs(SchemaOrgVocabulary.IDENTIFIER, String.class);
+                try {
+                    deprecateType(identifier);
+                    result.add(Result.ok(identifier));
+                } catch (Exception e) {
+                    result.add(Result.nok(HttpStatus.CONFLICT.value(), String.format("%s - %s", identifier, e.getMessage())));
+                }
+            });
+            return ResponseEntity.ok(result);
+        }
+        return ResponseEntity.notFound().build();
     }
 }

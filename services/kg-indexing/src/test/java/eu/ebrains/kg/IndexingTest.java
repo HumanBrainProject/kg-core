@@ -64,7 +64,7 @@ public class IndexingTest {
         Event event = new Event(spaceName, UUID.randomUUID(), homer, Event.Type.INSERT, new Date());
 
         //When
-        indexing.indexEvent(new PersistedEvent(event, DataStage.NATIVE, null, new Space(spaceName, false)));
+        indexing.indexEvent(new PersistedEvent(event, DataStage.NATIVE, null, new Space(spaceName, false, false)));
 
         //Then
 

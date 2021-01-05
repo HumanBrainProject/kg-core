@@ -14,25 +14,14 @@
  * limitations under the License.
  */
 
-package eu.ebrains.kg.authentication.model;
+package eu.ebrains.kg.commons.config.openApiGroups;
 
-public class Credential {
-    private String user;
-    private String password;
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
 
-    public String getUser() {
-        return user;
-    }
-
-    public void setUser(String user) {
-        this.user = user;
-    }
-
-    public String getPassword() {
-        return password;
-    }
-
-    public void setPassword(String password) {
-        this.password = password;
-    }
+@Retention(RetentionPolicy.RUNTIME)
+@Target(value={ElementType.METHOD, ElementType.TYPE})
+public @interface Advanced {
 }

@@ -92,6 +92,9 @@ public class EventController {
             case UNRELEASE:
                 hasPermission = permissionSvc.hasPermission(userWithRoles, Functionality.withSemanticsForOperation(semantics, event.getType(), Functionality.UNRELEASE), event.getSpaceName(),  event.getDocumentId());
                 break;
+            case META_DEPRECATION:
+                hasPermission = permissionSvc.hasGlobalPermission(userWithRoles, Functionality.DEFINE_TYPES);
+                break;
         }
         if (!hasPermission) {
             throw new ForbiddenException();

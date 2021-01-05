@@ -30,6 +30,7 @@ public class Result<T> {
     public static class Error{
         private int code;
         private String message;
+        private UUID instanceId;
 
         public int getCode() {
             return code;
@@ -45,6 +46,14 @@ public class Result<T> {
 
         public void setMessage(String message) {
             this.message = message;
+        }
+
+        public UUID getInstanceId() {
+            return instanceId;
+        }
+
+        public void setInstanceId(UUID instanceId) {
+            this.instanceId = instanceId;
         }
     }
 

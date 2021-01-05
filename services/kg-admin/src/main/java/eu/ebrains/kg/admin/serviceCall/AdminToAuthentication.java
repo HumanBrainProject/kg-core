@@ -18,9 +18,7 @@ package eu.ebrains.kg.admin.serviceCall;
 
 import eu.ebrains.kg.commons.AuthContext;
 import eu.ebrains.kg.commons.ServiceCall;
-import eu.ebrains.kg.commons.model.Client;
 import eu.ebrains.kg.commons.model.User;
-import eu.ebrains.kg.commons.permission.roles.Role;
 import org.springframework.stereotype.Component;
 
 import java.net.URLEncoder;
@@ -48,22 +46,6 @@ public class AdminToAuthentication {
 
     public User getOtherUser(String nativeId) {
         return serviceCall.get(SPACE + String.format("users/profiles/%s", nativeId), authContext.getAuthTokens(), User.class);
-    }
-
-    public Client registerClient(Client client) {
-        return serviceCall.put(String.format("%sclients", SPACE), client, authContext.getAuthTokens(), Client.class);
-    }
-
-    public Client unregisterClient(String clientName) {
-        return serviceCall.delete(String.format("%sclients/%s", SPACE, clientName), authContext.getAuthTokens(), Client.class);
-    }
-
-    public void createRoles(List<Role> roles) {
-        serviceCall.post(SPACE + "roles", roles, authContext.getAuthTokens(), Void.class);
-    }
-
-    public void removeRoles(String pattern) {
-        serviceCall.delete(String.format("%sroles/%s", SPACE, URLEncoder.encode(pattern, StandardCharsets.UTF_8)), authContext.getAuthTokens(), Void.class);
     }
 
     public void addUserToRole(String role, String nativeUserId) {

@@ -17,6 +17,7 @@
 package eu.ebrains.kg.graphdb.ingestion.controller;
 
 import eu.ebrains.kg.arango.commons.model.ArangoDocumentReference;
+import eu.ebrains.kg.commons.jsonld.NormalizedJsonLd;
 import eu.ebrains.kg.commons.model.DataStage;
 import eu.ebrains.kg.graphdb.commons.model.ArangoDocument;
 import eu.ebrains.kg.graphdb.ingestion.controller.semantics.*;
@@ -30,32 +31,25 @@ import java.util.List;
 @Component
 public class SemanticsController {
 
-    private final ClientSemanticsHandler clientSemanticsHandler;
 
-    private final TypeDefinitionSemanticsHandler typeDefinitionSemanticsHandler;
-
-    private final PropertyDefinitionSemanticsHandler propertyDefinitionSemanticsHandler;
-
-    private final PropertyInTypeDefinitionSemanticsHandler propertyInTypeDefinitionSemanticsHandler;
-
-    private final SpaceDefinitionSemanticsHandler spaceDefinitionSemanticsHandler;
-
-    private final TypeInSpaceDefinitionSemanticsHandler typeInSpaceDefinitionSemanticsHandler;
+    private final List<? extends SemanticsHandler> handlers;
 
     public SemanticsController(ClientSemanticsHandler clientSemanticsHandler, TypeDefinitionSemanticsHandler typeDefinitionSemanticsHandler, PropertyDefinitionSemanticsHandler propertyDefinitionSemanticsHandler, PropertyInTypeDefinitionSemanticsHandler propertyInTypeDefinitionSemanticsHandler, SpaceDefinitionSemanticsHandler spaceDefinitionSemanticsHandler, TypeInSpaceDefinitionSemanticsHandler typeInSpaceDefinitionSemanticsHandler) {
-        this.clientSemanticsHandler = clientSemanticsHandler;
-        this.typeDefinitionSemanticsHandler = typeDefinitionSemanticsHandler;
-        this.propertyDefinitionSemanticsHandler = propertyDefinitionSemanticsHandler;
-        this.propertyInTypeDefinitionSemanticsHandler = propertyInTypeDefinitionSemanticsHandler;
-        this.spaceDefinitionSemanticsHandler = spaceDefinitionSemanticsHandler;
-        this.typeInSpaceDefinitionSemanticsHandler = typeInSpaceDefinitionSemanticsHandler;
+        this.handlers = Arrays.asList(clientSemanticsHandler, typeDefinitionSemanticsHandler, propertyDefinitionSemanticsHandler, propertyInTypeDefinitionSemanticsHandler, spaceDefinitionSemanticsHandler, typeInSpaceDefinitionSemanticsHandler);
     }
 
     List<DBOperation> createUpsertOperations(DataStage stage, ArangoDocumentReference rootDocumentRef, ArangoDocument document) {
-        List<? extends SemanticsHandler> handlers = Arrays.asList(clientSemanticsHandler, typeDefinitionSemanticsHandler, propertyDefinitionSemanticsHandler, propertyInTypeDefinitionSemanticsHandler, spaceDefinitionSemanticsHandler, typeInSpaceDefinitionSemanticsHandler);
-        List<DBOperation> operations = new ArrayList<>();
+         List<DBOperation> operations = new ArrayList<>();
         for (SemanticsHandler handler : handlers) {
             operations.addAll(handler.createUpsertOperations(stage, rootDocumentRef, document));
+        }
+        return operations;
+    }
+
+    List<DBOperation> createMetaDeprecationOperations(NormalizedJsonLd document) {
+         List<DBOperation> operations = new ArrayList<>();
+        for (SemanticsHandler handler : handlers) {
+            operations.addAll(handler.createMetaDeprecateOperations(document));
         }
         return operations;
     }

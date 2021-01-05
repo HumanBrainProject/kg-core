@@ -31,6 +31,7 @@ import eu.ebrains.kg.graphdb.commons.model.ArangoEdge;
 import eu.ebrains.kg.graphdb.ingestion.controller.IdFactory;
 import eu.ebrains.kg.graphdb.ingestion.controller.structure.StaticStructureController;
 import eu.ebrains.kg.graphdb.ingestion.model.DBOperation;
+import eu.ebrains.kg.graphdb.ingestion.model.DeleteInstanceOperation;
 import eu.ebrains.kg.graphdb.ingestion.model.UpsertOperation;
 import org.springframework.stereotype.Component;
 
@@ -46,6 +47,20 @@ public class TypeInSpaceDefinitionSemanticsHandler extends SemanticsHandler {
     public TypeInSpaceDefinitionSemanticsHandler(TypeUtils typeUtils, ArangoDatabases databases) {
         super(typeUtils);
         this.databases = databases;
+    }
+
+
+    @Override
+    public List<DBOperation> createMetaDeprecateOperations(NormalizedJsonLd document) {
+        if(document.types()!=null && document.types().contains(EBRAINSVocabulary.META_TYPE_IN_SPACE_DEFINITION_TYPE)){
+            List<DBOperation> operations = new ArrayList<>();
+            JsonLdId type = document.getAs(EBRAINSVocabulary.META_TYPE, JsonLdId.class);
+            SpaceName space = document.getAs(EBRAINSVocabulary.META_SPACE, SpaceName.class);
+            ArangoDocumentReference documentRefForSpaceToTypeEdge = IdFactory.createDocumentRefForSpaceToTypeEdge(ArangoCollectionReference.fromSpace(space).getCollectionName(), type.getId());
+            operations.add(new DeleteInstanceOperation(documentRefForSpaceToTypeEdge));
+            return operations;
+        }
+        return Collections.emptyList();
     }
 
     @Override

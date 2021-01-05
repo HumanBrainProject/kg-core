@@ -14,45 +14,41 @@
  * limitations under the License.
  */
 
-package eu.ebrains.kg.admin.api;
+package eu.ebrains.kg.core.api;
 
 import com.arangodb.ArangoDBException;
-import eu.ebrains.kg.admin.controller.AdminSpaceController;
-import eu.ebrains.kg.admin.serviceCall.AdminToAuthentication;
+import eu.ebrains.kg.commons.Version;
+import eu.ebrains.kg.commons.config.openApiGroups.Admin;
 import eu.ebrains.kg.commons.model.Client;
+import eu.ebrains.kg.core.controller.CoreClientController;
 import io.swagger.v3.oas.annotations.Operation;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 /**
- * The clients api manages the registration of clients (including the registration of the required configuration in the authentication service)
+ * The spaces API provides information about existing KG spaces
  */
 @RestController
-@RequestMapping("/internal/admin/clients")
-public class AdminClientsAPI {
+@RequestMapping(Version.API + "/clients")
+@Admin
+public class Clients {
 
-    private final AdminSpaceController spaceController;
-    private final AdminToAuthentication authenticationSvc;
+    private final CoreClientController coreClientController;
 
-    public AdminClientsAPI(AdminSpaceController spaceController, AdminToAuthentication authenticationSvc) {
-        this.spaceController = spaceController;
-        this.authenticationSvc = authenticationSvc;
+    public Clients(CoreClientController coreClientController) {
+        this.coreClientController = coreClientController;
     }
-
 
     @Operation(summary = "Register a client in EBRAINS KG")
     @PutMapping("/{id}")
     public ResponseEntity<Client> addClient(@PathVariable("id") String id) {
         try {
-            Client client = new Client(id);
-            spaceController.createSpace(client.getSpace(), false);
-            authenticationSvc.registerClient(client);
+            Client client = coreClientController.addClient(id);
             return ResponseEntity.status(HttpStatus.CREATED).body(client);
         } catch (ArangoDBException ex) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
         }
-
     }
 
 
@@ -60,10 +56,7 @@ public class AdminClientsAPI {
     @DeleteMapping("/{id}")
     public ResponseEntity<Client> deleteClient(@PathVariable("id") String id) {
         try {
-            Client client = new Client(id);
-            spaceController.removeSpace(client.getSpace().getName());
-            authenticationSvc.unregisterClient(id);
-            return ResponseEntity.ok(client);
+            return ResponseEntity.ok(coreClientController.deleteClient(id));
         } catch (ArangoDBException ex) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
         }

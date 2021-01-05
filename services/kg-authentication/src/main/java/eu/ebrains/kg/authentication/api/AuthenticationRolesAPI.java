@@ -51,4 +51,9 @@ public class AuthenticationRolesAPI {
     public void createRoles(@RequestBody List<Role> roles) {
         keycloakController.createRoles(roles);
     }
+
+    @DeleteMapping("/{rolePattern}")
+    public void removeRoles(@PathVariable("rolePattern") String rolePattern){
+        keycloakController.removeRolesFromClient(URLDecoder.decode(rolePattern, StandardCharsets.UTF_8));
+    }
 }

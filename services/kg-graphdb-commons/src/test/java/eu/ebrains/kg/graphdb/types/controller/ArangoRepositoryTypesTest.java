@@ -70,7 +70,7 @@ public class ArangoRepositoryTypesTest {
         todoListProcessor.upsertDocument(simpsons.doc(UUID.randomUUID()), TestObjectFactory.createJsonLd( "simpsons/homer.json"), STAGE, null);
 
         //When
-        Paginated<NormalizedJsonLd> allTypes = arangoRepositoryTypes.getAllTypes(CLIENT, STAGE, true, true, null);
+        Paginated<NormalizedJsonLd> allTypes = arangoRepositoryTypes.getAllTypes(CLIENT, STAGE, true, true, true, null);
 
         //Then
         assertEquals(5, allTypes.getSize());
@@ -83,8 +83,8 @@ public class ArangoRepositoryTypesTest {
         todoListProcessor.upsertDocument(simpsons.doc(UUID.randomUUID()), TestObjectFactory.createJsonLd( "simpsons/homer.json"), STAGE, null);
 
         //When
-        Paginated<NormalizedJsonLd> allTypesForSimpsonsSpace = arangoRepositoryTypes.getTypesForSpace(CLIENT, STAGE, TestObjectFactory.SIMPSONS, true, true, null);
-        Paginated<NormalizedJsonLd> allTypesForFooBarSpace = arangoRepositoryTypes.getTypesForSpace(CLIENT, STAGE, new SpaceName("foobar"), true, true, null);
+        Paginated<NormalizedJsonLd> allTypesForSimpsonsSpace = arangoRepositoryTypes.getTypesForSpace(CLIENT, STAGE, TestObjectFactory.SIMPSONS, true, true, true, null);
+        Paginated<NormalizedJsonLd> allTypesForFooBarSpace = arangoRepositoryTypes.getTypesForSpace(CLIENT, STAGE, new SpaceName("foobar"), true, true, true, null);
 
         //Then
         assertEquals(5, allTypesForSimpsonsSpace.getSize());

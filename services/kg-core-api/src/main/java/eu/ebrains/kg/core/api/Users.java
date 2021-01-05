@@ -20,10 +20,13 @@ import eu.ebrains.kg.arango.commons.model.InternalSpace;
 import eu.ebrains.kg.commons.AuthContext;
 import eu.ebrains.kg.commons.IdUtils;
 import eu.ebrains.kg.commons.Version;
+import eu.ebrains.kg.commons.config.openApiGroups.Advanced;
+import eu.ebrains.kg.commons.config.openApiGroups.Simple;
 import eu.ebrains.kg.commons.jsonld.InstanceId;
 import eu.ebrains.kg.commons.jsonld.JsonLdDoc;
 import eu.ebrains.kg.commons.jsonld.NormalizedJsonLd;
 import eu.ebrains.kg.commons.markers.ExposesConfigurationInformation;
+import eu.ebrains.kg.commons.markers.ExposesMinimalUserInfo;
 import eu.ebrains.kg.commons.markers.ExposesUserInfo;
 import eu.ebrains.kg.commons.markers.ExposesUserPicture;
 import eu.ebrains.kg.commons.model.*;
@@ -33,12 +36,12 @@ import eu.ebrains.kg.core.serviceCall.CoreToAuthentication;
 import eu.ebrains.kg.core.serviceCall.CoreToPrimaryStore;
 import eu.ebrains.kg.core.serviceCall.CoreUsersToGraphDB;
 import io.swagger.v3.oas.annotations.Operation;
-import org.bouncycastle.util.encoders.Base64;
 import org.springdoc.api.annotations.ParameterObject;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -71,6 +74,7 @@ public class Users {
     @Operation(summary = "Get the endpoint of the authentication service")
     @GetMapping(value = "/authorization", produces = MediaType.APPLICATION_JSON_VALUE)
     @ExposesConfigurationInformation
+    @Advanced
     public Result<JsonLdDoc> getAuthEndpoint() {
         JsonLdDoc ld = new JsonLdDoc();
         ld.addProperty("endpoint", authenticationSvc.endpoint());
@@ -80,6 +84,7 @@ public class Users {
     @Operation(summary = "Get the endpoint to retrieve your token (e.g. via client id and client secret)")
     @GetMapping(value = "/authorization/tokenEndpoint", produces = MediaType.APPLICATION_JSON_VALUE)
     @ExposesConfigurationInformation
+    @Advanced
     public Result<JsonLdDoc> getTokenEndpoint() {
         JsonLdDoc ld = new JsonLdDoc();
         ld.addProperty("endpoint", authenticationSvc.tokenEndpoint());
@@ -89,6 +94,7 @@ public class Users {
     @Operation(summary = "Retrieve user information from the passed token (including detailed information such as e-mail address)")
     @GetMapping("/me")
     @ExposesUserInfo
+    @Simple
     public ResponseEntity<Result<User>> profile() {
         User myUserProfile = authenticationSvc.getMyUserProfile();
         return myUserProfile!=null ? ResponseEntity.ok(Result.ok(myUserProfile)) : ResponseEntity.notFound().build();
@@ -98,6 +104,7 @@ public class Users {
     @Operation(summary = "Retrieve a list of users")
     @GetMapping
     @ExposesUserInfo
+    @Advanced
     public ResponseEntity<PaginatedResult<NormalizedJsonLd>> getUserList(@ParameterObject PaginationParam paginationParam) {
         Paginated<NormalizedJsonLd> users = coreUsersToGraphDB.getUsers(paginationParam);
         users.getData().forEach(NormalizedJsonLd::removeAllInternalProperties);
@@ -136,6 +143,7 @@ public class Users {
 
     @Operation(summary = "Define a picture for a specific user")
     @PutMapping("/{id}/picture")
+    @Advanced
     public ResponseEntity<Result<Void>> defineUserPicture(@PathVariable("id") UUID userId, @RequestBody String base64encodedImage) {
         SpaceName targetSpace = InternalSpace.USERS_PICTURE_SPACE;
         NormalizedJsonLd doc = new NormalizedJsonLd();
@@ -145,6 +153,16 @@ public class Users {
         doc.addTypes(EBRAINSVocabulary.META_USER_PICTURE_TYPE);
         primaryStoreSvc.postEvent(Event.createUpsertEvent(targetSpace, uuid, Event.Type.INSERT, doc), false, authContext.getAuthTokens());
         return ResponseEntity.ok(Result.ok());
+    }
+
+
+    @Operation(summary = "Retrieve user information based on a keycloak attribute (excluding detailed information such as e-mail address)")
+    @GetMapping("/byAttribute/{attribute}/{value}")
+    @ExposesMinimalUserInfo
+    @Advanced
+    public ResponseEntity<List<User>> getUsersByAttribute(@PathVariable("attribute") String attribute, @PathVariable("value") String value) {
+        List<User> users = authenticationSvc.getUsersByAttribute(attribute, value);
+        return users != null ? ResponseEntity.ok(users) : ResponseEntity.notFound().build();
     }
 
 }

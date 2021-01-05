@@ -29,12 +29,12 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 @Component
-public class CoreExtraToIds {
+public class CoreAsyncToIds {
 
     private final ServiceCall serviceCall;
     private final IdUtils idUtils;
 
-    public CoreExtraToIds(ServiceCall serviceCall, IdUtils idUtils) {
+    public CoreAsyncToIds(ServiceCall serviceCall, IdUtils idUtils) {
         this.serviceCall = serviceCall;
         this.idUtils = idUtils;
     }

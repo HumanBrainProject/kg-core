@@ -17,6 +17,7 @@
 package eu.ebrains.kg.core.api;
 
 import eu.ebrains.kg.commons.Version;
+import eu.ebrains.kg.commons.config.openApiGroups.Simple;
 import eu.ebrains.kg.commons.jsonld.InstanceId;
 import eu.ebrains.kg.commons.jsonld.JsonLdDoc;
 import eu.ebrains.kg.commons.jsonld.NormalizedJsonLd;
@@ -42,8 +43,8 @@ import java.util.UUID;
  */
 @RestController
 @RequestMapping(Version.API+"/queries")
+@Simple
 public class Queries {
-
 
     private final CoreQueryController queryController;
 

@@ -40,14 +40,15 @@ public class EBRAINSVocabulary {
 
 
     public static final String META = NAMESPACE+"meta/";
-
     public static final String META_SPACES = META + "spaces";
     public static final String META_USER = META+"user";
     public static final String META_OCCURRENCES = META + "occurrences";
+    public static final String META_INCOMING_LINKS = META + "incomingLinks";
     public static final String META_PROPERTIES = META + "properties";
     public static final String META_PROPERTY = META + "property";
     public static final String META_PICTURE = META + "picture";
     public static final String META_PROPERTY_TARGET_TYPES = META + "targetTypes";
+    public static final String META_PROPERTY_SOURCE_TYPES = META + "sourceTypes";
     public static final String META_VALUE_TYPES = META + "valueTypes";
     public static final String META_ALTERNATIVE = META+"alternative";
     public static final String META_SELECTED = META+"selected";
@@ -60,6 +61,7 @@ public class EBRAINSVocabulary {
     public static final String META_FIRST_RELEASED_AT = META+"firstReleasedAt";
     public static final String META_FIRST_RELEASED_BY = META+"firstReleasedBy";
     public static final String META_SPACE = META + "space";
+    public static final String META_INTERNAL_SPACE = META_SPACE + "/internalSpace";
     public static final String META_CLIENT_SPACE = META_SPACE + "/clientSpace";
     public static final String META_AUTORELEASE_SPACE = META_SPACE + "/autorelease";
 
@@ -74,6 +76,9 @@ public class EBRAINSVocabulary {
     public final static String META_CLIENTCONFIGURATION_TYPE = META+"ClientConfiguration";
 
     public final static String META_USER_PICTURE_TYPE = META+"UserPicture";
+
+    public static final String META_REMOVE_SPECS = META + "removeSpecs";
+
 
 
 }

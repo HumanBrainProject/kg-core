@@ -22,8 +22,8 @@ import eu.ebrains.kg.commons.exception.UnauthorizedException;
 import eu.ebrains.kg.commons.jsonld.*;
 import eu.ebrains.kg.commons.model.DataStage;
 import eu.ebrains.kg.commons.model.SpaceName;
-import eu.ebrains.kg.core.serviceCall.CoreExtraToGraphDB;
-import eu.ebrains.kg.core.serviceCall.CoreExtraToIds;
+import eu.ebrains.kg.core.serviceCall.CoreAsyncToIds;
+import eu.ebrains.kg.core.serviceCall.CoreToGraphDB;
 import eu.ebrains.kg.core.serviceCall.CoreToPrimaryStore;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -40,12 +40,12 @@ import java.util.stream.Collectors;
 @Component
 public class CoreInferenceController {
 
-    private final CoreExtraToGraphDB graphSvc;
+    private final CoreToGraphDB graphSvc;
     private final IdUtils idUtils;
     private final CoreToPrimaryStore primaryStoreSvc;
-    private final CoreExtraToIds idsSvc;
+    private final CoreAsyncToIds idsSvc;
 
-    public CoreInferenceController(CoreExtraToGraphDB graphSvc, IdUtils idUtils, CoreToPrimaryStore primaryStoreSvc, CoreExtraToIds idsSvc) {
+    public CoreInferenceController(CoreToGraphDB graphSvc, IdUtils idUtils, CoreToPrimaryStore primaryStoreSvc, CoreAsyncToIds idsSvc) {
         this.graphSvc = graphSvc;
         this.idUtils = idUtils;
         this.primaryStoreSvc = primaryStoreSvc;

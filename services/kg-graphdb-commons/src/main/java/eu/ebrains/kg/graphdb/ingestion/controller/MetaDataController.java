@@ -90,6 +90,10 @@ public class MetaDataController {
         return Stream.concat(genericOperations.stream(), structuralDeleteOperations.stream()).collect(Collectors.toList());
     }
 
+    public List<DBOperation> createMetaStructureDeprecationOperations(NormalizedJsonLd doc) {
+        return semanticsController.createMetaDeprecationOperations(doc);
+    }
+
     private List<DBOperation> createUpsertOperationsForDocument(DataStage stage, ArangoDocumentReference rootDocumentRef, ArangoDocument document) {
         List<DBOperation> structureOps = structureTracker.createUpsertOperations(stage, rootDocumentRef, document);
         List<DBOperation> semanticsOps = semanticsController.createUpsertOperations(stage, rootDocumentRef, document);

@@ -307,8 +307,7 @@ public class Reconcile {
                                 inferredDocument.asIndexed().getDoc().put(SchemaOrgVocabulary.IDENTIFIER, identifiers);
                                 break;
                             case EBRAINSVocabulary.META_USER:
-                                //Users are combined into an array.
-                                inferredDocument.asIndexed().getDoc().addProperty(key, documentsForKey.stream().map(d -> d.getDoc().get(EBRAINSVocabulary.META_USER)).collect(Collectors.toList()));
+                                //Users are ignored for the reconciliated instance since they can be reconstructed from the alternatives
                                 break;
                             case JsonLdConsts.TYPE:
                                 inferredDocument.asIndexed().getDoc().addProperty(key, collectTypesForMerge(key, documentsForKey));

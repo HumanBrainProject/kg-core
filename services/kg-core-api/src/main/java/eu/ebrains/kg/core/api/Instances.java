@@ -19,6 +19,8 @@ package eu.ebrains.kg.core.api;
 import eu.ebrains.kg.commons.AuthContext;
 import eu.ebrains.kg.commons.IdUtils;
 import eu.ebrains.kg.commons.Version;
+import eu.ebrains.kg.commons.config.openApiGroups.Advanced;
+import eu.ebrains.kg.commons.config.openApiGroups.Simple;
 import eu.ebrains.kg.commons.exception.ForbiddenException;
 import eu.ebrains.kg.commons.jsonld.*;
 import eu.ebrains.kg.commons.markers.*;
@@ -28,6 +30,7 @@ import eu.ebrains.kg.commons.params.ReleaseTreeScope;
 import eu.ebrains.kg.commons.permissions.controller.PermissionSvc;
 import eu.ebrains.kg.core.controller.CoreInstanceController;
 import eu.ebrains.kg.core.model.ExposedStage;
+import eu.ebrains.kg.core.serviceCall.CoreInstancesToGraphDB;
 import eu.ebrains.kg.core.serviceCall.CoreToIds;
 import eu.ebrains.kg.core.serviceCall.CoreToRelease;
 import io.swagger.v3.oas.annotations.Operation;
@@ -54,16 +57,18 @@ public class Instances {
     private final CoreToRelease releaseSvc;
     private final IdUtils idUtils;
     private final AuthContext authContext;
+    private final CoreInstancesToGraphDB coreInstancesToGraphDB;
     private final PermissionSvc permissionSvc;
 
     private final Logger logger = LoggerFactory.getLogger(getClass());
 
-    public Instances(CoreToIds idsSvc, CoreInstanceController instanceController, CoreToRelease releaseSvc, IdUtils idUtils, AuthContext authContext, PermissionSvc permissionSvc) {
+    public Instances(CoreToIds idsSvc, CoreInstanceController instanceController, CoreToRelease releaseSvc, IdUtils idUtils, AuthContext authContext, CoreInstancesToGraphDB coreInstancesToGraphDB, PermissionSvc permissionSvc) {
         this.idsSvc = idsSvc;
         this.instanceController = instanceController;
         this.releaseSvc = releaseSvc;
         this.idUtils = idUtils;
         this.authContext = authContext;
+        this.coreInstancesToGraphDB = coreInstancesToGraphDB;
         this.permissionSvc = permissionSvc;
     }
 
@@ -71,6 +76,7 @@ public class Instances {
     @PostMapping("/instances")
     @WritesData
     @ExposesData
+    @Simple
     public ResponseEntity<Result<NormalizedJsonLd>> createNewInstance(@RequestBody JsonLdDoc jsonLdDoc, @RequestParam(value = "space") String space,  @ParameterObject ResponseConfiguration responseConfiguration, @ParameterObject  IngestConfiguration ingestConfiguration,  @ParameterObject ExternalEventInformation externalEventInformation) {
         Date startTime = new Date();
         UUID id = UUID.randomUUID();
@@ -93,6 +99,7 @@ public class Instances {
     @PostMapping("/instances/{id}")
     @ExposesData
     @WritesData
+    @Simple
     public ResponseEntity<Result<NormalizedJsonLd>> createNewInstance(@RequestBody JsonLdDoc jsonLdDoc, @PathVariable("id") UUID id, @RequestParam(value = "space") String space,  @ParameterObject ResponseConfiguration responseConfiguration, @ParameterObject  IngestConfiguration ingestConfiguration,  @ParameterObject ExternalEventInformation externalEventInformation) {
         Date startTime = new Date();
         //We want to prevent the UUID to be used twice...
@@ -133,6 +140,7 @@ public class Instances {
     @PutMapping("/instances/{id}")
     @ExposesData
     @WritesData
+    @Simple
     public ResponseEntity<Result<NormalizedJsonLd>> contributeToInstanceFullReplacement(@RequestBody JsonLdDoc jsonLdDoc, @PathVariable("id") UUID id, @RequestParam(value = "undeprecate", required = false, defaultValue = "false") boolean undeprecate,  @ParameterObject ResponseConfiguration responseConfiguration,  @ParameterObject IngestConfiguration ingestConfiguration,  @ParameterObject ExternalEventInformation externalEventInformation) {
         return contributeToInstance(jsonLdDoc, id, undeprecate, responseConfiguration, ingestConfiguration, externalEventInformation, true);
     }
@@ -141,6 +149,7 @@ public class Instances {
     @PatchMapping("/instances/{id}")
     @ExposesData
     @WritesData
+    @Simple
     public ResponseEntity<Result<NormalizedJsonLd>> contributeToInstancePartialReplacement(@RequestBody JsonLdDoc jsonLdDoc, @PathVariable("id") UUID id, @RequestParam(value = "undeprecate", required = false, defaultValue = "false") boolean undeprecate,  @ParameterObject ResponseConfiguration responseConfiguration,  @ParameterObject IngestConfiguration ingestConfiguration,  @ParameterObject ExternalEventInformation externalEventInformation) {
         return contributeToInstance(jsonLdDoc, id, undeprecate, responseConfiguration, ingestConfiguration, externalEventInformation, false);
     }
@@ -148,6 +157,7 @@ public class Instances {
     @Operation(summary = "Get the instance by its KG-internal ID")
     @GetMapping("/instances/{id}")
     @ExposesData
+    @Simple
     public ResponseEntity<Result<NormalizedJsonLd>> getInstanceById(@PathVariable("id") UUID id, @RequestParam("stage") ExposedStage stage, @ParameterObject ResponseConfiguration responseConfiguration) {
         Date startTime = new Date();
         NormalizedJsonLd instanceById = instanceController.getInstanceById(id, stage.getStage(), responseConfiguration);
@@ -157,6 +167,7 @@ public class Instances {
     @Operation(summary = "Get the scope for the instance by its KG-internal ID")
     @GetMapping("/instances/{id}/scope")
     @ExposesMinimalData
+    @Advanced
     public ResponseEntity<Result<ScopeElement>> getInstanceScope(@PathVariable("id") UUID id, @RequestParam("stage") ExposedStage stage, @RequestParam(value = "returnPermissions", required = false, defaultValue = "false") boolean returnPermissions) {
         Date startTime = new Date();
         ScopeElement scope = instanceController.getScopeForInstance(id, stage.getStage(), returnPermissions);
@@ -166,6 +177,7 @@ public class Instances {
     @Operation(summary = "Get the neighborhood for the instance by its KG-internal ID")
     @GetMapping("/instances/{id}/neighbors")
     @ExposesMinimalData
+    @Advanced
     public ResponseEntity<Result<GraphEntity>> getNeighbors(@PathVariable("id") UUID id, @RequestParam("stage") ExposedStage stage) {
         Date startTime = new Date();
         GraphEntity scope = instanceController.getNeighbors(id, stage.getStage());
@@ -176,6 +188,7 @@ public class Instances {
     @Operation(summary = "Returns a list of instances according to their types")
     @GetMapping("/instances")
     @ExposesData
+    @Simple
     public PaginatedResult<NormalizedJsonLd> getInstances(@RequestParam("stage") ExposedStage stage, @RequestParam("type") String type, @RequestParam(value = "space", required = false) String space, @RequestParam(value = "searchByLabel", required = false) String searchByLabel, @ParameterObject ResponseConfiguration responseConfiguration, @ParameterObject PaginationParam paginationParam) {
         Date startTime = new Date();
         PaginatedResult<NormalizedJsonLd> result = PaginatedResult.ok(instanceController.getInstances(stage.getStage(), new Type(type), space!=null ? new SpaceName(space) : null, searchByLabel, responseConfiguration, paginationParam));
@@ -186,6 +199,7 @@ public class Instances {
     @Operation(summary = "Bulk operation of /instances/{id} to read instances by their KG-internal IDs")
     @PostMapping("/instancesByIds")
     @ExposesData
+    @Advanced
     public Result<Map<String, Result<NormalizedJsonLd>>> getInstancesByIds(@RequestBody List<String> ids, @RequestParam("stage") ExposedStage stage, @ParameterObject ResponseConfiguration responseConfiguration) {
         Date startTime = new Date();
         return Result.ok(instanceController.getInstancesByIds(ids, stage.getStage(), responseConfiguration)).setExecutionDetails(startTime, new Date());
@@ -195,6 +209,7 @@ public class Instances {
     @Operation(summary = "Read instances by the given list of (external) identifiers")
     @PostMapping("/instancesByIdentifiers")
     @ExposesData
+    @Advanced
     public Result<Map<String, Result<NormalizedJsonLd>>> getInstancesByIdentifiers(@RequestBody List<String> identifiers, @RequestParam("stage") ExposedStage stage, @ParameterObject ResponseConfiguration responseConfiguration) {
         List<IdWithAlternatives> idWithAlternatives = identifiers.stream().map(identifier -> new IdWithAlternatives(UUID.randomUUID(), null, Collections.singleton(identifier))).collect(Collectors.toList());
         Map<UUID, String> uuidToIdentifier = idWithAlternatives.stream().collect(Collectors.toMap(IdWithAlternatives::getId, v -> v.getAlternatives().iterator().next()));
@@ -226,6 +241,7 @@ public class Instances {
     @WritesData
     //It only indirectly exposes the ids due to its status codes (you can tell if an id exists based on the return code this method provides)
     @ExposesIds
+    @Simple
     public ResponseEntity<Result<Void>> deleteInstance(@PathVariable("id") UUID id, @ParameterObject ExternalEventInformation externalEventInformation) {
         Date startTime = new Date();
         InstanceId instanceId = idsSvc.resolveId(DataStage.IN_PROGRESS, id);
@@ -248,6 +264,7 @@ public class Instances {
     //It only indirectly exposes the ids due to its status codes (you can tell if an id exists based on the return code this method provides)
     @ExposesIds
     @WritesData
+    @Simple
     public ResponseEntity<Result<Void>> releaseInstance(@PathVariable("id") UUID id, @RequestParam(value = "revision", required = false) String revision) {
         Date startTime = new Date();
         InstanceId instanceId = idsSvc.resolveId(DataStage.IN_PROGRESS, id);
@@ -267,6 +284,7 @@ public class Instances {
     //It only indirectly exposes the ids due to its status codes (you can tell if an id exists based on the return code this method provides)
     @ExposesIds
     @WritesData
+    @Simple
     public ResponseEntity<Result<Void>> unreleaseInstance(@PathVariable("id") UUID id) {
         Date startTime = new Date();
         InstanceId instanceId = idsSvc.resolveId(DataStage.IN_PROGRESS, id);
@@ -288,6 +306,7 @@ public class Instances {
     //It only indirectly exposes the ids due to its status codes (you can tell if an id exists based on the return code this method provides)
     @ExposesIds
     @ExposesReleaseStatus
+    @Simple
     public ResponseEntity<Result<ReleaseStatus>> getReleaseStatus(@PathVariable("id") UUID id, @RequestParam("releaseTreeScope") ReleaseTreeScope releaseTreeScope) {
         InstanceId instanceId = idsSvc.resolveId(DataStage.IN_PROGRESS, id);
         if (instanceId == null) {
@@ -308,6 +327,7 @@ public class Instances {
     //It only indirectly exposes the ids due to its status codes (you can tell if an id exists based on the return code this method provides)
     @ExposesIds
     @ExposesReleaseStatus
+    @Advanced
     public Result<Map<UUID, Result<ReleaseStatus>>> getReleaseStatusByIds(@RequestBody List<UUID> listOfIds, @RequestParam("releaseTreeScope") ReleaseTreeScope releaseTreeScope) {
         List<InstanceId> instanceIds = idsSvc.resolveIdsByUUID(DataStage.IN_PROGRESS, listOfIds, false);
         return Result.ok(instanceIds.stream().filter(instanceId -> !instanceId.isDeprecated()).collect(Collectors.toMap(InstanceId::getUuid, instanceId -> {
@@ -320,4 +340,25 @@ public class Instances {
                 }
         )));
     }
+
+
+
+    @Operation(summary = "Returns suggestions for an instance to be linked by the given property (e.g. for the KG Editor)")
+    @GetMapping("/instances/{id}/suggestedLinksForProperty")
+    @ExposesMinimalData
+    @Advanced
+    public Result<SuggestionResult> getSuggestedLinksForProperty(@RequestParam("stage") ExposedStage stage, @PathVariable("id") UUID id, @RequestParam(value = "property") String propertyName, @RequestParam(value = "type", required = false) String type, @RequestParam(value = "search", required = false) String search, @ParameterObject PaginationParam paginationParam) {
+        return getSuggestedLinksForProperty(null, stage, propertyName, id, type, search, paginationParam);
+    }
+
+    @Operation(summary = "Returns suggestions for an instance to be linked by the given property (e.g. for the KG Editor) - and takes into account the passed payload (already chosen values, reflection on dependencies between properties - e.g. providing only parcellations for an already chosen brain atlas)")
+    @PostMapping("/instances/{id}/suggestedLinksForProperty")
+    @ExposesMinimalData
+    @Advanced
+    public Result<SuggestionResult> getSuggestedLinksForProperty(@RequestBody NormalizedJsonLd payload, @RequestParam("stage") ExposedStage stage, @RequestParam(value = "property") String propertyName, @PathVariable("id") UUID id, @RequestParam(value = "type", required = false) String type, @RequestParam(value = "search", required = false) String search, @ParameterObject PaginationParam paginationParam) {
+        InstanceId instanceId = idsSvc.resolveId(DataStage.IN_PROGRESS, id);
+        return Result.ok(coreInstancesToGraphDB.getSuggestedLinksForProperty(payload, stage.getStage(), instanceId, id, propertyName, type != null && !type.isBlank() ? new Type(type) : null, search, paginationParam, authContext.getAuthTokens()));
+    }
+
+
 }
