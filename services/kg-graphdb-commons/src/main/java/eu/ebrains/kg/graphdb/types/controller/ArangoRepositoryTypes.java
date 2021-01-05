@@ -447,12 +447,26 @@ public class ArangoRepositoryTypes {
             aql.addLine(AQL.trust("\"" + EBRAINSVocabulary.META_SPACES + "\": globalTypeBySpace[*].globalPropertyBySpace"));
             aql.addLine(AQL.trust("}))"));
 
+            aql.addLine(AQL.trust("LET filteredTargetTypes = (FOR t IN targetTypes"));
+            if (withCount) {
+                aql.addLine(AQL.trust("LET o=t.`" + EBRAINSVocabulary.META_OCCURRENCES + "`"));
+            }
+            aql.addLine(AQL.trust("LET s=t.`"+EBRAINSVocabulary.META_SPACES +"`"));
+            aql.addLine(AQL.trust("COLLECT filteredType=t.`"+EBRAINSVocabulary.META_TYPE+"` INTO resultFilteredTypes KEEP o, s"));
+            aql.addLine(AQL.trust("RETURN {"));
+            aql.addLine(AQL.trust("\"" + EBRAINSVocabulary.META_TYPE + "\": filteredType,"));
+            if (withCount) {
+                aql.addLine(AQL.trust("\"" + EBRAINSVocabulary.META_OCCURRENCES + "\": SUM(resultFilteredTypes[*].o),"));
+            }
+            aql.addLine(AQL.trust("\"" + EBRAINSVocabulary.META_SPACES + "\": (FOR r IN resultFilteredTypes[*].s FILTER r != null RETURN DISTINCT r)"));
+            aql.addLine(AQL.trust("})"));
+
             aql.addLine(AQL.trust("RETURN MERGE({"));
             aql.addLine(AQL.trust("\"" + SchemaOrgVocabulary.IDENTIFIER + "\": globalPropertyName,"));
             if (withCount) {
                 aql.addLine(AQL.trust("\"" + EBRAINSVocabulary.META_OCCURRENCES + "\": SUM(NOT_NULL((FOR p IN groupedGlobalProperties[*].props[**] FILTER @space == null OR  p.`_tempSpace`==@space RETURN p)[*].`" + EBRAINSVocabulary.META_OCCURRENCES + "`, 0)),"));
             }
-            aql.addLine(AQL.trust("\"" + EBRAINSVocabulary.META_PROPERTY_TARGET_TYPES + "\": targetTypes"));
+            aql.addLine(AQL.trust("\"" + EBRAINSVocabulary.META_PROPERTY_TARGET_TYPES + "\": filteredTargetTypes"));
             aql.addLine(AQL.trust("}, globalPropertySpec, globalTypePropertySpec, clientSpecificGlobalPropertySpec, clientSpecificTypePropertySpec)"));
             aql.addLine(AQL.trust(")}]"));
             aql.addLine(AQL.trust("LET filteredSpaces = (FOR s IN spaces RETURN MERGE(s, {\"" + EBRAINSVocabulary.META_PROPERTIES + "\": (FOR p IN s.`" + EBRAINSVocabulary.META_PROPERTIES + "` RETURN UNSET(p, \"_tempSpace\"))}))"));
