@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 EPFL/Human Brain Project PCO
+ * Copyright 2021 EPFL/Human Brain Project PCO
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -63,7 +63,7 @@ public class AuthenticationUsersAPI {
     public ResponseEntity<UserWithRoles> getRoles() {
         Map<String, Claim> userProfile = keycloakController.getUserProfile();
         Map<String, Claim> clientProfile = keycloakController.getClientProfile();
-        UserWithRoles userWithRoles = userProfile != null && clientProfile != null ? new UserWithRoles(keycloakController.buildUserInfoFromKeycloak(userProfile), keycloakController.buildRoleListFromKeycloak(userProfile), keycloakController.buildRoleListFromKeycloak(clientProfile), keycloakController.getClientInfoFromKeycloak(clientProfile)) : null;
+        UserWithRoles userWithRoles = userProfile != null ? new UserWithRoles(keycloakController.buildUserInfoFromKeycloak(userProfile), keycloakController.buildRoleListFromKeycloak(userProfile), keycloakController.buildRoleListFromKeycloak(clientProfile), keycloakController.getClientInfoFromKeycloak(clientProfile)) : null;
         return userWithRoles != null ? ResponseEntity.ok(userWithRoles) : ResponseEntity.notFound().build();
     }
 

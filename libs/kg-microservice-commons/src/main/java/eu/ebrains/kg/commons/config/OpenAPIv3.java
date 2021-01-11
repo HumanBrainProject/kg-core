@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 EPFL/Human Brain Project PCO
+ * Copyright 2021 EPFL/Human Brain Project PCO
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -105,18 +105,24 @@ public class OpenAPIv3 {
 
     @Bean
     public OpenAPI customOpenAPI(@Value("${spring.application.name}") String applicationName, @Value("${eu.ebrains.kg.login.endpoint}") String loginEndpoint, @Value("${eu.ebrains.kg.api.basePath}") String basePath, @Value("${eu.ebrains.kg.api.versioned}") boolean versioned, @Value("${eu.ebrains.kg.server}") String server) {
-        SecurityScheme clientId = new SecurityScheme().name("Client ID").type(SecurityScheme.Type.APIKEY).in(SecurityScheme.In.HEADER).name("Client-Id").description("The client-id for the proxied client-authentication. To be provided with \"client-secret\" and either \"client-serviceAccount-secret\" or the \"user-token\"");
-        SecurityScheme clientSecret = new SecurityScheme().name("clientSecret").type(SecurityScheme.Type.APIKEY).in(SecurityScheme.In.HEADER).name("Client-Secret").description("The client-secret for the proxied client-authentication. To be provided with \"client-id\" and either \"client-serviceAccount-secret\" or the \"user-token\"");
-        SecurityScheme clientServiceAccountSecret = new SecurityScheme().name("clientServiceAccountSecret").type(SecurityScheme.Type.APIKEY).in(SecurityScheme.In.HEADER).name("Client-ServiceAccount-Secret").description("Provide the client-secret a second time to authenticate as the service account with the full authentication mechanisms. To be provided with \"client-id\" and \"client-secret\"");
-        SecurityRequirement clientSecretSaReq = new SecurityRequirement().addList("clientId").addList("clientSecret").addList("clientServiceAccountSecret");
-        SecurityRequirement clientSecretUserReq = new SecurityRequirement().addList("clientId").addList("clientSecret").addList("userToken");
-        SecurityScheme clientToken = new SecurityScheme().name("clientToken").type(SecurityScheme.Type.APIKEY).in(SecurityScheme.In.HEADER).name("Client-Authorization").description("The already resolved token for the client account. This is the recommended way of authenticating clients since you don't expose your static credentials to the KG core but handle it on the client side.");
-        SecurityRequirement clientTokenReq = new SecurityRequirement().addList("clientToken").addList("userToken");
+        SecurityScheme clientId = new SecurityScheme().type(SecurityScheme.Type.APIKEY).in(SecurityScheme.In.HEADER).name("Client-Id").description("The client-id for the proxied client-authentication. To be provided with \"Client-SA-Secret\" or the combination of \"Client-Secret\" and \"Authorization\"");
+        SecurityScheme clientSecret = new SecurityScheme().type(SecurityScheme.Type.APIKEY).in(SecurityScheme.In.HEADER).name("Client-Secret").description("The client-secret for the proxied client-authentication. To be provided with \"Client-Id\" and \"Authorization\"");
+        SecurityScheme serviceAccountSecret = new SecurityScheme().type(SecurityScheme.Type.APIKEY).in(SecurityScheme.In.HEADER).name("Client-SA-Secret").description("Provide the client-secret in this header to authenticate as the service account. To be provided with \"Client-Id\"");
+
+        SecurityScheme clientToken = new SecurityScheme().type(SecurityScheme.Type.APIKEY).in(SecurityScheme.In.HEADER).name("Client-Authorization").description("The already resolved token for the client account. This is the recommended way of authenticating clients since you don't expose your static credentials to the KG core but handle it on the client side.");
+
         OAuthFlow oAuthFlow = new OAuthFlow();
         oAuthFlow.authorizationUrl(loginEndpoint);
-        SecurityScheme userToken = new SecurityScheme().name("userToken").type(SecurityScheme.Type.OAUTH2).flows(new OAuthFlows().implicit(oAuthFlow)).description("The browser-based user authentication.");
+        SecurityScheme userToken = new SecurityScheme().name("Authorization").type(SecurityScheme.Type.OAUTH2).flows(new OAuthFlows().implicit(oAuthFlow)).description("The user authentication");
+
+        SecurityRequirement userWithoutClientReq = new SecurityRequirement().addList("Authorization");
+        SecurityRequirement userWithClientByToken = new SecurityRequirement().addList("Client-Authorization").addList("Authorization");
+        SecurityRequirement userWithClientByClientSecret = new SecurityRequirement().addList("Client-Id").addList("Client-Secret").addList("Authorization");
+        SecurityRequirement serviceAccountByClientSecret = new SecurityRequirement().addList("Client-Id").addList("Client-SA-Secret");
+
         OpenAPI openapi = new OpenAPI().openapi("3.0.3");
-        return openapi.info(new Info().version(Version.API).title(String.format("This is the %s API", applicationName)).license(new License().name("Apache 2.0").url("https://www.apache.org/licenses/LICENSE-2.0.html")).termsOfService("https://kg.ebrains.eu/search-terms-of-use.html")).components(new Components()).schemaRequirement("clientId", clientId).schemaRequirement("clientSecret", clientSecret).schemaRequirement("clientServiceAccountSecret", clientServiceAccountSecret).schemaRequirement("clientToken", clientToken).schemaRequirement("userToken", userToken)
-                .security(Arrays.asList(clientTokenReq, clientSecretUserReq, clientSecretSaReq));
+        return openapi.info(new Info().version(Version.API).title(String.format("This is the %s API", applicationName)).license(new License().name("Apache 2.0").url("https://www.apache.org/licenses/LICENSE-2.0.html")).termsOfService("https://kg.ebrains.eu/search-terms-of-use.html"))
+                .components(new Components()).schemaRequirement("Authorization", userToken).schemaRequirement("Client-Authorization", clientToken).schemaRequirement("Client-Id", clientId).schemaRequirement("Client-Secret", clientSecret).schemaRequirement("Client-SA-Secret", serviceAccountSecret)
+                .security(Arrays.asList(userWithoutClientReq, userWithClientByToken,  userWithClientByClientSecret, serviceAccountByClientSecret));
     }
 }

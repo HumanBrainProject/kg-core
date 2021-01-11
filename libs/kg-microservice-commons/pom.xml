@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-  ~ Copyright 2020 EPFL/Human Brain Project PCO
+  ~ Copyright 2021 EPFL/Human Brain Project PCO
   ~
   ~ Licensed under the Apache License, Version 2.0 (the "License");
   ~ you may not use this file except in compliance with the License.
@@ -83,6 +83,16 @@
             <artifactId>junit-vintage-engine</artifactId>
             <version>5.2.0</version>
             <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>io.sentry</groupId>
+            <artifactId>sentry-logback</artifactId>
+            <version>3.2.0</version>
+        </dependency>
+        <dependency>
+            <groupId>io.sentry</groupId>
+            <artifactId>sentry-spring-boot-starter</artifactId>
+            <version>3.2.0</version>
         </dependency>
     </dependencies>
 </project>

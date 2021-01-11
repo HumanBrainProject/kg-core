@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 EPFL/Human Brain Project PCO
+ * Copyright 2021 EPFL/Human Brain Project PCO
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -48,7 +48,7 @@ public class RestControllerAdvice {
     }
 
     @ModelAttribute
-    public IngestConfiguration ingestConfiguration(@RequestParam(value = "deferInference", required = false, defaultValue = "false") boolean deferInference, @RequestParam(value = "normalizePayload", required = false, defaultValue = "true") boolean normalizePayload){
+    public IngestConfiguration ingestConfiguration(@RequestParam(value = "deferInference", required = false, defaultValue = "false") boolean deferInference, @RequestParam(value = "normalizePayload", required = false, defaultValue = "true") boolean normalizePayload) {
         IngestConfiguration ingestConfiguration = new IngestConfiguration();
         ingestConfiguration.setDeferInference(deferInference);
         ingestConfiguration.setNormalizePayload(normalizePayload);
@@ -57,7 +57,7 @@ public class RestControllerAdvice {
 
 
     @ModelAttribute
-    public ResponseConfiguration responseConfiguration(@RequestParam(value = "returnPayload", required = false, defaultValue = "true") boolean returnPayload, @RequestParam(value = "returnPermissions", required = false, defaultValue = "false") boolean returnPermissions, @RequestParam(value = "returnAlternatives", required = false, defaultValue = "false") boolean returnAlternatives, @RequestParam(value = "returnEmbedded", required = false, defaultValue = "true") boolean returnEmbedded){
+    public ResponseConfiguration responseConfiguration(@RequestParam(value = "returnPayload", required = false, defaultValue = "true") boolean returnPayload, @RequestParam(value = "returnPermissions", required = false, defaultValue = "false") boolean returnPermissions, @RequestParam(value = "returnAlternatives", required = false, defaultValue = "false") boolean returnAlternatives, @RequestParam(value = "returnEmbedded", required = false, defaultValue = "true") boolean returnEmbedded) {
         ResponseConfiguration responseConfiguration = new ResponseConfiguration();
         responseConfiguration.setReturnAlternatives(returnAlternatives);
         responseConfiguration.setReturnEmbedded(returnEmbedded);
@@ -82,7 +82,7 @@ public class RestControllerAdvice {
      * Retrieves the authorization headers (user and client) and populates them in the {@link AuthContext}
      */
     @ModelAttribute
-    public void interceptAuthorizationToken(@RequestHeader(value = "Authorization", required = false) String userAuthorizationToken, @RequestHeader(value = "Client-Authorization", required = false) String clientAuthorizationToken, @RequestHeader(value = "Client-Id", required = false) String clientId, @RequestHeader(value = "Client-Secret", required = false) String clientSecret, @RequestHeader(value = "Client-ServiceAccount-Secret", required = false) String clientServiceAccountSecret, @RequestHeader(value = "Transaction-Id", required = false) UUID transactionId) {
+    public void interceptAuthorizationToken(@RequestHeader(value = "Authorization", required = false) String userAuthorizationToken, @RequestHeader(value = "Client-Authorization", required = false) String clientAuthorizationToken, @RequestHeader(value = "Client-Id", required = false) String clientId, @RequestHeader(value = "Client-Secret", required = false) String clientSecret, @RequestHeader(value = "Client-SA-Secret", required = false) String clientServiceAccountSecret, @RequestHeader(value = "Transaction-Id", required = false) UUID transactionId) {
         UserAuthToken userToken = null;
         ClientAuthToken clientToken = null;
         if (userAuthorizationToken != null) {
@@ -91,13 +91,26 @@ public class RestControllerAdvice {
         if (clientAuthorizationToken != null) {
             clientToken = new ClientAuthToken(clientAuthorizationToken);
         }
-        else if(clientId!=null && clientSecret!=null){
-            clientToken = toAuthentication.fetchToken(clientId, clientSecret);
-            if(clientToken!=null){
-                //A special treatment for service accounts - we ask for the client secret in the user authentication to ensure
-                if(clientServiceAccountSecret!=null && clientServiceAccountSecret.equals(clientSecret)){
-                    userToken = new UserAuthToken(clientToken.getRawToken());
+        if (clientId != null) {
+            if (clientAuthorizationToken != null) {
+                throw new InvalidRequestException("You should provide either the Client-Authorization or the Client-Id (with a Client-Secret or Client-SA-Secret) header, but not both.");
+            }
+            if(clientSecret == null && clientServiceAccountSecret == null){
+                throw new InvalidRequestException("You should provide either the Client-Secret or Client-SA-Secret header with Client-Id.");
+            }
+            else if (clientSecret != null && clientServiceAccountSecret != null){
+                throw new InvalidRequestException("You should provide either a Client-Secret or a Client-SA-Secret header, but not both.");
+            }
+            if (clientSecret != null) {
+                clientToken = toAuthentication.fetchToken(clientId, clientSecret);
+            }
+            if (clientServiceAccountSecret != null) {
+                if(userToken != null ){
+                    throw new InvalidRequestException("You should not provide a Client-SA-Secret header when you've already provided an Authoritation header.");
                 }
+                //A special treatment for service accounts - the service account of the given client will act as a user account
+                ClientAuthToken saClientToken = toAuthentication.fetchToken(clientId, clientServiceAccountSecret);
+                userToken = new UserAuthToken(saClientToken.getBearerToken());
             }
         }
         AuthTokens authTokens = new AuthTokens(userToken, clientToken);
@@ -121,8 +134,8 @@ public class RestControllerAdvice {
     }
 
     @ExceptionHandler({ServiceException.class})
-    protected ResponseEntity<?> handleServiceException(RuntimeException ex, WebRequest request){
-        return ResponseEntity.status(((ServiceException)ex).getStatusCode()).body(ex.getMessage());
+    protected ResponseEntity<?> handleServiceException(RuntimeException ex, WebRequest request) {
+        return ResponseEntity.status(((ServiceException) ex).getStatusCode()).body(ex.getMessage());
     }
 
     @ExceptionHandler({ServiceNotAvailableException.class})

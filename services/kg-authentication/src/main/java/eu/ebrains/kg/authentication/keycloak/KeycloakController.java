@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 EPFL/Human Brain Project PCO
+ * Copyright 2021 EPFL/Human Brain Project PCO
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -280,7 +280,7 @@ public class KeycloakController {
 
     public Map<String, Claim> getClientProfile() {
         if (authContext.getAuthTokens() == null || authContext.getAuthTokens().getClientAuthToken() == null) {
-            throw new UnauthorizedException("You haven't provided the required credentials! Please define a Client-Authorization header with your bearer token!");
+            return null;
         }
         return getInfo(authContext.getAuthTokens().getClientAuthToken().getBearerToken());
     }
@@ -317,8 +317,13 @@ public class KeycloakController {
     }
 
     public String getClientInfoFromKeycloak(Map<String, Claim> authClientInfo) {
-        Claim preferred_username = authClientInfo.get("preferred_username");
-        return preferred_username != null ? preferred_username.asString().substring("service-account-".length()) : null;
+        if(authClientInfo!=null) {
+            Claim preferred_username = authClientInfo.get("preferred_username");
+            return preferred_username != null ? preferred_username.asString().substring("service-account-".length()) : null;
+        }
+        else{
+            return "direct access";
+        }
     }
 
     public User buildUserInfoFromKeycloak(Map<String, Claim> authUserInfo) {
@@ -332,20 +337,25 @@ public class KeycloakController {
     }
 
     public List<String> buildRoleListFromKeycloak(Map<String, Claim> authInfo) {
-        Claim resourceAccess = authInfo.get("resource_access");
-        if(resourceAccess!=null){
-            Map<String, Object> resourceAccessMap = resourceAccess.asMap();
-            if(resourceAccessMap!=null){
-                Object kg = resourceAccessMap.get("kg");
-                if(kg instanceof Map){
-                    Object roles = ((Map<?, ?>) kg).get("roles");
-                    if(roles instanceof List){
-                        return ((List<?>)roles).stream().filter(Objects::nonNull).map(Object::toString).collect(Collectors.toList());
+        if(authInfo!=null) {
+            Claim resourceAccess = authInfo.get("resource_access");
+            if (resourceAccess != null) {
+                Map<String, Object> resourceAccessMap = resourceAccess.asMap();
+                if (resourceAccessMap != null) {
+                    Object kg = resourceAccessMap.get("kg");
+                    if (kg instanceof Map) {
+                        Object roles = ((Map<?, ?>) kg).get("roles");
+                        if (roles instanceof List) {
+                            return ((List<?>) roles).stream().filter(Objects::nonNull).map(Object::toString).collect(Collectors.toList());
+                        }
                     }
                 }
             }
+            return Collections.emptyList();
         }
-        return Collections.emptyList();
+        else{
+            return null;
+        }
     }
 
 }
