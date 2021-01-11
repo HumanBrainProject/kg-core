@@ -89,12 +89,12 @@ public class RestControllerAdvice {
             userToken = new UserAuthToken(userAuthorizationToken);
         }
         if (clientAuthorizationToken != null) {
+            if(clientId !=null || clientSecret != null || clientServiceAccountSecret!=null) {
+                throw new InvalidRequestException("You've provided a Client-Authorization header, so you shouldn't define any of Client-Id, Client-Secret or Client-SA-Secret.");
+            }
             clientToken = new ClientAuthToken(clientAuthorizationToken);
         }
         if (clientId != null) {
-            if (clientAuthorizationToken != null) {
-                throw new InvalidRequestException("You should provide either the Client-Authorization or the Client-Id (with a Client-Secret or Client-SA-Secret) header, but not both.");
-            }
             if(clientSecret == null && clientServiceAccountSecret == null){
                 throw new InvalidRequestException("You should provide either the Client-Secret or Client-SA-Secret header with Client-Id.");
             }
@@ -106,11 +106,11 @@ public class RestControllerAdvice {
             }
             if (clientServiceAccountSecret != null) {
                 if(userToken != null ){
-                    throw new InvalidRequestException("You should not provide a Client-SA-Secret header when you've already provided an Authoritation header.");
+                    throw new InvalidRequestException("You should not provide a Client-SA-Secret header when you've already provided an Authorization header.");
                 }
-                //A special treatment for service accounts - the service account of the given client will act as a user account
-                ClientAuthToken saClientToken = toAuthentication.fetchToken(clientId, clientServiceAccountSecret);
-                userToken = new UserAuthToken(saClientToken.getBearerToken());
+                //A special treatment for service accounts - the service account of the given client will act as a user account and the client. This allows to
+                clientToken = toAuthentication.fetchToken(clientId, clientServiceAccountSecret);
+                userToken = new UserAuthToken(clientToken.getBearerToken());
             }
         }
         AuthTokens authTokens = new AuthTokens(userToken, clientToken);

@@ -109,7 +109,7 @@ public class OpenAPIv3 {
         SecurityScheme clientSecret = new SecurityScheme().type(SecurityScheme.Type.APIKEY).in(SecurityScheme.In.HEADER).name("Client-Secret").description("The client-secret for the proxied client-authentication. To be provided with \"Client-Id\" and \"Authorization\"");
         SecurityScheme serviceAccountSecret = new SecurityScheme().type(SecurityScheme.Type.APIKEY).in(SecurityScheme.In.HEADER).name("Client-SA-Secret").description("Provide the client-secret in this header to authenticate as the service account. To be provided with \"Client-Id\"");
 
-        SecurityScheme clientToken = new SecurityScheme().type(SecurityScheme.Type.APIKEY).in(SecurityScheme.In.HEADER).name("Client-Authorization").description("The already resolved token for the client account. This is the recommended way of authenticating clients since you don't expose your static credentials to the KG core but handle it on the client side.");
+        SecurityScheme clientToken = new SecurityScheme().type(SecurityScheme.Type.APIKEY).in(SecurityScheme.In.HEADER).name("Client-Authorization").description("The bearer token for the service account to contextualize the authentication to this client. Although convenience mechanisms for authenticating clients directly with client-id and client-secret exist (see technical documentation), this is the recommended way of integration since you don't expose any credentials but the short-lived access-tokens to the KG core.");
 
         OAuthFlow oAuthFlow = new OAuthFlow();
         oAuthFlow.authorizationUrl(loginEndpoint);
@@ -122,7 +122,7 @@ public class OpenAPIv3 {
 
         OpenAPI openapi = new OpenAPI().openapi("3.0.3");
         return openapi.info(new Info().version(Version.API).title(String.format("This is the %s API", applicationName)).license(new License().name("Apache 2.0").url("https://www.apache.org/licenses/LICENSE-2.0.html")).termsOfService("https://kg.ebrains.eu/search-terms-of-use.html"))
-                .components(new Components()).schemaRequirement("Authorization", userToken).schemaRequirement("Client-Authorization", clientToken).schemaRequirement("Client-Id", clientId).schemaRequirement("Client-Secret", clientSecret).schemaRequirement("Client-SA-Secret", serviceAccountSecret)
+                .components(new Components()).schemaRequirement("Authorization", userToken).schemaRequirement("Client-Authorization", clientToken)
                 .security(Arrays.asList(userWithoutClientReq, userWithClientByToken,  userWithClientByClientSecret, serviceAccountByClientSecret));
     }
 }
