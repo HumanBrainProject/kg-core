@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 EPFL/Human Brain Project PCO
+ * Copyright 2021 EPFL/Human Brain Project PCO
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,6 +20,7 @@ import eu.ebrains.kg.commons.jsonld.InstanceId;
 import eu.ebrains.kg.commons.jsonld.NormalizedJsonLd;
 import eu.ebrains.kg.commons.model.*;
 import eu.ebrains.kg.commons.query.KgQuery;
+import eu.ebrains.kg.commons.semantics.vocabularies.EBRAINSVocabulary;
 import eu.ebrains.kg.core.serviceCall.CoreInstancesToGraphDB;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
@@ -57,9 +58,13 @@ public class CoreQueryController {
         return graphDB4InstancesSvc.getQueriesByType(DataStage.IN_PROGRESS, paginationParam, search, false, type);
     }
 
-    public KgQuery fetchQueryById(UUID queryId, SpaceName space, DataStage stage){
-        NormalizedJsonLd instance = graphDB4InstancesSvc.getInstance(DataStage.IN_PROGRESS, new InstanceId(queryId, space), true, false);
-        return new KgQuery(instance, stage);
+    public KgQuery fetchQueryById(InstanceId instanceId, DataStage stage){
+        NormalizedJsonLd instance = graphDB4InstancesSvc.getInstance(DataStage.IN_PROGRESS, instanceId, true, false);
+        //Only return the instance if it is actually a query
+        if(instance.types().contains(EBRAINSVocabulary.META_QUERY_TYPE)) {
+            return new KgQuery(instance, stage);
+        }
+        return null;
     }
 
     public Paginated<NormalizedJsonLd> executeQuery(KgQuery query, PaginationParam paginationParam){

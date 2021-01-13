@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 EPFL/Human Brain Project PCO
+ * Copyright 2021 EPFL/Human Brain Project PCO
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,6 +24,8 @@ public enum GraphQueryKeys {
     GRAPH_QUERY_META("meta"),
     GRAPH_QUERY_TYPE("type"),
     GRAPH_QUERY_NAME("name"),
+    GRAPH_QUERY_LABEL("label"),
+    GRAPH_QUERY_DESCRIPTION("description"),
     GRAPH_QUERY_TYPE_FILTER("typeFilter"),
     GRAPH_QUERY_SPECIFICATION ("specification"),
     GRAPH_QUERY_PROPERTY_NAME("propertyName"),

@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 EPFL/Human Brain Project PCO
+ * Copyright 2021 EPFL/Human Brain Project PCO
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,7 +26,6 @@ import eu.ebrains.kg.commons.jsonld.JsonLdDoc;
 import eu.ebrains.kg.commons.jsonld.JsonLdId;
 import eu.ebrains.kg.commons.jsonld.NormalizedJsonLd;
 import eu.ebrains.kg.commons.model.SpaceName;
-import eu.ebrains.kg.commons.query.KgQuery;
 import eu.ebrains.kg.commons.semantics.vocabularies.EBRAINSVocabulary;
 import eu.ebrains.kg.graphdb.commons.model.ArangoDocument;
 import eu.ebrains.kg.graphdb.commons.model.ArangoEdge;
@@ -53,7 +52,7 @@ public class StructureSplitter {
         ArangoDocument arangoDocument = ArangoDocument.from(payload);
         arangoDocument.setReference(documentReference);
         // if is query, we just return the document as we do not split it
-        if(payload.types().contains(KgQuery.getKgQueryType())){
+        if(payload.types().contains(EBRAINSVocabulary.META_QUERY_TYPE)){
             return Collections.singletonList(arangoDocument);
         }
         return extractNestedInstances(arangoDocument, arangoDocument.getDoc(), documentReference, new Stack<>(), new ArrayList<>());

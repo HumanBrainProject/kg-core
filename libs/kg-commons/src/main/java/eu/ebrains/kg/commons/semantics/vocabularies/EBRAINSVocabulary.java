@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 EPFL/Human Brain Project PCO
+ * Copyright 2021 EPFL/Human Brain Project PCO
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -68,6 +68,7 @@ public class EBRAINSVocabulary {
     public static final String META_PERMISSIONS = META + "permissions";
     public final static String META_PROPERTYUPDATES = META+"propertyUpdates";
 
+    public static final String META_QUERY_TYPE = META_TYPE+"/Query";
     public static final String META_PROPERTY_DEFINITION_TYPE = META+"PropertyDefinition";
     public static final String META_PROPERTY_IN_TYPE_DEFINITION_TYPE = META+"PropertyInTypeDefinition";
     public final static String META_TYPEDEFINITION_TYPE = META+"TypeDefinition";

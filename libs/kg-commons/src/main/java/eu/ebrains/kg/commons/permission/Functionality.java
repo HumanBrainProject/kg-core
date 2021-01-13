@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 EPFL/Human Brain Project PCO
+ * Copyright 2021 EPFL/Human Brain Project PCO
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,7 +18,6 @@ package eu.ebrains.kg.commons.permission;
 
 import eu.ebrains.kg.commons.model.DataStage;
 import eu.ebrains.kg.commons.model.Event;
-import eu.ebrains.kg.commons.query.KgQuery;
 import eu.ebrains.kg.commons.semantics.vocabularies.EBRAINSVocabulary;
 
 import java.util.Arrays;
@@ -72,10 +71,10 @@ public enum Functionality {
 
     //Query
     READ_QUERY( Permission.Level.GLOBAL_AND_SPACE, FunctionalityGroup.QUERY, null, null, null),
-    CREATE_QUERY( Permission.Level.GLOBAL_AND_SPACE, FunctionalityGroup.QUERY, null, Event.Type.INSERT, KgQuery.getKgQueryType()),
+    CREATE_QUERY( Permission.Level.GLOBAL_AND_SPACE, FunctionalityGroup.QUERY, null, Event.Type.INSERT, EBRAINSVocabulary.META_QUERY_TYPE),
     EXECUTE_QUERY( Permission.Level.GLOBAL_AND_SPACE, FunctionalityGroup.QUERY, null, null, null),
     EXECUTE_SYNC_QUERY( Permission.Level.GLOBAL_AND_SPACE, FunctionalityGroup.QUERY, null, null, null),
-    DELETE_QUERY(Permission.Level.GLOBAL_AND_SPACE, FunctionalityGroup.QUERY, null, Event.Type.DELETE, KgQuery.getKgQueryType());
+    DELETE_QUERY(Permission.Level.GLOBAL_AND_SPACE, FunctionalityGroup.QUERY, null, Event.Type.DELETE, EBRAINSVocabulary.META_QUERY_TYPE);
 
 
     private final List<Permission.Level> allowedPermissionLevels;

@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 EPFL/Human Brain Project PCO
+ * Copyright 2021 EPFL/Human Brain Project PCO
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -373,7 +373,7 @@ public class ArangoRepositoryInstances {
         if (database.collection(InternalSpace.TYPE_EDGE_COLLECTION.getCollectionName()).exists()) {
             Map<String, Object> bindVars = new HashMap<>();
             AQL aql = new AQL();
-            iterateThroughTypeList(Collections.singletonList(new Type(KgQuery.getKgQueryType())), bindVars, aql);
+            iterateThroughTypeList(Collections.singletonList(new Type(EBRAINSVocabulary.META_QUERY_TYPE)), bindVars, aql);
             aql.indent().addLine(AQL.trust("FOR v IN 1..1 OUTBOUND typeDefinition.type @@typeRelationCollection"));
             if (typeFilter != null && !typeFilter.isBlank()) {
                 aql.addLine(AQL.trust("FILTER v.`" + GraphQueryKeys.GRAPH_QUERY_META.getFieldName() + "`.`" + GraphQueryKeys.GRAPH_QUERY_TYPE.getFieldName() + "` == @typeFilter"));
@@ -381,6 +381,8 @@ public class ArangoRepositoryInstances {
             }
             if (search != null && !search.isBlank()) {
                 aql.addLine(AQL.trust("FILTER LIKE(v.`" + GraphQueryKeys.GRAPH_QUERY_META.getFieldName() + "`.`" + GraphQueryKeys.GRAPH_QUERY_NAME.getFieldName() + "`, @search, true)"));
+                aql.addLine(AQL.trust("OR LIKE(v.`" + GraphQueryKeys.GRAPH_QUERY_LABEL.getFieldName()+"`, @search, true)"));
+                aql.addLine(AQL.trust("OR LIKE(v.`" + GraphQueryKeys.GRAPH_QUERY_DESCRIPTION.getFieldName()+"`, @search, true)"));
                 bindVars.put("search", "%" + search + "%");
             }
             aql.addPagination(paginationParam);

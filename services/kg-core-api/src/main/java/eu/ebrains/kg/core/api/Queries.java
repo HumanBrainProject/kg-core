@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 EPFL/Human Brain Project PCO
+ * Copyright 2021 EPFL/Human Brain Project PCO
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,15 +27,19 @@ import eu.ebrains.kg.commons.markers.ExposesQuery;
 import eu.ebrains.kg.commons.markers.WritesData;
 import eu.ebrains.kg.commons.model.*;
 import eu.ebrains.kg.commons.query.KgQuery;
+import eu.ebrains.kg.commons.semantics.vocabularies.EBRAINSVocabulary;
 import eu.ebrains.kg.core.controller.CoreQueryController;
 import eu.ebrains.kg.core.model.ExposedStage;
 import eu.ebrains.kg.core.serviceCall.CoreToIds;
 import eu.ebrains.kg.core.serviceCall.CoreToJsonLd;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
 import org.springdoc.api.annotations.ParameterObject;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
 import java.util.UUID;
 
 /**
@@ -58,7 +62,7 @@ public class Queries {
         this.idsSvc = idsSvc;
     }
 
-    @Operation(summary = "List the queries which have been registered for the given root type")
+    @Operation(summary = "List the queries and filter them by root type and/or text in the label, name or description")
     @GetMapping
     @ExposesQuery
     public PaginatedResult<NormalizedJsonLd> listQueriesPerRootType(@ParameterObject PaginationParam paginationParam, @RequestParam(value = "type", required = false) String rootType, @RequestParam(value = "search", required = false) String search) {
@@ -77,49 +81,59 @@ public class Queries {
         return PaginatedResult.ok(queryController.executeQuery(new KgQuery(normalizedJsonLd, stage.getStage()), paginationParam));
     }
 
-    @Operation(summary = "Get the query specification with the given query id in a specific space (note that query ids are unique per space only)")
+    @Operation(summary = "Get the query specification with the given query id in a specific space")
     @GetMapping("/{queryId}")
     @ExposesQuery
-    public Result<NormalizedJsonLd> getQuerySpecification(@PathVariable("queryId") UUID queryId, @RequestParam("space") String space) {
-        KgQuery kgQuery = queryController.fetchQueryById(queryId, new SpaceName(space), DataStage.IN_PROGRESS);
+    public Result<NormalizedJsonLd> getQuerySpecification(@PathVariable("queryId") UUID queryId) {
+        InstanceId instanceId = idsSvc.resolveId(DataStage.IN_PROGRESS, queryId);
+        KgQuery kgQuery = queryController.fetchQueryById(instanceId, DataStage.IN_PROGRESS);
         return Result.ok(kgQuery.getPayload());
     }
 
-    @Operation(summary = "Removes a query specification")
+    @Operation(summary = "Remove a query specification")
     @DeleteMapping("/{queryId}")
     @WritesData
-    public void removeQuery(@PathVariable("queryId") UUID queryId, @RequestParam("space") String space) {
-        queryController.deleteQuery(new InstanceId(queryId, new SpaceName(space)));
+    public ResponseEntity<Void> removeQuery(@PathVariable("queryId") UUID queryId) {
+        InstanceId resolveId = idsSvc.resolveId(DataStage.IN_PROGRESS, queryId);
+        if(resolveId!=null) {
+            List<InstanceId> instanceIds = queryController.deleteQuery(resolveId);
+            if(instanceIds.isEmpty()){
+                return ResponseEntity.notFound().build();
+            }
+            return ResponseEntity.ok().build();
+        }
+        else {
+            return ResponseEntity.notFound().build();
+        }
     }
 
-    @Operation(summary = "Save a query specification")
+    @Operation(summary = "Create or save a query specification")
     @PutMapping("/{queryId}")
     @WritesData
     @ExposesInputWithoutEnrichedSensitiveData
-    public ResponseEntity<Result<NormalizedJsonLd>> saveQuery(@RequestBody JsonLdDoc query, @PathVariable(value = "queryId") UUID queryId, @RequestParam("space") String space) {
+    public ResponseEntity<Result<NormalizedJsonLd>> saveQuery(@RequestBody JsonLdDoc query, @PathVariable(value = "queryId") UUID queryId, @RequestParam(value = "space", required = false) @Parameter(description = "Required only when the instance is created - but not if it's updated.") String space) {
         NormalizedJsonLd normalizedJsonLd = jsonLdSvc.toNormalizedJsonLd(query);
-        normalizedJsonLd.addTypes(KgQuery.getKgQueryType());
-        SpaceName querySpace = new SpaceName(space);
+        normalizedJsonLd.addTypes(EBRAINSVocabulary.META_QUERY_TYPE);
         InstanceId resolveId = idsSvc.resolveId(DataStage.IN_PROGRESS, queryId);
         if(resolveId != null){
+            if(space!=null && !resolveId.getSpace().equals(new SpaceName(space))){
+                return ResponseEntity.status(HttpStatus.CONFLICT).body(Result.nok(HttpStatus.CONFLICT.value(), "The query with this UUID already exists in a different space"));
+            }
             return queryController.updateQuery(normalizedJsonLd, resolveId);
         }
-        return queryController.createNewQuery(normalizedJsonLd, queryId, querySpace);
+        if(space==null){
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Result.nok(HttpStatus.BAD_REQUEST.value(), "The query with this UUID doesn't exist yet. You therefore need to specify the space where it should be stored."));
+        }
+        return queryController.createNewQuery(normalizedJsonLd, queryId, new SpaceName(space));
     }
 
     @Operation(summary = "Execute a stored query to receive the instances")
     @GetMapping("/{queryId}/instances")
     @ExposesData
-    public PaginatedResult<NormalizedJsonLd> executeQueryById(@PathVariable("queryId") UUID queryId, @ParameterObject PaginationParam paginationParam,@RequestParam("space") String space, @RequestParam("stage") ExposedStage stage) {
-        KgQuery query = queryController.fetchQueryById(queryId, new SpaceName(space), stage.getStage());
+    public PaginatedResult<NormalizedJsonLd> executeQueryById(@PathVariable("queryId") UUID queryId, @ParameterObject PaginationParam paginationParam, @RequestParam("stage") ExposedStage stage) {
+        InstanceId instanceId = idsSvc.resolveId(DataStage.IN_PROGRESS, queryId);
+        KgQuery query = queryController.fetchQueryById(instanceId, stage.getStage());
         return PaginatedResult.ok(queryController.executeQuery(query, paginationParam));
-    }
-
-    @Operation(summary = "TO BE IMPLEMENTED: Returns the meta information of a query specification")
-    @GetMapping("/{queryId}/meta")
-    @ExposesData
-    public Result<NormalizedJsonLd> getMetaInformation(@PathVariable("queryId") String queryId) {
-        return null;
     }
 
 }

@@ -121,7 +121,13 @@ public class OpenAPIv3 {
         SecurityRequirement serviceAccountByClientSecret = new SecurityRequirement().addList("Client-Id").addList("Client-SA-Secret");
 
         OpenAPI openapi = new OpenAPI().openapi("3.0.3");
-        return openapi.info(new Info().version(Version.API).title(String.format("This is the %s API", applicationName)).license(new License().name("Apache 2.0").url("https://www.apache.org/licenses/LICENSE-2.0.html")).termsOfService("https://kg.ebrains.eu/search-terms-of-use.html"))
+        String description = "This is the API of the EBRAINS Knowledge Graph. Please note, that it is - for your convenience split into multiple definition groups: \n" +
+                "- simple: The most commonly used endpoints for interacting with the Knowledge Graph. This is the place you should start with.\n" +
+                "- advanced: Advanced functionalities for very specific use cases. \n" +
+                "- admin: Endpoints for the management of the EBRAINS Knowledge Graph. You need specific permissions for this - unless you're not an admin, this is not what you're looking for ;)\n" +
+                "- all: The complete list of all APIs available.";
+
+        return openapi.info(new Info().version(Version.API).title(String.format("This is the EBRAINS KG API")).description(description).license(new License().name("Apache 2.0").url("https://www.apache.org/licenses/LICENSE-2.0.html")).termsOfService("https://kg.ebrains.eu/search-terms-of-use.html"))
                 .components(new Components()).schemaRequirement("Authorization", userToken).schemaRequirement("Client-Authorization", clientToken)
                 .security(Arrays.asList(userWithoutClientReq, userWithClientByToken,  userWithClientByClientSecret, serviceAccountByClientSecret));
     }
