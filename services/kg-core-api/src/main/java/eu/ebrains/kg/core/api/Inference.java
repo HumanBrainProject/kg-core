@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 EPFL/Human Brain Project PCO
+ * Copyright 2021 EPFL/Human Brain Project PCO
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -42,17 +42,19 @@ public class Inference {
     @Operation(summary = "Triggers the inference of all documents of the given space")
     @PostMapping("/{space}")
     public void triggerInference(@PathVariable(value = "space") String space, @RequestParam(value = "identifier", required = false) String identifier, @RequestParam(value = "async", required = false, defaultValue = "false") boolean async) {
+        SpaceName spaceName = authContext.resolveSpaceName(space);
         if (async) {
-            inferenceController.asyncTriggerInference(new SpaceName(space), identifier, authContext.getAuthTokens());
+            inferenceController.asyncTriggerInference(spaceName, identifier, authContext.getAuthTokens());
         } else {
-            inferenceController.triggerInference(new SpaceName(space), identifier, authContext.getAuthTokens());
+            inferenceController.triggerInference(spaceName, identifier, authContext.getAuthTokens());
         }
     }
 
     @Operation(summary = "Triggers the inference of all documents which have been tagged to be deferred as part of their creation/contribution")
     @PostMapping("/{space}/deferred")
     public void triggerDeferredInference(@RequestParam(value = "sync", required = false, defaultValue = "false") boolean sync, @PathVariable(value = "space") String space) {
-        inferenceController.triggerDeferredInference(authContext.getAuthTokens(), new SpaceName(space), sync);
+        SpaceName spaceName = authContext.resolveSpaceName(space);
+        inferenceController.triggerDeferredInference(authContext.getAuthTokens(), spaceName, sync);
     }
 
 }

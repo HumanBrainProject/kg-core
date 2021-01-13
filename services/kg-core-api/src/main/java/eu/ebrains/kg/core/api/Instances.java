@@ -27,13 +27,13 @@ import eu.ebrains.kg.commons.markers.*;
 import eu.ebrains.kg.commons.model.*;
 import eu.ebrains.kg.commons.models.ExternalEventInformation;
 import eu.ebrains.kg.commons.params.ReleaseTreeScope;
-import eu.ebrains.kg.commons.permissions.controller.PermissionSvc;
 import eu.ebrains.kg.core.controller.CoreInstanceController;
 import eu.ebrains.kg.core.model.ExposedStage;
 import eu.ebrains.kg.core.serviceCall.CoreInstancesToGraphDB;
 import eu.ebrains.kg.core.serviceCall.CoreToIds;
 import eu.ebrains.kg.core.serviceCall.CoreToRelease;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import org.slf4j.Logger;
@@ -58,18 +58,16 @@ public class Instances {
     private final IdUtils idUtils;
     private final AuthContext authContext;
     private final CoreInstancesToGraphDB coreInstancesToGraphDB;
-    private final PermissionSvc permissionSvc;
 
     private final Logger logger = LoggerFactory.getLogger(getClass());
 
-    public Instances(CoreToIds idsSvc, CoreInstanceController instanceController, CoreToRelease releaseSvc, IdUtils idUtils, AuthContext authContext, CoreInstancesToGraphDB coreInstancesToGraphDB, PermissionSvc permissionSvc) {
+    public Instances(CoreToIds idsSvc, CoreInstanceController instanceController, CoreToRelease releaseSvc, IdUtils idUtils, AuthContext authContext, CoreInstancesToGraphDB coreInstancesToGraphDB) {
         this.idsSvc = idsSvc;
         this.instanceController = instanceController;
         this.releaseSvc = releaseSvc;
         this.idUtils = idUtils;
         this.authContext = authContext;
         this.coreInstancesToGraphDB = coreInstancesToGraphDB;
-        this.permissionSvc = permissionSvc;
     }
 
     @Operation(summary = "Create new instance with a system generated id")
@@ -77,11 +75,11 @@ public class Instances {
     @WritesData
     @ExposesData
     @Simple
-    public ResponseEntity<Result<NormalizedJsonLd>> createNewInstance(@RequestBody JsonLdDoc jsonLdDoc, @RequestParam(value = "space") String space,  @ParameterObject ResponseConfiguration responseConfiguration, @ParameterObject  IngestConfiguration ingestConfiguration,  @ParameterObject ExternalEventInformation externalEventInformation) {
+    public ResponseEntity<Result<NormalizedJsonLd>> createNewInstance(@RequestBody JsonLdDoc jsonLdDoc, @RequestParam(value = "space") @Parameter(description = "The space name the instance shall be stored in or \""+SpaceName.PRIVATE_SPACE+"\" if you want to store it to your private space") String space, @ParameterObject ResponseConfiguration responseConfiguration, @ParameterObject  IngestConfiguration ingestConfiguration, @ParameterObject ExternalEventInformation externalEventInformation) {
         Date startTime = new Date();
         UUID id = UUID.randomUUID();
         logger.debug(String.format("Creating new instance with id %s", id));
-        SpaceName spaceName = SpaceName.fromString(space);
+        SpaceName spaceName = authContext.resolveSpaceName(space);
         ResponseEntity<Result<NormalizedJsonLd>> newInstance = instanceController.createNewInstance(jsonLdDoc, id, spaceName, responseConfiguration, ingestConfiguration, externalEventInformation);
         logger.debug(String.format("Done creating new instance with id %s", id));
         if (ingestConfiguration.isDeferInference()) {
@@ -100,14 +98,14 @@ public class Instances {
     @ExposesData
     @WritesData
     @Simple
-    public ResponseEntity<Result<NormalizedJsonLd>> createNewInstance(@RequestBody JsonLdDoc jsonLdDoc, @PathVariable("id") UUID id, @RequestParam(value = "space") String space,  @ParameterObject ResponseConfiguration responseConfiguration, @ParameterObject  IngestConfiguration ingestConfiguration,  @ParameterObject ExternalEventInformation externalEventInformation) {
+    public ResponseEntity<Result<NormalizedJsonLd>> createNewInstance(@RequestBody JsonLdDoc jsonLdDoc, @PathVariable("id") UUID id, @RequestParam(value = "space") @Parameter(description = "The space name the instance shall be stored in or \""+SpaceName.PRIVATE_SPACE+"\" if you want to store it to your private space") String space,  @ParameterObject ResponseConfiguration responseConfiguration, @ParameterObject  IngestConfiguration ingestConfiguration,  @ParameterObject ExternalEventInformation externalEventInformation) {
         Date startTime = new Date();
         //We want to prevent the UUID to be used twice...
         InstanceId instanceId = idsSvc.resolveId(DataStage.IN_PROGRESS, id);
         if (instanceId != null) {
             return ResponseEntity.status(HttpStatus.CONFLICT).body(Result.nok(HttpStatus.CONFLICT.value(), String.format("The uuid you're providing (%s) is already in use. Please use a different one or do a PATCH instead", id)));
         }
-        SpaceName spaceName = SpaceName.fromString(space);
+        SpaceName spaceName = authContext.resolveSpaceName(space);
         logger.debug(String.format("Creating new instance with id %s", id));
         ResponseEntity<Result<NormalizedJsonLd>> newInstance = instanceController.createNewInstance(jsonLdDoc, id, spaceName, responseConfiguration, ingestConfiguration, externalEventInformation);
         logger.debug(String.format("Done creating new instance with id %s", id));
@@ -189,14 +187,14 @@ public class Instances {
     @GetMapping("/instances")
     @ExposesData
     @Simple
-    public PaginatedResult<NormalizedJsonLd> getInstances(@RequestParam("stage") ExposedStage stage, @RequestParam("type") String type, @RequestParam(value = "space", required = false) String space, @RequestParam(value = "searchByLabel", required = false) String searchByLabel, @ParameterObject ResponseConfiguration responseConfiguration, @ParameterObject PaginationParam paginationParam) {
+    public PaginatedResult<NormalizedJsonLd> getInstances(@RequestParam("stage") ExposedStage stage, @RequestParam("type") String type, @RequestParam(value = "space", required = false) @Parameter(description = "The space of the instances to be listed or \""+SpaceName.PRIVATE_SPACE+"\" for your private space") String space, @RequestParam(value = "searchByLabel", required = false) String searchByLabel, @ParameterObject ResponseConfiguration responseConfiguration, @ParameterObject PaginationParam paginationParam) {
         Date startTime = new Date();
         PaginatedResult<NormalizedJsonLd> result = PaginatedResult.ok(instanceController.getInstances(stage.getStage(), new Type(type), space!=null ? new SpaceName(space) : null, searchByLabel, responseConfiguration, paginationParam));
         result.setExecutionDetails(startTime, new Date());
         return result;
     }
 
-    @Operation(summary = "Bulk operation of /instances/{id} to read instances by their KG-internal IDs")
+    @Operation(summary = "Bulk operation of /instances/{id} to read instances by their UUIDs")
     @PostMapping("/instancesByIds")
     @ExposesData
     @Advanced

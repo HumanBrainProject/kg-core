@@ -79,7 +79,7 @@ public class UserWithRoles {
         return serviceAccount;
     }
 
-    private SpaceName getPrivateSpace(){
+    public SpaceName getPrivateSpace(){
         return new SpaceName("private-"+user.getNativeId());
     }
 

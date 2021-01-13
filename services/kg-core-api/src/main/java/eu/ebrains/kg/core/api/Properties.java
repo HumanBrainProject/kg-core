@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 EPFL/Human Brain Project PCO
+ * Copyright 2021 EPFL/Human Brain Project PCO
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -58,7 +58,6 @@ public class Properties {
     @Operation(summary = "Upload a property specification either globally or on a type level for the requesting client")
     @PutMapping("/properties")
     @WritesData
-
     public ResponseEntity<Result<Void>> defineProperty(@RequestBody NormalizedJsonLd payload, @Parameter(description = "By default, the specification is only valid for the current client. If this flag is set to true (and the client/user combination has the permission), the specification is applied for all clients (unless they have defined something by themselves)")  @RequestParam(value = "global", required = false) boolean global) {
         if(!payload.containsKey(EBRAINSVocabulary.META_PROPERTY)) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Result.nok(HttpStatus.BAD_REQUEST.value(), String.format("Property \"%s\" should be specified.", EBRAINSVocabulary.META_PROPERTY)));

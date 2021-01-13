@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 EPFL/Human Brain Project PCO
+ * Copyright 2021 EPFL/Human Brain Project PCO
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -67,16 +67,16 @@ public class Types {
     @GetMapping("/types")
     @ExposesType
     @Simple
-    public PaginatedResult<NormalizedJsonLd> getTypes(@RequestParam("stage") ExposedStage stage, @RequestParam(value = "space", required = false) String space, @RequestParam(value = "withProperties", defaultValue = "false") boolean withProperties, @RequestParam(value = "withIncomingLinks", defaultValue = "false") boolean withIncomingLinks, @ParameterObject PaginationParam paginationParam) {
-        return PaginatedResult.ok(graphDBSvc.getTypes(stage.getStage(), space != null ? new SpaceName(space) : null, withProperties, withIncomingLinks, withProperties, paginationParam));
+    public PaginatedResult<NormalizedJsonLd> getTypes(@RequestParam("stage") ExposedStage stage, @RequestParam(value = "space", required = false) @Parameter(description = "The space by which the types should be filtered or \"" + SpaceName.PRIVATE_SPACE + "\" for your private space.") String space, @RequestParam(value = "withProperties", defaultValue = "false") boolean withProperties, @RequestParam(value = "withIncomingLinks", defaultValue = "false") boolean withIncomingLinks, @ParameterObject PaginationParam paginationParam) {
+        return PaginatedResult.ok(graphDBSvc.getTypes(stage.getStage(), authContext.resolveSpaceName(space), withProperties, withIncomingLinks, withProperties, paginationParam));
     }
 
     @Operation(summary = "Returns the types according to the list of names - either with property information or without")
     @PostMapping("/typesByName")
     @ExposesType
     @Advanced
-    public Result<Map<String, Result<NormalizedJsonLd>>> getTypesByName(@RequestBody List<String> listOfTypeNames, @RequestParam("stage") ExposedStage stage, @RequestParam(value = "withProperties", defaultValue = "false") boolean withProperties, @RequestParam(value = "space", required = false) String space) {
-        return Result.ok(graphDBSvc.getTypesByNameList(listOfTypeNames, stage.getStage(), space != null ? new SpaceName(space) : null, withProperties));
+    public Result<Map<String, Result<NormalizedJsonLd>>> getTypesByName(@RequestBody List<String> listOfTypeNames, @RequestParam("stage") ExposedStage stage, @RequestParam(value = "withProperties", defaultValue = "false") boolean withProperties, @RequestParam(value = "space", required = false) @Parameter(description = "The space by which the types should be filtered or \"" + SpaceName.PRIVATE_SPACE + "\" for your private space.") String space) {
+        return Result.ok(graphDBSvc.getTypesByNameList(listOfTypeNames, stage.getStage(), authContext.resolveSpaceName(space), withProperties));
     }
 
     @Operation(summary = "Specify a type")

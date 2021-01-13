@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 EPFL/Human Brain Project PCO
+ * Copyright 2021 EPFL/Human Brain Project PCO
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -39,6 +39,7 @@ import eu.ebrains.kg.core.model.ExposedStage;
 import eu.ebrains.kg.core.serviceCall.CoreSpacesToGraphDB;
 import eu.ebrains.kg.core.serviceCall.CoreToPrimaryStore;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
 import org.springdoc.api.annotations.ParameterObject;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -74,8 +75,9 @@ public class Spaces {
 
     @GetMapping("{space}")
     @ExposesSpace
+
     @Advanced
-    public Result<NormalizedJsonLd> getSpace(@RequestParam("stage") ExposedStage stage, @PathVariable("space") String space, @RequestParam(value = "permissions", defaultValue = "false") boolean permissions) {
+    public Result<NormalizedJsonLd> getSpace(@RequestParam("stage") ExposedStage stage, @PathVariable("space") @Parameter(description = "The space to be read or \"" + SpaceName.PRIVATE_SPACE + "\" for your private space") String space, @RequestParam(value = "permissions", defaultValue = "false") boolean permissions) {
         NormalizedJsonLd s = spaceController.getSpace(stage, space, permissions);
         if (s != null) {
             s.removeAllInternalProperties();
@@ -104,9 +106,9 @@ public class Spaces {
     @PutMapping("{space}/types")
     @WritesData
     @Admin
-    public ResponseEntity<Result<Void>> assignTypeToSpace(@PathVariable("space") String space, @RequestParam("type") String type) {
+    public ResponseEntity<Result<Void>> assignTypeToSpace(@PathVariable("space") @Parameter(description = "The space be linked to or \"" + SpaceName.PRIVATE_SPACE + "\" for your private space") String space, @RequestParam("type") String type) {
         NormalizedJsonLd payload = new NormalizedJsonLd();
-        SpaceName sp = new SpaceName(space);
+        SpaceName sp = authContext.resolveSpaceName(space);
         payload.addTypes(EBRAINSVocabulary.META_TYPE_IN_SPACE_DEFINITION_TYPE);
         Type t = new Type(type);
         payload.addProperty(EBRAINSVocabulary.META_TYPE, new JsonLdId(t.getName()));
@@ -120,8 +122,9 @@ public class Spaces {
     @DeleteMapping("{space}/types")
     @WritesData
     @Admin
-    public ResponseEntity<Result<Void>> removeTypeFromSpace(@PathVariable("space") String space, @RequestParam("type") String type) {
-        spaceController.removeTypeInSpaceLink(new SpaceName(space), new Type(type));
+    public ResponseEntity<Result<Void>> removeTypeFromSpace(@PathVariable("space") @Parameter(description = "The space the type shall be removed from or \"" + SpaceName.PRIVATE_SPACE + "\" for your private space") String space, @RequestParam("type") String type) {
+        SpaceName spaceName = authContext.resolveSpaceName(space);
+        spaceController.removeTypeInSpaceLink(spaceName, new Type(type));
         return ResponseEntity.ok(Result.ok());
     }
 
@@ -130,8 +133,14 @@ public class Spaces {
     @PutMapping("{space}/specification")
     @Admin
     @ExposesInputWithoutEnrichedSensitiveData
-    public ResponseEntity<Result<NormalizedJsonLd>> createSpaceDefinition(@PathVariable(value = "space") String space, @RequestParam(value = "autorelease", required = false, defaultValue = "false") boolean autoRelease) {
-        return ResponseEntity.ok(Result.ok(spaceController.createSpaceDefinition(new Space(new SpaceName(space), autoRelease, false), true)));
+    public ResponseEntity<Result<NormalizedJsonLd>> createSpaceDefinition(@PathVariable(value = "space") @Parameter(description = "The space the definition is valid for. Please note that you can't do so for your private space (\"" + SpaceName.PRIVATE_SPACE + "\")") String space, @RequestParam(value = "autorelease", required = false, defaultValue = "false") boolean autoRelease) {
+        SpaceName spaceName = authContext.resolveSpaceName(space);
+        if (spaceName != null) {
+            if(spaceName.equals(authContext.getUserWithRoles().getPrivateSpace())){
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Result.nok(HttpStatus.BAD_REQUEST.value(), "Your private space is configured by default - you can't do so yourself."));
+            }
+        }
+        return ResponseEntity.ok(Result.ok(spaceController.createSpaceDefinition(new Space(spaceName, autoRelease, false), true)));
     }
 
 
@@ -139,7 +148,13 @@ public class Spaces {
     @DeleteMapping("{space}/specification")
     @Admin
     @ExposesInputWithoutEnrichedSensitiveData
-    public ResponseEntity<Result<Void>> removeSpaceDefinition(@PathVariable(value = "space") String space, @RequestParam(value = "removeRoles", required = false, defaultValue = "false") boolean removeRoles) {
+    public ResponseEntity<Result<Void>> removeSpaceDefinition(@PathVariable(value = "space") @Parameter(description = "The space the definition should be removed for. Please note that you can't do so for your private space (\"" + SpaceName.PRIVATE_SPACE + "\")") String space, @RequestParam(value = "removeRoles", required = false, defaultValue = "false") boolean removeRoles) {
+        SpaceName spaceName = authContext.resolveSpaceName(space);
+        if (spaceName != null) {
+            if(spaceName.equals(authContext.getUserWithRoles().getPrivateSpace())){
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Result.nok(HttpStatus.BAD_REQUEST.value(), "Your private space is configured by default - you can't do so yourself."));
+            }
+        }
         spaceController.removeSpaceDefinition(new SpaceName(space), removeRoles);
         return ResponseEntity.ok(Result.ok());
     }
@@ -148,8 +163,8 @@ public class Spaces {
     @Operation(summary = "Remove all links of a space (if it is empty) so it is disappearing from the meta database. This does not remove the explicit specifications but keeps them e.g. if it is going to be reintroudced).")
     @DeleteMapping("{space}/links")
     @Admin
-    public void removeSpaceLinks(@PathVariable(value = "space") String space) {
-        spaceController.removeSpaceLinks(new SpaceName(space));
+    public void removeSpaceLinks(@PathVariable(value = "space") @Parameter(description = "The space links should be removed from or \"" + SpaceName.PRIVATE_SPACE + "\" for your private space.") String space) {
+        spaceController.removeSpaceLinks(authContext.resolveSpaceName(space));
     }
 
 

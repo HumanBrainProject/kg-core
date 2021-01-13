@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 EPFL/Human Brain Project PCO
+ * Copyright 2021 EPFL/Human Brain Project PCO
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -65,7 +65,7 @@ public class CoreSpaceController {
     }
 
     public NormalizedJsonLd getSpace(ExposedStage stage, String space, boolean permissions) {
-        NormalizedJsonLd sp = graphDbSvc.getSpace(new SpaceName(space), stage.getStage());
+        NormalizedJsonLd sp = graphDbSvc.getSpace(authContext.resolveSpaceName(space), stage.getStage());
         if (sp != null && permissions) {
             UserWithRoles userWithRoles = authContext.getUserWithRoles();
             String spaceIdentifier = sp.getAs(SchemaOrgVocabulary.IDENTIFIER, String.class, null);

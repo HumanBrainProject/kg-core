@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 EPFL/Human Brain Project PCO
+ * Copyright 2021 EPFL/Human Brain Project PCO
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -67,6 +67,14 @@ public class AuthContext {
     public String getUserId(){
         UserWithRoles userWithRoles = getUserWithRoles();
         return userWithRoles == null || userWithRoles.getUser() ==null ? null : userWithRoles.getUser().getNativeId();
+    }
+
+    public SpaceName resolveSpaceName(String spaceName){
+        SpaceName space = SpaceName.fromString(spaceName);
+        if(space!=null){
+            return space.getName().equals(SpaceName.PRIVATE_SPACE) ? getUserWithRoles().getPrivateSpace() : space;
+        }
+        return null;
     }
 
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 EPFL/Human Brain Project PCO
+ * Copyright 2021 EPFL/Human Brain Project PCO
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,6 +26,8 @@ import java.util.Objects;
 @JsonSerialize(using = ToStringSerializer.class)
 @JsonDeserialize(using = SpaceNameDeserializer.class)
 public class SpaceName {
+
+    public transient static final String PRIVATE_SPACE = "myspace";
 
     private String name;
 

@@ -23,6 +23,7 @@ import java.util.Objects;
 
 public class EBRAINSVocabulary {
 
+
     public static final String ALIAS = "ebr";
     public static final String NAMESPACE = "https://core.kg.ebrains.eu/vocab/";
     public static final String LABEL = NAMESPACE+"label";

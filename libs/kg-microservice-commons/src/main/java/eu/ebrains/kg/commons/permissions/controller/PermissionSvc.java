@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 EPFL/Human Brain Project PCO
+ * Copyright 2021 EPFL/Human Brain Project PCO
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -36,27 +36,27 @@ public class PermissionSvc {
 
     private Set<FunctionalityInstance> getExpectedFunctionalityList(Functionality functionality, SpaceName space, UUID id) {
         Set<FunctionalityInstance> instances = new HashSet<>();
-        if(functionality.getAllowedPermissionLevels().contains(Permission.Level.GLOBAL)){
+        if (functionality.getAllowedPermissionLevels().contains(Permission.Level.GLOBAL)) {
             instances.add(new FunctionalityInstance(functionality, null, null));
         }
-        if(space != null && functionality.getAllowedPermissionLevels().contains(Permission.Level.SPACE)){
+        if (space != null && functionality.getAllowedPermissionLevels().contains(Permission.Level.SPACE)) {
             instances.add(new FunctionalityInstance(functionality, space, null));
         }
-        if(space != null && id!=null && functionality.getAllowedPermissionLevels().contains(Permission.Level.INSTANCE)){
+        if (space != null && id != null && functionality.getAllowedPermissionLevels().contains(Permission.Level.INSTANCE)) {
             instances.add(new FunctionalityInstance(functionality, space, id));
         }
         return instances;
     }
 
-    private boolean isServiceAccountForClientSpace(UserWithRoles userWithRoles, SpaceName space){
-        return userWithRoles != null && space != null && userWithRoles.getClientId() != null && userWithRoles.getClientId().equals(space.getName()) && userWithRoles.getUser()!=null && userWithRoles.getUser().isServiceAccountForClient(userWithRoles.getClientId()) && userWithRoles.isServiceAccount();
+    private boolean isServiceAccountForClientSpace(UserWithRoles userWithRoles, SpaceName space) {
+        return userWithRoles != null && space != null && userWithRoles.getClientId() != null && userWithRoles.getClientId().equals(space.getName()) && userWithRoles.getUser() != null && userWithRoles.getUser().isServiceAccountForClient(userWithRoles.getClientId()) && userWithRoles.isServiceAccount();
     }
 
     public boolean hasPermission(UserWithRoles userWithRoles, Functionality functionality, SpaceName space) {
         return hasPermission(userWithRoles, functionality, space, null);
     }
 
-    private boolean checkFunctionalities(Functionality functionality, SpaceName space, UUID id, List<FunctionalityInstance> permissions){
+    private boolean checkFunctionalities(Functionality functionality, SpaceName space, UUID id, List<FunctionalityInstance> permissions) {
         Set<FunctionalityInstance> expectedRoles = getExpectedFunctionalityList(functionality, space, id);
         return expectedRoles.stream().anyMatch(permissions::contains);
     }
@@ -77,37 +77,40 @@ public class PermissionSvc {
     }
 
     public boolean hasPermission(UserWithRoles userWithRoles, Functionality functionality, SpaceName space, UUID id) {
-        boolean clientOwnedSpace = isServiceAccountForClientSpace(userWithRoles, space);
-        if(functionality==null){
+        if (functionality == null) {
             return false;
         }
-        switch (functionality){
+        switch (functionality) {
             case CREATE_SPACE:
-                //One special case is, that a client service account can create its own space even if there are no explicitly declared rights.
-                if(clientOwnedSpace){
-                    return true;
+                if (space != null && userWithRoles != null) {
+                    boolean clientOwnedSpace = isServiceAccountForClientSpace(userWithRoles, space);
+                    boolean privateUserSpace = space.equals(userWithRoles.getPrivateSpace());
+                    //A special case is, that a client service account can create its own space even if there are no explicitly declared rights. The same is true for a user and the private space
+                    if (clientOwnedSpace || privateUserSpace) {
+                        return true;
+                    }
+                    break;
                 }
-                break;
         }
         return checkFunctionalities(functionality, space, id, userWithRoles.getPermissions());
     }
 
-    public boolean hasGlobalPermission(UserWithRoles userWithRoles, Functionality functionality){
+    public boolean hasGlobalPermission(UserWithRoles userWithRoles, Functionality functionality) {
         return hasPermission(userWithRoles, functionality, null, null);
     }
 
     public Set<SpaceName> getSpacesForPermission(UserWithRoles userWithRoles, Functionality functionality) {
         List<FunctionalityInstance> permissions = userWithRoles.getPermissions();
-        if(functionality==null){
+        if (functionality == null) {
             return Collections.emptySet();
         }
-        if(hasGlobalPermission(userWithRoles, functionality)){
+        if (hasGlobalPermission(userWithRoles, functionality)) {
             return null;
         }
         return permissions.stream().filter(f -> f.getFunctionality().equals(functionality)).map(FunctionalityInstance::getSpace).filter(Objects::nonNull).collect(Collectors.toSet());
     }
 
-    public Set<InstanceId> getInstancesWithExplicitPermission(List<FunctionalityInstance> permissions,Functionality functionality) {
+    public Set<InstanceId> getInstancesWithExplicitPermission(List<FunctionalityInstance> permissions, Functionality functionality) {
         return permissions.stream().filter(f -> f.getFunctionality().equals(functionality)).map(FunctionalityInstance::getInstanceId).filter(Objects::nonNull).collect(Collectors.toSet());
     }
 

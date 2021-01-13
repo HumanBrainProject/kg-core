@@ -111,7 +111,7 @@ public class Queries {
     @PutMapping("/{queryId}")
     @WritesData
     @ExposesInputWithoutEnrichedSensitiveData
-    public ResponseEntity<Result<NormalizedJsonLd>> saveQuery(@RequestBody JsonLdDoc query, @PathVariable(value = "queryId") UUID queryId, @RequestParam(value = "space", required = false) @Parameter(description = "Required only when the instance is created - but not if it's updated.") String space) {
+    public ResponseEntity<Result<NormalizedJsonLd>> saveQuery(@RequestBody JsonLdDoc query, @PathVariable(value = "queryId") UUID queryId, @RequestParam(value = "space", required = false) @Parameter(description = "Required only when the instance is created to specify where it should be stored ("+SpaceName.PRIVATE_SPACE+" for your private space) - but not if it's updated.") String space) {
         NormalizedJsonLd normalizedJsonLd = jsonLdSvc.toNormalizedJsonLd(query);
         normalizedJsonLd.addTypes(EBRAINSVocabulary.META_QUERY_TYPE);
         InstanceId resolveId = idsSvc.resolveId(DataStage.IN_PROGRESS, queryId);
