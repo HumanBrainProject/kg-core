@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 EPFL/Human Brain Project PCO
+ * Copyright 2021 EPFL/Human Brain Project PCO
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 
 package eu.ebrains.kg.graphdb.ingestion.controller;
 
+import eu.ebrains.kg.arango.commons.model.ArangoCollectionReference;
 import eu.ebrains.kg.arango.commons.model.ArangoDocumentReference;
 import eu.ebrains.kg.arango.commons.model.InternalSpace;
 
@@ -24,23 +25,23 @@ import java.util.UUID;
 
 public class IdFactory {
 
-    public static ArangoDocumentReference createDocumentRefForSpaceTypeToPropertyEdge(String collectionName, String typeName, String propertyName) {
-        return InternalSpace.TYPE_TO_PROPERTY_EDGE_COLLECTION.doc(UUID.nameUUIDFromBytes((collectionName + "_" + typeName + "_" + propertyName).getBytes(StandardCharsets.UTF_8)));
+    public static ArangoDocumentReference createDocumentRefForSpaceTypeToPropertyEdge(ArangoCollectionReference collectionReference, String typeName, String propertyName) {
+        return InternalSpace.TYPE_TO_PROPERTY_EDGE_COLLECTION.doc(UUID.nameUUIDFromBytes((collectionReference.getCollectionName() + "_" + typeName + "_" + propertyName).getBytes(StandardCharsets.UTF_8)));
     }
 
     public static ArangoDocumentReference createDocumentRefForGlobalTypeToPropertyEdge(String typeName, String propertyName) {
         return InternalSpace.GLOBAL_TYPE_TO_PROPERTY_EDGE_COLLECTION.doc(UUID.nameUUIDFromBytes((typeName + "_" + propertyName).getBytes(StandardCharsets.UTF_8)));
     }
 
-    public static ArangoDocumentReference createDocumentRefForSpaceTypePropertyToTypeEdge(String originCollectionName, String originTypeName, String propertyName, String targetCollectionName, String targetTypeName) {
-        return InternalSpace.PROPERTY_TO_TYPE_EDGE_COLLECTION.doc(UUID.nameUUIDFromBytes((originCollectionName + "_" + originTypeName + "_" + propertyName + "_" + targetCollectionName + "_" + targetTypeName).getBytes(StandardCharsets.UTF_8)));
+    public static ArangoDocumentReference createDocumentRefForSpaceTypePropertyToTypeEdge(ArangoCollectionReference originCollection, String originTypeName, String propertyName, ArangoCollectionReference targetCollection, String targetTypeName) {
+        return InternalSpace.PROPERTY_TO_TYPE_EDGE_COLLECTION.doc(UUID.nameUUIDFromBytes((originCollection.getCollectionName() + "_" + originTypeName + "_" + propertyName + "_" + targetCollection.getCollectionName() + "_" + targetTypeName).getBytes(StandardCharsets.UTF_8)));
     }
 
     public static ArangoDocumentReference createDocumentRefForPropertyInSpaceTypeToPropertyValueTypeEdge(String propertyInSpaceType, String propertyValueTypeName) {
         return InternalSpace.PROPERTY_TO_PROPERTY_VALUE_TYPE_EDGE_COLLECTION.doc(UUID.nameUUIDFromBytes((propertyInSpaceType + "_" + propertyValueTypeName).getBytes(StandardCharsets.UTF_8)));
     }
 
-    public static ArangoDocumentReference createDocumentRefForSpaceToTypeEdge(String spaceName, String typeName) {
-        return InternalSpace.SPACE_TO_TYPE_EDGE_COLLECTION.doc(UUID.nameUUIDFromBytes((spaceName + "_" + typeName).getBytes(StandardCharsets.UTF_8)));
+    public static ArangoDocumentReference createDocumentRefForSpaceToTypeEdge(ArangoCollectionReference collectionReference, String typeName) {
+        return InternalSpace.SPACE_TO_TYPE_EDGE_COLLECTION.doc(UUID.nameUUIDFromBytes((collectionReference.getCollectionName() + "_" + typeName).getBytes(StandardCharsets.UTF_8)));
     }
 }

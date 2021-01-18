@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 EPFL/Human Brain Project PCO
+ * Copyright 2021 EPFL/Human Brain Project PCO
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -56,7 +56,7 @@ public class TypeInSpaceDefinitionSemanticsHandler extends SemanticsHandler {
             List<DBOperation> operations = new ArrayList<>();
             JsonLdId type = document.getAs(EBRAINSVocabulary.META_TYPE, JsonLdId.class);
             SpaceName space = document.getAs(EBRAINSVocabulary.META_SPACE, SpaceName.class);
-            ArangoDocumentReference documentRefForSpaceToTypeEdge = IdFactory.createDocumentRefForSpaceToTypeEdge(ArangoCollectionReference.fromSpace(space).getCollectionName(), type.getId());
+            ArangoDocumentReference documentRefForSpaceToTypeEdge = IdFactory.createDocumentRefForSpaceToTypeEdge(ArangoCollectionReference.fromSpace(space), type.getId());
             operations.add(new DeleteInstanceOperation(documentRefForSpaceToTypeEdge));
             return operations;
         }
@@ -71,7 +71,7 @@ public class TypeInSpaceDefinitionSemanticsHandler extends SemanticsHandler {
             if (typeReference != null && spaces != null && !spaces.isEmpty()) {
                 List<DBOperation> operations = new ArrayList<>();
                 for (String space : spaces) {
-                    ArangoDocumentReference documentRefForSpaceToTypeEdge = IdFactory.createDocumentRefForSpaceToTypeEdge(ArangoCollectionReference.fromSpace(new SpaceName(space)).getCollectionName(), typeReference.getId());
+                    ArangoDocumentReference documentRefForSpaceToTypeEdge = IdFactory.createDocumentRefForSpaceToTypeEdge(ArangoCollectionReference.fromSpace(new SpaceName(space)), typeReference.getId());
                     ArangoDocumentReference spaceRef = StaticStructureController.createDocumentRefForMetaRepresentation(space, ArangoCollectionReference.fromSpace(InternalSpace.SPACES_SPACE));
                     ArangoDocumentReference typeRef = StaticStructureController.createDocumentRefForMetaRepresentation(typeReference.getId(), ArangoCollectionReference.fromSpace(InternalSpace.TYPES_SPACE));
                     ArangoEdge edge = new ArangoEdge();

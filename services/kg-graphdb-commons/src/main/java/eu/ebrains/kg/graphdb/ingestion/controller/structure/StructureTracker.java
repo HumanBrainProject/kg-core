@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 EPFL/Human Brain Project PCO
+ * Copyright 2021 EPFL/Human Brain Project PCO
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -80,9 +80,8 @@ public class StructureTracker {
      */
     private List<DBOperation> handleUpdatedTypes(ArangoCollectionReference collection, ArangoDocument arangoDocument, DataStage stage) {
         List<DBOperation> allOperations = new ArrayList<>();
-        //This code assumes that there are no links to embedded instances (which is a general constraint of the graph)
         if (!arangoDocument.asIndexedDoc().isEmbedded()) {
-            List<String> newSpaceTypeIds = arangoDocument.getDoc().types().stream().map(type -> IdFactory.createDocumentRefForSpaceToTypeEdge(collection.getCollectionName(), type).getId()).collect(Collectors.toList());
+            List<String> newSpaceTypeIds = arangoDocument.getDoc().types().stream().map(type -> IdFactory.createDocumentRefForSpaceToTypeEdge(collection, type).getId()).collect(Collectors.toList());
             Set<String> existingSpaceTypeIds = findIncomingSpaceTypeIds(arangoDocument.getOriginalDocument(), stage);
             cleanUpRemovedLinks(arangoDocument.getId(), stage, allOperations, newSpaceTypeIds, existingSpaceTypeIds);
             createLinksToNewTypes(arangoDocument.getId(), stage, newSpaceTypeIds, existingSpaceTypeIds, allOperations);
@@ -94,13 +93,12 @@ public class StructureTracker {
         List<String> spaceTypesToBeLinked = newSpaceTypeIds.stream().filter(t -> !existingSpaceTypeIds.contains(t)).distinct().collect(Collectors.toList());
         if (!spaceTypesToBeLinked.isEmpty()) {
             Set<IncomingProperty> incomingProperties = findIncomingProperties(targetDocumentRef, stage);
-            incomingProperties.stream().map(incomingProperty -> {
+            incomingProperties.forEach(incomingProperty -> {
                 ArangoDocumentReference rootDocumentRef = ArangoDocumentReference.fromArangoId(incomingProperty.getOrigin(), false);
                 ArangoDocument originalDoc = arangoRepositoryCommons.getDocument(stage, rootDocumentRef);
                 List<ArangoInstance> arangoInstances = staticStructureController.ensureStaticPropertyToTypeEdges(stage, rootDocumentRef.getArangoCollectionReference(), targetDocumentRef.getArangoCollectionReference(), incomingProperty.getProperty(), originalDoc.getDoc().types(), spaceTypesToBeLinked, allOperations);
                 allOperations.addAll(addNewEdgesOfDocumentContributions(rootDocumentRef, arangoInstances, incomingProperty.getDocTypes(), targetDocumentRef, false));
-                return arangoInstances;
-            }).flatMap(Collection::stream).collect(Collectors.toList());
+            });
         }
     }
 
@@ -112,16 +110,16 @@ public class StructureTracker {
         }
     }
 
-    public List<DBOperation> createUpsertOperations(DataStage stage, ArangoDocument targetDocument, EdgeResolutionOperation resolutionOperation){
+    public List<DBOperation> createUpsertOperations(DataStage stage, ArangoDocument targetDocument, EdgeResolutionOperation resolutionOperation) {
         List<DBOperation> dbOperations = new ArrayList<>();
         String propertyName = resolutionOperation.getUpdatedEdge().getOriginalLabel();
         logger.trace(String.format("Create structural upsert operation for property %s in document %s", propertyName, resolutionOperation.getUpdatedEdge().getFrom().getId()));
         ArangoDocument fromDocument = arangoRepositoryCommons.getDocument(stage, resolutionOperation.getUpdatedEdge().getFrom());
-        if(fromDocument==null){
+        if (fromDocument == null) {
             throw new RuntimeException(String.format("Was not able to find original document based on resolved instance (%s) in stage %s", resolutionOperation.getUpdatedEdge().getFrom().getId(), stage.name()));
         }
         ArangoDocument fromRootDocument = fromDocument;
-        if(fromDocument.asIndexedDoc().isEmbedded()){
+        if (fromDocument.asIndexedDoc().isEmbedded()) {
             fromRootDocument = arangoRepositoryCommons.getDocument(stage, fromDocument.getOriginalDocument());
         }
         List<ArangoInstance> arangoInstances = staticStructureController.ensureStaticPropertyToTypeEdges(stage, fromRootDocument.getId().getArangoCollectionReference(), targetDocument.getId().getArangoCollectionReference(), propertyName, fromRootDocument.getDoc().types(), targetDocument.getDoc().types(), dbOperations);
@@ -154,7 +152,7 @@ public class StructureTracker {
         return arangoInstances.stream().filter(arangoInstance -> arangoInstance instanceof ArangoEdge).map(i -> {
             ArangoEdge structuralEdge = (ArangoEdge) i;
             DocumentRelation edgeFromDocumentToStructuralEdge = new DocumentRelation();
-            edgeFromDocumentToStructuralEdge.setFrom(ArangoDocumentReference.fromArangoId("internalunresolved/"+UUID.nameUUIDFromBytes("unspecified".getBytes(StandardCharsets.UTF_8)), true));
+            edgeFromDocumentToStructuralEdge.setFrom(ArangoDocumentReference.fromArangoId("internalunresolved/" + UUID.nameUUIDFromBytes("unspecified".getBytes(StandardCharsets.UTF_8)), true));
             edgeFromDocumentToStructuralEdge.setTo(structuralEdge.getId());
             edgeFromDocumentToStructuralEdge.setOriginalDocument(rootDocumentRef);
             edgeFromDocumentToStructuralEdge.setDocCollection(rootDocumentRef.getArangoCollectionReference().getCollectionName());
@@ -204,18 +202,18 @@ public class StructureTracker {
             AQL aql = new AQL();
             aql.addLine(AQL.trust("FOR edge IN @@documentRelation"));
             bindVars.put("@documentRelation", InternalSpace.DOCUMENT_RELATION_EDGE_COLLECTION.getCollectionName());
-            aql.addLine(AQL.trust("FILTER edge."+DocumentRelation.TARGET_ORIGINAL_DOCUMENT+" == @targetOriginalDocument"));
+            aql.addLine(AQL.trust("FILTER edge." + DocumentRelation.TARGET_ORIGINAL_DOCUMENT + " == @targetOriginalDocument"));
             bindVars.put("targetOriginalDocument", targetOriginalDocumentRef.getId());
             aql.addLine(AQL.trust("FILTER IS_SAME_COLLECTION(@propertyToType, edge._to)"));
             bindVars.put("propertyToType", InternalSpace.PROPERTY_TO_TYPE_EDGE_COLLECTION.getCollectionName());
-            aql.addLine(AQL.trust("RETURN DISTINCT {\"origin\" : edge."+ IndexedJsonLdDoc.ORIGINAL_DOCUMENT+", \"docTypes\": TO_ARRAY(edge."+IndexedJsonLdDoc.DOC_TYPES+"), \"property\": DOCUMENT(DOCUMENT(edge._to)._from).`" + SchemaOrgVocabulary.IDENTIFIER + "`}"));
-            return new HashSet<>(databases.getMetaByStage(stage).query(aql.build().getValue(), bindVars,  new AqlQueryOptions(), IncomingProperty.class).asListRemaining());
+            aql.addLine(AQL.trust("RETURN DISTINCT {\"origin\" : edge." + IndexedJsonLdDoc.ORIGINAL_DOCUMENT + ", \"docTypes\": TO_ARRAY(edge." + IndexedJsonLdDoc.DOC_TYPES + "), \"property\": DOCUMENT(DOCUMENT(edge._to)._from).`" + SchemaOrgVocabulary.IDENTIFIER + "`}"));
+            return new HashSet<>(databases.getMetaByStage(stage).query(aql.build().getValue(), bindVars, new AqlQueryOptions(), IncomingProperty.class).asListRemaining());
         }
         return Collections.emptySet();
     }
 
 
-    private boolean hasCollection(DataStage stage, ArangoCollectionReference reference){
+    private boolean hasCollection(DataStage stage, ArangoCollectionReference reference) {
         return databases.getMetaByStage(stage).collection(reference.getCollectionName()).exists();
     }
 
@@ -225,14 +223,14 @@ public class StructureTracker {
             Map<String, Object> bindVars = new HashMap<>();
             aql.addLine(AQL.trust("FOR d IN @@documentRelation"));
             bindVars.put("@documentRelation", InternalSpace.DOCUMENT_RELATION_EDGE_COLLECTION.getCollectionName());
-            aql.addLine(AQL.trust("FILTER d."+DocumentRelation.TARGET_ORIGINAL_DOCUMENT+" == @targetDocument"));
+            aql.addLine(AQL.trust("FILTER d." + DocumentRelation.TARGET_ORIGINAL_DOCUMENT + " == @targetDocument"));
             bindVars.put("targetDocument", targetOriginalDocumentRef.getId());
             aql.addLine(AQL.trust("LET doc = DOCUMENT(d._to)"));
-            aql.addLine(AQL.trust("FILTER doc."+ ArangoVocabulary.COLLECTION+" == @propertyToTypeSpaceName"));
+            aql.addLine(AQL.trust("FILTER doc." + ArangoVocabulary.COLLECTION + " == @propertyToTypeSpaceName"));
             bindVars.put("propertyToTypeSpaceName", InternalSpace.PROPERTY_TO_TYPE_EDGE_COLLECTION.getCollectionName());
             aql.addLine(AQL.trust("LET linkedSpaceType = DOCUMENT(doc._to)"));
             aql.addLine(AQL.trust("RETURN DISTINCT linkedSpaceType._id"));
-            return new HashSet<>(databases.getMetaByStage(stage).query(aql.build().getValue(), bindVars,  new AqlQueryOptions(), String.class).asListRemaining());
+            return new HashSet<>(databases.getMetaByStage(stage).query(aql.build().getValue(), bindVars, new AqlQueryOptions(), String.class).asListRemaining());
         }
         return Collections.emptySet();
     }
@@ -244,10 +242,10 @@ public class StructureTracker {
             Map<String, Object> bindVars = new HashMap<>();
             aql.addLine(AQL.trust("FOR d IN @@documentRelation"));
             bindVars.put("@documentRelation", InternalSpace.DOCUMENT_RELATION_EDGE_COLLECTION.getCollectionName());
-            aql.addLine(AQL.trust("FILTER d."+DocumentRelation.TARGET_ORIGINAL_DOCUMENT+" == @targetDocument"));
+            aql.addLine(AQL.trust("FILTER d." + DocumentRelation.TARGET_ORIGINAL_DOCUMENT + " == @targetDocument"));
             bindVars.put("targetDocument", targetOriginalDocumentRef.getId());
             aql.addLine(AQL.trust("LET doc = DOCUMENT(d._to)"));
-            aql.addLine(AQL.trust("FILTER doc."+ArangoVocabulary.COLLECTION+" == @propertyToTypeSpaceName"));
+            aql.addLine(AQL.trust("FILTER doc." + ArangoVocabulary.COLLECTION + " == @propertyToTypeSpaceName"));
             bindVars.put("propertyToTypeSpaceName", InternalSpace.PROPERTY_TO_TYPE_EDGE_COLLECTION.getCollectionName());
             aql.addLine(AQL.trust("LET linkedSpaceType = DOCUMENT(doc._to)"));
             if (spaceTypeIdFilterList != null) {
@@ -255,7 +253,7 @@ public class StructureTracker {
                 bindVars.put("typeList", spaceTypeIdFilterList);
             }
             aql.addLine(AQL.trust("RETURN d._id"));
-            List<String> typesWithLinks = databases.getMetaByStage(stage).query(aql.build().getValue(), bindVars,  new AqlQueryOptions(), String.class).asListRemaining();
+            List<String> typesWithLinks = databases.getMetaByStage(stage).query(aql.build().getValue(), bindVars, new AqlQueryOptions(), String.class).asListRemaining();
             return typesWithLinks.stream().map(m -> ArangoDocumentReference.fromArangoId(m, true)).collect(Collectors.toSet());
         }
         return Collections.emptySet();

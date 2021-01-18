@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 EPFL/Human Brain Project PCO
+ * Copyright 2021 EPFL/Human Brain Project PCO
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -64,9 +64,9 @@ public class StaticStructureController {
         //We can skip the type and property creation since we know that they already have been created due to the document insertion process
         originTypes.forEach(originType -> {
             targetTypes.forEach(t -> {
-                        ArangoDocumentReference targetSpaceType = IdFactory.createDocumentRefForSpaceToTypeEdge(targetCollection.getCollectionName(), t);
-                        ArangoDocumentReference originType2Property = IdFactory.createDocumentRefForSpaceTypeToPropertyEdge(originCollection.getCollectionName(), originType, property);
-                        ArangoDocumentReference property2targetType = IdFactory.createDocumentRefForSpaceTypePropertyToTypeEdge(originCollection.getCollectionName(), originType, property, targetCollection.getCollectionName(), t);
+                        ArangoDocumentReference targetSpaceType = IdFactory.createDocumentRefForSpaceToTypeEdge(targetCollection, t);
+                        ArangoDocumentReference originType2Property = IdFactory.createDocumentRefForSpaceTypeToPropertyEdge(originCollection, originType, property);
+                        ArangoDocumentReference property2targetType = IdFactory.createDocumentRefForSpaceTypePropertyToTypeEdge(originCollection, originType, property, targetCollection, t);
                         ArangoEdge edge = new ArangoEdge();
                         edge.setFrom(originType2Property);
                         edge.setTo(targetSpaceType);
@@ -121,21 +121,21 @@ public class StaticStructureController {
         allVertices.addAll(typeRepresentations);
 
         //... find space
-        String collectionName = arangoDocument.getId().getArangoCollectionReference().getCollectionName();
-        MetaRepresentation spaceRepresentation = createMetaRepresentation(new SpaceName(collectionName).getName(), ArangoCollectionReference.fromSpace(InternalSpace.SPACES_SPACE));
+        ArangoCollectionReference collectionReference = arangoDocument.getId().getArangoCollectionReference();
+        MetaRepresentation spaceRepresentation = createMetaRepresentation(new SpaceName(collectionReference.getCollectionName()).getName(), ArangoCollectionReference.fromSpace(InternalSpace.SPACES_SPACE));
         allVertices.add(spaceRepresentation);
 
 
-        Map<ArangoDocumentReference, Tuple<String, String>> spaceTypes = new HashMap<>();
+        Map<ArangoDocumentReference, Tuple<ArangoCollectionReference, String>> spaceTypes = new HashMap<>();
         //... link spaces with types
         typeRepresentations.forEach(type -> {
             ArangoEdge edge = new ArangoEdge();
             edge.setFrom(spaceRepresentation.getIdRef());
             edge.setTo(type.getIdRef());
-            ArangoDocumentReference documentRefForSpaceToTypeEdge = IdFactory.createDocumentRefForSpaceToTypeEdge(spaceRepresentation.getIdentifier(), type.getIdentifier());
+            ArangoDocumentReference documentRefForSpaceToTypeEdge = IdFactory.createDocumentRefForSpaceToTypeEdge(collectionReference, type.getIdentifier());
             edge.redefineId(documentRefForSpaceToTypeEdge);
-            Tuple<String, String> tuple = new Tuple<>();
-            tuple.setA(spaceRepresentation.getIdentifier());
+            Tuple<ArangoCollectionReference, String> tuple = new Tuple<>();
+            tuple.setA(collectionReference);
             tuple.setB(type.getIdentifier());
             spaceTypes.put(documentRefForSpaceToTypeEdge, tuple);
             allEdges.add(edge);
@@ -153,7 +153,7 @@ public class StaticStructureController {
         //Create property representation by type and space of the document
         spaceTypes.keySet().forEach(spaceType -> propertiesWithValueTypes.forEach((property, propertyValueType) -> {
             ArangoEdge propertyInSpaceType = new ArangoEdge();
-            Tuple<String, String> tuple = spaceTypes.get(spaceType);
+            Tuple<ArangoCollectionReference, String> tuple = spaceTypes.get(spaceType);
             propertyInSpaceType.redefineId(IdFactory.createDocumentRefForSpaceTypeToPropertyEdge(tuple.getA(), tuple.getB(), property.getIdentifier()));
             propertyInSpaceType.setFrom(spaceType);
             propertyInSpaceType.setTo(property.getIdRef());
