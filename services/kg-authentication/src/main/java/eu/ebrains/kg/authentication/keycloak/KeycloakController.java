@@ -150,7 +150,7 @@ public class KeycloakController {
             ClientResource clientResource = keycloakClient.getRealmResource().clients().get(c.getId());
             String serviceAccountId = clientResource.getServiceAccountUser().getId();
             ClientScopeRepresentation kgClientScope = keycloakClient.getKgClientScope();
-            if(kgClientScope!=null){
+            if (kgClientScope != null) {
                 clientResource.addDefaultClientScope(kgClientScope.getId());
             }
             UserResource userResource = keycloakClient.getRealmResource().users().get(serviceAccountId);
@@ -169,7 +169,7 @@ public class KeycloakController {
         return Arrays.asList(ownerRoleResource.toRepresentation(), isClientRoleResource.toRepresentation());
     }
 
-    public void createRoles(List<Role> roles){
+    public void createRoles(List<Role> roles) {
         roles.forEach(keycloakClient::createRoleForClient);
         keycloakClient.syncKgScopeWithKgRoles();
     }
@@ -202,11 +202,10 @@ public class KeycloakController {
 
     private final int maxTries = 10;
 
-    private void retryConnectingToKeycloak(int connectionTry){
-        if(config.getKgCoreClientSecret()==null || config.getKgCoreClientSecret().isBlank()){
+    private void retryConnectingToKeycloak(int connectionTry) {
+        if (config.getKgCoreClientSecret() == null || config.getKgCoreClientSecret().isBlank()) {
             logger.error("You haven't provided the kg-core client secret. If this is a new installation, you should consider executing the setup api");
-        }
-        else {
+        } else {
             if (maxTries > connectionTry) {
                 try {
                     keycloakClient.ensureDefaultClientAndGlobalRolesInKeycloak();
@@ -295,7 +294,16 @@ public class KeycloakController {
     Map<String, Claim> getInfo(String token) {
         String bareToken = token.substring("Bearer ".length());
         try {
-            return jwtVerifier.verify(bareToken).getClaims();
+            Map<String, Claim> claims = jwtVerifier.verify(bareToken).getClaims();
+            //Additionally to the pure token validation, we also ensure that the token contains the kg-scope scope since this ensures, that the user has accepted the conditions as declared in the "consent" area.
+            Claim scope = claims.get("scope");
+            if (scope != null) {
+                String[] scopes = scope.asString().split(" ");
+                if (Arrays.asList(scopes).contains(keycloakClient.getKgClientScopeName())) {
+                    return claims;
+                }
+            }
+            throw new UnauthorizedException(String.format("The provided token does not contain the scope %s which is required", keycloakClient.getKgClientScopeName()));
         } catch (JWTVerificationException ex) {
             throw new UnauthorizedException(ex);
         }
@@ -317,11 +325,10 @@ public class KeycloakController {
     }
 
     public String getClientInfoFromKeycloak(Map<String, Claim> authClientInfo) {
-        if(authClientInfo!=null) {
+        if (authClientInfo != null) {
             Claim preferred_username = authClientInfo.get("preferred_username");
             return preferred_username != null ? preferred_username.asString().substring("service-account-".length()) : null;
-        }
-        else{
+        } else {
             return "direct access";
         }
     }
@@ -337,7 +344,7 @@ public class KeycloakController {
     }
 
     public List<String> buildRoleListFromKeycloak(Map<String, Claim> authInfo) {
-        if(authInfo!=null) {
+        if (authInfo != null) {
             Claim resourceAccess = authInfo.get("resource_access");
             if (resourceAccess != null) {
                 Map<String, Object> resourceAccessMap = resourceAccess.asMap();
@@ -352,8 +359,7 @@ public class KeycloakController {
                 }
             }
             return Collections.emptyList();
-        }
-        else{
+        } else {
             return null;
         }
     }

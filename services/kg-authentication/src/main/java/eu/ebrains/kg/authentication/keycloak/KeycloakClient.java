@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 EPFL/Human Brain Project PCO
+ * Copyright 2021 EPFL/Human Brain Project PCO
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -57,6 +57,10 @@ public class KeycloakClient {
     private String technicalClientId;
 
     private final String kgClientScopeName;
+
+    public String getKgClientScopeName() {
+        return kgClientScopeName;
+    }
 
     public KeycloakClient(KeycloakConfig config, Keycloak kgKeycloak, @Qualifier("direct") WebClient.Builder internalWebClient) {
         this.config = config;
@@ -167,7 +171,8 @@ public class KeycloakClient {
         Map<String, String> attrs = new HashMap<>();
         attrs.put("display.on.consent.screen", "true");
         attrs.put("include.in.token.scope", "true");
-        attrs.put("consent.screen.text", "You agree to share user information (user name, family and given name as well as your e-mail address) with the EBRAINS KG");
+        attrs.put("consent.screen.text", "Knowledge Graph: Your roles in the Knowledge Graph. \n " +
+                "By making use of the EBRAINS Knowledge Graph, you agree to the terms of use available at https://kg.ebrains.eu/search-terms-of-use.html");
         clientScope.setAttributes(attrs);
         String roleMapperName = "client roles";
         List<ProtocolMapperRepresentation> protocolMappers = clientScope.getProtocolMappers();
