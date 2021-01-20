@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 EPFL/Human Brain Project PCO
+ * Copyright 2021 EPFL/Human Brain Project PCO
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -64,13 +64,13 @@ public class GraphDBInstancesAPI {
 
     @GetMapping("instancesByType")
     @ExposesData
-    public Paginated<NormalizedJsonLd> getInstancesByType(@PathVariable("stage") DataStage stage, @RequestParam("type") String type, @RequestParam(value = "space", required = false) String space, @RequestParam(value = "searchByLabel", required = false) String searchByLabel, @RequestParam(value = "returnAlternatives", required = false, defaultValue = "false") boolean returnAlternatives, @RequestParam(value = "returnEmbedded", required = false, defaultValue = "false") boolean returnEmbedded, PaginationParam paginationParam) {
+    public Paginated<NormalizedJsonLd> getInstancesByType(@PathVariable("stage") DataStage stage, @RequestParam("type") String type, @RequestParam(value = "space", required = false) String space, @RequestParam(value = "searchByLabel", required = false) String searchByLabel, @RequestParam(value = "returnAlternatives", required = false, defaultValue = "false") boolean returnAlternatives, @RequestParam(value = "returnEmbedded", required = false, defaultValue = "false") boolean returnEmbedded, @RequestParam(value = "sortByLabel", required = false, defaultValue = "false") boolean sortByLabel, PaginationParam paginationParam) {
         List<Type> types = Collections.singletonList(new Type(type));
-        if (searchByLabel != null && !searchByLabel.isBlank()) {
-            //Since we're searching by label, we need to reflect on the type -> we therefore have to resolve the type in the database first...
+        if (sortByLabel || (searchByLabel != null && !searchByLabel.isBlank())) {
+            //Since we're either sorting or searching by label, we need to reflect on the type -> we therefore have to resolve the type in the database first...
             types = typeRepository.getTypeInformation(authContext.getUserWithRoles().getClientId(), stage, types);
         }
-        return repository.getDocumentsByTypes(stage, types, space != null && !space.isBlank() ? new SpaceName(space) : null, paginationParam, searchByLabel, returnEmbedded, returnAlternatives);
+        return repository.getDocumentsByTypes(stage, types, space != null && !space.isBlank() ? new SpaceName(space) : null, paginationParam, searchByLabel, returnEmbedded, returnAlternatives, sortByLabel);
     }
 
     @GetMapping("queriesByType")

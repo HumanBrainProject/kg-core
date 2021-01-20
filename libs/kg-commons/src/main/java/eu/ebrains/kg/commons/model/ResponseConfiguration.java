@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 EPFL/Human Brain Project PCO
+ * Copyright 2021 EPFL/Human Brain Project PCO
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,6 +22,15 @@ public class ResponseConfiguration {
     private boolean returnPermissions = false;
     private boolean returnAlternatives = false;
     private boolean returnEmbedded = true;
+    private boolean sortByLabel = true;
+
+    public boolean isSortByLabel() {
+        return sortByLabel;
+    }
+
+    public void setSortByLabel(boolean sortByLabel) {
+        this.sortByLabel = sortByLabel;
+    }
 
     public boolean isReturnPayload() {
         return returnPayload;
@@ -58,4 +67,5 @@ public class ResponseConfiguration {
         this.returnEmbedded = returnEmbedded;
         return this;
     }
+
 }

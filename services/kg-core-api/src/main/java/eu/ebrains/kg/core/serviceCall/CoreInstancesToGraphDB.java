@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 EPFL/Human Brain Project PCO
+ * Copyright 2021 EPFL/Human Brain Project PCO
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -50,8 +50,8 @@ public class CoreInstancesToGraphDB {
         return serviceCall.get(BASE_URL + String.format("/%s/instances/%s?returnEmbedded=%b&returnAlternatives=%b", stage.name(), instanceId.serialize(), returnEmbedded, returnAlternatives), authContext.getAuthTokens(), NormalizedJsonLd.class);
     }
 
-    public Paginated<NormalizedJsonLd> getInstancesByType(DataStage stage, Type type, SpaceName space, PaginationParam paginationParam, String searchByLabel, boolean returnEmbedded, boolean returnAlternatives) {
-        return serviceCall.get(BASE_URL + String.format("/%s/instancesByType?type=%s&from=%d&size=%s&returnEmbedded=%b&searchByLabel=%s&space=%s&returnAlternatives=%b", stage.name(), type.getEncodedName(), paginationParam.getFrom(), paginationParam.getSize() != null ? String.valueOf(paginationParam.getSize()) : "", returnEmbedded, searchByLabel != null ? searchByLabel : "", space!=null ? space.getName() : "", returnAlternatives), authContext.getAuthTokens(), PaginatedDocuments.class);
+    public Paginated<NormalizedJsonLd> getInstancesByType(DataStage stage, Type type, SpaceName space, PaginationParam paginationParam, String searchByLabel, boolean returnEmbedded, boolean returnAlternatives, boolean sortByLabel) {
+        return serviceCall.get(BASE_URL + String.format("/%s/instancesByType?type=%s&from=%d&size=%s&returnEmbedded=%b&searchByLabel=%s&space=%s&returnAlternatives=%b&sortByLabel=%b", stage.name(), type.getEncodedName(), paginationParam.getFrom(), paginationParam.getSize() != null ? String.valueOf(paginationParam.getSize()) : "", returnEmbedded, searchByLabel != null ? searchByLabel : "", space!=null ? space.getName() : "", returnAlternatives, sortByLabel), authContext.getAuthTokens(), PaginatedDocuments.class);
     }
 
     public Paginated<NormalizedJsonLd> getQueriesByType(DataStage stage, PaginationParam paginationParam, String searchByLabel, boolean returnAlternatives, Type rootType) {
