@@ -356,7 +356,7 @@ public class ArangoRepositoryInstances {
             }
             addSearchFilter(bindVars, aql, search);
             if(sortByLabel){
-                aql.addLine(AQL.trust("SORT v[typeDefinition.labelProperty] ASC"));
+                aql.addLine(AQL.trust("SORT v[typeDefinition.labelProperty], v._key ASC"));
             }
             aql.addPagination(paginationParam);
             aql.addLine(AQL.trust("RETURN v"));
