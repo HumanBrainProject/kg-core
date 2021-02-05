@@ -228,7 +228,7 @@ public class ArangoRepositoryTypes {
             aql.addLine(AQL.trust("COLLECT t = i.l.type INTO spaces"));
             aql.addLine(AQL.trust("RETURN {"));
             aql.addLine(AQL.trust("\"" + EBRAINSVocabulary.META_TYPE + "\": t,"));
-            aql.addLine(AQL.trust("\"" + EBRAINSVocabulary.META_SPACES + "\": (FOR s IN spaces RETURN {\"" + EBRAINSVocabulary.META_SPACE + "\": s.i.l.space})"));
+            aql.addLine(AQL.trust("\"" + EBRAINSVocabulary.META_SPACES + "\": UNIQUE(FOR s IN spaces RETURN {\"" + EBRAINSVocabulary.META_SPACE + "\": s.i.l.space})"));
             aql.addLine(AQL.trust("})"));
             aql.addLine(AQL.trust("FILTER property!=NULL"));
 

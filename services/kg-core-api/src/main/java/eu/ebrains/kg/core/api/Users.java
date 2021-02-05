@@ -127,7 +127,7 @@ public class Users {
     @ExposesUserPicture
     public ResponseEntity<String> getUserPicture(@PathVariable("id") UUID userId) {
         SpaceName targetSpace = InternalSpace.USERS_PICTURE_SPACE;
-        NormalizedJsonLd instance = coreInstancesToGraphDB.getInstance(DataStage.IN_PROGRESS, new InstanceId(createUserPictureId(userId), targetSpace), false, false);
+        NormalizedJsonLd instance = coreInstancesToGraphDB.getInstance(DataStage.IN_PROGRESS, new InstanceId(createUserPictureId(userId), targetSpace), false, false, false);
         if(instance!=null){
             String picture = instance.getAs(EBRAINSVocabulary.META_PICTURE, String.class);
             if(picture!=null){
