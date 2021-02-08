@@ -52,6 +52,7 @@ import eu.ebrains.kg.graphdb.instances.model.ArangoRelation;
 import eu.ebrains.kg.graphdb.queries.controller.QueryController;
 import eu.ebrains.kg.graphdb.queries.model.spec.GraphQueryKeys;
 import eu.ebrains.kg.graphdb.types.controller.ArangoRepositoryTypes;
+import io.swagger.v3.core.util.Json;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
 
@@ -103,34 +104,13 @@ public class ArangoRepositoryInstances {
         if (incomingLinks) {
             ArangoDocumentReference arangoDocumentReference = ArangoDocumentReference.fromInstanceId(new InstanceId(id, space));
             NormalizedJsonLd instanceIncomingLinks = getIncomingLinks(Collections.singletonList(arangoDocumentReference), stage);
-            if(instanceIncomingLinks != null) {
+            if (instanceIncomingLinks != null) {
                 Set<Type> types = new HashSet<>();
-                Set<InstanceId> instanceIds = instanceIncomingLinks.values()
-                        .stream()
-                        .map(i -> (Collection<?>) ((Map<?, ?>) i).values())
-                        .flatMap(Collection::stream)
-                        .map(v -> {
-                            NormalizedJsonLd normalizedJsonLd = (NormalizedJsonLd) v; //FIXME: Cannot be normalized as it is a List
-                            List<Type> typeList = normalizedJsonLd.types().stream().map(Type::new).collect(Collectors.toList());
-                            types.addAll(typeList);
-                            return new InstanceId(idUtils.getUUID(normalizedJsonLd.id()), new SpaceName(normalizedJsonLd.getAs(EBRAINSVocabulary.META_SPACE, String.class)));
-                        })
-                        .collect(Collectors.toSet());
+                Set<InstanceId> instanceIds = getInstanceIds(instanceIncomingLinks, types);
                 List<Type> extendedTypes = typesRepo.getTypeInformation(authContext.getUserWithRoles().getClientId(), stage, types);
-                Map<String, Type> extendedTypesByName = extendedTypes.stream().collect(Collectors.toMap(k -> k.getName(), v -> v));
+                Map<String, Type> extendedTypesByName = extendedTypes.stream().collect(Collectors.toMap(Type::getName, v -> v));
                 Map<UUID, String> labelsForInstances = getLabelsForInstances(stage, instanceIds, extendedTypes);
-
-                instanceIncomingLinks.values()
-                        .stream()
-                        .map(i -> (List<?>) ((Map<?, ?>) i).values())
-                        .flatMap(Collection::stream)
-                        .forEach(v -> {
-                            NormalizedJsonLd normalizedJsonLd = (NormalizedJsonLd) v;
-                            String label = labelsForInstances.get(idUtils.getUUID(normalizedJsonLd.id()));
-                            List<Type> extendedTypesList = normalizedJsonLd.types().stream().map(extendedTypesByName::get).collect(Collectors.toList());
-                            normalizedJsonLd.put("label", label);
-                            normalizedJsonLd.put("@types", extendedTypesList);
-                        });
+                enrichDocument(instanceIncomingLinks, extendedTypesByName, labelsForInstances);
                 document.getDoc().put(EBRAINSVocabulary.META_INCOMING_LINKS, instanceIncomingLinks.get(id.toString()));
             }
         }
@@ -140,6 +120,38 @@ public class ArangoRepositoryInstances {
             doc.keepPropertiesOnly(getMinimalFields(stage, doc.types()));
         }
         return doc;
+    }
+
+    private Set<InstanceId> getInstanceIds(NormalizedJsonLd instanceIncomingLinks, Set<Type> types) {
+        return instanceIncomingLinks.values()
+                .stream()
+                .map(i -> (Collection<?>) ((Map<?, ?>) i).values())
+                .flatMap(Collection::stream)
+                .map(v -> (List<Map<? extends  String, ?>>) v)
+                .flatMap(Collection::stream)
+                .map(jsonLd -> {
+                    NormalizedJsonLd normalizedJsonLd = new NormalizedJsonLd(jsonLd);
+                    List<Type> typeList = normalizedJsonLd.types().stream().map(Type::new).collect(Collectors.toList());
+                    types.addAll(typeList);
+                    return new InstanceId(idUtils.getUUID(normalizedJsonLd.id()), new SpaceName(normalizedJsonLd.getAs(EBRAINSVocabulary.META_SPACE, String.class)));
+                })
+                .collect(Collectors.toSet());
+    }
+
+    private void enrichDocument(NormalizedJsonLd instanceIncomingLinks, Map<String, Type> extendedTypesByName, Map<UUID, String> labelsForInstances) {
+        instanceIncomingLinks.values()
+                .stream()
+                .map(i -> (Collection<?>) ((Map<?, ?>) i).values())
+                .flatMap(Collection::stream)
+                .map(v -> (List<Map<String, Object>>) v)
+                .flatMap(Collection::stream)
+                .forEach(v -> {
+                    NormalizedJsonLd normalizedJsonLd = new NormalizedJsonLd(v);
+                    String label = labelsForInstances.get(idUtils.getUUID(normalizedJsonLd.id()));
+                    List<Type> extendedTypesList = normalizedJsonLd.types().stream().map(extendedTypesByName::get).collect(Collectors.toList());
+                    v.put(EBRAINSVocabulary.LABEL, label);
+                    v.put(EBRAINSVocabulary.META_TYPES, extendedTypesList);
+                });
     }
 
     private Set<String> getMinimalFields(DataStage stage, List<String> types) {
