@@ -506,7 +506,11 @@ public class ArangoRepositoryTypes {
                 aql.addLine(AQL.trust("LET o=t.`" + EBRAINSVocabulary.META_OCCURRENCES + "`"));
             }
             aql.addLine(AQL.trust("LET s=t.`"+EBRAINSVocabulary.META_SPACES +"`"));
-            aql.addLine(AQL.trust("COLLECT filteredType=t.`"+EBRAINSVocabulary.META_TYPE+"` INTO resultFilteredTypes KEEP o, s"));
+            if (withCount) {
+                aql.addLine(AQL.trust("COLLECT filteredType=t.`" + EBRAINSVocabulary.META_TYPE + "` INTO resultFilteredTypes KEEP o, s"));
+            } else {
+                aql.addLine(AQL.trust("COLLECT filteredType=t.`" + EBRAINSVocabulary.META_TYPE + "` INTO resultFilteredTypes KEEP s"));
+            }
             aql.addLine(AQL.trust("RETURN {"));
             aql.addLine(AQL.trust("\"" + EBRAINSVocabulary.META_TYPE + "\": filteredType,"));
             if (withCount) {

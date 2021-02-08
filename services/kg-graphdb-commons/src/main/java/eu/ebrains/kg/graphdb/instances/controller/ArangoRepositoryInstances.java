@@ -107,9 +107,9 @@ public class ArangoRepositoryInstances {
             if (instanceIncomingLinks != null) {
                 Set<Type> types = new HashSet<>();
                 Set<InstanceId> instanceIds = getInstanceIds(instanceIncomingLinks, types);
-                List<Type> extendedTypes = typesRepo.getTypeInformation(authContext.getUserWithRoles().getClientId(), stage, types);
-                Map<String, Type> extendedTypesByName = extendedTypes.stream().collect(Collectors.toMap(Type::getName, v -> v));
-                Map<UUID, String> labelsForInstances = getLabelsForInstances(stage, instanceIds, extendedTypes);
+                List<NormalizedJsonLd> extendedTypes = typesRepo.getTypes(authContext.getUserWithRoles().getClientId(), stage, types, true, false, false);
+                Map<String, NormalizedJsonLd> extendedTypesByName = extendedTypes.stream().collect(Collectors.toMap(NormalizedJsonLd::primaryIdentifier, v -> v));
+                Map<UUID, String> labelsForInstances = getLabelsForInstances(stage, instanceIds, extendedTypes.stream().map(Type::fromPayload).collect(Collectors.toList()));
                 enrichDocument(instanceIncomingLinks, extendedTypesByName, labelsForInstances);
                 document.getDoc().put(EBRAINSVocabulary.META_INCOMING_LINKS, instanceIncomingLinks.get(id.toString()));
             }
@@ -127,7 +127,7 @@ public class ArangoRepositoryInstances {
                 .stream()
                 .map(i -> (Collection<?>) ((Map<?, ?>) i).values())
                 .flatMap(Collection::stream)
-                .map(v -> (List<Map<? extends  String, ?>>) v)
+                .map(v -> (List<Map<? extends String, ?>>) v)
                 .flatMap(Collection::stream)
                 .map(jsonLd -> {
                     NormalizedJsonLd normalizedJsonLd = new NormalizedJsonLd(jsonLd);
@@ -138,7 +138,7 @@ public class ArangoRepositoryInstances {
                 .collect(Collectors.toSet());
     }
 
-    private void enrichDocument(NormalizedJsonLd instanceIncomingLinks, Map<String, Type> extendedTypesByName, Map<UUID, String> labelsForInstances) {
+    private void enrichDocument(NormalizedJsonLd instanceIncomingLinks, Map<String, NormalizedJsonLd> extendedTypesByName, Map<UUID, String> labelsForInstances) {
         instanceIncomingLinks.values()
                 .stream()
                 .map(i -> (Collection<?>) ((Map<?, ?>) i).values())
@@ -148,9 +148,19 @@ public class ArangoRepositoryInstances {
                 .forEach(v -> {
                     NormalizedJsonLd normalizedJsonLd = new NormalizedJsonLd(v);
                     String label = labelsForInstances.get(idUtils.getUUID(normalizedJsonLd.id()));
-                    List<Type> extendedTypesList = normalizedJsonLd.types().stream().map(extendedTypesByName::get).collect(Collectors.toList());
+                    List<NormalizedJsonLd> extendedTypesList = normalizedJsonLd.types().stream().map(extendedTypesByName::get).collect(Collectors.toList());
                     v.put(EBRAINSVocabulary.LABEL, label);
-                    v.put(EBRAINSVocabulary.META_TYPES, extendedTypesList);
+                    v.put(EBRAINSVocabulary.META_TYPES, extendedTypesList.stream().map(Type::fromPayload).collect(Collectors.toList()));
+                    NormalizedJsonLd propertyDefinition = extendedTypesList.stream()
+                            .map(e -> e.getAsListOf(EBRAINSVocabulary.META_PROPERTIES, NormalizedJsonLd.class))
+                            .flatMap(Collection::stream)
+                            .filter(f -> f.identifiers().contains(normalizedJsonLd.primaryIdentifier()))
+                            .findFirst()
+                            .orElse(null);
+                    if (propertyDefinition != null) {
+                        String nameForReverseLink = propertyDefinition.getAs(EBRAINSVocabulary.META_NAME_REVERSE_LINK, String.class);
+                        v.put(SchemaOrgVocabulary.NAME, nameForReverseLink);
+                    }
                 });
     }
 
