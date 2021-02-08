@@ -55,6 +55,7 @@ import eu.ebrains.kg.graphdb.types.controller.ArangoRepositoryTypes;
 import io.swagger.v3.core.util.Json;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
+import org.springframework.util.CollectionUtils;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -104,7 +105,7 @@ public class ArangoRepositoryInstances {
         if (incomingLinks) {
             ArangoDocumentReference arangoDocumentReference = ArangoDocumentReference.fromInstanceId(new InstanceId(id, space));
             NormalizedJsonLd instanceIncomingLinks = getIncomingLinks(Collections.singletonList(arangoDocumentReference), stage);
-            if (instanceIncomingLinks != null) {
+            if (!CollectionUtils.isEmpty(instanceIncomingLinks)) {
                 Set<Type> types = new HashSet<>();
                 Set<InstanceId> instanceIds = getInstanceIds(instanceIncomingLinks, types);
                 List<NormalizedJsonLd> extendedTypes = typesRepo.getTypes(authContext.getUserWithRoles().getClientId(), stage, types, true, false, false);
@@ -527,6 +528,7 @@ public class ArangoRepositoryInstances {
         aql.addLine(AQL.trust("RETURN {"));
         aql.indent().addLine(AQL.trust(" [identifier]: instancesByIdentifier[*].i"));
         aql.outdent().addLine(AQL.trust("})"));
+        aql.addLine(AQL.trust("FILTER FIRST(groupedByInstances) != null"));
         aql.addLine(AQL.trust("RETURN {"));
         aql.indent().addLine(AQL.trust(" [doc._key]: FIRST(groupedByInstances)"));
         aql.outdent().addLine(AQL.trust("})"));
