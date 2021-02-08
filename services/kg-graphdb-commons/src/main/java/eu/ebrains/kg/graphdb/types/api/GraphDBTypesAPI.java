@@ -42,8 +42,8 @@ public class GraphDBTypesAPI {
     }
 
     @GetMapping("/types")
-    public Paginated<NormalizedJsonLd> getTypes(@PathVariable("stage") DataStage stage, @RequestParam(value = "space", required = false) String space, PaginationParam paginationParam) {
-        return getTypes(stage, space, false, false, false, paginationParam);
+    public Paginated<NormalizedJsonLd> getTypes(@PathVariable("stage") DataStage stage, @RequestParam(value = "space", required = false) String space, @RequestParam(value = "withIncomingLinks", required = false, defaultValue = "false") boolean withIncomingLinks, PaginationParam paginationParam) {
+        return getTypes(stage, space, false, withIncomingLinks, false, paginationParam);
     }
 
     private Paginated<NormalizedJsonLd> getTypes(DataStage stage, String space, boolean withProperties, boolean withIncomingLinks, boolean withCount, PaginationParam paginationParam) {

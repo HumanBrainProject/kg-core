@@ -46,8 +46,8 @@ public class CoreInstancesToGraphDB {
 
     private final static String BASE_URL = "http://kg-graphdb-sync/internal/graphdb";
 
-    public NormalizedJsonLd getInstance(DataStage stage, InstanceId instanceId, boolean returnEmbedded, boolean returnAlternatives) {
-        return serviceCall.get(BASE_URL + String.format("/%s/instances/%s?returnEmbedded=%b&returnAlternatives=%b", stage.name(), instanceId.serialize(), returnEmbedded, returnAlternatives), authContext.getAuthTokens(), NormalizedJsonLd.class);
+    public NormalizedJsonLd getInstance(DataStage stage, InstanceId instanceId, boolean returnEmbedded, boolean returnAlternatives, boolean returnIncomingLinks) {
+        return serviceCall.get(BASE_URL + String.format("/%s/instances/%s?returnEmbedded=%b&returnAlternatives=%b&returnIncomingLinks=%b", stage.name(), instanceId.serialize(), returnEmbedded, returnAlternatives, returnIncomingLinks), authContext.getAuthTokens(), NormalizedJsonLd.class);
     }
 
     public Paginated<NormalizedJsonLd> getInstancesByType(DataStage stage, Type type, SpaceName space, PaginationParam paginationParam, String searchByLabel, boolean returnEmbedded, boolean returnAlternatives, boolean sortByLabel) {
