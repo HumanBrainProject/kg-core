@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 EPFL/Human Brain Project PCO
+ * Copyright 2021 EPFL/Human Brain Project PCO
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -49,7 +49,7 @@ public class IdsTest {
 
 
     @Autowired
-    IdsAPI ids;
+    IdsAPIRest ids;
 
     @Autowired
     IdUtils idUtils;

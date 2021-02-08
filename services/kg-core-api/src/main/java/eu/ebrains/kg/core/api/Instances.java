@@ -19,6 +19,7 @@ package eu.ebrains.kg.core.api;
 import eu.ebrains.kg.commons.AuthContext;
 import eu.ebrains.kg.commons.IdUtils;
 import eu.ebrains.kg.commons.Version;
+import eu.ebrains.kg.commons.api.IdsAPI;
 import eu.ebrains.kg.commons.config.openApiGroups.Advanced;
 import eu.ebrains.kg.commons.config.openApiGroups.Simple;
 import eu.ebrains.kg.commons.exception.ForbiddenException;
@@ -58,16 +59,18 @@ public class Instances {
     private final IdUtils idUtils;
     private final AuthContext authContext;
     private final CoreInstancesToGraphDB coreInstancesToGraphDB;
+    private final IdsAPI.Client idsAPIClient;
 
     private final Logger logger = LoggerFactory.getLogger(getClass());
 
-    public Instances(CoreToIds idsSvc, CoreInstanceController instanceController, CoreToRelease releaseSvc, IdUtils idUtils, AuthContext authContext, CoreInstancesToGraphDB coreInstancesToGraphDB) {
+    public Instances(CoreToIds idsSvc, CoreInstanceController instanceController, CoreToRelease releaseSvc, IdUtils idUtils, AuthContext authContext, CoreInstancesToGraphDB coreInstancesToGraphDB, IdsAPI.Client idsAPIClient) {
         this.idsSvc = idsSvc;
         this.instanceController = instanceController;
         this.releaseSvc = releaseSvc;
         this.idUtils = idUtils;
         this.authContext = authContext;
         this.coreInstancesToGraphDB = coreInstancesToGraphDB;
+        this.idsAPIClient = idsAPIClient;
     }
 
     @Operation(summary = "Create new instance with a system generated id")
@@ -123,7 +126,7 @@ public class Instances {
             return ResponseEntity.notFound().build();
         } else if (instanceId.isDeprecated()) {
             if (undeprecate) {
-                idsSvc.undeprecateInstance(instanceId.getUuid());
+                idsAPIClient.deprecateId(DataStage.IN_PROGRESS, instanceId.getUuid(), true);
             } else {
                 return ResponseEntity.status(HttpStatus.GONE).body(Result.nok(HttpStatus.GONE.value(), "The instance you're trying to contribute to has been deprecated."));
             }
@@ -211,9 +214,9 @@ public class Instances {
     public Result<Map<String, Result<NormalizedJsonLd>>> getInstancesByIdentifiers(@RequestBody List<String> identifiers, @RequestParam("stage") ExposedStage stage, @ParameterObject ResponseConfiguration responseConfiguration) {
         List<IdWithAlternatives> idWithAlternatives = identifiers.stream().map(identifier -> new IdWithAlternatives(UUID.randomUUID(), null, Collections.singleton(identifier))).collect(Collectors.toList());
         Map<UUID, String> uuidToIdentifier = idWithAlternatives.stream().collect(Collectors.toMap(IdWithAlternatives::getId, v -> v.getAlternatives().iterator().next()));
-        JsonLdIdMapping[] jsonLdIdMappings = idsSvc.resolveIds(stage.getStage(), idWithAlternatives);
+        List<JsonLdIdMapping> jsonLdIdMappings = idsAPIClient.resolveId(idWithAlternatives, stage.getStage());
         Map<String, InstanceId> identifierToInstanceIdLookup = new HashMap<>();
-        Arrays.stream(jsonLdIdMappings).forEach(jsonLdIdMapping -> {
+        jsonLdIdMappings.forEach(jsonLdIdMapping -> {
             if(jsonLdIdMapping.getResolvedIds() != null && jsonLdIdMapping.getResolvedIds().size()==1){
                 String identifier = uuidToIdentifier.get(jsonLdIdMapping.getRequestedId());
                 JsonLdId resolvedId = jsonLdIdMapping.getResolvedIds().iterator().next();

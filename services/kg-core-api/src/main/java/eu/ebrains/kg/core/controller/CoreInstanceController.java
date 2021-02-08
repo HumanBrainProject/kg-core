@@ -240,16 +240,27 @@ public class CoreInstanceController {
     }
 
     private void resolveAlternatives(DataStage stage, List<NormalizedJsonLd> documents){
-        Map<String, List<Map<String, Object>>> idsForResolution = documents.stream().map(d -> d.get(EBRAINSVocabulary.META_ALTERNATIVE)).filter(a -> a instanceof Map).map(a -> ((Map<?,?>) a).values()).flatMap(Collection::stream).map(v -> v instanceof Collection ? (Collection<?>) v : Collections.singleton(v)).flatMap(Collection::stream).filter(value -> value instanceof Map).map(value -> ((Map<?, ?>) value).get(EBRAINSVocabulary.META_VALUE)).filter(Objects::nonNull).map(v -> v instanceof Collection ? (Collection<?>) v : Collections.singleton(v)).flatMap(Collection::stream).filter(v -> {
+        Map<String, List<Map<String, Object>>> idsForResolution = documents.stream()
+                .map(d -> d.get(EBRAINSVocabulary.META_ALTERNATIVE)).filter(Objects::nonNull)
+                .filter(a -> a instanceof Map).map(a -> ((Map<?,?>) a).values()).flatMap(Collection::stream)
+                .map(v -> v instanceof Collection ? (Collection<?>) v : Collections.singleton(v))
+                .flatMap(Collection::stream).filter(value -> value instanceof Map)
+                .map(value -> ((Map<?, ?>) value).get(EBRAINSVocabulary.META_VALUE))
+                .filter(Objects::nonNull)
+                .map(v -> v instanceof Collection ? (Collection<?>) v : Collections.singleton(v))
+                .flatMap(Collection::stream).filter(v -> {
             if (v instanceof Map) {
                 Object id = ((Map<?, ?>) v).get(JsonLdConsts.ID);
                 return id instanceof String && !idUtils.isInternalId((String) id);
             }
             return false;
-        }).map(v -> (Map<String, Object>) v).collect(Collectors.groupingBy(k -> (String)k.get(JsonLdConsts.ID)));
+        }).map(v -> (Map<String, Object>) v)
+                .collect(Collectors.groupingBy(k -> (String)k.get(JsonLdConsts.ID)));
         Map<UUID, String> requestToIdentifier = new HashMap<>();
         idsForResolution.keySet().forEach(id -> requestToIdentifier.put(UUID.randomUUID(), id));
-        List<IdWithAlternatives> idWithAlternatives = requestToIdentifier.keySet().stream().map(k -> new IdWithAlternatives(k, null, Collections.singleton(requestToIdentifier.get(k)))).collect(Collectors.toList());
+        List<IdWithAlternatives> idWithAlternatives = requestToIdentifier.keySet().stream()
+                .map(k -> new IdWithAlternatives(k, null, Collections.singleton(requestToIdentifier.get(k))))
+                .collect(Collectors.toList());
         JsonLdIdMapping[] mappings = idsSvc.resolveIds(stage, idWithAlternatives);
 
         Map<UUID, Set<Map<String, Object>>> updatedObjects = new HashMap<>();
