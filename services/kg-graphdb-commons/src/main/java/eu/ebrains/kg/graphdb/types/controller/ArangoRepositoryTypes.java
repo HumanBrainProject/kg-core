@@ -228,7 +228,7 @@ public class ArangoRepositoryTypes {
             aql.addLine(AQL.trust("COLLECT t = i.l.type INTO spaces"));
             aql.addLine(AQL.trust("RETURN {"));
             aql.addLine(AQL.trust("\"" + EBRAINSVocabulary.META_TYPE + "\": t,"));
-            aql.addLine(AQL.trust("\"" + EBRAINSVocabulary.META_SPACES + "\": (FOR s IN spaces RETURN {\"" + EBRAINSVocabulary.META_SPACE + "\": s.i.l.space})"));
+            aql.addLine(AQL.trust("\"" + EBRAINSVocabulary.META_SPACES + "\": UNIQUE(FOR s IN spaces RETURN {\"" + EBRAINSVocabulary.META_SPACE + "\": s.i.l.space})"));
             aql.addLine(AQL.trust("})"));
             aql.addLine(AQL.trust("FILTER property!=NULL"));
 
@@ -506,7 +506,11 @@ public class ArangoRepositoryTypes {
                 aql.addLine(AQL.trust("LET o=t.`" + EBRAINSVocabulary.META_OCCURRENCES + "`"));
             }
             aql.addLine(AQL.trust("LET s=t.`"+EBRAINSVocabulary.META_SPACES +"`"));
-            aql.addLine(AQL.trust("COLLECT filteredType=t.`"+EBRAINSVocabulary.META_TYPE+"` INTO resultFilteredTypes KEEP o, s"));
+            if (withCount) {
+                aql.addLine(AQL.trust("COLLECT filteredType=t.`" + EBRAINSVocabulary.META_TYPE + "` INTO resultFilteredTypes KEEP o, s"));
+            } else {
+                aql.addLine(AQL.trust("COLLECT filteredType=t.`" + EBRAINSVocabulary.META_TYPE + "` INTO resultFilteredTypes KEEP s"));
+            }
             aql.addLine(AQL.trust("RETURN {"));
             aql.addLine(AQL.trust("\"" + EBRAINSVocabulary.META_TYPE + "\": filteredType,"));
             if (withCount) {

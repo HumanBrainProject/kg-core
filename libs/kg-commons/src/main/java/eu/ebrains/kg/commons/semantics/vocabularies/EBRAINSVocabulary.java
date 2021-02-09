@@ -43,10 +43,12 @@ public class EBRAINSVocabulary {
     public static final String META = NAMESPACE+"meta/";
     public static final String META_SPACES = META + "spaces";
     public static final String META_USER = META+"user";
+    public static final String META_NAME_REVERSE_LINK = META+"nameForReverseLink";
     public static final String META_OCCURRENCES = META + "occurrences";
     public static final String META_INCOMING_LINKS = META + "incomingLinks";
     public static final String META_PROPERTIES = META + "properties";
     public static final String META_PROPERTY = META + "property";
+    public static final String META_PROPERTY_SEARCHABLE = META_PROPERTY + "/searchable";
     public static final String META_PICTURE = META + "picture";
     public static final String META_PROPERTY_TARGET_TYPES = META + "targetTypes";
     public static final String META_PROPERTY_SOURCE_TYPES = META + "sourceTypes";
@@ -56,6 +58,7 @@ public class EBRAINSVocabulary {
     public static final String META_VALUE = META+"value";
     public static final String META_REVISION = META+"revision";
     public static final String META_TYPE = META+"type";
+    public static final String META_TYPES = META+"types";
     public static final String META_TYPE_LABEL_PROPERTY = META_TYPE+"/labelProperty";
     public static final String META_LAST_RELEASED_AT = META+"lastReleasedAt";
     public static final String META_LAST_RELEASED_BY = META+"lastReleasedBy";

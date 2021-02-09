@@ -127,7 +127,7 @@ public class CoreInstanceController {
 
     private NormalizedJsonLd patchInstance(InstanceId instanceId, NormalizedJsonLd normalizedJsonLd, boolean removeNonDefinedKeys, ZonedDateTime eventDateTime) {
         InstanceId nativeId = new InstanceId(idUtils.getDocumentIdForUserAndInstance(authContext.getUserId(), instanceId.getUuid()), instanceId.getSpace(), instanceId.isDeprecated());
-        NormalizedJsonLd instance = graphDbSvc.getInstance(DataStage.NATIVE, nativeId, true, false);
+        NormalizedJsonLd instance = graphDbSvc.getInstance(DataStage.NATIVE, nativeId, true, false, false);
         if (instance == null) {
             Map<String, ZonedDateTime> updateTimes = new HashMap<>();
             normalizedJsonLd.keySet().forEach(k -> updateTimes.put(k, eventDateTime != null ? eventDateTime : ZonedDateTime.now()));
@@ -224,7 +224,7 @@ public class CoreInstanceController {
             return null;
         }
         if (responseConfiguration.isReturnPayload()) {
-            NormalizedJsonLd instance = graphDbSvc.getInstance(stage, instanceId, responseConfiguration.isReturnEmbedded(), responseConfiguration.isReturnAlternatives());
+            NormalizedJsonLd instance = graphDbSvc.getInstance(stage, instanceId, responseConfiguration.isReturnEmbedded(), responseConfiguration.isReturnAlternatives(), responseConfiguration.isReturnIncomingLinks());
             if(responseConfiguration.isReturnAlternatives()){
                 resolveAlternatives(stage, Collections.singletonList(instance));
             }
