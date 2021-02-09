@@ -528,9 +528,9 @@ public class ArangoRepositoryInstances {
         aql.addLine(AQL.trust("RETURN {"));
         aql.indent().addLine(AQL.trust(" [identifier]: instancesByIdentifier[*].i"));
         aql.outdent().addLine(AQL.trust("})"));
-        aql.addLine(AQL.trust("FILTER FIRST(groupedByInstances) != null"));
+        aql.addLine(AQL.trust("FILTER groupedByInstances != null"));
         aql.addLine(AQL.trust("RETURN {"));
-        aql.indent().addLine(AQL.trust(" [doc._key]: FIRST(groupedByInstances)"));
+        aql.indent().addLine(AQL.trust(" [doc._key]: MERGE(groupedByInstances)"));
         aql.outdent().addLine(AQL.trust("})"));
 
         List<NormalizedJsonLd> instances = db.query(aql.build().getValue(), bindVars, new AqlQueryOptions(), NormalizedJsonLd.class).asListRemaining();
