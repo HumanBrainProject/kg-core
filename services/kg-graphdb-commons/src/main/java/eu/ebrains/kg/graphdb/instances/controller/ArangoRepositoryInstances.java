@@ -22,7 +22,6 @@ import com.arangodb.entity.CollectionType;
 import com.arangodb.model.AqlQueryOptions;
 import com.arangodb.model.CollectionCreateOptions;
 import com.arangodb.model.CollectionsReadOptions;
-import com.google.inject.Stage;
 import eu.ebrains.kg.arango.commons.aqlBuilder.AQL;
 import eu.ebrains.kg.arango.commons.aqlBuilder.ArangoVocabulary;
 import eu.ebrains.kg.arango.commons.model.AQLQuery;
@@ -52,7 +51,6 @@ import eu.ebrains.kg.graphdb.instances.model.ArangoRelation;
 import eu.ebrains.kg.graphdb.queries.controller.QueryController;
 import eu.ebrains.kg.graphdb.queries.model.spec.GraphQueryKeys;
 import eu.ebrains.kg.graphdb.types.controller.ArangoRepositoryTypes;
-import io.swagger.v3.core.util.Json;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
 import org.springframework.util.CollectionUtils;
@@ -316,13 +314,19 @@ public class ArangoRepositoryInstances {
     @ExposesData
     //FIXME: Do we want to return suggested links for RELEASED stage?
     public Paginated<SuggestedLink> getSuggestionsByTypes(DataStage stage, List<Type> types, PaginationParam paginationParam, String search, List<UUID> excludeIds) {
-        //Suggestions are special in terms of permissions: We even allow instances to show up which are in spaces the user doesn't have read access for. This is only acceptable because we're returning a restricted result with minimal information
+        // Suggestions are special in terms of permissions: We even allow instances to show up which are in spaces the
+        // user doesn't have read access for. This is only acceptable because we're returning a restricted result with
+        // minimal information.
+
+
         if (types == null || types.isEmpty()) {
             return new Paginated<>();
         }
         Map<String, Object> bindVars = new HashMap<>();
         AQL aql = new AQL();
-        iterateThroughTypeList(types, bindVars, aql);
+        // ATTENTION: We are only allowed to search by "label" fields but not by "searchable" fields if the user has no read rights
+        // for those instances since otherwise, information could be extracted by doing searches. We therefore don't provide additional search fields.
+        iterateThroughTypeList(types, null, bindVars, aql);
         aql.indent().addLine(AQL.trust("FOR v IN 1..1 OUTBOUND typeDefinition.type @@typeRelationCollection"));
         aql.addLine(AQL.trust("FILTER v." + ArangoVocabulary.KEY + " NOT IN @excludeIds"));
         bindVars.put("excludeIds", excludeIds);
@@ -347,8 +351,7 @@ public class ArangoRepositoryInstances {
         if (search != null && !search.isBlank()) {
             List<String> searchTerms = Arrays.stream(search.trim().split(" ")).filter(s -> !s.isBlank()).map(s -> "%" + s.replaceAll("%", "") + "%").collect(Collectors.toList());
             if (!searchTerms.isEmpty()) {
-                //TODO Search also for searchable properties - not only the label and id property
-                aql.addLine(AQL.trust("LET found = (FOR name IN [typeDefinition.labelProperty, \"" + ArangoVocabulary.KEY + "\"] FILTER "));
+                aql.addLine(AQL.trust("LET found = (FOR name IN APPEND([typeDefinition.labelProperty, \""+ArangoVocabulary.KEY+"\"], typeDefinition.searchableProperties) FILTER "));
                 for (int i = 0; i < searchTerms.size(); i++) {
                     aql.addLine(AQL.trust("LIKE(v[name], @search" + i + ", true) "));
                     if (i < searchTerms.size() - 1) {
@@ -362,15 +365,16 @@ public class ArangoRepositoryInstances {
         }
     }
 
-    private void iterateThroughTypeList(List<Type> types, Map<String, Object> bindVars, AQL aql) {
+    private void iterateThroughTypeList(List<Type> types, Map<String, List<String>> searchableProperties, Map<String, Object> bindVars, AQL aql) {
         aql.addLine(AQL.trust("FOR typeDefinition IN ["));
         ArangoCollectionReference typeCollection = ArangoCollectionReference.fromSpace(InternalSpace.TYPE_SPACE);
         bindVars.put("@typeCollection", typeCollection.getCollectionName());
         for (int i = 0; i < types.size(); i++) {
-            aql.addLine(AQL.trust(" {typeName: @typeName" + i + ", type: DOCUMENT(@@typeCollection, @documentId" + i + "), labelProperty: @labelProperty" + i + "}"));
+            aql.addLine(AQL.trust(" {typeName: @typeName" + i + ", type: DOCUMENT(@@typeCollection, @documentId" + i + "), labelProperty: @labelProperty" + i + ", searchableProperties : @searchableProperties"+i+"}"));
             bindVars.put("documentId" + i, typeCollection.docWithStableId(types.get(i).getName()).getDocumentId().toString());
             bindVars.put("labelProperty" + i, types.get(i).getLabelProperty());
             bindVars.put("typeName" + i, types.get(i).getName());
+            bindVars.put("searchableProperties" + i, searchableProperties!=null ? searchableProperties.get(types.get(i).getName()) : null);
             if (i < types.size() - 1) {
                 aql.add(AQL.trust(","));
             }
@@ -392,13 +396,13 @@ public class ArangoRepositoryInstances {
 
 
     @ExposesData
-    public Paginated<NormalizedJsonLd> getDocumentsByTypes(DataStage stage, List<Type> typesWithLabelInfo, SpaceName space, PaginationParam paginationParam, String search, boolean embedded, boolean alternatives, boolean sortByLabel) {
+    public Paginated<NormalizedJsonLd> getDocumentsByTypes(DataStage stage, List<Type> typesWithLabelInfo, SpaceName space, PaginationParam paginationParam, String search, boolean embedded, boolean alternatives, boolean sortByLabel, Map<String, List<String>> searchableProperties) {
         //TODO find label field for type (and client) and filter by search if set.
         ArangoDatabase database = databases.getByStage(stage);
         if (database.collection(InternalSpace.TYPE_EDGE_COLLECTION.getCollectionName()).exists()) {
             Map<String, Object> bindVars = new HashMap<>();
             AQL aql = new AQL();
-            iterateThroughTypeList(typesWithLabelInfo, bindVars, aql);
+            iterateThroughTypeList(typesWithLabelInfo, searchableProperties, bindVars, aql);
             Map<String, Object> whitelistFilter = permissionsController.whitelistFilterForReadInstances(authContext.getUserWithRoles(), stage);
             if (whitelistFilter != null) {
                 aql.specifyWhitelist();
@@ -434,7 +438,7 @@ public class ArangoRepositoryInstances {
         if (database.collection(InternalSpace.TYPE_EDGE_COLLECTION.getCollectionName()).exists()) {
             Map<String, Object> bindVars = new HashMap<>();
             AQL aql = new AQL();
-            iterateThroughTypeList(Collections.singletonList(new Type(EBRAINSVocabulary.META_QUERY_TYPE)), bindVars, aql);
+            iterateThroughTypeList(Collections.singletonList(new Type(EBRAINSVocabulary.META_QUERY_TYPE)), null, bindVars, aql);
             aql.indent().addLine(AQL.trust("FOR v IN 1..1 OUTBOUND typeDefinition.type @@typeRelationCollection"));
             if (typeFilter != null && !typeFilter.isBlank()) {
                 aql.addLine(AQL.trust("FILTER v.`" + GraphQueryKeys.GRAPH_QUERY_META.getFieldName() + "`.`" + GraphQueryKeys.GRAPH_QUERY_TYPE.getFieldName() + "` == @typeFilter"));
