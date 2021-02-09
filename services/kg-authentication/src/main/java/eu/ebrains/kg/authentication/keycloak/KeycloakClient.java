@@ -138,7 +138,7 @@ public class KeycloakClient {
             clientRepresentation.setEnabled(true);
             clientRepresentation.setConsentRequired(true);
             clientRepresentation.setImplicitFlowEnabled(true);
-            clientRepresentation.setStandardFlowEnabled(false);
+            clientRepresentation.setStandardFlowEnabled(true);
             clientRepresentation.setFullScopeAllowed(false);
             clientRepresentation.setPublicClient(true);
             getClientResource().addDefaultClientScope(clientScope.getId());
