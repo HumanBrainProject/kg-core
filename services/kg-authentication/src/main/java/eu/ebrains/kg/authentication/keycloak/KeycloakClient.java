@@ -138,17 +138,19 @@ public class KeycloakClient {
             clientRepresentation.setEnabled(true);
             clientRepresentation.setConsentRequired(true);
             clientRepresentation.setImplicitFlowEnabled(true);
-            clientRepresentation.setStandardFlowEnabled(false);
+            clientRepresentation.setStandardFlowEnabled(true);
             clientRepresentation.setFullScopeAllowed(false);
             clientRepresentation.setPublicClient(true);
             getClientResource().addDefaultClientScope(clientScope.getId());
             Map<String, String> attributes = new HashMap<>();
             attributes.put("display.on.consent.screen", "true");
             attributes.put("access.token.lifespan", "1800");
+            attributes.put("pkce.code.challenge.method", "S256");
             attributes.put("consent.screen.text", "By using the EBRAINS Knowledge Graph, you agree to the according terms of use available at https://kg.ebrains.eu/search-terms-of-use.html");
             clientRepresentation.setAttributes(attributes);
             if (initialConfig) {
                 clientRepresentation.setRedirectUris(Arrays.asList(getRedirectUri(), "http://localhost*"));
+                clientRepresentation.setWebOrigins(Collections.singletonList("+"));
             }
             getClientResource().update(clientRepresentation);
             Arrays.stream(RoleMapping.values()).forEach(p -> createRoleForClient(p.toRole(null)));

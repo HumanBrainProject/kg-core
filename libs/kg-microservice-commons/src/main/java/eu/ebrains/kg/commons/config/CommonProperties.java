@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 EPFL/Human Brain Project PCO
+ * Copyright 2021 EPFL/Human Brain Project PCO
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,6 +23,6 @@ import org.springframework.context.annotation.PropertySource;
  * A shared property file to configure the commonalities of all microservices
  */
 @Configuration
-@PropertySource("classpath:shared.properties")
+@PropertySource({"classpath:shared.properties", "classpath:commit.properties"})
 public class CommonProperties {
 }
