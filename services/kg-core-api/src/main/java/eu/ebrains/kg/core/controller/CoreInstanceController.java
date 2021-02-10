@@ -170,7 +170,7 @@ public class CoreInstanceController {
         }).filter(Objects::nonNull).collect(Collectors.toList());
         List<InstanceId> idsAfterResolution = idsSvc.resolveIdsByUUID(stage, validUUIDs, true);
         idsAfterResolution.stream().filter(instanceId -> !instanceId.isDeprecated()).filter(InstanceId::isUnresolved).forEach(id -> result.put(id.getUuid().toString(), Result.nok(HttpStatus.NOT_FOUND.value(), HttpStatus.NOT_FOUND.getReasonPhrase())));
-        Map<UUID, Result<NormalizedJsonLd>> instancesByIds = graphDbSvc.getInstancesByIds(stage, idsAfterResolution.stream().filter(i -> !i.isUnresolved() && !i.isDeprecated()).collect(Collectors.toList()), responseConfiguration.isReturnEmbedded(), responseConfiguration.isReturnAlternatives());
+        Map<UUID, Result<NormalizedJsonLd>> instancesByIds = graphDbSvc.getInstancesByIds(stage, idsAfterResolution.stream().filter(i -> !i.isUnresolved() && !i.isDeprecated()).collect(Collectors.toList()), responseConfiguration.isReturnEmbedded(), responseConfiguration.isReturnAlternatives(), responseConfiguration.isReturnIncomingLinks());
         instancesByIds.forEach((k,v) -> result.put(k.toString(), v));
         for (String id : ids) {
             if(!result.containsKey(id)){
@@ -200,7 +200,7 @@ public class CoreInstanceController {
     public ResponseEntity<Result<NormalizedJsonLd>> handleIngestionResponse(ResponseConfiguration responseConfiguration, List<InstanceId> instanceIds) {
         Result<NormalizedJsonLd> result;
         if (responseConfiguration.isReturnPayload()) {
-            Map<UUID, Result<NormalizedJsonLd>> instancesByIds = graphDbSvc.getInstancesByIds(DataStage.IN_PROGRESS, instanceIds, responseConfiguration.isReturnEmbedded(), responseConfiguration.isReturnAlternatives());
+            Map<UUID, Result<NormalizedJsonLd>> instancesByIds = graphDbSvc.getInstancesByIds(DataStage.IN_PROGRESS, instanceIds, responseConfiguration.isReturnEmbedded(), responseConfiguration.isReturnAlternatives(), responseConfiguration.isReturnIncomingLinks());
             if(responseConfiguration.isReturnAlternatives()){
                 resolveAlternatives(DataStage.IN_PROGRESS, instancesByIds.values().stream().map(Result::getData).collect(Collectors.toList()));
             }

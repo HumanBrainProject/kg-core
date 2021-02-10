@@ -58,8 +58,8 @@ public class CoreInstancesToGraphDB {
         return serviceCall.get(BASE_URL + String.format("/%s/queriesByType?from=%d&size=%s&searchByLabel=%s&returnAlternatives=%b&rootType=%s", stage.name(), paginationParam.getFrom(), paginationParam.getSize() != null ? String.valueOf(paginationParam.getSize()) : "", searchByLabel != null ? searchByLabel : "", returnAlternatives, rootType != null ? rootType.getEncodedName() : ""), authContext.getAuthTokens(), PaginatedDocuments.class);
     }
 
-    public Map<UUID, Result<NormalizedJsonLd>> getInstancesByIds(DataStage stage, List<InstanceId> ids, boolean returnEmbedded, boolean returnAlternatives) {
-        return serviceCall.post(BASE_URL + String.format("/%s/instancesByIds?returnEmbedded=%b&returnAlternatives=%b", stage.name(), returnEmbedded, returnAlternatives), ids.stream().map(InstanceId::serialize).collect(Collectors.toList()), authContext.getAuthTokens(), IdPayloadMapping.class);
+    public Map<UUID, Result<NormalizedJsonLd>> getInstancesByIds(DataStage stage, List<InstanceId> ids, boolean returnEmbedded, boolean returnAlternatives, boolean returnIncomingLinks) {
+        return serviceCall.post(BASE_URL + String.format("/%s/instancesByIds?returnEmbedded=%b&returnAlternatives=%b&returnIncomingLinks=%b", stage.name(), returnEmbedded, returnAlternatives, returnIncomingLinks), ids.stream().map(InstanceId::serialize).collect(Collectors.toList()), authContext.getAuthTokens(), IdPayloadMapping.class);
     }
 
     public JsonLdDoc getSpace(DataStage stage, InstanceId instanceId) {
