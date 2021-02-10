@@ -48,6 +48,7 @@ public class EBRAINSVocabulary {
     public static final String META_INCOMING_LINKS = META + "incomingLinks";
     public static final String META_PROPERTIES = META + "properties";
     public static final String META_PROPERTY = META + "property";
+    public static final String META_PROPERTY_SEARCHABLE = META_PROPERTY + "/searchable";
     public static final String META_PICTURE = META + "picture";
     public static final String META_PROPERTY_TARGET_TYPES = META + "targetTypes";
     public static final String META_PROPERTY_SOURCE_TYPES = META + "sourceTypes";

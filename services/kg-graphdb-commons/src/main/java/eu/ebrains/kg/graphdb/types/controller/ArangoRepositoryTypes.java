@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 EPFL/Human Brain Project PCO
+ * Copyright 2021 EPFL/Human Brain Project PCO
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -70,7 +70,7 @@ public class ArangoRepositoryTypes {
         ArangoDatabase db = databases.getMetaByStage(stage);
         AQLQuery typeStructureQuery = createTypeStructureQuery(db, client, types, propertyName, null, true, false, true, null);
         Paginated<NormalizedJsonLd> documents = arangoRepositoryCommons.queryDocuments(db, typeStructureQuery);
-        List<Type> targetTypes = documents.getData().stream().map(t -> t.getAsListOf(EBRAINSVocabulary.META_PROPERTIES, NormalizedJsonLd.class)).flatMap(Collection::stream).map(p -> p.getAsListOf(EBRAINSVocabulary.META_PROPERTY_TARGET_TYPES, NormalizedJsonLd.class)).flatMap(Collection::stream).map(targetType -> targetType.getAs(EBRAINSVocabulary.META_TYPE, String.class)).distinct().map(Type::new).collect(Collectors.toList());
+        List<Type> targetTypes = documents.getData().stream().map(t -> t.getAsListOf(EBRAINSVocabulary.META_PROPERTIES, NormalizedJsonLd.class)).flatMap(Collection::stream).map(p -> p.getAsListOf(EBRAINSVocabulary.META_PROPERTY_TARGET_TYPES, NormalizedJsonLd.class)).flatMap(Collection::stream).map(targetType -> targetType.getAs(EBRAINSVocabulary.META_TYPE, String.class)).filter(Objects::nonNull).distinct().map(Type::new).collect(Collectors.toList());
         if (targetTypes.isEmpty()) {
             //This is important since an empty target type list would result in an non-existing filter and would return all types in the next step
             return Collections.emptyList();
