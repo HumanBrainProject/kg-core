@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 EPFL/Human Brain Project PCO
+ * Copyright 2021 EPFL/Human Brain Project PCO
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,7 +26,7 @@ import eu.ebrains.kg.commons.jsonld.NormalizedJsonLd;
 import eu.ebrains.kg.commons.semantics.vocabularies.EBRAINSVocabulary;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.stereotype.Component;
 
 import javax.json.Json;
 import javax.json.JsonArray;
@@ -37,13 +37,13 @@ import java.util.List;
 import java.util.Map;
 
 @SuppressWarnings({"unchecked", "rawtypes"})
-@RestController
-@RequestMapping("/internal/jsonld")
-public class JsonLdAPI {
+@Component
+public class JsonLdAPI implements eu.ebrains.kg.commons.api.JsonLd.Client {
 
     private final Logger logger = LoggerFactory.getLogger(getClass());
 
     private final static String NULL_PLACEHOLDER = EBRAINSVocabulary.NAMESPACE + "jsonld/nullvalue";
+
 
     private void addNullValuesPlaceholder(Object o) {
         if (o instanceof Map) {
@@ -84,8 +84,8 @@ public class JsonLdAPI {
         this.jsonAdapter = jsonAdapter;
     }
 
-    @PostMapping
-    public NormalizedJsonLd normalize(@RequestBody JsonLdDoc payload, @RequestParam(value = "keepNullValues", required = false, defaultValue = "true") boolean keepNullValues) {
+    @Override
+    public NormalizedJsonLd normalize(JsonLdDoc payload, boolean keepNullValues) {
         logger.debug("Received payload to be normalized");
         if (keepNullValues) {
             //The JSON-LD library we're using removes null values - we therefore have to do a little hack and set a placeholder for all null values which we replace with null later on again.

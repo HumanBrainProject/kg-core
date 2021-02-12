@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 EPFL/Human Brain Project PCO
+ * Copyright 2021 EPFL/Human Brain Project PCO
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,7 +28,7 @@ import eu.ebrains.kg.commons.model.DataStage;
 import eu.ebrains.kg.commons.model.Paginated;
 import eu.ebrains.kg.commons.model.PaginationParam;
 import eu.ebrains.kg.commons.permission.Functionality;
-import eu.ebrains.kg.commons.permissions.controller.PermissionSvc;
+import eu.ebrains.kg.commons.permissions.controller.Permissions;
 import eu.ebrains.kg.graphdb.commons.controller.ArangoDatabases;
 import eu.ebrains.kg.graphdb.commons.controller.ArangoRepositoryCommons;
 import org.springframework.stereotype.Component;
@@ -42,18 +42,18 @@ public class UsersRepository {
 
     private final ArangoRepositoryCommons arangoRepositoryCommons;
     private final ArangoDatabases databases;
-    private final PermissionSvc permissionSvc;
+    private final Permissions permissions;
     private final AuthContext authContext;
 
-    public UsersRepository(ArangoRepositoryCommons arangoRepositoryCommons, ArangoDatabases databases, PermissionSvc permissionSvc, AuthContext authContext) {
+    public UsersRepository(ArangoRepositoryCommons arangoRepositoryCommons, ArangoDatabases databases, Permissions permissions, AuthContext authContext) {
         this.arangoRepositoryCommons = arangoRepositoryCommons;
         this.databases = databases;
-        this.permissionSvc = permissionSvc;
+        this.permissions = permissions;
         this.authContext = authContext;
     }
 
     public Paginated<NormalizedJsonLd> getUsers(PaginationParam pagination) {
-        if(!permissionSvc.hasPermission(authContext.getUserWithRoles(), Functionality.LIST_USERS, null)){
+        if(!permissions.hasPermission(authContext.getUserWithRoles(), Functionality.LIST_USERS, null)){
             throw new ForbiddenException("No right to list users");
         }
         ArangoDatabase db = databases.getByStage(DataStage.NATIVE);

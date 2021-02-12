@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 EPFL/Human Brain Project PCO
+ * Copyright 2021 EPFL/Human Brain Project PCO
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 
 package eu.ebrains.kg.testutils;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import eu.ebrains.kg.commons.jsonld.JsonLdConsts;
 import eu.ebrains.kg.commons.jsonld.JsonLdDoc;
 import eu.ebrains.kg.commons.jsonld.JsonLdId;
@@ -27,37 +28,39 @@ import java.util.UUID;
 
 public class TestDataFactory {
 
-    public static JsonLdDoc createTestData(int numberOfFields, int iteration, boolean normalized){
+    public static JsonLdDoc createTestData(int numberOfFields, int iteration, boolean normalized) {
         return createTestData(numberOfFields, normalized, String.valueOf(iteration), null);
     }
 
-    public static JsonLdDoc createTestData(int numberOfFields, String salt, boolean normalized){
+    public static JsonLdDoc createTestData(int numberOfFields, String salt, boolean normalized) {
         return createTestData(numberOfFields, normalized, salt, null);
     }
 
-    public static JsonLdDoc createTestData(int numberOfFields, boolean normalized, int iteration, Integer linkedInstance){
+    public static JsonLdDoc createTestData(int numberOfFields, boolean normalized, int iteration, Integer linkedInstance) {
         return createTestData(numberOfFields, normalized, String.valueOf(iteration), linkedInstance);
     }
 
     public static String DYNAMIC_FIELD_PREFIX = "https://schema.hbp.eu/test";
     public static String TEST_TYPE = "https://core.kg.ebrains.eu/TestPayload";
 
-    public static JsonLdDoc createTestData(int numberOfFields, boolean normalized, String salt, Integer linkedInstance){
+    public static JsonLdDoc createTestData(int numberOfFields, boolean normalized, String salt, Integer linkedInstance) {
         Map<String, Object> testData = new HashMap<>();
         testData.put(JsonLdConsts.TYPE, TEST_TYPE);
         testData.put(JsonLdConsts.ID, String.format("https://core.kg.ebrains.eu/test/%s", salt));
         testData.put(SchemaOrgVocabulary.NAME, salt);
-        if(linkedInstance!=null){
-            testData.put(normalized ? "https://schema.hbp.eu/linked" : "hbp:linked", new JsonLdId(String.format("https://core.kg.ebrains.eu/test/%d", linkedInstance)));
+        if (linkedInstance != null) {
+            testData.put(normalized ? "https://schema.hbp.eu/linked" : "hbp:linked",
+                    //To ensure that the map can be properly normalized, we are not allowed to have a jsonld object in but rather should provide it as a map
+                    new ObjectMapper().convertValue(new JsonLdId(String.format("https://core.kg.ebrains.eu/test/%d", linkedInstance)), Map.class));
         }
-        if(!normalized){
+        if (!normalized) {
             Map<String, String> context = new HashMap<>();
             context.put("hbp", "https://schema.hbp.eu/");
             testData.put("@context", context);
         }
         String randomValue = UUID.randomUUID().toString();
         for (int i = 0; i < numberOfFields; i++) {
-            String key = normalized ? DYNAMIC_FIELD_PREFIX+"%d" : "hbp:test%d";
+            String key = normalized ? DYNAMIC_FIELD_PREFIX + "%d" : "hbp:test%d";
             testData.put(String.format(key, i), String.format("value-%s-%d", randomValue, i));
         }
 

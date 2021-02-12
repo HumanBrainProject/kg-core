@@ -18,8 +18,9 @@ package eu.ebrains.kg.core.api;
 
 import eu.ebrains.kg.arango.commons.model.InternalSpace;
 import eu.ebrains.kg.commons.AuthContext;
-import eu.ebrains.kg.commons.IdUtils;
 import eu.ebrains.kg.commons.Version;
+import eu.ebrains.kg.commons.api.GraphDBSpaces;
+import eu.ebrains.kg.commons.api.PrimaryStoreEvents;
 import eu.ebrains.kg.commons.config.openApiGroups.Admin;
 import eu.ebrains.kg.commons.config.openApiGroups.Advanced;
 import eu.ebrains.kg.commons.jsonld.JsonLdId;
@@ -36,8 +37,6 @@ import eu.ebrains.kg.commons.semantics.vocabularies.EBRAINSVocabulary;
 import eu.ebrains.kg.commons.semantics.vocabularies.SchemaOrgVocabulary;
 import eu.ebrains.kg.core.controller.CoreSpaceController;
 import eu.ebrains.kg.core.model.ExposedStage;
-import eu.ebrains.kg.core.serviceCall.CoreSpacesToGraphDB;
-import eu.ebrains.kg.core.serviceCall.CoreToPrimaryStore;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import org.springdoc.api.annotations.ParameterObject;
@@ -59,23 +58,20 @@ import java.util.stream.Collectors;
 @RequestMapping(Version.API + "/spaces")
 public class Spaces {
 
-    private final CoreSpacesToGraphDB graphDbSvc;
+    private final GraphDBSpaces.Client graphDBSpaces;
     private final CoreSpaceController spaceController;
     private final AuthContext authContext;
-    private final CoreToPrimaryStore primaryStoreSvc;
-    private final IdUtils idUtils;
+    private final PrimaryStoreEvents.Client primaryStoreEvents;
 
-    public Spaces(CoreSpacesToGraphDB graphDbSvc, CoreSpaceController spaceController, AuthContext authContext, CoreToPrimaryStore primaryStoreSvc, IdUtils idUtils) {
-        this.graphDbSvc = graphDbSvc;
+    public Spaces(GraphDBSpaces.Client graphDBSpaces, CoreSpaceController spaceController, AuthContext authContext, PrimaryStoreEvents.Client primaryStoreEvents) {
+        this.graphDBSpaces = graphDBSpaces;
         this.spaceController = spaceController;
         this.authContext = authContext;
-        this.primaryStoreSvc = primaryStoreSvc;
-        this.idUtils = idUtils;
+        this.primaryStoreEvents = primaryStoreEvents;
     }
 
     @GetMapping("{space}")
     @ExposesSpace
-
     @Advanced
     public Result<NormalizedJsonLd> getSpace(@RequestParam("stage") ExposedStage stage, @PathVariable("space") @Parameter(description = "The space to be read or \"" + SpaceName.PRIVATE_SPACE + "\" for your private space") String space, @RequestParam(value = "permissions", defaultValue = "false") boolean permissions) {
         NormalizedJsonLd s = spaceController.getSpace(stage, space, permissions);
@@ -89,7 +85,7 @@ public class Spaces {
     @ExposesSpace
     @Advanced
     public PaginatedResult<NormalizedJsonLd> getSpaces(@RequestParam("stage") ExposedStage stage, @ParameterObject PaginationParam paginationParam, @RequestParam(value = "permissions", defaultValue = "false") boolean permissions) {
-        Paginated<NormalizedJsonLd> spaces = graphDbSvc.getSpaces(stage.getStage(), paginationParam);
+        Paginated<NormalizedJsonLd> spaces = graphDBSpaces.getSpaces(stage.getStage(), paginationParam);
         if (permissions) {
             UserWithRoles userWithRoles = authContext.getUserWithRoles();
             spaces.getData().forEach(space -> {
@@ -114,7 +110,7 @@ public class Spaces {
         payload.addProperty(EBRAINSVocabulary.META_TYPE, new JsonLdId(t.getName()));
         payload.addProperty(EBRAINSVocabulary.META_SPACES, Collections.singletonList(sp.getName()));
         payload.setId(EBRAINSVocabulary.createIdForStructureDefinition("type2space", sp.getName(), t.getName()));
-        primaryStoreSvc.postEvent(Event.createUpsertEvent(InternalSpace.GLOBAL_SPEC, UUID.nameUUIDFromBytes(payload.id().getId().getBytes(StandardCharsets.UTF_8)), Event.Type.INSERT, payload), false, authContext.getAuthTokens());
+        primaryStoreEvents.postEvent(Event.createUpsertEvent(InternalSpace.GLOBAL_SPEC, UUID.nameUUIDFromBytes(payload.id().getId().getBytes(StandardCharsets.UTF_8)), Event.Type.INSERT, payload), false);
         return ResponseEntity.ok(Result.ok());
     }
 

@@ -17,6 +17,7 @@
 package eu.ebrains.kg.core.api;
 
 import eu.ebrains.kg.commons.Version;
+import eu.ebrains.kg.commons.api.JsonLd;
 import eu.ebrains.kg.commons.config.openApiGroups.Simple;
 import eu.ebrains.kg.commons.jsonld.InstanceId;
 import eu.ebrains.kg.commons.jsonld.JsonLdDoc;
@@ -29,9 +30,8 @@ import eu.ebrains.kg.commons.model.*;
 import eu.ebrains.kg.commons.query.KgQuery;
 import eu.ebrains.kg.commons.semantics.vocabularies.EBRAINSVocabulary;
 import eu.ebrains.kg.core.controller.CoreQueryController;
+import eu.ebrains.kg.core.controller.IdsController;
 import eu.ebrains.kg.core.model.ExposedStage;
-import eu.ebrains.kg.core.serviceCall.CoreToIds;
-import eu.ebrains.kg.core.serviceCall.CoreToJsonLd;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import org.springdoc.api.annotations.ParameterObject;
@@ -39,7 +39,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 
 /**
@@ -52,14 +52,14 @@ public class Queries {
 
     private final CoreQueryController queryController;
 
-    private final CoreToJsonLd jsonLdSvc;
+    private final JsonLd.Client jsonLd;
 
-    private final CoreToIds idsSvc;
+    private final IdsController ids;
 
-    public Queries(CoreQueryController queryController, CoreToJsonLd jsonLdSvc, CoreToIds idsSvc) {
+    public Queries(CoreQueryController queryController, JsonLd.Client jsonLd, IdsController ids) {
         this.queryController = queryController;
-        this.jsonLdSvc = jsonLdSvc;
-        this.idsSvc = idsSvc;
+        this.jsonLd = jsonLd;
+        this.ids = ids;
     }
 
     @Operation(summary = "List the queries and filter them by root type and/or text in the label, name or description")
@@ -77,7 +77,7 @@ public class Queries {
     @PostMapping
     @ExposesData
     public PaginatedResult<NormalizedJsonLd> testQuery(@RequestBody JsonLdDoc query, @ParameterObject PaginationParam paginationParam, @RequestParam("stage") ExposedStage stage) {
-        NormalizedJsonLd normalizedJsonLd = jsonLdSvc.toNormalizedJsonLd(query);
+        NormalizedJsonLd normalizedJsonLd = jsonLd.normalize(query, true);
         return PaginatedResult.ok(queryController.executeQuery(new KgQuery(normalizedJsonLd, stage.getStage()), paginationParam));
     }
 
@@ -85,7 +85,7 @@ public class Queries {
     @GetMapping("/{queryId}")
     @ExposesQuery
     public Result<NormalizedJsonLd> getQuerySpecification(@PathVariable("queryId") UUID queryId) {
-        InstanceId instanceId = idsSvc.resolveId(DataStage.IN_PROGRESS, queryId);
+        InstanceId instanceId = ids.resolveId(DataStage.IN_PROGRESS, queryId);
         KgQuery kgQuery = queryController.fetchQueryById(instanceId, DataStage.IN_PROGRESS);
         return Result.ok(kgQuery.getPayload());
     }
@@ -94,9 +94,9 @@ public class Queries {
     @DeleteMapping("/{queryId}")
     @WritesData
     public ResponseEntity<Void> removeQuery(@PathVariable("queryId") UUID queryId) {
-        InstanceId resolveId = idsSvc.resolveId(DataStage.IN_PROGRESS, queryId);
+        InstanceId resolveId = ids.resolveId(DataStage.IN_PROGRESS, queryId);
         if(resolveId!=null) {
-            List<InstanceId> instanceIds = queryController.deleteQuery(resolveId);
+            Set<InstanceId> instanceIds = queryController.deleteQuery(resolveId);
             if(instanceIds.isEmpty()){
                 return ResponseEntity.notFound().build();
             }
@@ -112,9 +112,9 @@ public class Queries {
     @WritesData
     @ExposesInputWithoutEnrichedSensitiveData
     public ResponseEntity<Result<NormalizedJsonLd>> saveQuery(@RequestBody JsonLdDoc query, @PathVariable(value = "queryId") UUID queryId, @RequestParam(value = "space", required = false) @Parameter(description = "Required only when the instance is created to specify where it should be stored ("+SpaceName.PRIVATE_SPACE+" for your private space) - but not if it's updated.") String space) {
-        NormalizedJsonLd normalizedJsonLd = jsonLdSvc.toNormalizedJsonLd(query);
+        NormalizedJsonLd normalizedJsonLd = jsonLd.normalize(query, true);
         normalizedJsonLd.addTypes(EBRAINSVocabulary.META_QUERY_TYPE);
-        InstanceId resolveId = idsSvc.resolveId(DataStage.IN_PROGRESS, queryId);
+        InstanceId resolveId = ids.resolveId(DataStage.IN_PROGRESS, queryId);
         if(resolveId != null){
             if(space!=null && !resolveId.getSpace().equals(new SpaceName(space))){
                 return ResponseEntity.status(HttpStatus.CONFLICT).body(Result.nok(HttpStatus.CONFLICT.value(), "The query with this UUID already exists in a different space"));
@@ -131,7 +131,7 @@ public class Queries {
     @GetMapping("/{queryId}/instances")
     @ExposesData
     public PaginatedResult<NormalizedJsonLd> executeQueryById(@PathVariable("queryId") UUID queryId, @ParameterObject PaginationParam paginationParam, @RequestParam("stage") ExposedStage stage) {
-        InstanceId instanceId = idsSvc.resolveId(DataStage.IN_PROGRESS, queryId);
+        InstanceId instanceId = ids.resolveId(DataStage.IN_PROGRESS, queryId);
         KgQuery query = queryController.fetchQueryById(instanceId, stage.getStage());
         return PaginatedResult.ok(queryController.executeQuery(query, paginationParam));
     }

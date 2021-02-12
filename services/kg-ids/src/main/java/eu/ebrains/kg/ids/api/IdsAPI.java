@@ -15,6 +15,7 @@
  */
 
 package eu.ebrains.kg.ids.api;
+import eu.ebrains.kg.commons.api.Ids;
 import eu.ebrains.kg.commons.exception.AmbiguousIdException;
 import eu.ebrains.kg.commons.jsonld.JsonLdId;
 import eu.ebrains.kg.commons.jsonld.JsonLdIdMapping;
@@ -32,7 +33,7 @@ import java.util.List;
 import java.util.UUID;
 
 @Component
-public class IdsAPI implements eu.ebrains.kg.commons.api.IdsAPI.Client, eu.ebrains.kg.commons.api.IdsAPI.Endpoint {
+public class IdsAPI implements Ids.Client {
 
     private final IdRepository idRepository;
 

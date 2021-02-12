@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-  ~ Copyright 2020 EPFL/Human Brain Project PCO
+  ~ Copyright 2021 EPFL/Human Brain Project PCO
   ~
   ~ Licensed under the Apache License, Version 2.0 (the "License");
   ~ you may not use this file except in compliance with the License.
@@ -46,12 +46,6 @@
                     <artifactId>jsr311-api</artifactId>
                 </exclusion>
             </exclusions>
-        </dependency>
-        <dependency>
-            <groupId>eu.ebrains.kg</groupId>
-            <artifactId>kg-admin</artifactId>
-            <version>3.0-SNAPSHOT</version>
-            <classifier>library</classifier>
         </dependency>
         <dependency>
             <groupId>eu.ebrains.kg</groupId>
@@ -103,19 +97,7 @@
         </dependency>
         <dependency>
             <groupId>eu.ebrains.kg</groupId>
-            <artifactId>kg-query</artifactId>
-            <version>3.0-SNAPSHOT</version>
-            <classifier>library</classifier>
-        </dependency>
-        <dependency>
-            <groupId>eu.ebrains.kg</groupId>
             <artifactId>kg-releasing</artifactId>
-            <version>3.0-SNAPSHOT</version>
-            <classifier>library</classifier>
-        </dependency>
-        <dependency>
-            <groupId>eu.ebrains.kg</groupId>
-            <artifactId>kg-spatial-search</artifactId>
             <version>3.0-SNAPSHOT</version>
             <classifier>library</classifier>
         </dependency>

@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 EPFL/Human Brain Project PCO
+ * Copyright 2021 EPFL/Human Brain Project PCO
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,7 +25,7 @@ import eu.ebrains.kg.commons.model.SpaceName;
 import eu.ebrains.kg.commons.models.UserWithRoles;
 import eu.ebrains.kg.commons.permission.Functionality;
 import eu.ebrains.kg.commons.permission.FunctionalityInstance;
-import eu.ebrains.kg.commons.permissions.controller.PermissionSvc;
+import eu.ebrains.kg.commons.permissions.controller.Permissions;
 import org.springframework.stereotype.Component;
 
 import java.util.*;
@@ -34,10 +34,10 @@ import java.util.stream.Collectors;
 @Component
 public class PermissionsController {
 
-    private final PermissionSvc permissions;
+    private final Permissions permissions;
     private final IdUtils idUtils;
 
-    public PermissionsController(PermissionSvc permissions, IdUtils idUtils) {
+    public PermissionsController(Permissions permissions, IdUtils idUtils) {
         this.permissions = permissions;
         this.idUtils = idUtils;
     }

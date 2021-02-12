@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 EPFL/Human Brain Project PCO
+ * Copyright 2021 EPFL/Human Brain Project PCO
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,6 +22,7 @@ import eu.ebrains.kg.arango.commons.model.ArangoDocumentReference;
 import eu.ebrains.kg.arango.commons.model.InternalSpace;
 import eu.ebrains.kg.commons.IdUtils;
 import eu.ebrains.kg.commons.TypeUtils;
+import eu.ebrains.kg.commons.api.Ids;
 import eu.ebrains.kg.commons.jsonld.JsonLdId;
 import eu.ebrains.kg.commons.jsonld.JsonLdIdMapping;
 import eu.ebrains.kg.commons.jsonld.NormalizedJsonLd;
@@ -35,7 +36,6 @@ import eu.ebrains.kg.graphdb.commons.controller.EntryHookDocuments;
 import eu.ebrains.kg.graphdb.commons.model.ArangoDocument;
 import eu.ebrains.kg.graphdb.commons.model.ArangoEdge;
 import eu.ebrains.kg.graphdb.commons.model.ArangoInstance;
-import eu.ebrains.kg.graphdb.commons.serviceCall.GraphDBToIds;
 import eu.ebrains.kg.graphdb.ingestion.model.DBOperation;
 import eu.ebrains.kg.graphdb.ingestion.model.DeleteOperation;
 import eu.ebrains.kg.graphdb.ingestion.model.EdgeResolutionOperation;
@@ -55,16 +55,16 @@ public class DataController {
     private final ArangoRepositoryCommons repository;
     private final EntryHookDocuments entryHookDocuments;
     private final ArangoUtils arangoUtils;
-    private final GraphDBToIds idLookupSvc;
+    private final Ids.Client ids;
     private final ReleasingController releasingController;
     private final TypeUtils typeUtils;
 
-    public DataController(IdUtils idUtils, ArangoRepositoryCommons repository, EntryHookDocuments entryHookDocuments, ArangoUtils arangoUtils, GraphDBToIds idLookupSvc, ReleasingController releasingController, TypeUtils typeUtils) {
+    public DataController(IdUtils idUtils, ArangoRepositoryCommons repository, EntryHookDocuments entryHookDocuments, ArangoUtils arangoUtils, Ids.Client ids, ReleasingController releasingController, TypeUtils typeUtils) {
         this.idUtils = idUtils;
         this.repository = repository;
         this.entryHookDocuments = entryHookDocuments;
         this.arangoUtils = arangoUtils;
-        this.idLookupSvc = idLookupSvc;
+        this.ids = ids;
         this.releasingController = releasingController;
         this.typeUtils = typeUtils;
     }
@@ -173,7 +173,7 @@ public class DataController {
             edgeToRequestId.put(e.getOriginalTo(), requestId);
             return new IdWithAlternatives().setId(requestId).setAlternatives(Collections.singleton(e.getOriginalTo().getId()));
         }).collect(Collectors.toList());
-        List<JsonLdIdMapping> resolvedIds = idLookupSvc.resolveIds(stage, ids);
+        List<JsonLdIdMapping> resolvedIds = this.ids.resolveId(ids, stage);
         Set<ArangoEdge> resolvedEdges = new HashSet<>();
         Set<JsonLdId> resolvedJsonLdIds = new HashSet<>();
 

@@ -38,7 +38,7 @@ import eu.ebrains.kg.commons.model.*;
 import eu.ebrains.kg.commons.models.UserWithRoles;
 import eu.ebrains.kg.commons.params.ReleaseTreeScope;
 import eu.ebrains.kg.commons.permission.Functionality;
-import eu.ebrains.kg.commons.permissions.controller.PermissionSvc;
+import eu.ebrains.kg.commons.permissions.controller.Permissions;
 import eu.ebrains.kg.commons.query.KgQuery;
 import eu.ebrains.kg.commons.semantics.vocabularies.EBRAINSVocabulary;
 import eu.ebrains.kg.commons.semantics.vocabularies.SchemaOrgVocabulary;
@@ -64,7 +64,7 @@ public class ArangoRepositoryInstances {
 
     private final ArangoRepositoryCommons arangoRepositoryCommons;
     private final PermissionsController permissionsController;
-    private final PermissionSvc permissionSvc;
+    private final Permissions permissions;
     private final AuthContext authContext;
     private final ArangoUtils arangoUtils;
     private final QueryController queryController;
@@ -72,10 +72,10 @@ public class ArangoRepositoryInstances {
     private final ArangoDatabases databases;
     private final IdUtils idUtils;
 
-    public ArangoRepositoryInstances(ArangoRepositoryCommons arangoRepositoryCommons, PermissionsController permissionsController, PermissionSvc permissionSvc, AuthContext authContext, ArangoUtils arangoUtils, QueryController queryController, ArangoRepositoryTypes typesRepo, ArangoDatabases databases, IdUtils idUtils) {
+    public ArangoRepositoryInstances(ArangoRepositoryCommons arangoRepositoryCommons, PermissionsController permissionsController, Permissions permissions, AuthContext authContext, ArangoUtils arangoUtils, QueryController queryController, ArangoRepositoryTypes typesRepo, ArangoDatabases databases, IdUtils idUtils) {
         this.arangoRepositoryCommons = arangoRepositoryCommons;
         this.permissionsController = permissionsController;
-        this.permissionSvc = permissionSvc;
+        this.permissions = permissions;
         this.authContext = authContext;
         this.arangoUtils = arangoUtils;
         this.queryController = queryController;
@@ -87,7 +87,7 @@ public class ArangoRepositoryInstances {
 
     @ExposesData
     public NormalizedJsonLd getInstance(DataStage stage, SpaceName space, UUID id, boolean embedded, boolean removeInternalProperties, boolean alternatives, boolean incomingLinks) {
-        if (!permissionSvc.hasPermission(authContext.getUserWithRoles(), Functionality.MINIMAL_READ, space, id)) {
+        if (!permissions.hasPermission(authContext.getUserWithRoles(), Functionality.MINIMAL_READ, space, id)) {
             throw new ForbiddenException(String.format("You don't have read rights on the instance with the id %s", id));
         }
         ArangoDocument document = arangoRepositoryCommons.getDocument(stage, ArangoCollectionReference.fromSpace(space).doc(id));
@@ -114,7 +114,7 @@ public class ArangoRepositoryInstances {
             }
         }
         NormalizedJsonLd doc = document.getDoc();
-        if (doc != null && !permissionSvc.hasPermission(authContext.getUserWithRoles(), Functionality.READ, space, id)) {
+        if (doc != null && !permissions.hasPermission(authContext.getUserWithRoles(), Functionality.READ, space, id)) {
             //The user doesn't have read rights - we need to restrict the information to minimal data
             doc.keepPropertiesOnly(getMinimalFields(stage, doc.types()));
         }
@@ -293,8 +293,8 @@ public class ArangoRepositoryInstances {
     public Map<UUID, Result<NormalizedJsonLd>> getDocumentsByIdList(DataStage stage, List<InstanceId> instanceIds, boolean embedded, boolean alternatives) {
         UserWithRoles userWithRoles = authContext.getUserWithRoles();
 
-        Set<InstanceId> hasReadPermissions = instanceIds.stream().filter(i -> permissionSvc.hasPermission(userWithRoles, permissionsController.getReadFunctionality(stage), i.getSpace(), i.getUuid())).collect(Collectors.toSet());
-        Set<InstanceId> hasOnlyMinimalReadPermissions = instanceIds.stream().filter(i -> !hasReadPermissions.contains(i) && permissionSvc.hasPermission(userWithRoles, permissionsController.getMinimalReadFunctionality(stage), i.getSpace(), i.getUuid())).collect(Collectors.toSet());
+        Set<InstanceId> hasReadPermissions = instanceIds.stream().filter(i -> permissions.hasPermission(userWithRoles, permissionsController.getReadFunctionality(stage), i.getSpace(), i.getUuid())).collect(Collectors.toSet());
+        Set<InstanceId> hasOnlyMinimalReadPermissions = instanceIds.stream().filter(i -> !hasReadPermissions.contains(i) && permissions.hasPermission(userWithRoles, permissionsController.getMinimalReadFunctionality(stage), i.getSpace(), i.getUuid())).collect(Collectors.toSet());
         Set<InstanceId> hasNoPermissions = instanceIds.stream().filter(i -> !hasReadPermissions.contains(i) && !hasOnlyMinimalReadPermissions.contains(i)).collect(Collectors.toSet());
 
         Map<UUID, Result<NormalizedJsonLd>> documentsByReferenceList = getDocumentsByReferenceList(stage, hasReadPermissions.stream().map(ArangoDocumentReference::fromInstanceId).collect(Collectors.toList()), embedded, alternatives);
@@ -470,7 +470,7 @@ public class ArangoRepositoryInstances {
 
     @ExposesMinimalData
     public GraphEntity getNeighbors(DataStage stage, SpaceName space, UUID id) {
-        if (!permissionSvc.hasPermission(authContext.getUserWithRoles(), permissionsController.getReadFunctionality(stage), space, id)) {
+        if (!permissions.hasPermission(authContext.getUserWithRoles(), permissionsController.getReadFunctionality(stage), space, id)) {
             throw new ForbiddenException();
         }
         //FIXME: Do we have to restrict this to the instances with minimal read access?
@@ -633,7 +633,7 @@ public class ArangoRepositoryInstances {
 
     @ExposesReleaseStatus
     public ReleaseStatus getReleaseStatus(SpaceName space, UUID id, ReleaseTreeScope treeScope) {
-        if (!permissionSvc.hasPermission(authContext.getUserWithRoles(), Functionality.RELEASE_STATUS, space, id)) {
+        if (!permissions.hasPermission(authContext.getUserWithRoles(), Functionality.RELEASE_STATUS, space, id)) {
             throw new ForbiddenException();
         }
         switch (treeScope) {
@@ -795,7 +795,7 @@ public class ArangoRepositoryInstances {
         aql.addLine(AQL.trust("}"));
 
         aql.addLine(AQL.trust("RETURN MERGE(FOR id IN @ids"));
-        bindVars.put("ids", ids.stream().map(InstanceId::serialize).collect(Collectors.toSet()));
+        bindVars.put("ids", ids!=null ? ids.stream().filter(Objects::nonNull).map(InstanceId::serialize).collect(Collectors.toSet()) : null);
         aql.indent().addLine(AQL.trust("LET doc = DOCUMENT(id)"));
         aql.addLine(AQL.trust("FILTER doc != null"));
         aql.addLine(AQL.trust("FILTER doc.`" + JsonLdConsts.TYPE + "`"));

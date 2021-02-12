@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 EPFL/Human Brain Project PCO
+ * Copyright 2021 EPFL/Human Brain Project PCO
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,15 +19,10 @@ package eu.ebrains.kg.testutils;
 import eu.ebrains.kg.commons.AuthTokens;
 import eu.ebrains.kg.commons.permission.ClientAuthToken;
 import eu.ebrains.kg.commons.permission.UserAuthToken;
-import eu.ebrains.kg.commons.serviceCall.ToAuthentication;
 import org.junit.Before;
 import org.mockito.Mockito;
-import org.springframework.boot.test.mock.mockito.MockBean;
 
 public abstract class AbstractFunctionalityTest extends AbstractSystemTest {
-
-    @MockBean
-    protected ToAuthentication authenticationSvc;
 
     private AuthTokens authTokens;
 
@@ -36,10 +31,7 @@ public abstract class AbstractFunctionalityTest extends AbstractSystemTest {
         this.authTokens=new AuthTokens();
         this.authTokens.setUserAuthToken(new UserAuthToken("userToken"));
         this.authTokens.setClientAuthToken(new ClientAuthToken("clientToken"));
-        Mockito.doAnswer(a -> authTokens).when(authContext).getAuthTokens();
-        Mockito.doCallRealMethod().when(authContext).getUserId();
-        Mockito.doCallRealMethod().when(authContext).getClientSpace();
-        Mockito.doAnswer(a -> authenticationSvc.getUserWithRoles()).when(authContext).getUserWithRoles();
+        Mockito.doAnswer(a -> authTokens).when(authTokenContext).getAuthTokens();
     }
 
 }

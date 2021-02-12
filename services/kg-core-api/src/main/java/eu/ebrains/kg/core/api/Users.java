@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 EPFL/Human Brain Project PCO
+ * Copyright 2021 EPFL/Human Brain Project PCO
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,9 +17,12 @@
 package eu.ebrains.kg.core.api;
 
 import eu.ebrains.kg.arango.commons.model.InternalSpace;
-import eu.ebrains.kg.commons.AuthContext;
 import eu.ebrains.kg.commons.IdUtils;
 import eu.ebrains.kg.commons.Version;
+import eu.ebrains.kg.commons.api.Authentication;
+import eu.ebrains.kg.commons.api.GraphDBInstances;
+import eu.ebrains.kg.commons.api.GraphDBUsers;
+import eu.ebrains.kg.commons.api.PrimaryStoreEvents;
 import eu.ebrains.kg.commons.config.openApiGroups.Advanced;
 import eu.ebrains.kg.commons.config.openApiGroups.Simple;
 import eu.ebrains.kg.commons.jsonld.InstanceId;
@@ -31,17 +34,12 @@ import eu.ebrains.kg.commons.markers.ExposesUserInfo;
 import eu.ebrains.kg.commons.markers.ExposesUserPicture;
 import eu.ebrains.kg.commons.model.*;
 import eu.ebrains.kg.commons.semantics.vocabularies.EBRAINSVocabulary;
-import eu.ebrains.kg.core.serviceCall.CoreInstancesToGraphDB;
-import eu.ebrains.kg.core.serviceCall.CoreToAuthentication;
-import eu.ebrains.kg.core.serviceCall.CoreToPrimaryStore;
-import eu.ebrains.kg.core.serviceCall.CoreUsersToGraphDB;
 import io.swagger.v3.oas.annotations.Operation;
 import org.springdoc.api.annotations.ParameterObject;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -55,20 +53,18 @@ import java.util.stream.Collectors;
 @RequestMapping(Version.API+"/users")
 public class Users {
 
-    private final CoreToAuthentication authenticationSvc;
-    private final CoreUsersToGraphDB coreUsersToGraphDB;
-    private final CoreInstancesToGraphDB coreInstancesToGraphDB;
+    private final Authentication.Client authentication;
+    private final GraphDBUsers.Client graphDBUsers;
+    private final GraphDBInstances.Client graphDBInstances;
     private final IdUtils idUtils;
-    private final CoreToPrimaryStore primaryStoreSvc;
-    private final AuthContext authContext;
+    private final PrimaryStoreEvents.Client primaryStoreEvents;
 
-    public Users(CoreToAuthentication authenticationSvc, CoreUsersToGraphDB coreUsersToGraphDB, CoreInstancesToGraphDB coreInstancesToGraphDB, IdUtils idUtils, CoreToPrimaryStore primaryStoreSvc, AuthContext authContext) {
-        this.authenticationSvc = authenticationSvc;
-        this.coreUsersToGraphDB = coreUsersToGraphDB;
-        this.coreInstancesToGraphDB = coreInstancesToGraphDB;
+    public Users(Authentication.Client authentication, GraphDBUsers.Client graphDBUsers, GraphDBInstances.Client graphDBInstances, IdUtils idUtils, PrimaryStoreEvents.Client primaryStoreEvents) {
+        this.authentication = authentication;
+        this.graphDBUsers = graphDBUsers;
+        this.graphDBInstances = graphDBInstances;
         this.idUtils = idUtils;
-        this.primaryStoreSvc = primaryStoreSvc;
-        this.authContext = authContext;
+        this.primaryStoreEvents = primaryStoreEvents;
     }
 
     @Operation(summary = "Get the endpoint of the authentication service")
@@ -77,7 +73,7 @@ public class Users {
     @Advanced
     public Result<JsonLdDoc> getAuthEndpoint() {
         JsonLdDoc ld = new JsonLdDoc();
-        ld.addProperty("endpoint", authenticationSvc.endpoint());
+        ld.addProperty("endpoint", authentication.authEndpoint());
         return Result.ok(ld);
     }
 
@@ -87,7 +83,7 @@ public class Users {
     @Advanced
     public Result<JsonLdDoc> getTokenEndpoint() {
         JsonLdDoc ld = new JsonLdDoc();
-        ld.addProperty("endpoint", authenticationSvc.tokenEndpoint());
+        ld.addProperty("endpoint", authentication.tokenEndpoint());
         return Result.ok(ld);
     }
 
@@ -95,9 +91,9 @@ public class Users {
     @GetMapping("/me")
     @ExposesUserInfo
     @Simple
-    public ResponseEntity<Result<User>> profile() {
-        User myUserProfile = authenticationSvc.getMyUserProfile();
-        return myUserProfile!=null ? ResponseEntity.ok(Result.ok(myUserProfile)) : ResponseEntity.notFound().build();
+    public ResponseEntity<Result<User>> myUserInfo() {
+        User myUserInfo = authentication.getMyUserInfo();
+        return myUserInfo!=null ? ResponseEntity.ok(Result.ok(myUserInfo)) : ResponseEntity.notFound().build();
     }
 
 
@@ -106,7 +102,7 @@ public class Users {
     @ExposesUserInfo
     @Advanced
     public ResponseEntity<PaginatedResult<NormalizedJsonLd>> getUserList(@ParameterObject PaginationParam paginationParam) {
-        Paginated<NormalizedJsonLd> users = coreUsersToGraphDB.getUsers(paginationParam);
+        Paginated<NormalizedJsonLd> users = graphDBUsers.getUsers(paginationParam);
         users.getData().forEach(NormalizedJsonLd::removeAllInternalProperties);
         return ResponseEntity.ok(PaginatedResult.ok(users));
     }
@@ -116,7 +112,7 @@ public class Users {
     @ExposesUserPicture
     public ResponseEntity<Map<UUID, String>> getUserPictures(@RequestBody List<UUID> userIds) {
         SpaceName targetSpace = InternalSpace.USERS_PICTURE_SPACE;
-        Map<UUID, Result<NormalizedJsonLd>> instancesByIds = coreInstancesToGraphDB.getInstancesByIds(DataStage.IN_PROGRESS, userIds.stream().map(userId -> new InstanceId(createUserPictureId(userId), targetSpace)).collect(Collectors.toList()), false, false);
+        Map<UUID, Result<NormalizedJsonLd>> instancesByIds = graphDBInstances.getInstancesByIds(userIds.stream().map(userId -> new InstanceId(createUserPictureId(userId), targetSpace).serialize()).collect(Collectors.toList()), DataStage.IN_PROGRESS, false, false);
         Map<UUID, UUID> userPictureIdToUserId = userIds.stream().collect(Collectors.toMap(this::createUserPictureId, v-> v));
         return ResponseEntity.ok(instancesByIds.keySet().stream().filter(k -> instancesByIds.get(k).getData() != null && instancesByIds.get(k).getData().getAs(EBRAINSVocabulary.META_PICTURE, String.class) != null).collect(Collectors.toMap(userPictureIdToUserId::get, v -> "data:image/jpeg;base64,"+instancesByIds.get(v).getData().getAs(EBRAINSVocabulary.META_PICTURE, String.class))));
     }
@@ -127,7 +123,7 @@ public class Users {
     @ExposesUserPicture
     public ResponseEntity<String> getUserPicture(@PathVariable("id") UUID userId) {
         SpaceName targetSpace = InternalSpace.USERS_PICTURE_SPACE;
-        NormalizedJsonLd instance = coreInstancesToGraphDB.getInstance(DataStage.IN_PROGRESS, new InstanceId(createUserPictureId(userId), targetSpace), false, false, false);
+        NormalizedJsonLd instance = graphDBInstances.getInstanceById(targetSpace.getName(), createUserPictureId(userId), DataStage.IN_PROGRESS, false, false, false, true);
         if(instance!=null){
             String picture = instance.getAs(EBRAINSVocabulary.META_PICTURE, String.class);
             if(picture!=null){
@@ -151,7 +147,7 @@ public class Users {
         UUID uuid = createUserPictureId(userId);
         doc.setId(idUtils.buildAbsoluteUrl(uuid));
         doc.addTypes(EBRAINSVocabulary.META_USER_PICTURE_TYPE);
-        primaryStoreSvc.postEvent(Event.createUpsertEvent(targetSpace, uuid, Event.Type.INSERT, doc), false, authContext.getAuthTokens());
+        primaryStoreEvents.postEvent(Event.createUpsertEvent(targetSpace, uuid, Event.Type.INSERT, doc), false);
         return ResponseEntity.ok(Result.ok());
     }
 
@@ -161,7 +157,7 @@ public class Users {
     @ExposesMinimalUserInfo
     @Advanced
     public ResponseEntity<List<User>> getUsersByAttribute(@PathVariable("attribute") String attribute, @PathVariable("value") String value) {
-        List<User> users = authenticationSvc.getUsersByAttribute(attribute, value);
+        List<User> users = authentication.getUsersByAttribute(attribute, value);
         return users != null ? ResponseEntity.ok(users) : ResponseEntity.notFound().build();
     }
 

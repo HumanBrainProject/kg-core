@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 EPFL/Human Brain Project PCO
+ * Copyright 2021 EPFL/Human Brain Project PCO
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 
 package eu.ebrains.kg.commons.serviceCall;
 
+import eu.ebrains.kg.commons.api.Authentication;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
@@ -29,18 +30,18 @@ import java.util.Map;
 @Component
 public class KeycloakSvc {
 
-    private final CoreForTokenSvc coreSvc;
+    private final Authentication.Client authentication;
     private String endpoint;
     private final WebClient.Builder internalWebClient;
 
-    public KeycloakSvc(CoreForTokenSvc coreSvc, @Qualifier("direct") WebClient.Builder internalWebClient) {
-        this.coreSvc = coreSvc;
+    public KeycloakSvc(Authentication.Client authentication, @Qualifier("direct") WebClient.Builder internalWebClient) {
+        this.authentication = authentication;
         this.internalWebClient = internalWebClient;
     }
 
     private String getEndpoint() {
         if (endpoint == null) {
-            endpoint = coreSvc.getTokenEndpoint();
+            endpoint = authentication.tokenEndpoint();
         }
         return endpoint;
     }

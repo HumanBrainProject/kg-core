@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 EPFL/Human Brain Project PCO
+ * Copyright 2021 EPFL/Human Brain Project PCO
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,12 +18,12 @@ package eu.ebrains.kg.core.api.queries.tests;
 
 import com.arangodb.ArangoDB;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import eu.ebrains.kg.authentication.api.AuthenticationAPI;
 import eu.ebrains.kg.commons.IdUtils;
 import eu.ebrains.kg.commons.jsonld.JsonLdDoc;
 import eu.ebrains.kg.commons.jsonld.NormalizedJsonLd;
 import eu.ebrains.kg.commons.model.PaginatedResult;
 import eu.ebrains.kg.commons.permission.roles.Role;
-import eu.ebrains.kg.commons.serviceCall.ToAuthentication;
 import eu.ebrains.kg.core.api.AbstractTest;
 import eu.ebrains.kg.core.api.Instances;
 import eu.ebrains.kg.core.api.Queries;
@@ -101,9 +101,9 @@ public class TestSimpleQueryTest extends AbstractTest {
             "}";
 
 
-    public TestSimpleQueryTest(ArangoDB.Builder database, ToAuthentication authenticationSvc, Collection<List<Role>> roles, Queries queries, Instances instances, ExposedStage stage, IdUtils idUtils, boolean release)  throws IOException
+    public TestSimpleQueryTest(ArangoDB.Builder database, AuthenticationAPI authenticationAPI, Collection<List<Role>> roles, Queries queries, Instances instances, ExposedStage stage, IdUtils idUtils, boolean release)  throws IOException
     {
-        super(database, authenticationSvc, roles);
+        super(database, authenticationAPI,  roles);
         this.instances = instances;
         this.queries = queries;
         this.query = new JsonLdDoc(new ObjectMapper().readValue(this.testQuery, LinkedHashMap.class));

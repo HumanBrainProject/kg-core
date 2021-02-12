@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 EPFL/Human Brain Project PCO
+ * Copyright 2021 EPFL/Human Brain Project PCO
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,12 +17,12 @@
 package eu.ebrains.kg.core.api;
 
 import eu.ebrains.kg.commons.AuthContext;
+import eu.ebrains.kg.commons.api.PrimaryStoreEvents;
 import eu.ebrains.kg.commons.jsonld.JsonLdId;
 import eu.ebrains.kg.commons.jsonld.NormalizedJsonLd;
 import eu.ebrains.kg.commons.model.Result;
 import eu.ebrains.kg.commons.model.SpaceName;
 import eu.ebrains.kg.commons.semantics.vocabularies.EBRAINSVocabulary;
-import eu.ebrains.kg.core.serviceCall.CoreToPrimaryStore;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -32,7 +32,7 @@ import org.springframework.http.ResponseEntity;
 
 public class PropertiesTest {
     AuthContext authContext = Mockito.mock(AuthContext.class);
-    Properties instance = new Properties(Mockito.mock(CoreToPrimaryStore.class), authContext);
+    Properties instance = new Properties(Mockito.mock(PrimaryStoreEvents.Client.class), authContext);
 
     @Before
     public void init() {

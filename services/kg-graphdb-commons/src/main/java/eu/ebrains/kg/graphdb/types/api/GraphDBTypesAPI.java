@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 EPFL/Human Brain Project PCO
+ * Copyright 2021 EPFL/Human Brain Project PCO
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,20 +17,20 @@
 package eu.ebrains.kg.graphdb.types.api;
 
 import eu.ebrains.kg.commons.AuthContext;
+import eu.ebrains.kg.commons.api.GraphDBTypes;
 import eu.ebrains.kg.commons.jsonld.JsonLdDoc;
 import eu.ebrains.kg.commons.jsonld.NormalizedJsonLd;
 import eu.ebrains.kg.commons.model.*;
 import eu.ebrains.kg.graphdb.types.controller.ArangoRepositoryTypes;
 import org.springframework.http.HttpStatus;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.stereotype.Component;
 
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-@RestController
-@RequestMapping("/internal/graphdb/{stage}")
-public class GraphDBTypesAPI {
+@Component
+public class GraphDBTypesAPI implements GraphDBTypes.Client {
 
     private final AuthContext authContext;
 
@@ -41,8 +41,8 @@ public class GraphDBTypesAPI {
         this.repositoryTypes = repositoryTypes;
     }
 
-    @GetMapping("/types")
-    public Paginated<NormalizedJsonLd> getTypes(@PathVariable("stage") DataStage stage, @RequestParam(value = "space", required = false) String space, @RequestParam(value = "withIncomingLinks", required = false, defaultValue = "false") boolean withIncomingLinks, PaginationParam paginationParam) {
+    @Override
+    public Paginated<NormalizedJsonLd> getTypes(DataStage stage, String space, boolean withIncomingLinks, PaginationParam paginationParam) {
         return getTypes(stage, space, false, withIncomingLinks, false, paginationParam);
     }
 
@@ -54,18 +54,18 @@ public class GraphDBTypesAPI {
         }
     }
 
-    @GetMapping("/typesWithProperties")
-    public Paginated<NormalizedJsonLd> getTypesWithProperties(@PathVariable("stage") DataStage stage, @RequestParam(value = "space", required = false) String space, @RequestParam(value = "withCounts", required = false, defaultValue = "true") boolean withCounts, @RequestParam(value = "withIncomingLinks", required = false, defaultValue = "true") boolean withIncomingLinks, PaginationParam paginationParam) {
+    @Override
+    public Paginated<NormalizedJsonLd> getTypesWithProperties(DataStage stage, String space, boolean withCounts, boolean withIncomingLinks, PaginationParam paginationParam) {
         return getTypes(stage, space, true, withIncomingLinks, withCounts, paginationParam);
     }
 
-    @PostMapping("/typesByName")
-    public Map<String, Result<NormalizedJsonLd>> getTypesByName(@RequestBody List<String> types, @PathVariable("stage") DataStage stage, @RequestParam(value = "space", required = false) String space) {
+    @Override
+    public Map<String, Result<NormalizedJsonLd>> getTypesByName(List<String> types, DataStage stage, String space) {
         return getTypesByName(types, stage, space, false, false, false);
     }
 
-    @PostMapping("/typesWithPropertiesByName")
-    public Map<String, Result<NormalizedJsonLd>> getTypesWithPropertiesByName(@RequestBody List<String> types, @PathVariable("stage") DataStage stage, @RequestParam(value = "withCounts", required = false, defaultValue = "true") boolean withCounts, @RequestParam(value = "withIncomingLinks", required = false, defaultValue = "true") boolean withIncomingLinks, @RequestParam(value = "space", required = false) String space) {
+    @Override
+    public Map<String, Result<NormalizedJsonLd>> getTypesWithPropertiesByName(List<String> types, DataStage stage, boolean withCounts, boolean withIncomingLinks, String space) {
         return getTypesByName(types, stage, space, true, withIncomingLinks, withCounts);
     }
 

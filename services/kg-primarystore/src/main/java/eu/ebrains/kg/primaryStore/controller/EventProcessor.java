@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 EPFL/Human Brain Project PCO
+ * Copyright 2021 EPFL/Human Brain Project PCO
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,20 +16,18 @@
 
 package eu.ebrains.kg.primaryStore.controller;
 
-import eu.ebrains.kg.commons.AuthTokens;
+import eu.ebrains.kg.commons.api.Indexing;
+import eu.ebrains.kg.commons.api.Inference;
 import eu.ebrains.kg.commons.jsonld.InstanceId;
 import eu.ebrains.kg.commons.jsonld.NormalizedJsonLd;
 import eu.ebrains.kg.commons.model.DataStage;
 import eu.ebrains.kg.commons.model.Event;
 import eu.ebrains.kg.commons.model.PersistedEvent;
 import eu.ebrains.kg.commons.model.SpaceName;
-import eu.ebrains.kg.commons.models.UserWithRoles;
 import eu.ebrains.kg.commons.semantics.vocabularies.EBRAINSVocabulary;
 import eu.ebrains.kg.primaryStore.model.DeferredInference;
 import eu.ebrains.kg.primaryStore.model.ExecutedDeferredInference;
 import eu.ebrains.kg.primaryStore.model.FailedEvent;
-import eu.ebrains.kg.primaryStore.serviceCall.PrimaryStoreToIndexing;
-import eu.ebrains.kg.primaryStore.serviceCall.PrimaryStoreToInference;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.scheduling.annotation.Async;
@@ -43,7 +41,7 @@ import java.util.stream.Collectors;
 
 @Component
 public class EventProcessor {
-    private final PrimaryStoreToIndexing indexingSvc;
+    private final Indexing.Client indexing;
 
     private final SSEProducer sseProducer;
 
@@ -51,7 +49,7 @@ public class EventProcessor {
 
     private final EventController eventController;
 
-    private final PrimaryStoreToInference inferenceSvc;
+    private final Inference.Client inference;
 
     private InferenceProcessor inferenceProcessor;
 
@@ -61,26 +59,25 @@ public class EventProcessor {
 
     private final Logger logger = LoggerFactory.getLogger(getClass());
 
-    public EventProcessor(PrimaryStoreToIndexing indexingSvc, SSEProducer sseProducer, EventRepository eventRepository, EventController eventController, PrimaryStoreToInference inferenceSvc, UserResolver userResolver, InferenceProcessor inferenceProcessor) {
-        this.indexingSvc = indexingSvc;
+    public EventProcessor(Indexing.Client indexing, SSEProducer sseProducer, EventRepository eventRepository, EventController eventController, Inference.Client inference, UserResolver userResolver, InferenceProcessor inferenceProcessor) {
+        this.indexing = indexing;
         this.sseProducer = sseProducer;
         this.eventRepository = eventRepository;
         this.eventController = eventController;
-        this.inferenceSvc = inferenceSvc;
+        this.inference = inference;
         this.userResolver = userResolver;
         this.inferenceProcessor = inferenceProcessor;
     }
 
-    public Set<InstanceId> postEvent(UserWithRoles userWithRoles, AuthTokens authTokens, Event event, boolean deferInference) {
-        logger.info(String.format("Received event of type %s for instance %s in space %s by user %s via client %s", event.getType().name(), event.getDocumentId(), event.getSpaceName().getName(), userWithRoles != null && userWithRoles.getUser() != null ? userWithRoles.getUser().getUserName() : "anonymous", userWithRoles != null && userWithRoles.getClientId() != null ? userWithRoles.getClientId() : "unknown"));
-        PersistedEvent persistedEvent = eventController.persistEvent(authTokens, event, event.getType().getStage(), userWithRoles,  userResolver.resolveUser(event, userWithRoles));
-        List<PersistedEvent> inferredEvents = processEvent(authTokens, persistedEvent, userWithRoles, deferInference);
+    public Set<InstanceId> postEvent(Event event, boolean deferInference) {
+        PersistedEvent persistedEvent = eventController.persistEvent(event, event.getType().getStage());
+        List<PersistedEvent> inferredEvents = processEvent(persistedEvent, deferInference);
         return inferredEvents.stream().map(e -> new InstanceId(e.getDocumentId(), e.getSpaceName())).collect(Collectors.toSet());
     }
 
-    public List<PersistedEvent> processEvent(AuthTokens authTokens, PersistedEvent persistedEvent, UserWithRoles userWithRoles, boolean deferInference) {
+    public List<PersistedEvent> processEvent(PersistedEvent persistedEvent, boolean deferInference) {
         try {
-            indexingSvc.indexEvent(persistedEvent, authTokens);
+            indexing.indexEvent(persistedEvent);
         } catch (Exception e) {
             eventRepository.recordFailedEvent(new FailedEvent(persistedEvent, e, ZonedDateTime.now()));
             throw e;
@@ -94,14 +91,14 @@ public class EventProcessor {
                 deferredInference.setUuid(persistedEvent.getDocumentId());
                 eventRepository.recordDeferredInference(deferredInference);
             } else {
-                return autoRelease(inferenceProcessor.triggerInference(persistedEvent.getSpaceName(), persistedEvent.getDocumentId(), userWithRoles, authTokens), userWithRoles, authTokens);
+                return autoRelease(inferenceProcessor.triggerInference(persistedEvent.getSpaceName(), persistedEvent.getDocumentId()));
             }
         }
         return Collections.emptyList();
     }
 
-    public void syncDeferredInference(AuthTokens authTokens, SpaceName space, UserWithRoles userWithRoles){
-        List<ExecutedDeferredInference> results = deferInference(authTokens, space, userWithRoles);
+    public void syncDeferredInference(SpaceName space){
+        List<ExecutedDeferredInference> results = deferInference(space);
         List<String> unsuccessful = results.stream().filter(d -> !d.isSuccessful()).map(d -> String.format("%s/%s: %s", d.getDeferredInference().getSpace().getName(), d.getDeferredInference().getUuid(), d.getException().getMessage())).collect(Collectors.toList());
         if(!unsuccessful.isEmpty()){
             logger.error(String.format("Was not able to infer all deferred instances: %s", String.join(", ", unsuccessful)));
@@ -109,16 +106,16 @@ public class EventProcessor {
     }
 
     @Async
-    public void asyncDeferredInference(AuthTokens authTokens, SpaceName space, UserWithRoles userWithRoles){
-        syncDeferredInference(authTokens, space, userWithRoles);
+    public void asyncDeferredInference(SpaceName space){
+        syncDeferredInference(space);
     }
 
-    private synchronized List<ExecutedDeferredInference> deferInference(AuthTokens authTokens, SpaceName space, UserWithRoles userWithRoles){
+    private synchronized List<ExecutedDeferredInference> deferInference(SpaceName space){
         List<DeferredInference> deferredInferences;
         List<ExecutedDeferredInference> results = new ArrayList<>();
         int pageSize = 20;
         while((deferredInferences = eventRepository.getDeferredInferences(space, pageSize)) != null && !deferredInferences.isEmpty()){
-            List<CompletableFuture<ExecutedDeferredInference>> completableFutures = deferredInferences.stream().map(i -> inferenceProcessor.asyncDoDeferInference(authTokens, i, userWithRoles)).collect(Collectors.toList());
+            List<CompletableFuture<ExecutedDeferredInference>> completableFutures = deferredInferences.stream().map(i -> inferenceProcessor.asyncDoDeferInference(i)).collect(Collectors.toList());
             // Wait until they are all done
             CompletableFuture.allOf(completableFutures.toArray(CompletableFuture[]::new)).join();
             List<ExecutedDeferredInference> executedDeferredInferences = completableFutures.stream().map(c -> {
@@ -129,16 +126,16 @@ public class EventProcessor {
                     return null;
                 }
             }).filter(Objects::nonNull).collect(Collectors.toList());
-            executedDeferredInferences.stream().filter(ExecutedDeferredInference::isSuccessful).forEach(e -> autoRelease(e.getPersistedEvents(), userWithRoles, authTokens));
+            executedDeferredInferences.stream().filter(ExecutedDeferredInference::isSuccessful).forEach(e -> autoRelease(e.getPersistedEvents()));
             results.addAll(executedDeferredInferences);
         }
         return results;
     }
 
-    public List<PersistedEvent> autoRelease(List<PersistedEvent> events, UserWithRoles userWithRoles, AuthTokens authTokens){
+    public List<PersistedEvent> autoRelease(List<PersistedEvent> events){
         events.forEach(e -> {
             if(e.getSpace() != null && e.getSpace().isAutoRelease()){
-                postEvent(userWithRoles, authTokens, new Event(e.getSpaceName(), e.getDocumentId(), new NormalizedJsonLd(e.getData()).removeAllInternalProperties().removeAllFieldsFromNamespace(EBRAINSVocabulary.META), Event.Type.RELEASE, new Date()), false);
+                postEvent(new Event(e.getSpaceName(), e.getDocumentId(), new NormalizedJsonLd(e.getData()).removeAllInternalProperties().removeAllFieldsFromNamespace(EBRAINSVocabulary.META), Event.Type.RELEASE, new Date()), false);
             }
         });
         return events;

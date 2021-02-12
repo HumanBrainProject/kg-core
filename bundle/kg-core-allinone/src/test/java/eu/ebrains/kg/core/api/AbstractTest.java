@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 EPFL/Human Brain Project PCO
+ * Copyright 2021 EPFL/Human Brain Project PCO
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,13 +17,13 @@
 package eu.ebrains.kg.core.api;
 
 import com.arangodb.ArangoDB;
+import eu.ebrains.kg.authentication.api.AuthenticationAPI;
 import eu.ebrains.kg.commons.jsonld.JsonLdId;
 import eu.ebrains.kg.commons.jsonld.NormalizedJsonLd;
 import eu.ebrains.kg.commons.model.*;
 import eu.ebrains.kg.commons.models.UserWithRoles;
 import eu.ebrains.kg.commons.permission.roles.Role;
 import eu.ebrains.kg.commons.permission.roles.RoleMapping;
-import eu.ebrains.kg.commons.serviceCall.ToAuthentication;
 import org.junit.Assert;
 import org.mockito.Mockito;
 import org.springframework.http.ResponseEntity;
@@ -43,28 +43,29 @@ public abstract class AbstractTest {
     protected ResponseConfiguration defaultResponseConfiguration = new ResponseConfiguration().setReturnEmbedded(true).setReturnPermissions(false).setReturnAlternatives(false).setReturnPayload(true);
     protected PaginationParam defaultPaginationParam = new PaginationParam().setFrom(0).setSize(20l);
 
-    private final static List<String> ADMIN_ROLE = Collections.singletonList(RoleMapping.ADMIN.toRole(null).getName());
-    private final static List<String> ADMIN_CLIENT_ROLE = Arrays.asList(RoleMapping.ADMIN.toRole(null).getName(), RoleMapping.IS_CLIENT.toRole(null).getName());
+    public final static List<String> ADMIN_ROLE = Collections.singletonList(RoleMapping.ADMIN.toRole(null).getName());
+    public final static List<String> ADMIN_CLIENT_ROLE = Arrays.asList(RoleMapping.ADMIN.toRole(null).getName(), RoleMapping.IS_CLIENT.toRole(null).getName());
 
     private List<Role> currentRoles;
-    private final ToAuthentication authenticationSvc;
+    private final AuthenticationAPI authentication;
     private final Collection<List<Role>> roleCollections;
     private final ArangoDB.Builder database;
 
-    public AbstractTest(ArangoDB.Builder database, ToAuthentication authenticationSvc, RoleMapping[] roleMappings) {
-        this(database, authenticationSvc, Arrays.stream(roleMappings).filter(Objects::nonNull).map(r -> Collections.singletonList(r.toRole(null))).collect(Collectors.toSet()));
+    public AbstractTest(ArangoDB.Builder database, AuthenticationAPI authentication, RoleMapping[] roleMappings) {
+        this(database, authentication, Arrays.stream(roleMappings).filter(Objects::nonNull).map(r -> Collections.singletonList(r.toRole(null))).collect(Collectors.toSet()));
     }
 
-    public AbstractTest(ArangoDB.Builder database, ToAuthentication authenticationSvc, Collection<List<Role>> roleCollections) {
-        this.authenticationSvc = authenticationSvc;
+    public AbstractTest(ArangoDB.Builder database, AuthenticationAPI authentication, Collection<List<Role>> roleCollections) {
         this.database = database;
         this.roleCollections = roleCollections;
+        this.authentication = authentication;
     }
 
     protected void beAdmin() {
         User user = new User("bobEverythingGoes", "Bob Everything Goes", "fakeAdmin@ebrains.eu", "Bob Everything", "Goes", "admin");
         UserWithRoles userWithRoles = new UserWithRoles(user, ADMIN_ROLE, ADMIN_CLIENT_ROLE, "testClient");
-        Mockito.doAnswer(a -> userWithRoles).when(authenticationSvc).getUserWithRoles();
+        Mockito.doAnswer(a -> user).when(authentication).getMyUserInfo();
+        Mockito.doAnswer(a -> userWithRoles).when(authentication).getRoles();
     }
 
     protected void beInCurrentRole() {
@@ -75,7 +76,8 @@ public abstract class AbstractTest {
         } else {
             User user = new User("alice", "Alice ", "fakeAlice@ebrains.eu", "Alice", "User", "alice");
             UserWithRoles userWithRoles = new UserWithRoles(user, currentRoles.stream().filter(Objects::nonNull).map(Role::getName).collect(Collectors.toList()), ADMIN_CLIENT_ROLE, "testClient");
-            Mockito.doAnswer(a -> userWithRoles).when(authenticationSvc).getUserWithRoles();
+            Mockito.doAnswer(a -> user).when(authentication).getMyUserInfo();
+            Mockito.doAnswer(a -> userWithRoles).when(authentication).getRoles();
         }
     }
 
@@ -83,7 +85,8 @@ public abstract class AbstractTest {
         User user = new User("joeCantDoAThing", "Joe Cant Do A Thing", "fakeUnauthorized@ebrains.eu", "Joe Cant Do A", "Thing", "unauthorized");
         //It's the user not having any righexts - the client is still the same with full rights
         UserWithRoles userWithRoles = new UserWithRoles(user, Collections.emptyList(), ADMIN_CLIENT_ROLE, "testClient");
-        Mockito.doAnswer(a -> userWithRoles).when(authenticationSvc).getUserWithRoles();
+        Mockito.doAnswer(a -> user).when(authentication).getMyUserInfo();
+        Mockito.doAnswer(a -> userWithRoles).when(authentication).getRoles();
     }
 
     protected abstract void setup();
@@ -115,7 +118,7 @@ public abstract class AbstractTest {
                 }
             } catch (Exception e) {
                 if(!e.getClass().equals(expectedException)){
-                    throw new RuntimeException(String.format("Failing test with role %s", currentRoles), e);
+                    throw new RuntimeException(String.format("Failing test with role %s", currentRoles.stream().map(Role::getName).collect(Collectors.joining(", "))), e);
                 }
             }
         }

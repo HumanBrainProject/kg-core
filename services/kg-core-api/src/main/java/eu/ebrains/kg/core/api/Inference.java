@@ -44,9 +44,9 @@ public class Inference {
     public void triggerInference(@PathVariable(value = "space") String space, @RequestParam(value = "identifier", required = false) String identifier, @RequestParam(value = "async", required = false, defaultValue = "false") boolean async) {
         SpaceName spaceName = authContext.resolveSpaceName(space);
         if (async) {
-            inferenceController.asyncTriggerInference(spaceName, identifier, authContext.getAuthTokens());
+            inferenceController.asyncTriggerInference(spaceName, identifier);
         } else {
-            inferenceController.triggerInference(spaceName, identifier, authContext.getAuthTokens());
+            inferenceController.triggerInference(spaceName, identifier);
         }
     }
 
@@ -54,7 +54,7 @@ public class Inference {
     @PostMapping("/{space}/deferred")
     public void triggerDeferredInference(@RequestParam(value = "sync", required = false, defaultValue = "false") boolean sync, @PathVariable(value = "space") String space) {
         SpaceName spaceName = authContext.resolveSpaceName(space);
-        inferenceController.triggerDeferredInference(authContext.getAuthTokens(), spaceName, sync);
+        inferenceController.triggerDeferredInference(spaceName, sync);
     }
 
 }

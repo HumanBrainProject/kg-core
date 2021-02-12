@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 EPFL/Human Brain Project PCO
+ * Copyright 2021 EPFL/Human Brain Project PCO
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,11 +17,11 @@
 package eu.ebrains.kg.core.api.instances.tests;
 
 import com.arangodb.ArangoDB;
+import eu.ebrains.kg.authentication.api.AuthenticationAPI;
 import eu.ebrains.kg.commons.jsonld.JsonLdDoc;
 import eu.ebrains.kg.commons.jsonld.NormalizedJsonLd;
 import eu.ebrains.kg.commons.model.Result;
 import eu.ebrains.kg.commons.permission.roles.RoleMapping;
-import eu.ebrains.kg.commons.serviceCall.ToAuthentication;
 import eu.ebrains.kg.core.api.AbstractTest;
 import eu.ebrains.kg.core.api.Instances;
 import eu.ebrains.kg.testutils.TestDataFactory;
@@ -31,8 +31,8 @@ public abstract class AbstractInstanceTest extends AbstractTest {
 
     protected final Instances instances;
 
-    public AbstractInstanceTest(ArangoDB.Builder database, ToAuthentication authenticationSvc, Instances instances, RoleMapping[] roles) {
-        super(database, authenticationSvc, roles);
+    public AbstractInstanceTest(ArangoDB.Builder database, AuthenticationAPI authenticationAPI, Instances instances, RoleMapping[] roles) {
+        super(database, authenticationAPI, roles);
         this.instances = instances;
     }
 
@@ -41,6 +41,7 @@ public abstract class AbstractInstanceTest extends AbstractTest {
         ResponseEntity<Result<NormalizedJsonLd>> response = instances.createNewInstance(originalDoc, "functionalityTest", defaultResponseConfiguration, defaultIngestConfiguration, null);
         return response.getBody().getData();
     }
+
 
 
 }

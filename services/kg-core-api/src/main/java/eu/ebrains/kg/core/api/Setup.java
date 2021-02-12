@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 EPFL/Human Brain Project PCO
+ * Copyright 2021 EPFL/Human Brain Project PCO
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,11 +18,11 @@ package eu.ebrains.kg.core.api;
 
 import eu.ebrains.kg.arango.commons.model.InternalSpace;
 import eu.ebrains.kg.commons.Version;
+import eu.ebrains.kg.commons.api.Authentication;
 import eu.ebrains.kg.commons.config.openApiGroups.Admin;
 import eu.ebrains.kg.commons.model.Credential;
 import eu.ebrains.kg.commons.model.Space;
 import eu.ebrains.kg.core.controller.CoreSpaceController;
-import eu.ebrains.kg.core.serviceCall.CoreToAuthentication;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -33,11 +33,11 @@ import org.springframework.web.bind.annotation.RestController;
 public class Setup {
 
     private final CoreSpaceController spaceController;
-    private final CoreToAuthentication coreToAuthentication;
+    private final Authentication.Client authentication;
 
-    public Setup(CoreSpaceController spaceController, CoreToAuthentication coreToAuthentication) {
+    public Setup(CoreSpaceController spaceController, Authentication.Client authentication) {
         this.spaceController = spaceController;
-        this.coreToAuthentication = coreToAuthentication;
+        this.authentication = authentication;
     }
 
     @PutMapping("/database")
@@ -52,6 +52,6 @@ public class Setup {
     @PutMapping("/authentication")
     @Admin
     public void setupAuthentication(@RequestBody Credential credential){
-        coreToAuthentication.setupAuthentication(credential);
+        authentication.setup(credential);
     }
 }

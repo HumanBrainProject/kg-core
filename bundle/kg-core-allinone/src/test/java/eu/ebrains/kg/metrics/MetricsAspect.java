@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 EPFL/Human Brain Project PCO
+ * Copyright 2021 EPFL/Human Brain Project PCO
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -52,7 +52,7 @@ public class MetricsAspect {
             } catch (Throwable throwable) {
                 throw throwable;
             } finally {
-                if(authContext!=null && authContext.getAuthTokens()!=null && authContext.getAuthTokens().getTransactionId()!=null) {
+                if(authContext!=null && authContext.getAuthTokens()!=null) {
                     Instant end = Instant.now();
                     MethodExecution execution = new MethodExecution();
                     execution.setPackageName(proceedingJoinPoint.getSignature().getDeclaringType().getSimpleName());

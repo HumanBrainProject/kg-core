@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 EPFL/Human Brain Project PCO
+ * Copyright 2021 EPFL/Human Brain Project PCO
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,14 +16,14 @@
 
 package eu.ebrains.kg.release.controller;
 
+import eu.ebrains.kg.commons.api.GraphDBInstances;
+import eu.ebrains.kg.commons.api.PrimaryStoreEvents;
 import eu.ebrains.kg.commons.jsonld.IndexedJsonLdDoc;
 import eu.ebrains.kg.commons.model.DataStage;
 import eu.ebrains.kg.commons.model.Event;
 import eu.ebrains.kg.commons.model.ReleaseStatus;
 import eu.ebrains.kg.commons.model.SpaceName;
 import eu.ebrains.kg.commons.params.ReleaseTreeScope;
-import eu.ebrains.kg.release.serviceCall.ReleaseToGraphDB;
-import eu.ebrains.kg.release.serviceCall.ReleaseToPrimaryStore;
 import org.springframework.stereotype.Component;
 
 import java.util.Date;
@@ -32,14 +32,12 @@ import java.util.UUID;
 @Component
 public class Release {
 
-    private final ReleaseToGraphDB graphDBSvc;
+    private final GraphDBInstances.Client graphDBInstances;
+    private final PrimaryStoreEvents.Client primaryStoreEvents;
 
-    private final ReleaseToPrimaryStore releasePrimaryStoreSvc;
-
-
-    public Release(ReleaseToGraphDB graphDBSvc, ReleaseToPrimaryStore releasePrimaryStoreSvc) {
-        this.graphDBSvc = graphDBSvc;
-        this.releasePrimaryStoreSvc = releasePrimaryStoreSvc;
+    public Release(GraphDBInstances.Client graphDBInstances, PrimaryStoreEvents.Client primaryStoreEvents) {
+        this.graphDBInstances = graphDBInstances;
+        this.primaryStoreEvents = primaryStoreEvents;
     }
 
     public void release(SpaceName space, UUID id, String revision) {
@@ -50,7 +48,7 @@ public class Release {
             //Revision is optional -> if not provided, we just continue with the releasing process.
             throw new IllegalArgumentException("Incorrect revision provided");
         }
-        releasePrimaryStoreSvc.pushToStore(new Event(space, id, jsonLdDoc.getDoc(), Event.Type.RELEASE, new Date()));
+        primaryStoreEvents.postEvent(new Event(space, id, jsonLdDoc.getDoc(), Event.Type.RELEASE, new Date()), false);
     }
 
     public void unrelease(SpaceName space, UUID id) {
@@ -58,14 +56,14 @@ public class Release {
         if (jsonLdDoc == null) {
             throw new IllegalArgumentException(String.format("Instance %s/%s not found", space.getName(), id));
         }
-        releasePrimaryStoreSvc.pushToStore(new Event(space, id, jsonLdDoc.getDoc(), Event.Type.UNRELEASE, new Date()));
+        primaryStoreEvents.postEvent(new Event(space, id, jsonLdDoc.getDoc(), Event.Type.UNRELEASE, new Date()), false);
     }
 
     public ReleaseStatus getStatus(SpaceName space, UUID id, ReleaseTreeScope treeScope) {
-        return graphDBSvc.getReleaseStatus(space, id, treeScope);
+        return graphDBInstances.getReleaseStatus(space!=null ? space.getName() : null, id, treeScope);
     }
 
     private IndexedJsonLdDoc getInstance(DataStage stage, SpaceName space, UUID id) {
-        return graphDBSvc.getWithEmbedded(stage, space, id);
+        return IndexedJsonLdDoc.from(graphDBInstances.getInstanceById(space.getName(), id, stage, true, false, false, true));
     }
 }

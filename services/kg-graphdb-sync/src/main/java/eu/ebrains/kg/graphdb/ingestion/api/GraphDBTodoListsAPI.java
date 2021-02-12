@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 EPFL/Human Brain Project PCO
+ * Copyright 2021 EPFL/Human Brain Project PCO
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,18 +16,18 @@
 
 package eu.ebrains.kg.graphdb.ingestion.api;
 
+import eu.ebrains.kg.commons.api.GraphDBTodoLists;
 import eu.ebrains.kg.commons.model.DataStage;
 import eu.ebrains.kg.commons.model.TodoItem;
 import eu.ebrains.kg.graphdb.ingestion.controller.TodoListProcessor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.stereotype.Component;
 
 import java.util.List;
 
-@RestController
-@RequestMapping("/internal/graphdb/{stage}")
-public class GraphDBTodoListsAPI {
+@Component
+public class GraphDBTodoListsAPI implements GraphDBTodoLists.Client {
 
     private final Logger logger = LoggerFactory.getLogger(getClass());
 
@@ -37,8 +37,8 @@ public class GraphDBTodoListsAPI {
         this.todoListProcessor = todoListProcessor;
     }
 
-    @PostMapping("/todoLists")
-    public void processTodoList(@RequestBody List<TodoItem> todoList, @PathVariable("stage") DataStage stage) {
+    @Override
+    public void processTodoList(List<TodoItem> todoList, DataStage stage) {
         logger.debug(String.format("Received request to process todolist for stage %s", stage));
         todoListProcessor.doProcessTodoList(todoList, stage);
     }

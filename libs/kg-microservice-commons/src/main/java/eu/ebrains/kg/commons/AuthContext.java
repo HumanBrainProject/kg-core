@@ -16,48 +16,29 @@
 
 package eu.ebrains.kg.commons;
 
+import eu.ebrains.kg.commons.api.Authentication;
 import eu.ebrains.kg.commons.model.Space;
 import eu.ebrains.kg.commons.model.SpaceName;
 import eu.ebrains.kg.commons.models.UserWithRoles;
-import eu.ebrains.kg.commons.serviceCall.ToAuthentication;
-import org.springframework.context.annotation.Scope;
-import org.springframework.context.annotation.ScopedProxyMode;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
-import org.springframework.web.context.annotation.RequestScope;
 
-/**
- * The authentication context is a request scoped bean which allows to keep token information and caches user and role information.
- * The population of the token information is achieved by the {@link RestControllerAdvice}
- */
 @Component
-@RequestScope
-@Scope(value = "request", proxyMode = ScopedProxyMode.TARGET_CLASS)
 public class AuthContext {
 
-    private final ToAuthentication authenticationSvc;
+    private final static Logger logger = LoggerFactory.getLogger(AuthContext.class); ;
 
-    private UserWithRoles userWithRoles;
+    private final AuthTokenContext authTokenContext;
+    private final Authentication.Client authentication;
 
-    public AuthContext(ToAuthentication authenticationSvc) {
-        this.authenticationSvc = authenticationSvc;
-    }
-
-    private AuthTokens authTokens;
-
-    public AuthTokens getAuthTokens() {
-        return authTokens;
-    }
-
-
-    public void setAuthTokens(AuthTokens authTokens) {
-        this.authTokens = authTokens;
+    public AuthContext(AuthTokenContext authTokenContext, Authentication.Client authentication) {
+        this.authTokenContext = authTokenContext;
+        this.authentication = authentication;
     }
 
     public UserWithRoles getUserWithRoles() {
-        if(userWithRoles==null){
-            userWithRoles = authenticationSvc.getUserWithRoles();
-        }
-        return userWithRoles;
+        return authentication.getRoles();
     }
 
     public Space getClientSpace(){
@@ -75,6 +56,10 @@ public class AuthContext {
             return space.getName().equals(SpaceName.PRIVATE_SPACE) ? getUserWithRoles().getPrivateSpace() : space;
         }
         return null;
+    }
+
+    public AuthTokens getAuthTokens(){
+        return this.authTokenContext.getAuthTokens();
     }
 
 }

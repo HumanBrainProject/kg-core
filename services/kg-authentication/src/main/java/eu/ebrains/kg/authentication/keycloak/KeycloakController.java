@@ -22,7 +22,7 @@ import com.auth0.jwt.algorithms.Algorithm;
 import com.auth0.jwt.exceptions.JWTVerificationException;
 import com.auth0.jwt.interfaces.Claim;
 import eu.ebrains.kg.authentication.model.OpenIdConfig;
-import eu.ebrains.kg.commons.AuthContext;
+import eu.ebrains.kg.commons.AuthTokenContext;
 import eu.ebrains.kg.commons.JsonAdapter;
 import eu.ebrains.kg.commons.exception.UnauthorizedException;
 import eu.ebrains.kg.commons.model.Client;
@@ -69,18 +69,18 @@ public class KeycloakController {
 
     private final KeycloakClient keycloakClient;
 
-    private final AuthContext authContext;
+    private final AuthTokenContext authTokenContext;
 
     private final KeycloakUsers keycloakUsers;
 
     private final JWTVerifier jwtVerifier;
 
 
-    public KeycloakController(KeycloakConfig config, KeycloakClient keycloakClient, JsonAdapter jsonAdapter, AuthContext authContext, KeycloakUsers keycloakUsers) {
+    public KeycloakController(KeycloakConfig config, KeycloakClient keycloakClient, JsonAdapter jsonAdapter, AuthTokenContext authTokenContext, KeycloakUsers keycloakUsers) {
         this.config = config;
         this.jsonAdapter = jsonAdapter;
         this.keycloakClient = keycloakClient;
-        this.authContext = authContext;
+        this.authTokenContext = authTokenContext;
         this.keycloakUsers = keycloakUsers;
         this.jwtVerifier = JWT.require(getAlgorithmFromKeycloakConfig(keycloakClient.getPublicKey())).withIssuer(config.getIssuer()).build(); //Reusable verifier instance;
     }
@@ -278,17 +278,17 @@ public class KeycloakController {
 
 
     public Map<String, Claim> getClientProfile() {
-        if (authContext.getAuthTokens() == null || authContext.getAuthTokens().getClientAuthToken() == null) {
+        if (authTokenContext.getAuthTokens() == null || authTokenContext.getAuthTokens().getClientAuthToken() == null) {
             return null;
         }
-        return getInfo(authContext.getAuthTokens().getClientAuthToken().getBearerToken());
+        return getInfo(authTokenContext.getAuthTokens().getClientAuthToken().getBearerToken());
     }
 
     public Map<String, Claim> getUserProfile() {
-        if (authContext.getAuthTokens() == null || authContext.getAuthTokens().getUserAuthToken() == null) {
+        if (authTokenContext.getAuthTokens() == null || authTokenContext.getAuthTokens().getUserAuthToken() == null) {
             throw new UnauthorizedException("You haven't provided the required credentials! Please define an Authorization header with your bearer token!");
         }
-        return getInfo(authContext.getAuthTokens().getUserAuthToken().getBearerToken());
+        return getInfo(authTokenContext.getAuthTokens().getUserAuthToken().getBearerToken());
     }
 
     Map<String, Claim> getInfo(String token) {

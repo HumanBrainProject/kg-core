@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 EPFL/Human Brain Project PCO
+ * Copyright 2021 EPFL/Human Brain Project PCO
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -63,7 +63,7 @@ public class InstancesTest extends AbstractFunctionalityTest {
     @Test
     public void createInstanceOk() {
         //Given
-        CreateInstanceTest test = new CreateInstanceTest(database, authenticationSvc, instances, WRITE_ROLES);
+        CreateInstanceTest test = new CreateInstanceTest(database, authenticationAPI, instances, WRITE_ROLES);
 
         //When
         test.execute(
@@ -76,7 +76,7 @@ public class InstancesTest extends AbstractFunctionalityTest {
     @Test
     public void createInstanceForbidden() {
         //Given
-        CreateInstanceTest test = new CreateInstanceTest(database, authenticationSvc, instances, NON_WRITE_ROLES);
+        CreateInstanceTest test = new CreateInstanceTest(database, authenticationAPI, instances, NON_WRITE_ROLES);
 
         //When
         test.execute(ForbiddenException.class);
@@ -85,7 +85,7 @@ public class InstancesTest extends AbstractFunctionalityTest {
     @Test
     public void createInstanceWithSpecifiedUUIDOk() {
         //Given
-        CreateInstanceWithSpecifiedUUIDTest test = new CreateInstanceWithSpecifiedUUIDTest(database, authenticationSvc, instances, WRITE_ROLES);
+        CreateInstanceWithSpecifiedUUIDTest test = new CreateInstanceWithSpecifiedUUIDTest(database, authenticationAPI, instances, WRITE_ROLES);
 
         //When
         test.execute(() -> {
@@ -98,7 +98,7 @@ public class InstancesTest extends AbstractFunctionalityTest {
     @Test
     public void createInstanceWithSpecifiedUUIDOkForbidden() {
         //Given
-        CreateInstanceWithSpecifiedUUIDTest test = new CreateInstanceWithSpecifiedUUIDTest(database, authenticationSvc, instances, NON_WRITE_ROLES);
+        CreateInstanceWithSpecifiedUUIDTest test = new CreateInstanceWithSpecifiedUUIDTest(database, authenticationAPI, instances, NON_WRITE_ROLES);
 
         //When
         test.execute(ForbiddenException.class);
@@ -107,7 +107,7 @@ public class InstancesTest extends AbstractFunctionalityTest {
     @Test
     public void createInstanceWithNewSpaceOk() {
         //Given
-        CreateInstanceWithNewSpaceTest test = new CreateInstanceWithNewSpaceTest(database, authenticationSvc, instances, new RoleMapping[]{RoleMapping.ADMIN});
+        CreateInstanceWithNewSpaceTest test = new CreateInstanceWithNewSpaceTest(database, authenticationAPI, instances, new RoleMapping[]{RoleMapping.ADMIN});
 
         //When
         test.execute(
@@ -122,7 +122,7 @@ public class InstancesTest extends AbstractFunctionalityTest {
     @Test
     public void createInstanceWithNewSpaceForbidden() {
         //Given
-        CreateInstanceWithNewSpaceTest test = new CreateInstanceWithNewSpaceTest(database, authenticationSvc, instances, RoleMapping.getRemainingUserRoles(new RoleMapping[]{RoleMapping.ADMIN}));
+        CreateInstanceWithNewSpaceTest test = new CreateInstanceWithNewSpaceTest(database, authenticationAPI, instances, RoleMapping.getRemainingUserRoles(new RoleMapping[]{RoleMapping.ADMIN}));
 
         //When
         test.execute(ForbiddenException.class);
@@ -131,7 +131,7 @@ public class InstancesTest extends AbstractFunctionalityTest {
     @Test
     public void contributeToInstanceFullReplacementOk() {
         //Given
-        ContributeToInstanceFullReplacementTest test = new ContributeToInstanceFullReplacementTest(database, authenticationSvc, idUtils, instances, WRITE_ROLES);
+        ContributeToInstanceFullReplacementTest test = new ContributeToInstanceFullReplacementTest(database, authenticationAPI, idUtils, instances, WRITE_ROLES);
 
         //When
         test.execute(() -> {
@@ -151,7 +151,7 @@ public class InstancesTest extends AbstractFunctionalityTest {
     @Test
     public void contributeToInstanceFullReplacementForbidden() {
         //Given
-        ContributeToInstanceFullReplacementTest test = new ContributeToInstanceFullReplacementTest(database, authenticationSvc, idUtils, instances, NON_WRITE_ROLES);
+        ContributeToInstanceFullReplacementTest test = new ContributeToInstanceFullReplacementTest(database, authenticationAPI, idUtils, instances, NON_WRITE_ROLES);
 
         //When
         test.execute(ForbiddenException.class);
@@ -160,7 +160,7 @@ public class InstancesTest extends AbstractFunctionalityTest {
     @Test
     public void contributeToInstancePartialReplacementOk() {
         //Given
-        ContributeToInstancePartialReplacementTest test = new ContributeToInstancePartialReplacementTest(database, authenticationSvc, idUtils, instances, WRITE_ROLES);
+        ContributeToInstancePartialReplacementTest test = new ContributeToInstancePartialReplacementTest(database, authenticationAPI, idUtils, instances, WRITE_ROLES);
 
         //When
         test.execute(() -> {
@@ -184,7 +184,7 @@ public class InstancesTest extends AbstractFunctionalityTest {
     @Test
     public void contributeToInstancePartialReplacementForbidden() {
         //Given
-        ContributeToInstancePartialReplacementTest test = new ContributeToInstancePartialReplacementTest(database, authenticationSvc, idUtils, instances, NON_WRITE_ROLES);
+        ContributeToInstancePartialReplacementTest test = new ContributeToInstancePartialReplacementTest(database, authenticationAPI, idUtils, instances, NON_WRITE_ROLES);
 
         //When
         test.execute(ForbiddenException.class);
@@ -194,7 +194,7 @@ public class InstancesTest extends AbstractFunctionalityTest {
     @Test
     public void getInstanceByIdOk() {
         //Given
-        GetInstanceByIdTest test = new GetInstanceByIdTest(database, authenticationSvc, idUtils, instances, READ_IN_PROGRESS_ROLES);
+        GetInstanceByIdTest test = new GetInstanceByIdTest(database, authenticationAPI, idUtils, instances, READ_IN_PROGRESS_ROLES);
 
         //When
         test.execute(() -> {
@@ -207,7 +207,7 @@ public class InstancesTest extends AbstractFunctionalityTest {
     @Test
     public void getInstanceByIdForbidden() {
         //Given
-        GetInstanceByIdTest test = new GetInstanceByIdTest(database, authenticationSvc, idUtils, instances, NON_READ_IN_PROGRESS_ROLES);
+        GetInstanceByIdTest test = new GetInstanceByIdTest(database, authenticationAPI, idUtils, instances, NON_READ_IN_PROGRESS_ROLES);
 
         //When
         test.execute(ForbiddenException.class);
@@ -216,7 +216,7 @@ public class InstancesTest extends AbstractFunctionalityTest {
     @Test
     public void getInstanceScopeSimpleOk() {
         //Given
-        GetInstanceScopeSimpleTest test = new GetInstanceScopeSimpleTest(database, authenticationSvc, idUtils, instances, READ_IN_PROGRESS_ROLES);
+        GetInstanceScopeSimpleTest test = new GetInstanceScopeSimpleTest(database, authenticationAPI, idUtils, instances, READ_IN_PROGRESS_ROLES);
 
         //When
         test.execute(() -> {
@@ -232,7 +232,7 @@ public class InstancesTest extends AbstractFunctionalityTest {
     @Test
     public void getInstanceScopeSimpleForbidden() {
         //Given
-        GetInstanceScopeSimpleTest test = new GetInstanceScopeSimpleTest(database, authenticationSvc, idUtils, instances, NON_READ_IN_PROGRESS_ROLES);
+        GetInstanceScopeSimpleTest test = new GetInstanceScopeSimpleTest(database, authenticationAPI, idUtils, instances, NON_READ_IN_PROGRESS_ROLES);
 
         test.execute(ForbiddenException.class);
     }
@@ -241,7 +241,7 @@ public class InstancesTest extends AbstractFunctionalityTest {
     public void getInstanceNeighborsSimpleOk() {
 
         //Given
-        GetInstanceNeighborsSimpleTest test = new GetInstanceNeighborsSimpleTest(database, authenticationSvc, idUtils, instances, READ_IN_PROGRESS_ROLES);
+        GetInstanceNeighborsSimpleTest test = new GetInstanceNeighborsSimpleTest(database, authenticationAPI, idUtils, instances, READ_IN_PROGRESS_ROLES);
 
         //When
         test.execute(() -> {
@@ -262,7 +262,7 @@ public class InstancesTest extends AbstractFunctionalityTest {
     public void getInstanceNeighborsSimpleForbidden() {
 
         //Given
-        GetInstanceNeighborsSimpleTest test = new GetInstanceNeighborsSimpleTest(database, authenticationSvc, idUtils, instances, NON_READ_IN_PROGRESS_ROLES);
+        GetInstanceNeighborsSimpleTest test = new GetInstanceNeighborsSimpleTest(database, authenticationAPI, idUtils, instances, NON_READ_IN_PROGRESS_ROLES);
 
         //When
         test.execute(ForbiddenException.class);
@@ -272,7 +272,7 @@ public class InstancesTest extends AbstractFunctionalityTest {
     @Test
     public void getInstancesOk() {
         //Given
-        GetInstancesTest test = new GetInstancesTest(database, authenticationSvc, idUtils, instances, READ_IN_PROGRESS_ROLES);
+        GetInstancesTest test = new GetInstancesTest(database, authenticationAPI, idUtils, instances, READ_IN_PROGRESS_ROLES);
 
         //When
         test.execute(() -> {
@@ -293,7 +293,7 @@ public class InstancesTest extends AbstractFunctionalityTest {
     @Test
     public void getInstancesForbidden() {
         //Given
-        GetInstancesTest test = new GetInstancesTest(database, authenticationSvc, idUtils, instances, NON_READ_IN_PROGRESS_ROLES);
+        GetInstancesTest test = new GetInstancesTest(database, authenticationAPI, idUtils, instances, NON_READ_IN_PROGRESS_ROLES);
 
         //When
         test.execute(() -> {
@@ -307,7 +307,7 @@ public class InstancesTest extends AbstractFunctionalityTest {
     @Test
     public void getInstancesByIdsOk() {
         //Given
-        GetInstancesByIdsTest test = new GetInstancesByIdsTest(database, authenticationSvc, idUtils, instances, READ_IN_PROGRESS_ROLES);
+        GetInstancesByIdsTest test = new GetInstancesByIdsTest(database, authenticationAPI, idUtils, instances, READ_IN_PROGRESS_ROLES);
 
         //When
         test.execute(() -> {
@@ -331,7 +331,7 @@ public class InstancesTest extends AbstractFunctionalityTest {
     @Test
     public void getInstancesByIdsForbidden() {
         //Given
-        GetInstancesByIdsTest test = new GetInstancesByIdsTest(database, authenticationSvc, idUtils, instances, NON_READ_IN_PROGRESS_ROLES);
+        GetInstancesByIdsTest test = new GetInstancesByIdsTest(database, authenticationAPI, idUtils, instances, NON_READ_IN_PROGRESS_ROLES);
 
         //When
         test.execute(() -> {
@@ -346,7 +346,7 @@ public class InstancesTest extends AbstractFunctionalityTest {
     @Test
     public void getInstancesByIdentifiersOk() {
         //Given
-        GetInstancesByIdentifiersTest test = new GetInstancesByIdentifiersTest(database, authenticationSvc, idUtils, instances, READ_IN_PROGRESS_ROLES);
+        GetInstancesByIdentifiersTest test = new GetInstancesByIdentifiersTest(database, authenticationAPI, idUtils, instances, READ_IN_PROGRESS_ROLES);
 
         //When
         test.execute(() -> {
@@ -368,7 +368,7 @@ public class InstancesTest extends AbstractFunctionalityTest {
     @Test
     public void getInstancesByIdentifiersForbidden() {
         //Given
-        GetInstancesByIdentifiersTest test = new GetInstancesByIdentifiersTest(database, authenticationSvc, idUtils, instances, NON_READ_IN_PROGRESS_ROLES);
+        GetInstancesByIdentifiersTest test = new GetInstancesByIdentifiersTest(database, authenticationAPI, idUtils, instances, NON_READ_IN_PROGRESS_ROLES);
 
         //When
         test.execute(() -> {
@@ -384,7 +384,7 @@ public class InstancesTest extends AbstractFunctionalityTest {
     @Test
     public void deleteInstanceOk() {
         //Given
-        DeleteInstanceTest test = new DeleteInstanceTest(database, authenticationSvc, idUtils, instances, OWNER_ROLES);
+        DeleteInstanceTest test = new DeleteInstanceTest(database, authenticationAPI, idUtils, instances, OWNER_ROLES);
 
         //When
         test.execute(() -> {
@@ -397,7 +397,7 @@ public class InstancesTest extends AbstractFunctionalityTest {
     @Test
     public void deleteInstanceForbidden() {
         //Given
-        DeleteInstanceTest test = new DeleteInstanceTest(database, authenticationSvc, idUtils, instances, NON_OWNER_ROLES);
+        DeleteInstanceTest test = new DeleteInstanceTest(database, authenticationAPI, idUtils, instances, NON_OWNER_ROLES);
 
         //When
         test.execute(ForbiddenException.class);
@@ -407,7 +407,7 @@ public class InstancesTest extends AbstractFunctionalityTest {
     @Test
     public void releaseInstanceOk() {
         //Given
-        ReleaseInstanceTest test = new ReleaseInstanceTest(database, authenticationSvc, idUtils, instances, OWNER_ROLES);
+        ReleaseInstanceTest test = new ReleaseInstanceTest(database, authenticationAPI, idUtils, instances, OWNER_ROLES);
 
         //When
         test.execute(() -> {
@@ -421,7 +421,7 @@ public class InstancesTest extends AbstractFunctionalityTest {
     @Test
     public void releaseInstanceForbidden() {
         //Given
-        ReleaseInstanceTest test = new ReleaseInstanceTest(database, authenticationSvc, idUtils, instances, NON_OWNER_ROLES);
+        ReleaseInstanceTest test = new ReleaseInstanceTest(database, authenticationAPI, idUtils, instances, NON_OWNER_ROLES);
 
         //When
         test.execute(ForbiddenException.class);
@@ -430,7 +430,7 @@ public class InstancesTest extends AbstractFunctionalityTest {
     @Test
     public void unreleaseInstanceOk() {
         //Given
-        UnreleaseInstanceTest test = new UnreleaseInstanceTest(database, authenticationSvc, idUtils, instances, OWNER_ROLES);
+        UnreleaseInstanceTest test = new UnreleaseInstanceTest(database, authenticationAPI, idUtils, instances, OWNER_ROLES);
 
         //When
         test.execute(() -> {
@@ -447,7 +447,7 @@ public class InstancesTest extends AbstractFunctionalityTest {
     @Test
     public void unreleaseInstanceForbidden() {
         //Given
-        UnreleaseInstanceTest test = new UnreleaseInstanceTest(database, authenticationSvc, idUtils, instances, NON_OWNER_ROLES);
+        UnreleaseInstanceTest test = new UnreleaseInstanceTest(database, authenticationAPI, idUtils, instances, NON_OWNER_ROLES);
 
         //When
         test.execute(ForbiddenException.class);
@@ -457,7 +457,7 @@ public class InstancesTest extends AbstractFunctionalityTest {
     @Test
     public void getReleaseStatusOk() {
         //Given
-        GetReleaseStatusTest test = new GetReleaseStatusTest(database, authenticationSvc, idUtils, instances, RELEASE_STATUS_ROLES);
+        GetReleaseStatusTest test = new GetReleaseStatusTest(database, authenticationAPI, idUtils, instances, RELEASE_STATUS_ROLES);
 
         //When
         test.execute(() -> {
@@ -472,7 +472,7 @@ public class InstancesTest extends AbstractFunctionalityTest {
     @Test
     public void getReleaseStatusForbidden() {
         //Given
-        GetReleaseStatusTest test = new GetReleaseStatusTest(database, authenticationSvc, idUtils, instances, NON_RELEASE_STATUS_ROLES);
+        GetReleaseStatusTest test = new GetReleaseStatusTest(database, authenticationAPI, idUtils, instances, NON_RELEASE_STATUS_ROLES);
 
         //When
         test.execute(ForbiddenException.class);
@@ -481,7 +481,7 @@ public class InstancesTest extends AbstractFunctionalityTest {
     @Test
     public void getReleaseStatusByIdsOk() {
         //Given
-        GetReleaseStatusByIdsTest test = new GetReleaseStatusByIdsTest(database, authenticationSvc, idUtils, instances, RELEASE_STATUS_ROLES);
+        GetReleaseStatusByIdsTest test = new GetReleaseStatusByIdsTest(database, authenticationAPI, idUtils, instances, RELEASE_STATUS_ROLES);
 
         //When
         test.execute(() -> {
@@ -498,7 +498,7 @@ public class InstancesTest extends AbstractFunctionalityTest {
     @Test
     public void getReleaseStatusByIdsForbidden() {
         //Given
-        GetReleaseStatusByIdsTest test = new GetReleaseStatusByIdsTest(database, authenticationSvc, idUtils, instances, NON_RELEASE_STATUS_ROLES);
+        GetReleaseStatusByIdsTest test = new GetReleaseStatusByIdsTest(database, authenticationAPI, idUtils, instances, NON_RELEASE_STATUS_ROLES);
 
         //When
         test.execute(() -> {

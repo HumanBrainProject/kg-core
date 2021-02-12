@@ -19,7 +19,8 @@ package eu.ebrains.kg.core.api;
 import eu.ebrains.kg.commons.AuthContext;
 import eu.ebrains.kg.commons.IdUtils;
 import eu.ebrains.kg.commons.Version;
-import eu.ebrains.kg.commons.api.IdsAPI;
+import eu.ebrains.kg.commons.api.GraphDBInstances;
+import eu.ebrains.kg.commons.api.Release;
 import eu.ebrains.kg.commons.config.openApiGroups.Advanced;
 import eu.ebrains.kg.commons.config.openApiGroups.Simple;
 import eu.ebrains.kg.commons.exception.ForbiddenException;
@@ -29,10 +30,8 @@ import eu.ebrains.kg.commons.model.*;
 import eu.ebrains.kg.commons.models.ExternalEventInformation;
 import eu.ebrains.kg.commons.params.ReleaseTreeScope;
 import eu.ebrains.kg.core.controller.CoreInstanceController;
+import eu.ebrains.kg.core.controller.IdsController;
 import eu.ebrains.kg.core.model.ExposedStage;
-import eu.ebrains.kg.core.serviceCall.CoreInstancesToGraphDB;
-import eu.ebrains.kg.core.serviceCall.CoreToIds;
-import eu.ebrains.kg.core.serviceCall.CoreToRelease;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
@@ -53,24 +52,22 @@ import java.util.stream.Collectors;
 @RestController
 @RequestMapping(Version.API)
 public class Instances {
-    private final CoreToIds idsSvc;
     private final CoreInstanceController instanceController;
-    private final CoreToRelease releaseSvc;
+    private final Release.Client release;
     private final IdUtils idUtils;
     private final AuthContext authContext;
-    private final CoreInstancesToGraphDB coreInstancesToGraphDB;
-    private final IdsAPI.Client idsAPIClient;
+    private final GraphDBInstances.Client graphDBInstances;
+    private final IdsController idsController;
 
     private final Logger logger = LoggerFactory.getLogger(getClass());
 
-    public Instances(CoreToIds idsSvc, CoreInstanceController instanceController, CoreToRelease releaseSvc, IdUtils idUtils, AuthContext authContext, CoreInstancesToGraphDB coreInstancesToGraphDB, IdsAPI.Client idsAPIClient) {
-        this.idsSvc = idsSvc;
+    public Instances(CoreInstanceController instanceController, Release.Client release, IdUtils idUtils, AuthContext authContext, GraphDBInstances.Client graphDBInstances, IdsController idsController) {
         this.instanceController = instanceController;
-        this.releaseSvc = releaseSvc;
+        this.release = release;
         this.idUtils = idUtils;
         this.authContext = authContext;
-        this.coreInstancesToGraphDB = coreInstancesToGraphDB;
-        this.idsAPIClient = idsAPIClient;
+        this.graphDBInstances = graphDBInstances;
+        this.idsController = idsController;
     }
 
     @Operation(summary = "Create new instance with a system generated id")
@@ -104,7 +101,7 @@ public class Instances {
     public ResponseEntity<Result<NormalizedJsonLd>> createNewInstance(@RequestBody JsonLdDoc jsonLdDoc, @PathVariable("id") UUID id, @RequestParam(value = "space") @Parameter(description = "The space name the instance shall be stored in or \""+SpaceName.PRIVATE_SPACE+"\" if you want to store it to your private space") String space,  @ParameterObject ResponseConfiguration responseConfiguration, @ParameterObject  IngestConfiguration ingestConfiguration,  @ParameterObject ExternalEventInformation externalEventInformation) {
         Date startTime = new Date();
         //We want to prevent the UUID to be used twice...
-        InstanceId instanceId = idsSvc.resolveId(DataStage.IN_PROGRESS, id);
+        InstanceId instanceId = idsController.resolveId(DataStage.IN_PROGRESS, id);
         if (instanceId != null) {
             return ResponseEntity.status(HttpStatus.CONFLICT).body(Result.nok(HttpStatus.CONFLICT.value(), String.format("The uuid you're providing (%s) is already in use. Please use a different one or do a PATCH instead", id)));
         }
@@ -121,19 +118,22 @@ public class Instances {
     private ResponseEntity<Result<NormalizedJsonLd>> contributeToInstance(@RequestBody JsonLdDoc jsonLdDoc, UUID id, boolean undeprecate, @ParameterObject ResponseConfiguration responseConfiguration,  @ParameterObject IngestConfiguration ingestConfiguration,  @ParameterObject ExternalEventInformation externalEventInformation, boolean removeNonDeclaredFields) {
         Date startTime = new Date();
         logger.debug(String.format("Contributing to instance with id %s", id));
-        InstanceId instanceId = idsSvc.resolveId(DataStage.IN_PROGRESS, id);
+        InstanceId instanceId = idsController.resolveId(DataStage.IN_PROGRESS, id);
         if (instanceId == null) {
             return ResponseEntity.notFound().build();
         } else if (instanceId.isDeprecated()) {
             if (undeprecate) {
-                idsAPIClient.deprecateId(DataStage.IN_PROGRESS, instanceId.getUuid(), true);
+                idsController.undeprecateInstance(instanceId.getUuid());
             } else {
                 return ResponseEntity.status(HttpStatus.GONE).body(Result.nok(HttpStatus.GONE.value(), "The instance you're trying to contribute to has been deprecated."));
             }
         }
         ResponseEntity<Result<NormalizedJsonLd>> resultResponseEntity = instanceController.contributeToInstance(jsonLdDoc, instanceId, removeNonDeclaredFields, responseConfiguration, ingestConfiguration, externalEventInformation);
         logger.debug(String.format("Done contributing to instance with id %s", id));
-        resultResponseEntity.getBody().setExecutionDetails(startTime, new Date());
+        Result<NormalizedJsonLd> body = resultResponseEntity.getBody();
+        if(body!=null){
+            body.setExecutionDetails(startTime, new Date());
+        }
         return resultResponseEntity;
     }
 
@@ -214,7 +214,7 @@ public class Instances {
     public Result<Map<String, Result<NormalizedJsonLd>>> getInstancesByIdentifiers(@RequestBody List<String> identifiers, @RequestParam("stage") ExposedStage stage, @ParameterObject ResponseConfiguration responseConfiguration) {
         List<IdWithAlternatives> idWithAlternatives = identifiers.stream().map(identifier -> new IdWithAlternatives(UUID.randomUUID(), null, Collections.singleton(identifier))).collect(Collectors.toList());
         Map<UUID, String> uuidToIdentifier = idWithAlternatives.stream().collect(Collectors.toMap(IdWithAlternatives::getId, v -> v.getAlternatives().iterator().next()));
-        List<JsonLdIdMapping> jsonLdIdMappings = idsAPIClient.resolveId(idWithAlternatives, stage.getStage());
+        List<JsonLdIdMapping> jsonLdIdMappings = idsController.resolveIds(stage.getStage(), idWithAlternatives);
         Map<String, InstanceId> identifierToInstanceIdLookup = new HashMap<>();
         jsonLdIdMappings.forEach(jsonLdIdMapping -> {
             if(jsonLdIdMapping.getResolvedIds() != null && jsonLdIdMapping.getResolvedIds().size()==1){
@@ -245,11 +245,11 @@ public class Instances {
     @Simple
     public ResponseEntity<Result<Void>> deleteInstance(@PathVariable("id") UUID id, @ParameterObject ExternalEventInformation externalEventInformation) {
         Date startTime = new Date();
-        InstanceId instanceId = idsSvc.resolveId(DataStage.IN_PROGRESS, id);
+        InstanceId instanceId = idsController.resolveId(DataStage.IN_PROGRESS, id);
         if (instanceId == null) {
             return ResponseEntity.notFound().build();
         } else {
-            ReleaseStatus releaseStatus = releaseSvc.getReleaseStatus(instanceId, ReleaseTreeScope.TOP_INSTANCE_ONLY);
+            ReleaseStatus releaseStatus = release.getReleaseStatus(instanceId.getSpace().getName(), instanceId.getUuid(), ReleaseTreeScope.TOP_INSTANCE_ONLY);
             if (releaseStatus != null && releaseStatus != ReleaseStatus.UNRELEASED) {
                 return ResponseEntity.status(HttpStatus.CONFLICT).body(Result.nok(HttpStatus.CONFLICT.value(), "Was not able to remove instance because it is released still"));
             }
@@ -268,14 +268,14 @@ public class Instances {
     @Simple
     public ResponseEntity<Result<Void>> releaseInstance(@PathVariable("id") UUID id, @RequestParam(value = "revision", required = false) String revision) {
         Date startTime = new Date();
-        InstanceId instanceId = idsSvc.resolveId(DataStage.IN_PROGRESS, id);
+        InstanceId instanceId = idsController.resolveId(DataStage.IN_PROGRESS, id);
         if (instanceId == null) {
             return ResponseEntity.notFound().build();
         }
         else if(instanceId.isDeprecated()){
             return ResponseEntity.status(HttpStatus.GONE).build();
         }
-        releaseSvc.releaseInstance(instanceId, revision);
+        release.releaseInstance(instanceId.getSpace().getName(), instanceId.getUuid(), revision);
         return ResponseEntity.ok(Result.<Void>ok().setExecutionDetails(startTime, new Date()));
     }
 
@@ -288,14 +288,14 @@ public class Instances {
     @Simple
     public ResponseEntity<Result<Void>> unreleaseInstance(@PathVariable("id") UUID id) {
         Date startTime = new Date();
-        InstanceId instanceId = idsSvc.resolveId(DataStage.IN_PROGRESS, id);
+        InstanceId instanceId = idsController.resolveId(DataStage.IN_PROGRESS, id);
         if (instanceId == null) {
             return ResponseEntity.notFound().build();
         }
         else if(instanceId.isDeprecated()){
             return ResponseEntity.status(HttpStatus.GONE).build();
         }
-        releaseSvc.unreleaseInstance(instanceId);
+        release.unreleaseInstance(instanceId.getSpace().getName(), instanceId.getUuid());
         return ResponseEntity.ok(Result.<Void>ok().setExecutionDetails(startTime, new Date()));
     }
 
@@ -309,14 +309,14 @@ public class Instances {
     @ExposesReleaseStatus
     @Simple
     public ResponseEntity<Result<ReleaseStatus>> getReleaseStatus(@PathVariable("id") UUID id, @RequestParam("releaseTreeScope") ReleaseTreeScope releaseTreeScope) {
-        InstanceId instanceId = idsSvc.resolveId(DataStage.IN_PROGRESS, id);
+        InstanceId instanceId = idsController.resolveId(DataStage.IN_PROGRESS, id);
         if (instanceId == null) {
             return ResponseEntity.notFound().build();
         }
         else if(instanceId.isDeprecated()){
             return ResponseEntity.status(HttpStatus.GONE).build();
         }
-        ReleaseStatus releaseStatus = releaseSvc.getReleaseStatus(instanceId, releaseTreeScope);
+        ReleaseStatus releaseStatus = release.getReleaseStatus(instanceId.getSpace().getName(), instanceId.getUuid(), releaseTreeScope);
         return ResponseEntity.ok(Result.ok(releaseStatus));
     }
 
@@ -330,10 +330,10 @@ public class Instances {
     @ExposesReleaseStatus
     @Advanced
     public Result<Map<UUID, Result<ReleaseStatus>>> getReleaseStatusByIds(@RequestBody List<UUID> listOfIds, @RequestParam("releaseTreeScope") ReleaseTreeScope releaseTreeScope) {
-        List<InstanceId> instanceIds = idsSvc.resolveIdsByUUID(DataStage.IN_PROGRESS, listOfIds, false);
+        List<InstanceId> instanceIds = idsController.resolveIdsByUUID(DataStage.IN_PROGRESS, listOfIds, false);
         return Result.ok(instanceIds.stream().filter(instanceId -> !instanceId.isDeprecated()).collect(Collectors.toMap(InstanceId::getUuid, instanceId -> {
                     try {
-                        return Result.ok(releaseSvc.getReleaseStatus(instanceId, releaseTreeScope));
+                        return Result.ok(release.getReleaseStatus(instanceId.getSpace().getName(), instanceId.getUuid(), releaseTreeScope));
                     }
                     catch (ForbiddenException ex){
                         return Result.nok(HttpStatus.FORBIDDEN.value(), HttpStatus.FORBIDDEN.getReasonPhrase());
@@ -357,8 +357,8 @@ public class Instances {
     @ExposesMinimalData
     @Advanced
     public Result<SuggestionResult> getSuggestedLinksForProperty(@RequestBody NormalizedJsonLd payload, @RequestParam("stage") ExposedStage stage, @RequestParam(value = "property") String propertyName, @PathVariable("id") UUID id, @RequestParam(value = "type", required = false) String type, @RequestParam(value = "search", required = false) String search, @ParameterObject PaginationParam paginationParam) {
-        InstanceId instanceId = idsSvc.resolveId(DataStage.IN_PROGRESS, id);
-        return Result.ok(coreInstancesToGraphDB.getSuggestedLinksForProperty(payload, stage.getStage(), instanceId, id, propertyName, type != null && !type.isBlank() ? new Type(type) : null, search, paginationParam, authContext.getAuthTokens()));
+        InstanceId instanceId = idsController.resolveId(DataStage.IN_PROGRESS, id);
+        return Result.ok(graphDBInstances.getSuggestedLinksForProperty(payload, stage.getStage(), instanceId.getSpace().getName(), id, propertyName, type != null && !type.isBlank() ? new Type(type).getName() : null, search, paginationParam));
     }
 
 

@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 EPFL/Human Brain Project PCO
+ * Copyright 2021 EPFL/Human Brain Project PCO
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,11 +17,11 @@
 package eu.ebrains.kg.core.api;
 
 import eu.ebrains.kg.commons.Version;
+import eu.ebrains.kg.commons.api.JsonLd;
 import eu.ebrains.kg.commons.config.openApiGroups.Simple;
 import eu.ebrains.kg.commons.jsonld.JsonLdDoc;
 import eu.ebrains.kg.commons.jsonld.NormalizedJsonLd;
 import eu.ebrains.kg.commons.markers.ExposesInputWithoutEnrichedSensitiveData;
-import eu.ebrains.kg.core.serviceCall.CoreToJsonLd;
 import io.swagger.v3.oas.annotations.Operation;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -34,10 +34,10 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequestMapping(Version.API + "/jsonld")
 public class JsonLD {
-    private final CoreToJsonLd coreToJsonLd;
+    private final JsonLd.Client jsonLd;
 
-    public JsonLD(CoreToJsonLd coreToJsonLd) {
-        this.coreToJsonLd = coreToJsonLd;
+    public JsonLD(JsonLd.Client jsonLd) {
+        this.jsonLd = jsonLd;
     }
 
     @Operation(summary = "Normalizes the passed payload according to the EBRAINS KG conventions")
@@ -45,7 +45,7 @@ public class JsonLD {
     @ExposesInputWithoutEnrichedSensitiveData
     @Simple
     public NormalizedJsonLd normalizePayload(@RequestBody JsonLdDoc payload) {
-        return coreToJsonLd.toNormalizedJsonLd(payload);
+        return jsonLd.normalize(payload, true);
     }
 
 }

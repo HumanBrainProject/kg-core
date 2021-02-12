@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 EPFL/Human Brain Project PCO
+ * Copyright 2021 EPFL/Human Brain Project PCO
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,13 +20,13 @@ import com.arangodb.model.AqlQueryOptions;
 import eu.ebrains.kg.arango.commons.aqlBuilder.AQL;
 import eu.ebrains.kg.arango.commons.model.ArangoDatabaseProxy;
 import eu.ebrains.kg.commons.IdUtils;
+import eu.ebrains.kg.commons.api.Ids;
 import eu.ebrains.kg.commons.jsonld.InferredJsonLdDoc;
 import eu.ebrains.kg.commons.jsonld.JsonLdId;
 import eu.ebrains.kg.commons.jsonld.JsonLdIdMapping;
 import eu.ebrains.kg.commons.jsonld.NormalizedJsonLd;
 import eu.ebrains.kg.commons.model.DataStage;
 import eu.ebrains.kg.commons.model.IdWithAlternatives;
-import eu.ebrains.kg.systemTest.serviceCall.SystemTestToIds;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -41,20 +41,20 @@ public class InstanceHistory {
 
     private final Logger logger = LoggerFactory.getLogger(getClass());
 
-    private final SystemTestToIds idsSvc;
+    private final Ids.Client ids;
 
     private final IdUtils idUtils;
 
-    private ArangoDatabaseProxy events;
+    private final ArangoDatabaseProxy events;
 
-    public InstanceHistory(IdUtils idUtils, SystemTestToIds idsSvc, @Qualifier("eventsTest") ArangoDatabaseProxy events) {
-        this.events = events;
-        this.idsSvc = idsSvc;
+    public InstanceHistory(Ids.Client ids, IdUtils idUtils, @Qualifier("eventsTest") ArangoDatabaseProxy events) {
+        this.ids = ids;
         this.idUtils = idUtils;
+        this.events = events;
     }
 
     public List<NormalizedJsonLd> loadHistoryOfInstance(UUID uuid) {
-        List<JsonLdIdMapping> jsonLdIdMappings = idsSvc.resolveIds(DataStage.IN_PROGRESS, Collections.singletonList(new IdWithAlternatives(uuid, null, null)));
+        List<JsonLdIdMapping> jsonLdIdMappings = ids.resolveId(Collections.singletonList(new IdWithAlternatives(uuid, null, null)), DataStage.IN_PROGRESS);
         if (jsonLdIdMappings.isEmpty()) {
             return null;
         } else {

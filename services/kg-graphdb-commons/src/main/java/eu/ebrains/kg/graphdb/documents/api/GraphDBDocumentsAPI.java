@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 EPFL/Human Brain Project PCO
+ * Copyright 2021 EPFL/Human Brain Project PCO
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,19 +16,15 @@
 
 package eu.ebrains.kg.graphdb.documents.api;
 
-import eu.ebrains.kg.commons.markers.ExposesIds;
+import eu.ebrains.kg.commons.api.GraphDBDocuments;
 import eu.ebrains.kg.commons.model.SpaceName;
 import eu.ebrains.kg.graphdb.instances.controller.ArangoRepositoryInstances;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.stereotype.Component;
 
 import java.util.List;
 
-@RestController
-@RequestMapping("/internal/graphdb/")
-public class GraphDBDocumentsAPI {
+@Component
+public class GraphDBDocumentsAPI implements GraphDBDocuments.Client {
 
     private final ArangoRepositoryInstances repository;
 
@@ -36,9 +32,8 @@ public class GraphDBDocumentsAPI {
         this.repository = repository;
     }
 
-    @GetMapping("documentIds/{space}")
-    @ExposesIds
-    public List<String> getDocumentIdsBySpace(@PathVariable("space") String space) {
+    @Override
+    public List<String> getDocumentIdsBySpace(String space) {
         return repository.getDocumentIdsBySpace(new SpaceName(space));
     }
 

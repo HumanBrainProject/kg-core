@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 EPFL/Human Brain Project PCO
+ * Copyright 2021 EPFL/Human Brain Project PCO
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,33 +21,33 @@ import eu.ebrains.kg.commons.model.ReleaseStatus;
 import eu.ebrains.kg.commons.model.SpaceName;
 import eu.ebrains.kg.commons.params.ReleaseTreeScope;
 import eu.ebrains.kg.release.controller.Release;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.stereotype.Component;
 
 import java.util.UUID;
 
 
-@RestController
-@RequestMapping("/internal/releases")
-public class ReleaseAPI {
+@Component
+public class ReleaseAPI implements eu.ebrains.kg.commons.api.Release.Client {
 
-    @Autowired
-    Release release;
+    private final Release release;
 
-    @PutMapping("/{space}/{id}")
-    public void releaseInstance(@PathVariable("space") String space, @PathVariable("id") UUID id, @RequestParam(value = "rev", required = false) String revision){
+    public ReleaseAPI(Release release) {
+        this.release = release;
+    }
+
+    @Override
+    public void releaseInstance(String space, UUID id, String revision){
         release.release(new SpaceName(space), id, revision);
     }
 
-    @DeleteMapping("/{space}/{id}")
-    public void unreleaseInstance(@PathVariable("space") String space, @PathVariable("id") UUID id){
+    @Override
+    public void unreleaseInstance(String space, UUID id){
         release.unrelease(new SpaceName(space), id);
     }
 
-    @GetMapping("/{space}/{id}")
-    public ReleaseStatus getReleaseStatus(@PathVariable("space") String space, @PathVariable("id") UUID id, @RequestParam("releaseTreeScope") ReleaseTreeScope releaseTreeScope){
+    @Override
+    public ReleaseStatus getReleaseStatus(String space, UUID id, ReleaseTreeScope releaseTreeScope){
         return release.getStatus(new SpaceName(space), id, releaseTreeScope);
     }
-
 
 }

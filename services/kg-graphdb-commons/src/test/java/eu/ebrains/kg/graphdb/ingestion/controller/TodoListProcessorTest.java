@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 EPFL/Human Brain Project PCO
+ * Copyright 2021 EPFL/Human Brain Project PCO
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,6 +20,7 @@ import com.netflix.discovery.EurekaClient;
 import eu.ebrains.kg.arango.commons.model.ArangoCollectionReference;
 import eu.ebrains.kg.arango.commons.model.ArangoDocumentReference;
 import eu.ebrains.kg.commons.IdUtils;
+import eu.ebrains.kg.commons.api.Ids;
 import eu.ebrains.kg.commons.jsonld.NormalizedJsonLd;
 import eu.ebrains.kg.commons.model.DataStage;
 import eu.ebrains.kg.commons.model.IdWithAlternatives;
@@ -28,9 +29,7 @@ import eu.ebrains.kg.docker.SpringDockerComposeRunner;
 import eu.ebrains.kg.graphdb.commons.controller.ArangoDatabases;
 import eu.ebrains.kg.graphdb.commons.controller.ArangoRepositoryCommons;
 import eu.ebrains.kg.graphdb.commons.model.ArangoDocument;
-import eu.ebrains.kg.graphdb.serviceCall.PrimaryStoreSvcTest;
 import eu.ebrains.kg.test.TestObjectFactory;
-import eu.ebrains.kg.test.TestToIds;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -62,14 +61,10 @@ public class TodoListProcessorTest {
     IdUtils idUtils;
 
     @Autowired
-    PrimaryStoreSvcTest primaryStoreSvc;
-
-
-    @Autowired
     ArangoDatabases arangoDatabases;
 
     @Autowired
-    TestToIds idsSvcForTest;
+    Ids.Client ids;
 
 
     @Before
@@ -269,11 +264,11 @@ public class TodoListProcessorTest {
 
         NormalizedJsonLd bart = TestObjectFactory.createJsonLd("simpsons/bart.json");
         ArangoDocumentReference bartId = todoListProcessor.upsertDocument(simpsons.doc(UUID.randomUUID()), bart, stage, null);
-        idsSvcForTest.upsert(stage, new IdWithAlternatives().setId(bartId.getDocumentId()).setSpace(TestObjectFactory.SIMPSONS.getName()).setAlternatives(bart.identifiers()));
+        ids.createOrUpdateId(new IdWithAlternatives().setId(bartId.getDocumentId()).setSpace(TestObjectFactory.SIMPSONS.getName()).setAlternatives(bart.identifiers()), stage);
 
         NormalizedJsonLd homer = TestObjectFactory.createJsonLd("simpsons/homer.json");
         ArangoDocumentReference homerId = todoListProcessor.upsertDocument(simpsons.doc(UUID.randomUUID()), homer, stage, null);
-        idsSvcForTest.upsert(stage, new IdWithAlternatives().setId(homerId.getDocumentId()).setSpace(TestObjectFactory.SIMPSONS.getName()).setAlternatives(homer.identifiers()));
+        ids.createOrUpdateId(new IdWithAlternatives().setId(homerId.getDocumentId()).setSpace(TestObjectFactory.SIMPSONS.getName()).setAlternatives(homer.identifiers()), stage);
 
         //When
         NormalizedJsonLd bartUpdate = TestObjectFactory.createJsonLd("simpsons/bartUpdate.json");
@@ -290,11 +285,11 @@ public class TodoListProcessorTest {
 
         NormalizedJsonLd bart = TestObjectFactory.createJsonLd("simpsons/bartUpdate.json");
         ArangoDocumentReference bartId = todoListProcessor.upsertDocument(simpsons.doc(UUID.randomUUID()), bart, stage, null);
-        idsSvcForTest.upsert(stage, new IdWithAlternatives().setId(bartId.getDocumentId()).setSpace(TestObjectFactory.SIMPSONS.getName()).setAlternatives(bart.identifiers()));
+        ids.createOrUpdateId(new IdWithAlternatives().setId(bartId.getDocumentId()).setSpace(TestObjectFactory.SIMPSONS.getName()).setAlternatives(bart.identifiers()), stage);
 
         NormalizedJsonLd homer = TestObjectFactory.createJsonLd("simpsons/homer.json");
         ArangoDocumentReference homerId = todoListProcessor.upsertDocument(simpsons.doc(UUID.randomUUID()), homer, stage, null);
-        idsSvcForTest.upsert(stage, new IdWithAlternatives().setId(homerId.getDocumentId()).setSpace(TestObjectFactory.SIMPSONS.getName()).setAlternatives(homer.identifiers()));
+        ids.createOrUpdateId(new IdWithAlternatives().setId(homerId.getDocumentId()).setSpace(TestObjectFactory.SIMPSONS.getName()).setAlternatives(homer.identifiers()), stage);
 
         //When
         NormalizedJsonLd bartUpdate = TestObjectFactory.createJsonLd("simpsons/bart.json");
@@ -311,12 +306,12 @@ public class TodoListProcessorTest {
 
         NormalizedJsonLd homer = TestObjectFactory.createJsonLd("simpsons/homer.json");
         ArangoDocumentReference homerId = todoListProcessor.upsertDocument(simpsons.doc(UUID.randomUUID()), homer, stage, null);
-        idsSvcForTest.upsert(stage, new IdWithAlternatives().setId(homerId.getDocumentId()).setSpace(TestObjectFactory.SIMPSONS.getName()).setAlternatives(homer.identifiers()));
+        ids.createOrUpdateId(new IdWithAlternatives().setId(homerId.getDocumentId()).setSpace(TestObjectFactory.SIMPSONS.getName()).setAlternatives(homer.identifiers()), stage);
 
         //When
         NormalizedJsonLd bart = TestObjectFactory.createJsonLd("simpsons/bart.json");
         ArangoDocumentReference bartId = todoListProcessor.upsertDocument(simpsons.doc(UUID.randomUUID()), bart, stage, null);
-        idsSvcForTest.upsert(stage, new IdWithAlternatives().setId(bartId.getDocumentId()).setSpace(TestObjectFactory.SIMPSONS.getName()).setAlternatives(bart.identifiers()));
+        ids.createOrUpdateId(new IdWithAlternatives().setId(bartId.getDocumentId()).setSpace(TestObjectFactory.SIMPSONS.getName()).setAlternatives(bart.identifiers()), stage);
 
         //Then
 
@@ -328,7 +323,7 @@ public class TodoListProcessorTest {
         UUID uuid = UUID.randomUUID();
         payload.setId(idUtils.buildAbsoluteUrl(uuid));
         ArangoDocumentReference id = todoListProcessor.upsertDocument(ArangoCollectionReference.fromSpace(space).doc(uuid), payload, stage, null);
-        idsSvcForTest.upsert(stage, new IdWithAlternatives().setId(id.getDocumentId()).setSpace(space.getName()).setAlternatives(payload.identifiers()));
+        ids.createOrUpdateId(new IdWithAlternatives().setId(id.getDocumentId()).setSpace(space.getName()).setAlternatives(payload.identifiers()), stage);
         return id;
     }
 
@@ -365,7 +360,7 @@ public class TodoListProcessorTest {
     private void uploadToDatabase(DataStage stage) {
         NormalizedJsonLd bart = TestObjectFactory.createJsonLd("simpsons/bart.json");
         ArangoDocumentReference bartId = todoListProcessor.upsertDocument(simpsons.doc(UUID.randomUUID()), bart, stage, null);
-        idsSvcForTest.upsert(stage, new IdWithAlternatives().setId(bartId.getDocumentId()).setSpace(TestObjectFactory.SIMPSONS.getName()).setAlternatives(bart.identifiers()));
+        ids.createOrUpdateId(new IdWithAlternatives().setId(bartId.getDocumentId()).setSpace(TestObjectFactory.SIMPSONS.getName()).setAlternatives(bart.identifiers()), stage);
     }
 
 
