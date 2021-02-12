@@ -33,6 +33,7 @@ import eu.ebrains.kg.graphdb.instances.controller.ArangoRepositoryInstances;
 import eu.ebrains.kg.graphdb.instances.model.ArangoRelation;
 import eu.ebrains.kg.graphdb.types.controller.ArangoRepositoryTypes;
 import io.swagger.v3.oas.annotations.Parameter;
+import org.apache.commons.lang.StringUtils;
 import org.springframework.web.bind.annotation.*;
 
 import java.net.URLDecoder;
@@ -152,7 +153,7 @@ public class GraphDBInstancesAPI {
 
         List<Type> types;
         List<UUID> existingLinks;
-        if (type != null) {
+        if (StringUtils.isNotBlank(type)) {
             types = Collections.singletonList(new Type(URLDecoder.decode(type, StandardCharsets.UTF_8)));
             existingLinks = Collections.emptyList();
         } else {
