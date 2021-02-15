@@ -60,8 +60,8 @@ public class GraphDBInstancesAPIRest implements GraphDBInstances {
 
     @PostMapping("instancesByIds")
     @ExposesData
-    public Map<UUID, Result<NormalizedJsonLd>> getInstancesByIds(@RequestBody List<String> ids, @PathVariable("stage") DataStage stage, @RequestParam(value = "returnEmbedded", required = false, defaultValue = "false") boolean returnEmbedded, @RequestParam(value = "returnAlternatives", required = false, defaultValue = "false") boolean returnAlternatives) {
-        return graphDBInstancesAPI.getInstancesByIds(ids, stage, returnEmbedded, returnAlternatives);
+    public Map<UUID, Result<NormalizedJsonLd>> getInstancesByIds(@RequestBody List<String> ids, @PathVariable("stage") DataStage stage, @RequestParam(value = "returnEmbedded", required = false, defaultValue = "false") boolean returnEmbedded, @RequestParam(value = "returnAlternatives", required = false, defaultValue = "false") boolean returnAlternatives, @RequestParam(value = "returnIncomingLinks", required = false, defaultValue = "false") boolean returnIncomingLinks) {
+        return graphDBInstancesAPI.getInstancesByIds(ids, stage, returnEmbedded, returnAlternatives, returnIncomingLinks);
     }
 
     @PostMapping("instancesByIds/labels")

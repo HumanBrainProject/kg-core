@@ -91,16 +91,16 @@ public class GraphDBInstancesAPI implements GraphDBInstances.Client {
 
     @Override
     @ExposesData
-    public Map<UUID, Result<NormalizedJsonLd>> getInstancesByIds(List<String> ids, DataStage stage, boolean returnEmbedded, boolean returnAlternatives) {
+    public Map<UUID, Result<NormalizedJsonLd>> getInstancesByIds(List<String> ids, DataStage stage, boolean returnEmbedded, boolean returnAlternatives, boolean returnIncomingLinks) {
         List<InstanceId> instanceIds = ids.stream().map(InstanceId::deserialize).filter(Objects::nonNull).collect(Collectors.toList());
-        return repository.getDocumentsByIdList(stage, instanceIds, returnEmbedded, returnAlternatives);
+        return repository.getDocumentsByIdList(stage, instanceIds, returnEmbedded, returnAlternatives, returnIncomingLinks);
     }
 
     @Override
     @ExposesMinimalData
     public Map<UUID, String> getLabels(List<String> ids, DataStage stage) {
         Set<InstanceId> instanceIds = ids.stream().map(InstanceId::deserialize).filter(Objects::nonNull).collect(Collectors.toSet());
-        Set<Type> types = getInstancesByIds(ids, stage, false, false).values().stream().map(Result::getData).map(JsonLdDoc::types).flatMap(Collection::stream).distinct().map(Type::new).collect(Collectors.toSet());
+        Set<Type> types = getInstancesByIds(ids, stage, false, false, false).values().stream().map(Result::getData).map(JsonLdDoc::types).flatMap(Collection::stream).distinct().map(Type::new).collect(Collectors.toSet());
         List<Type> extendedTypes = typeRepository.getTypeInformation(authContext.getUserWithRoles().getClientId(), stage, types);
         return repository.getLabelsForInstances(stage, instanceIds, extendedTypes);
     }
@@ -148,7 +148,7 @@ public class GraphDBInstancesAPI implements GraphDBInstances.Client {
             payload = repository.getInstance(stage, new SpaceName(space), id, true, true, false, false);
         }
         SuggestionResult suggestionResult = new SuggestionResult();
-        List<NormalizedJsonLd> targetTypesForProperty = typeRepository.getTargetTypesForProperty(authContext.getUserWithRoles().getClientId(), stage, payload.types().stream().map(t -> new Type(t)).collect(Collectors.toList()), propertyName);
+        List<NormalizedJsonLd> targetTypesForProperty = typeRepository.getTargetTypesForProperty(authContext.getUserWithRoles().getClientId(), stage, payload.types().stream().map(Type::new).collect(Collectors.toList()), propertyName);
         List<Type> typesWithLabelInfo = ArangoRepositoryTypes.extractExtendedTypeInformationFromPayload(targetTypesForProperty);
         suggestionResult.setTypes(targetTypesForProperty.stream().collect(Collectors.toMap(JsonLdDoc::primaryIdentifier, t -> t)));
         List<UUID> existingLinks = payload.getAsListOf(propertyName, JsonLdId.class, true).stream().map(idUtils::getUUID).filter(Objects::nonNull).collect(Collectors.toList());

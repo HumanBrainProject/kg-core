@@ -41,7 +41,7 @@ public interface GraphDBInstances {
     Paginated<NormalizedJsonLd> getQueriesByType(DataStage stage, String searchByLabel, boolean returnAlternatives, boolean returnEmbedded, PaginationParam paginationParam, String rootType);
 
     @ExposesData
-    Map<UUID, Result<NormalizedJsonLd>> getInstancesByIds(List<String> instanceIds, DataStage stage, boolean returnEmbedded, boolean returnAlternatives);
+    Map<UUID, Result<NormalizedJsonLd>> getInstancesByIds(List<String> instanceIds, DataStage stage, boolean returnEmbedded, boolean returnAlternatives, boolean returnIncomingLinks);
 
     @ExposesMinimalData
     Map<UUID, String> getLabels(List<String> instanceIds, DataStage stage);

@@ -150,7 +150,6 @@ public class KeycloakClient {
             clientRepresentation.setAttributes(attributes);
             if (initialConfig) {
                 clientRepresentation.setRedirectUris(Arrays.asList(getRedirectUri(), "http://localhost*"));
-                clientRepresentation.setWebOrigins(Collections.singletonList("+"));
             }
             getClientResource().update(clientRepresentation);
             Arrays.stream(RoleMapping.values()).forEach(p -> createRoleForClient(p.toRole(null)));

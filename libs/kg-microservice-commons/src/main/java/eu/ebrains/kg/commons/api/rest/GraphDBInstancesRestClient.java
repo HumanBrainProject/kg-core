@@ -67,9 +67,9 @@ public class GraphDBInstancesRestClient implements GraphDBInstances.Client {
     }
 
     @Override
-    public Map<UUID, Result<NormalizedJsonLd>> getInstancesByIds(List<String> instanceIds, DataStage stage, boolean returnEmbedded, boolean returnAlternatives) {
-        return serviceCall.post(String.format("%s/%s/instancesByIds?returnEmbedded=%b&returnAlternatives=%b",
-                SERVICE_URL, stage.name(), returnEmbedded, returnAlternatives),
+    public Map<UUID, Result<NormalizedJsonLd>> getInstancesByIds(List<String> instanceIds, DataStage stage, boolean returnEmbedded, boolean returnAlternatives, boolean returnIncomingLinks) {
+        return serviceCall.post(String.format("%s/%s/instancesByIds?returnEmbedded=%b&returnAlternatives=%b&returnIncomingLinks=%b",
+                SERVICE_URL, stage.name(), returnEmbedded, returnAlternatives, returnIncomingLinks),
                 instanceIds,
                 authTokenContext.getAuthTokens(),
                 IdPayloadMapping.class);

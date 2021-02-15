@@ -104,13 +104,9 @@ public class ArangoRepositoryInstances {
             ArangoDocumentReference arangoDocumentReference = ArangoDocumentReference.fromInstanceId(new InstanceId(id, space));
             NormalizedJsonLd instanceIncomingLinks = getIncomingLinks(Collections.singletonList(arangoDocumentReference), stage);
             if (!CollectionUtils.isEmpty(instanceIncomingLinks)) {
-                Set<Type> types = new HashSet<>();
-                Set<InstanceId> instanceIds = getInstanceIds(instanceIncomingLinks, types);
-                List<NormalizedJsonLd> extendedTypes = typesRepo.getTypes(authContext.getUserWithRoles().getClientId(), stage, types, true, false, false);
-                Map<String, NormalizedJsonLd> extendedTypesByName = extendedTypes.stream().collect(Collectors.toMap(NormalizedJsonLd::primaryIdentifier, v -> v));
-                Map<UUID, String> labelsForInstances = getLabelsForInstances(stage, instanceIds, extendedTypes.stream().map(Type::fromPayload).collect(Collectors.toList()));
-                enrichDocument(instanceIncomingLinks, extendedTypesByName, labelsForInstances);
-                document.getDoc().put(EBRAINSVocabulary.META_INCOMING_LINKS, instanceIncomingLinks.get(id.toString()));
+                String idString = id.toString();
+                NormalizedJsonLd d = document.getDoc();
+                handleIncomingLinks(stage, idString, d, instanceIncomingLinks);
             }
         }
         NormalizedJsonLd doc = document.getDoc();
@@ -119,6 +115,16 @@ public class ArangoRepositoryInstances {
             doc.keepPropertiesOnly(getMinimalFields(stage, doc.types()));
         }
         return doc;
+    }
+
+    private void handleIncomingLinks(DataStage stage, String id, NormalizedJsonLd document, NormalizedJsonLd instanceIncomingLinks) {
+        Set<Type> types = new HashSet<>();
+        Set<InstanceId> instanceIds = getInstanceIds(instanceIncomingLinks, types);
+        List<NormalizedJsonLd> extendedTypes = typesRepo.getTypes(authContext.getUserWithRoles().getClientId(), stage, types, true, false, false);
+        Map<String, NormalizedJsonLd> extendedTypesByName = extendedTypes.stream().collect(Collectors.toMap(NormalizedJsonLd::primaryIdentifier, v -> v));
+        Map<UUID, String> labelsForInstances = getLabelsForInstances(stage, instanceIds, extendedTypes.stream().map(Type::fromPayload).collect(Collectors.toList()));
+        enrichDocument(instanceIncomingLinks, extendedTypesByName, labelsForInstances);
+        document.put(EBRAINSVocabulary.META_INCOMING_LINKS, instanceIncomingLinks.get(id));
     }
 
     private Set<InstanceId> getInstanceIds(NormalizedJsonLd instanceIncomingLinks, Set<Type> types) {
@@ -208,7 +214,7 @@ public class ArangoRepositoryInstances {
                     return alternative != null ? alternative.stream().map(a -> a.getAsListOf(EBRAINSVocabulary.META_USER, String.class)).flatMap(List::stream).collect(Collectors.toList()) : Collections.<String>emptyList();
                 }).flatMap(List::stream).collect(Collectors.toList())).flatMap(List::stream).map(id -> ArangoCollectionReference.fromSpace(InternalSpace.USERS_SPACE).doc(idUtils.getUUID(new JsonLdId(id)))).distinct().collect(Collectors.toList());
         //We always resolve users in native space, since users are only maintained there...
-        Map<UUID, Result<NormalizedJsonLd>> usersById = getDocumentsByReferenceList(DataStage.NATIVE, userIdsToResolve, false, false);
+        Map<UUID, Result<NormalizedJsonLd>> usersById = getDocumentsByReferenceList(DataStage.NATIVE, userIdsToResolve, false, false, false);
         alternatives.stream().flatMap(Arrays::stream).forEach(d ->
                 d.keySet().stream().filter(k -> !NormalizedJsonLd.isInternalKey(k) && !JsonLdConsts.isJsonLdConst(k)).forEach(k -> {
                     Object obj = d.get(k);
@@ -238,7 +244,7 @@ public class ArangoRepositoryInstances {
                 }));
     }
 
-    private Map<UUID, Result<NormalizedJsonLd>> getDocumentsByReferenceList(DataStage stage, List<ArangoDocumentReference> documentReferences, boolean embedded, boolean alternatives) {
+    private Map<UUID, Result<NormalizedJsonLd>> getDocumentsByReferenceList(DataStage stage, List<ArangoDocumentReference> documentReferences, boolean embedded, boolean alternatives, boolean incomingLinks) {
         ArangoDatabase db = databases.getByStage(stage);
         AQL aql = new AQL().addLine(AQL.trust("RETURN {"));
         int counter = 0;
@@ -273,6 +279,16 @@ public class ArangoRepositoryInstances {
             handleAlternativesAndEmbedded(normalizedJsonLds, stage, alternatives, embedded);
             exposeRevision(normalizedJsonLds);
             normalizedJsonLds.forEach(NormalizedJsonLd::removeAllInternalProperties);
+
+            if (incomingLinks) {
+                NormalizedJsonLd instanceIncomingLinks = getIncomingLinks(documentReferences, stage);
+                if (!CollectionUtils.isEmpty(instanceIncomingLinks)) {
+                    normalizedJsonLds.forEach(d -> {
+                        String id = idUtils.getUUID(d.id()).toString();
+                        handleIncomingLinks(stage, id, d, instanceIncomingLinks);
+                    });
+                }
+            }
         }
         return result;
     }
@@ -290,15 +306,15 @@ public class ArangoRepositoryInstances {
     }
 
     @ExposesData
-    public Map<UUID, Result<NormalizedJsonLd>> getDocumentsByIdList(DataStage stage, List<InstanceId> instanceIds, boolean embedded, boolean alternatives) {
+    public Map<UUID, Result<NormalizedJsonLd>> getDocumentsByIdList(DataStage stage, List<InstanceId> instanceIds, boolean embedded, boolean alternatives, boolean incomingLinks) {
         UserWithRoles userWithRoles = authContext.getUserWithRoles();
 
         Set<InstanceId> hasReadPermissions = instanceIds.stream().filter(i -> permissions.hasPermission(userWithRoles, permissionsController.getReadFunctionality(stage), i.getSpace(), i.getUuid())).collect(Collectors.toSet());
         Set<InstanceId> hasOnlyMinimalReadPermissions = instanceIds.stream().filter(i -> !hasReadPermissions.contains(i) && permissions.hasPermission(userWithRoles, permissionsController.getMinimalReadFunctionality(stage), i.getSpace(), i.getUuid())).collect(Collectors.toSet());
         Set<InstanceId> hasNoPermissions = instanceIds.stream().filter(i -> !hasReadPermissions.contains(i) && !hasOnlyMinimalReadPermissions.contains(i)).collect(Collectors.toSet());
 
-        Map<UUID, Result<NormalizedJsonLd>> documentsByReferenceList = getDocumentsByReferenceList(stage, hasReadPermissions.stream().map(ArangoDocumentReference::fromInstanceId).collect(Collectors.toList()), embedded, alternatives);
-        Map<UUID, Result<NormalizedJsonLd>> documentsByReferenceListWithMinimalReadAccess = getDocumentsByReferenceList(stage, hasOnlyMinimalReadPermissions.stream().map(ArangoDocumentReference::fromInstanceId).collect(Collectors.toList()), false, false);
+        Map<UUID, Result<NormalizedJsonLd>> documentsByReferenceList = getDocumentsByReferenceList(stage, hasReadPermissions.stream().map(ArangoDocumentReference::fromInstanceId).collect(Collectors.toList()), embedded, alternatives, incomingLinks);
+        Map<UUID, Result<NormalizedJsonLd>> documentsByReferenceListWithMinimalReadAccess = getDocumentsByReferenceList(stage, hasOnlyMinimalReadPermissions.stream().map(ArangoDocumentReference::fromInstanceId).collect(Collectors.toList()), false, false, false);
 
         //Reduce the payload to the minimal fields
         documentsByReferenceListWithMinimalReadAccess.values().forEach(d -> d.getData().keepPropertiesOnly(getMinimalFields(stage, d.getData().types())));
