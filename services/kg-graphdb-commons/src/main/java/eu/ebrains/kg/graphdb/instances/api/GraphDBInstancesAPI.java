@@ -33,6 +33,7 @@ import eu.ebrains.kg.commons.semantics.vocabularies.EBRAINSVocabulary;
 import eu.ebrains.kg.graphdb.instances.controller.ArangoRepositoryInstances;
 import eu.ebrains.kg.graphdb.instances.model.ArangoRelation;
 import eu.ebrains.kg.graphdb.types.controller.ArangoRepositoryTypes;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Component;
 
 import java.net.URLDecoder;
@@ -144,14 +145,23 @@ public class GraphDBInstancesAPI implements GraphDBInstances.Client {
     @Override
     @ExposesMinimalData
     public SuggestionResult getSuggestedLinksForProperty(NormalizedJsonLd payload, DataStage stage, String space, UUID id, String propertyName, String type, String search, PaginationParam paginationParam) {
-        if (payload == null) {
-            payload = repository.getInstance(stage, new SpaceName(space), id, true, true, false, false);
+
+        List<Type> types;
+        List<UUID> existingLinks;
+        if (StringUtils.isNotBlank(type)) {
+            types = Collections.singletonList(new Type(URLDecoder.decode(type, StandardCharsets.UTF_8)));
+            existingLinks = Collections.emptyList();
+        } else {
+            if (payload == null) {
+                payload = repository.getInstance(stage, new SpaceName(space), id, true, true, false, false);
+            }
+            types = payload.types().stream().map(Type::new).collect(Collectors.toList());
+            existingLinks = payload.getAsListOf(propertyName, JsonLdId.class, true).stream().map(idUtils::getUUID).filter(Objects::nonNull).collect(Collectors.toList());
         }
         SuggestionResult suggestionResult = new SuggestionResult();
-        List<NormalizedJsonLd> targetTypesForProperty = typeRepository.getTargetTypesForProperty(authContext.getUserWithRoles().getClientId(), stage, payload.types().stream().map(Type::new).collect(Collectors.toList()), propertyName);
+        List<NormalizedJsonLd> targetTypesForProperty = typeRepository.getTargetTypesForProperty(authContext.getUserWithRoles().getClientId(), stage, types, propertyName);
         List<Type> typesWithLabelInfo = ArangoRepositoryTypes.extractExtendedTypeInformationFromPayload(targetTypesForProperty);
         suggestionResult.setTypes(targetTypesForProperty.stream().collect(Collectors.toMap(JsonLdDoc::primaryIdentifier, t -> t)));
-        List<UUID> existingLinks = payload.getAsListOf(propertyName, JsonLdId.class, true).stream().map(idUtils::getUUID).filter(Objects::nonNull).collect(Collectors.toList());
         Paginated<SuggestedLink> documentsByTypes = repository.getSuggestionsByTypes(stage, typesWithLabelInfo, paginationParam, search, existingLinks);
         suggestionResult.setSuggestions(documentsByTypes);
         return suggestionResult;

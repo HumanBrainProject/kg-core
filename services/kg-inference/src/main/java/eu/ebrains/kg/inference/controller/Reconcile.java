@@ -98,12 +98,12 @@ public class Reconcile {
 
 
     private InvolvedPayloads findInvolvedDocuments(SpaceName space, UUID id, Set<UUID> handledDocumentIds, Set<UUID> handledInstanceIds, InvolvedPayloads involvedPayloads) {
-        List<IndexedJsonLdDoc> relatedInstancesByIdentifiers = graphDBInstances.getDocumentWithRelatedInstancesByIdentifiers(space.getName(), id, DataStage.NATIVE, true, false).stream().map(IndexedJsonLdDoc::from).collect(Collectors.toList());
+        List<IndexedJsonLdDoc> relatedInstancesByIdentifiers = graphDBInstances.getDocumentWithRelatedInstancesByIdentifiers(space == null ? null : space.getName(), id, DataStage.NATIVE, true, false).stream().map(IndexedJsonLdDoc::from).collect(Collectors.toList());
         involvedPayloads.documents.addAll(relatedInstancesByIdentifiers);
         handledDocumentIds.add(id);
         Set<UUID> nonProcessedRelatedDocumentIds = relatedInstancesByIdentifiers.stream().map(IndexedJsonLdDoc::getDocumentId).filter(docId -> !handledDocumentIds.contains(docId)).collect(Collectors.toSet());
         //Find already existing instances for this document
-        List<InferredJsonLdDoc> inferredInstances = graphDBInstances.getDocumentWithIncomingRelatedInstances(space.getName(), id, DataStage.IN_PROGRESS, InferredJsonLdDoc.INFERENCE_OF, true, false, false).stream().map(InferredJsonLdDoc::from).collect(Collectors.toList());
+        List<InferredJsonLdDoc> inferredInstances = graphDBInstances.getDocumentWithIncomingRelatedInstances(space == null ? null : space.getName(), id, DataStage.IN_PROGRESS, InferredJsonLdDoc.INFERENCE_OF, true, false, false).stream().map(InferredJsonLdDoc::from).collect(Collectors.toList());
         if (inferredInstances.size() > 1) {
             throw new IllegalStateException(String.format("There are %d inferred instances for the id %s (%s)- this is not acceptable", inferredInstances.size(), id, inferredInstances.stream().map(i -> i.asIndexed().getDocumentId().toString()).collect(Collectors.joining(", "))));
         } else if (inferredInstances.size() == 1) {

@@ -61,10 +61,12 @@ public class CoreQueryController {
     }
 
     public KgQuery fetchQueryById(InstanceId instanceId, DataStage stage){
-        NormalizedJsonLd instance = graphDBInstances.getInstanceById(instanceId.getSpace().getName(), instanceId.getUuid(), DataStage.IN_PROGRESS,true, false, false, true);
-        //Only return the instance if it is actually a query
-        if(instance.types().contains(EBRAINSVocabulary.META_QUERY_TYPE)) {
-            return new KgQuery(instance, stage);
+        if(instanceId!=null) {
+            NormalizedJsonLd instance = graphDBInstances.getInstanceById(instanceId.getSpace().getName(), instanceId.getUuid(), DataStage.IN_PROGRESS, true, false, false, true);
+            //Only return the instance if it is actually a query
+            if (instance!=null && instance.types()!=null && instance.types().contains(EBRAINSVocabulary.META_QUERY_TYPE)) {
+                return new KgQuery(instance, stage);
+            }
         }
         return null;
     }

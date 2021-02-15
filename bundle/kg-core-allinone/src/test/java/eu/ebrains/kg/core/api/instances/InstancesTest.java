@@ -209,6 +209,8 @@ public class InstancesTest extends AbstractFunctionalityTest {
         //Given
         GetInstanceByIdTest test = new GetInstanceByIdTest(database, authenticationAPI, idUtils, instances, NON_READ_IN_PROGRESS_ROLES);
 
+        //TODO update assertion -> this doesn't return a forbidden exception anymore but rather minimal metadata
+
         //When
         test.execute(ForbiddenException.class);
     }
@@ -233,7 +235,7 @@ public class InstancesTest extends AbstractFunctionalityTest {
     public void getInstanceScopeSimpleForbidden() {
         //Given
         GetInstanceScopeSimpleTest test = new GetInstanceScopeSimpleTest(database, authenticationAPI, idUtils, instances, NON_READ_IN_PROGRESS_ROLES);
-
+        //TODO update assertion -> this doesn't return a forbidden exception anymore but rather minimal metadata
         test.execute(ForbiddenException.class);
     }
 
@@ -333,6 +335,8 @@ public class InstancesTest extends AbstractFunctionalityTest {
         //Given
         GetInstancesByIdsTest test = new GetInstancesByIdsTest(database, authenticationAPI, idUtils, instances, NON_READ_IN_PROGRESS_ROLES);
 
+        //TODO update assertion -> this doesn't return a forbidden exception anymore but rather minimal metadata
+
         //When
         test.execute(() -> {
             for (UUID id : test.ids) {
@@ -369,6 +373,8 @@ public class InstancesTest extends AbstractFunctionalityTest {
     public void getInstancesByIdentifiersForbidden() {
         //Given
         GetInstancesByIdentifiersTest test = new GetInstancesByIdentifiersTest(database, authenticationAPI, idUtils, instances, NON_READ_IN_PROGRESS_ROLES);
+
+        //TODO update assertion -> this doesn't return a forbidden exception anymore but rather minimal metadata
 
         //When
         test.execute(() -> {

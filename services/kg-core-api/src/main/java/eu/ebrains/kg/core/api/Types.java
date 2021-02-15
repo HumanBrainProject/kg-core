@@ -67,11 +67,16 @@ public class Types {
     @Simple
     public PaginatedResult<NormalizedJsonLd> getTypes(@RequestParam("stage") ExposedStage stage, @RequestParam(value = "space", required = false) @Parameter(description = "The space by which the types should be filtered or \"" + SpaceName.PRIVATE_SPACE + "\" for your private space.") String space, @RequestParam(value = "withProperties", defaultValue = "false") boolean withProperties, @RequestParam(value = "withIncomingLinks", defaultValue = "false") boolean withIncomingLinks, @ParameterObject PaginationParam paginationParam) {
         if(withProperties){
-            return PaginatedResult.ok(graphDBTypes.getTypesWithProperties(stage.getStage(), authContext.resolveSpaceName(space).getName(), true, withIncomingLinks, paginationParam));
+            return PaginatedResult.ok(graphDBTypes.getTypesWithProperties(stage.getStage(), getResolvedSpaceName(space), true, withIncomingLinks, paginationParam));
         }
         else {
-            return PaginatedResult.ok(graphDBTypes.getTypes(stage.getStage(), authContext.resolveSpaceName(space).getName(), withIncomingLinks, paginationParam));
+            return PaginatedResult.ok(graphDBTypes.getTypes(stage.getStage(), getResolvedSpaceName(space), withIncomingLinks, paginationParam));
         }
+    }
+
+    private String getResolvedSpaceName(String space){
+        SpaceName spaceName = authContext.resolveSpaceName(space);
+        return spaceName!=null ? spaceName.getName() : null;
     }
 
     @Operation(summary = "Returns the types according to the list of names - either with property information or without")
@@ -79,12 +84,13 @@ public class Types {
     @ExposesType
     @Advanced
     public Result<Map<String, Result<NormalizedJsonLd>>> getTypesByName(@RequestBody List<String> listOfTypeNames, @RequestParam("stage") ExposedStage stage, @RequestParam(value = "withProperties", defaultValue = "false") boolean withProperties, @RequestParam(value = "space", required = false) @Parameter(description = "The space by which the types should be filtered or \"" + SpaceName.PRIVATE_SPACE + "\" for your private space.") String space) {
+        SpaceName spaceName = authContext.resolveSpaceName(space);
         if(withProperties){
             //TODO check for withIncomingLinks
-            return Result.ok(graphDBTypes.getTypesWithPropertiesByName(listOfTypeNames, stage.getStage(), true, true, authContext.resolveSpaceName(space).getName()));
+            return Result.ok(graphDBTypes.getTypesWithPropertiesByName(listOfTypeNames, stage.getStage(), true, true, getResolvedSpaceName(space)));
         }
         else{
-            return Result.ok(graphDBTypes.getTypesByName(listOfTypeNames, stage.getStage(),  authContext.resolveSpaceName(space).getName()));
+            return Result.ok(graphDBTypes.getTypesByName(listOfTypeNames, stage.getStage(), getResolvedSpaceName(space)));
         }
     }
 

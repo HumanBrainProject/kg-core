@@ -62,6 +62,9 @@ public class CoreInferenceController {
 
     public void triggerInference(SpaceName space, String identifier) {
         List<UUID> uuids;
+        if(space == null){
+            throw new IllegalArgumentException("No space provided");
+        }
         if (identifier == null) {
             uuids = graphDBDocuments.getDocumentIdsBySpace(space.getName()).stream().map(UUID::fromString).collect(Collectors.toList());
         } else {

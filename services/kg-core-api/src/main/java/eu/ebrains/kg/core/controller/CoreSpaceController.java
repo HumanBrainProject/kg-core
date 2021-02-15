@@ -145,7 +145,7 @@ public class CoreSpaceController {
     }
 
     public boolean isSpaceEmpty(String space) {
-        return graphDBTypes.getTypes(DataStage.IN_PROGRESS, new SpaceName(space).getName(), false, new PaginationParam()).getTotalResults() == 0;
+        return graphDBTypes.getTypes(DataStage.IN_PROGRESS, space!=null ? new SpaceName(space).getName() : null, false, new PaginationParam()).getTotalResults() == 0;
     }
 
 }
