@@ -146,19 +146,24 @@ public class GraphDBInstancesAPI implements GraphDBInstances.Client {
     @ExposesMinimalData
     public SuggestionResult getSuggestedLinksForProperty(NormalizedJsonLd payload, DataStage stage, String space, UUID id, String propertyName, String type, String search, PaginationParam paginationParam) {
 
-        List<Type> types;
-        List<UUID> existingLinks;
+        List<Type> types = null;
+        List<UUID> existingLinks = Collections.emptyList();;
         if (StringUtils.isNotBlank(type)) {
             types = Collections.singletonList(new Type(URLDecoder.decode(type, StandardCharsets.UTF_8)));
-            existingLinks = Collections.emptyList();
         } else {
             if (payload == null) {
                 payload = repository.getInstance(stage, new SpaceName(space), id, true, true, false, false);
             }
-            types = payload.types().stream().map(Type::new).collect(Collectors.toList());
-            existingLinks = payload.getAsListOf(propertyName, JsonLdId.class, true).stream().map(idUtils::getUUID).filter(Objects::nonNull).collect(Collectors.toList());
+            if (payload != null) {
+                types = payload.types().stream().map(Type::new).collect(Collectors.toList());
+                existingLinks = payload.getAsListOf(propertyName, JsonLdId.class, true).stream().map(idUtils::getUUID).filter(Objects::nonNull).collect(Collectors.toList());
+            }
         }
         SuggestionResult suggestionResult = new SuggestionResult();
+        if(types==null || types.isEmpty()){
+            //We don't have any clue about the type so we can't give any suggestions
+            return null;
+        }
         List<NormalizedJsonLd> targetTypesForProperty = typeRepository.getTargetTypesForProperty(authContext.getUserWithRoles().getClientId(), stage, types, propertyName);
         List<Type> typesWithLabelInfo = ArangoRepositoryTypes.extractExtendedTypeInformationFromPayload(targetTypesForProperty);
         suggestionResult.setTypes(targetTypesForProperty.stream().collect(Collectors.toMap(JsonLdDoc::primaryIdentifier, t -> t)));

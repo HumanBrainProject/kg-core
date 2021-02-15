@@ -358,10 +358,7 @@ public class Instances {
     @Advanced
     public Result<SuggestionResult> getSuggestedLinksForProperty(@RequestBody NormalizedJsonLd payload, @RequestParam("stage") ExposedStage stage, @RequestParam(value = "property") String propertyName, @PathVariable("id") UUID id, @RequestParam(value = "type", required = false) String type, @RequestParam(value = "search", required = false) String search, @ParameterObject PaginationParam paginationParam) {
         InstanceId instanceId = idsController.resolveId(DataStage.IN_PROGRESS, id);
-        if(instanceId == null){
-            return null;
-        }
-        return Result.ok(graphDBInstances.getSuggestedLinksForProperty(payload, stage.getStage(), instanceId.getSpace().getName(), id, propertyName, type != null && !type.isBlank() ? new Type(type).getName() : null, search, paginationParam));
+        return Result.ok(graphDBInstances.getSuggestedLinksForProperty(payload, stage.getStage(), instanceId!=null ? instanceId.getSpace().getName() : null, id, propertyName, type != null && !type.isBlank() ? new Type(type).getName() : null, search, paginationParam));
     }
 
 
