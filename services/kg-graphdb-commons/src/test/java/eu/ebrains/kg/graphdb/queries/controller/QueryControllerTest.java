@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 EPFL/Human Brain Project PCO
+ * Copyright 2021 EPFL/Human Brain Project PCO
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,6 +20,7 @@ import com.netflix.discovery.EurekaClient;
 import eu.ebrains.kg.arango.commons.model.ArangoCollectionReference;
 import eu.ebrains.kg.arango.commons.model.ArangoDocumentReference;
 import eu.ebrains.kg.commons.IdUtils;
+import eu.ebrains.kg.commons.api.Ids;
 import eu.ebrains.kg.commons.jsonld.NormalizedJsonLd;
 import eu.ebrains.kg.commons.model.*;
 import eu.ebrains.kg.commons.models.UserWithRoles;
@@ -27,7 +28,6 @@ import eu.ebrains.kg.commons.query.KgQuery;
 import eu.ebrains.kg.docker.SpringDockerComposeRunner;
 import eu.ebrains.kg.graphdb.ingestion.controller.TodoListProcessor;
 import eu.ebrains.kg.test.TestObjectFactory;
-import eu.ebrains.kg.test.TestToIds;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -55,7 +55,7 @@ public class QueryControllerTest {
     TodoListProcessor todoListProcessor;
 
     @Autowired
-    TestToIds idsSvcForTest;
+    Ids.Client ids;
 
     @Autowired
     IdUtils idUtils;
@@ -150,13 +150,13 @@ public class QueryControllerTest {
     private void prepareHomerMargeAndMaggie() {
         NormalizedJsonLd homer = TestObjectFactory.createJsonLd("simpsons/homer.json");
         ArangoDocumentReference homerDocumentId = todoListProcessor.upsertDocument(simpsons.doc(UUID.randomUUID()), homer, stage, null);
-        idsSvcForTest.upsert(stage, new IdWithAlternatives().setId(homerDocumentId.getDocumentId()).setSpace(TestObjectFactory.SIMPSONS.getName()).setAlternatives(homer.identifiers()));
+        ids.createOrUpdateId(new IdWithAlternatives().setId(homerDocumentId.getDocumentId()).setSpace(TestObjectFactory.SIMPSONS.getName()).setAlternatives(homer.identifiers()), stage);
         NormalizedJsonLd maggie = TestObjectFactory.createJsonLd("simpsons/maggie.json");
         ArangoDocumentReference maggieDocumentId = todoListProcessor.upsertDocument(simpsons.doc(UUID.randomUUID()), maggie, stage, null);
-        idsSvcForTest.upsert(stage, new IdWithAlternatives().setId(maggieDocumentId.getDocumentId()).setSpace(TestObjectFactory.SIMPSONS.getName()).setAlternatives(maggie.identifiers()));
+        ids.createOrUpdateId(new IdWithAlternatives().setId(maggieDocumentId.getDocumentId()).setSpace(TestObjectFactory.SIMPSONS.getName()).setAlternatives(maggie.identifiers()), stage);
         NormalizedJsonLd marge = TestObjectFactory.createJsonLd("simpsons/marge.json");
         ArangoDocumentReference margeDocumentId = todoListProcessor.upsertDocument(simpsons.doc(UUID.randomUUID()), marge, stage, null);
-        idsSvcForTest.upsert(stage, new IdWithAlternatives().setId(margeDocumentId.getDocumentId()).setSpace(TestObjectFactory.SIMPSONS.getName()).setAlternatives(marge.identifiers()));
+        ids.createOrUpdateId(new IdWithAlternatives().setId(margeDocumentId.getDocumentId()).setSpace(TestObjectFactory.SIMPSONS.getName()).setAlternatives(marge.identifiers()), stage);
     }
 
 

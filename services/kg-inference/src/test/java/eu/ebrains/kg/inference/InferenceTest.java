@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 EPFL/Human Brain Project PCO
+ * Copyright 2021 EPFL/Human Brain Project PCO
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,8 +24,8 @@ import eu.ebrains.kg.commons.model.Event;
 import eu.ebrains.kg.commons.model.SpaceName;
 import eu.ebrains.kg.docker.SpringDockerComposeRunner;
 import eu.ebrains.kg.inference.api.InferenceAPI;
+import eu.ebrains.kg.test.GraphDB4Test;
 import eu.ebrains.kg.test.TestObjectFactory;
-import eu.ebrains.kg.test.TestToGraphDB;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -53,7 +53,7 @@ public class InferenceTest {
     }
 
     @Autowired
-    TestToGraphDB graphDBSvc;
+    GraphDB4Test graphDBSvc;
 
     @Autowired
     InferenceAPI inference;

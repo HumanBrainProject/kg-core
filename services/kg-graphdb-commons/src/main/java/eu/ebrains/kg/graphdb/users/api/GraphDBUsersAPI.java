@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 EPFL/Human Brain Project PCO
+ * Copyright 2021 EPFL/Human Brain Project PCO
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,18 +16,16 @@
 
 package eu.ebrains.kg.graphdb.users.api;
 
+import eu.ebrains.kg.commons.api.GraphDBUsers;
 import eu.ebrains.kg.commons.jsonld.NormalizedJsonLd;
 import eu.ebrains.kg.commons.markers.ExposesUserInfo;
 import eu.ebrains.kg.commons.model.Paginated;
 import eu.ebrains.kg.commons.model.PaginationParam;
 import eu.ebrains.kg.graphdb.users.controller.UsersRepository;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.stereotype.Component;
 
-@RestController
-@RequestMapping("/internal/graphdb")
-public class GraphDBUsersAPI {
+@Component
+public class GraphDBUsersAPI implements GraphDBUsers.Client {
 
     private UsersRepository usersRepository;
 
@@ -35,7 +33,7 @@ public class GraphDBUsersAPI {
         this.usersRepository = usersRepository;
     }
 
-    @GetMapping("/users")
+    @Override
     @ExposesUserInfo
     public Paginated<NormalizedJsonLd> getUsers(PaginationParam paginationParam){
         return usersRepository.getUsers(paginationParam);

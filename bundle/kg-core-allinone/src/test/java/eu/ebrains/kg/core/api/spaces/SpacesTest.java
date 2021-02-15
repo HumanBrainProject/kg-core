@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 EPFL/Human Brain Project PCO
+ * Copyright 2021 EPFL/Human Brain Project PCO
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -48,7 +48,7 @@ public class SpacesTest extends AbstractFunctionalityTest {
     @Test
     public void getSpaceWithPermissionsOk() {
         //Given
-        GetSpaceWithPermissionsTest test = new GetSpaceWithPermissionsTest(database, authenticationSvc, READ_SPACE_ROLES, instances, spaces);
+        GetSpaceWithPermissionsTest test = new GetSpaceWithPermissionsTest(database, authenticationAPI, READ_SPACE_ROLES, instances, spaces);
 
         //When
         test.execute(() -> {
@@ -61,7 +61,7 @@ public class SpacesTest extends AbstractFunctionalityTest {
     @Test
     public void getSpaceWithPermissionsForbidden() {
         //Given
-        GetSpaceWithPermissionsTest test = new GetSpaceWithPermissionsTest(database, authenticationSvc, NON_READ_SPACE_ROLES, instances, spaces);
+        GetSpaceWithPermissionsTest test = new GetSpaceWithPermissionsTest(database, authenticationAPI, NON_READ_SPACE_ROLES, instances, spaces);
 
         //When
         test.execute(ForbiddenException.class);
@@ -71,7 +71,7 @@ public class SpacesTest extends AbstractFunctionalityTest {
     @Test
     public void getSpacesWithPermissionsOk() {
         //Given
-        GetSpacesWithPermissionsTest test = new GetSpacesWithPermissionsTest(database, authenticationSvc, READ_SPACE_ROLES, instances, spaces);
+        GetSpacesWithPermissionsTest test = new GetSpacesWithPermissionsTest(database, authenticationAPI, READ_SPACE_ROLES, instances, spaces);
 
         //When
         test.execute(() -> {
@@ -86,7 +86,7 @@ public class SpacesTest extends AbstractFunctionalityTest {
     @Test
     public void getSpacesWithPermissionsForbidden() {
         //Given
-        GetSpacesWithPermissionsTest test = new GetSpacesWithPermissionsTest(database, authenticationSvc, NON_READ_SPACE_ROLES, instances, spaces);
+        GetSpacesWithPermissionsTest test = new GetSpacesWithPermissionsTest(database, authenticationAPI, NON_READ_SPACE_ROLES, instances, spaces);
 
         //When
         test.execute(()->{

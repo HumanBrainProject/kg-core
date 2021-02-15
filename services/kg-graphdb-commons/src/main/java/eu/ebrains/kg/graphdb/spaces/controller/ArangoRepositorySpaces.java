@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 EPFL/Human Brain Project PCO
+ * Copyright 2021 EPFL/Human Brain Project PCO
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,7 +30,7 @@ import eu.ebrains.kg.commons.model.Paginated;
 import eu.ebrains.kg.commons.model.PaginationParam;
 import eu.ebrains.kg.commons.model.SpaceName;
 import eu.ebrains.kg.commons.permission.Functionality;
-import eu.ebrains.kg.commons.permissions.controller.PermissionSvc;
+import eu.ebrains.kg.commons.permissions.controller.Permissions;
 import eu.ebrains.kg.commons.semantics.vocabularies.EBRAINSVocabulary;
 import eu.ebrains.kg.commons.semantics.vocabularies.SchemaOrgVocabulary;
 import eu.ebrains.kg.graphdb.commons.controller.ArangoDatabases;
@@ -50,22 +50,22 @@ import java.util.stream.Collectors;
 public class ArangoRepositorySpaces {
 
     private final ArangoDatabases databases;
-    private final PermissionSvc permissionSvc;
+    private final Permissions permissions;
     private final PermissionsController permissionsController;
     private final AuthContext authContext;
     private final ArangoRepositoryCommons arangoRepositoryCommons;
     private final Logger logger = LoggerFactory.getLogger(getClass());
 
-    public ArangoRepositorySpaces(ArangoDatabases databases, PermissionSvc permissionSvc, PermissionsController permissionsController, AuthContext authContext, ArangoRepositoryCommons arangoRepositoryCommons) {
+    public ArangoRepositorySpaces(ArangoDatabases databases, Permissions permissions, PermissionsController permissionsController, AuthContext authContext, ArangoRepositoryCommons arangoRepositoryCommons) {
         this.databases = databases;
-        this.permissionSvc = permissionSvc;
+        this.permissions = permissions;
         this.permissionsController = permissionsController;
         this.authContext = authContext;
         this.arangoRepositoryCommons = arangoRepositoryCommons;
     }
 
     public NormalizedJsonLd getSpace(SpaceName space, DataStage stage) {
-        if (!permissionSvc.hasPermission(authContext.getUserWithRoles(), Functionality.READ_SPACE, space)){
+        if (!permissions.hasPermission(authContext.getUserWithRoles(), Functionality.READ_SPACE, space)){
             throw new ForbiddenException(String.format("You don't have the right to read the space %s", space.getName()));
         }
         ArangoDatabase db = databases.getMetaByStage(stage);

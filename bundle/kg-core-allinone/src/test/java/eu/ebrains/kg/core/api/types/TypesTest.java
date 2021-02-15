@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 EPFL/Human Brain Project PCO
+ * Copyright 2021 EPFL/Human Brain Project PCO
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -60,7 +60,7 @@ public class TypesTest extends AbstractFunctionalityTest {
     @Test
     public void defineTypeOk() {
         //Given
-        DefineTypeTest test = new DefineTypeTest(database, authenticationSvc, TYPE_DEFINITION_ROLES, types);
+        DefineTypeTest test = new DefineTypeTest(database, authenticationAPI, TYPE_DEFINITION_ROLES, types);
 
         //When
         test.execute(() -> {
@@ -75,7 +75,7 @@ public class TypesTest extends AbstractFunctionalityTest {
     @Test
     public void defineTypeForbidden() {
         //Given
-        DefineTypeTest test = new DefineTypeTest(database, authenticationSvc, NON_TYPE_DEFINITION_ROLES, types);
+        DefineTypeTest test = new DefineTypeTest(database, authenticationAPI, NON_TYPE_DEFINITION_ROLES, types);
 
         //When
         test.execute(ForbiddenException.class);
@@ -85,7 +85,7 @@ public class TypesTest extends AbstractFunctionalityTest {
     @Test
     public void getTypesOk() {
         //Given
-        GetTypesTest test = new GetTypesTest(database, authenticationSvc, null, false, false, READ_TYPES_IN_PROGRESS_ROLES, types, instances);
+        GetTypesTest test = new GetTypesTest(database, authenticationAPI, null, false, false, READ_TYPES_IN_PROGRESS_ROLES, types, instances);
 
         //When
         test.execute(() -> {
@@ -98,7 +98,7 @@ public class TypesTest extends AbstractFunctionalityTest {
     @Test
     public void getTypesForbidden() {
         //Given
-        GetTypesTest test = new GetTypesTest(database, authenticationSvc, null, false, false, NON_READ_TYPES_IN_PROGRESS_ROLES, types, instances);
+        GetTypesTest test = new GetTypesTest(database, authenticationAPI, null, false, false, NON_READ_TYPES_IN_PROGRESS_ROLES, types, instances);
 
         //When
         test.execute(() -> {
@@ -112,7 +112,7 @@ public class TypesTest extends AbstractFunctionalityTest {
     @Test
     public void getTypesBySpaceOk() {
         //Given
-        GetTypesTest test = new GetTypesTest(database, authenticationSvc, new SpaceName("functionalityTest"), false, false, READ_TYPES_IN_PROGRESS_ROLES, types, instances);
+        GetTypesTest test = new GetTypesTest(database, authenticationAPI, new SpaceName("functionalityTest"), false, false, READ_TYPES_IN_PROGRESS_ROLES, types, instances);
 
         //When
         test.execute(() -> {
@@ -127,7 +127,7 @@ public class TypesTest extends AbstractFunctionalityTest {
     @Test
     public void getTypesBySpaceForbidden() {
         //Given
-        GetTypesTest test = new GetTypesTest(database, authenticationSvc, new SpaceName("functionalityTest"), false, false, NON_READ_TYPES_IN_PROGRESS_ROLES, types, instances);
+        GetTypesTest test = new GetTypesTest(database, authenticationAPI, new SpaceName("functionalityTest"), false, false, NON_READ_TYPES_IN_PROGRESS_ROLES, types, instances);
 
         //When
         test.execute(() -> {
@@ -142,7 +142,7 @@ public class TypesTest extends AbstractFunctionalityTest {
     @Test
     public void getTypesWithPropertiesOk() {
         //Given
-        GetTypesTest test = new GetTypesTest(database, authenticationSvc, null, true, false, READ_TYPES_IN_PROGRESS_ROLES, types, instances);
+        GetTypesTest test = new GetTypesTest(database, authenticationAPI, null, true, false, READ_TYPES_IN_PROGRESS_ROLES, types, instances);
 
         //When
         test.execute(() -> {
@@ -159,7 +159,7 @@ public class TypesTest extends AbstractFunctionalityTest {
     @Test
     public void getTypesWithPropertiesForbidden() {
         //Given
-        GetTypesTest test = new GetTypesTest(database, authenticationSvc, null, true, false, NON_READ_TYPES_IN_PROGRESS_ROLES, types, instances);
+        GetTypesTest test = new GetTypesTest(database, authenticationAPI, null, true, false, NON_READ_TYPES_IN_PROGRESS_ROLES, types, instances);
 
         //When
         test.execute(() -> {
@@ -173,7 +173,7 @@ public class TypesTest extends AbstractFunctionalityTest {
     @Test
     public void getTypesBySpaceWithPropertiesOk() {
         //Given
-        GetTypesTest test = new GetTypesTest(database, authenticationSvc, new SpaceName("functionalityTest"), true, false, READ_TYPES_IN_PROGRESS_ROLES, types, instances);
+        GetTypesTest test = new GetTypesTest(database, authenticationAPI, new SpaceName("functionalityTest"), true, false, READ_TYPES_IN_PROGRESS_ROLES, types, instances);
 
         //When
         test.execute(() -> {
@@ -187,7 +187,7 @@ public class TypesTest extends AbstractFunctionalityTest {
     @Test
     public void getTypesBySpaceWithPropertiesForbidden() {
         //Given
-        GetTypesTest test = new GetTypesTest(database, authenticationSvc, new SpaceName("functionalityTest"), true, false, NON_READ_TYPES_IN_PROGRESS_ROLES, types, instances);
+        GetTypesTest test = new GetTypesTest(database, authenticationAPI, new SpaceName("functionalityTest"), true, false, NON_READ_TYPES_IN_PROGRESS_ROLES, types, instances);
 
         //When
         test.execute(() -> {
@@ -203,7 +203,7 @@ public class TypesTest extends AbstractFunctionalityTest {
     @Test
     public void getTypesByNameOk() {
         //Given
-        GetTypesByNameTest test = new GetTypesByNameTest(database, authenticationSvc, null, false, READ_TYPES_IN_PROGRESS_ROLES, types, instances);
+        GetTypesByNameTest test = new GetTypesByNameTest(database, authenticationAPI, null, false, READ_TYPES_IN_PROGRESS_ROLES, types, instances);
 
         //When
         test.execute(()->{
@@ -217,7 +217,7 @@ public class TypesTest extends AbstractFunctionalityTest {
     @Test
     public void getTypesByNameForbidden() {
         //Given
-        GetTypesByNameTest test = new GetTypesByNameTest(database, authenticationSvc, null, false, NON_READ_TYPES_IN_PROGRESS_ROLES, types, instances);
+        GetTypesByNameTest test = new GetTypesByNameTest(database, authenticationAPI, null, false, NON_READ_TYPES_IN_PROGRESS_ROLES, types, instances);
 
         //When
         test.execute(()->{

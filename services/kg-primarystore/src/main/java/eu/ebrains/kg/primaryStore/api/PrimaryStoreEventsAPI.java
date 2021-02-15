@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 EPFL/Human Brain Project PCO
+ * Copyright 2021 EPFL/Human Brain Project PCO
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,23 +16,20 @@
 
 package eu.ebrains.kg.primaryStore.api;
 
-import eu.ebrains.kg.commons.AuthContext;
+import eu.ebrains.kg.commons.api.PrimaryStoreEvents;
 import eu.ebrains.kg.commons.jsonld.InstanceId;
 import eu.ebrains.kg.commons.model.DataStage;
 import eu.ebrains.kg.commons.model.Event;
 import eu.ebrains.kg.commons.model.PersistedEvent;
 import eu.ebrains.kg.commons.model.SpaceName;
-import eu.ebrains.kg.commons.models.UserWithRoles;
 import eu.ebrains.kg.primaryStore.controller.EventProcessor;
 import eu.ebrains.kg.primaryStore.controller.EventRepository;
 import eu.ebrains.kg.primaryStore.controller.InferenceProcessor;
 import eu.ebrains.kg.primaryStore.controller.SSEProducer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.http.MediaType;
 import org.springframework.http.codec.ServerSentEvent;
 import org.springframework.stereotype.Component;
-import org.springframework.web.bind.annotation.*;
 import reactor.core.publisher.Flux;
 
 import java.util.List;
@@ -40,9 +37,7 @@ import java.util.Set;
 import java.util.UUID;
 
 @Component
-@RestController
-@RequestMapping("/internal/primaryStore/events")
-public class PrimaryStoreEventsAPI {
+public class PrimaryStoreEventsAPI implements PrimaryStoreEvents.Client {
 
     private final EventProcessor eventProcessor;
 
@@ -52,58 +47,50 @@ public class PrimaryStoreEventsAPI {
 
     private final EventRepository eventRepository;
 
-    private final AuthContext authContext;
-
     private final Logger logger = LoggerFactory.getLogger(getClass());
 
-    public PrimaryStoreEventsAPI(EventProcessor eventProcessor, SSEProducer sseProducer, EventRepository eventRepository, AuthContext authContext, InferenceProcessor inferenceProcessor) {
+    public PrimaryStoreEventsAPI(EventProcessor eventProcessor, SSEProducer sseProducer, EventRepository eventRepository, InferenceProcessor inferenceProcessor) {
         this.eventProcessor = eventProcessor;
         this.sseProducer = sseProducer;
         this.eventRepository = eventRepository;
-        this.authContext = authContext;
         this.inferenceProcessor = inferenceProcessor;
     }
 
-    @GetMapping(value = "/stream/{stage}", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
-    public Flux<ServerSentEvent<PersistedEvent>> streamEvents(@PathVariable("stage") DataStage stage, @RequestHeader(value = "Last-Event-Id", required = false) String lastEventId, @RequestParam(value = "lastEventId", required = false) String lastEventIdFromQuery) {
+    @Override
+    public Flux<ServerSentEvent<PersistedEvent>> streamEvents(DataStage stage, String lastEventId, String lastEventIdFromQuery) {
         return sseProducer.initiateNewFlux(stage, lastEventId != null ? lastEventId : lastEventIdFromQuery);
     }
 
-    @GetMapping("/count/{stage}")
-    public Long getNumberOfRegisteredEvents(@PathVariable("stage") DataStage stage) {
+    @Override
+    public Long getNumberOfRegisteredEvents(DataStage stage) {
         return eventRepository.count(stage);
     }
 
-    @GetMapping("/{stage}")
-    public List<PersistedEvent> getEventsSince(@PathVariable("stage") DataStage stage, @RequestParam(value = "lastEventId", required = false) String lastEventId) {
+    @Override
+    public List<PersistedEvent> getEventsSince(DataStage stage, String lastEventId) {
         return eventRepository.eventsByLastEventId(stage, lastEventId);
     }
 
-    @PostMapping
-    public Set<InstanceId> postEvent(@RequestBody Event event, @RequestParam(value = "deferInference", required = false, defaultValue = "false") boolean deferInference) {
-        UserWithRoles userWithRoles = authContext.getUserWithRoles();
-        return eventProcessor.postEvent(userWithRoles, authContext.getAuthTokens(), event, deferInference);
+    @Override
+    public Set<InstanceId> postEvent(Event event, boolean deferInference) {
+        return eventProcessor.postEvent(event, deferInference);
     }
 
-
-    @PostMapping("/inference/deferred/{space}")
-    public void inferDeferred(@PathVariable("space") String space, @RequestParam(value = "sync", required = false, defaultValue = "false") boolean sync) {
-        UserWithRoles userWithRoles = authContext.getUserWithRoles();
+    @Override
+    public void inferDeferred(String space, boolean sync) {
         logger.info("Received request for deferred inference");
         if(sync) {
-            eventProcessor.syncDeferredInference(authContext.getAuthTokens(), new SpaceName(space), userWithRoles);
+            eventProcessor.syncDeferredInference(new SpaceName(space));
         }
         else {
-            eventProcessor.asyncDeferredInference(authContext.getAuthTokens(), new SpaceName(space), userWithRoles);
+            eventProcessor.asyncDeferredInference(new SpaceName(space));
         }
     }
 
-
-    @PostMapping("/inference/{space}/{id}")
-    public void infer(@PathVariable("space") String space, @PathVariable("id") UUID id) {
-        UserWithRoles userWithRoles = authContext.getUserWithRoles();
+    @Override
+    public void infer(String space, UUID id) {
         logger.info("Received request for deferred inference");
-        eventProcessor.autoRelease(inferenceProcessor.triggerInference(new SpaceName(space), id, userWithRoles, authContext.getAuthTokens()), userWithRoles, authContext.getAuthTokens());
+        eventProcessor.autoRelease(inferenceProcessor.triggerInference(new SpaceName(space), id));
     }
 
 }

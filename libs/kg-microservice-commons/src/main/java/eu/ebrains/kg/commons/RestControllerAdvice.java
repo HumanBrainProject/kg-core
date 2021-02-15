@@ -21,31 +21,16 @@ import eu.ebrains.kg.commons.model.IngestConfiguration;
 import eu.ebrains.kg.commons.model.PaginationParam;
 import eu.ebrains.kg.commons.model.ResponseConfiguration;
 import eu.ebrains.kg.commons.model.Result;
-import eu.ebrains.kg.commons.permission.ClientAuthToken;
-import eu.ebrains.kg.commons.permission.UserAuthToken;
-import eu.ebrains.kg.commons.serviceCall.ToAuthentication;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.context.request.WebRequest;
-
-import java.util.UUID;
 
 /**
  * This controller advice handles the population of the {@link AuthContext}, provides shared parameters (such as {@link PaginationParam}) and translates exceptions into http status codes.
  */
 @ControllerAdvice(annotations = RestController.class)
 public class RestControllerAdvice {
-
-    private final AuthContext authContext;
-
-    private final ToAuthentication toAuthentication;
-
-
-    public RestControllerAdvice(AuthContext authContext, ToAuthentication toAuthentication) {
-        this.authContext = authContext;
-        this.toAuthentication = toAuthentication;
-    }
 
     @ModelAttribute
     public IngestConfiguration ingestConfiguration(@RequestParam(value = "deferInference", required = false, defaultValue = "false") boolean deferInference, @RequestParam(value = "normalizePayload", required = false, defaultValue = "true") boolean normalizePayload) {
@@ -79,20 +64,14 @@ public class RestControllerAdvice {
     }
 
     /**
-     * Retrieves the authorization headers (user and client) and populates them in the {@link AuthContext}
+     * Validates that there is a valid authorization header combination handed in
      */
     @ModelAttribute
-    public void interceptAuthorizationToken(@RequestHeader(value = "Authorization", required = false) String userAuthorizationToken, @RequestHeader(value = "Client-Authorization", required = false) String clientAuthorizationToken, @RequestHeader(value = "Client-Id", required = false) String clientId, @RequestHeader(value = "Client-Secret", required = false) String clientSecret, @RequestHeader(value = "Client-SA-Secret", required = false) String clientServiceAccountSecret, @RequestHeader(value = "Transaction-Id", required = false) UUID transactionId) {
-        UserAuthToken userToken = null;
-        ClientAuthToken clientToken = null;
-        if (userAuthorizationToken != null) {
-            userToken = new UserAuthToken(userAuthorizationToken);
-        }
+    public void validateAuthorizationTokenCombinations(@RequestHeader(value = "Authorization", required = false) String userAuthorizationToken, @RequestHeader(value = "Client-Authorization", required = false) String clientAuthorizationToken, @RequestHeader(value = "Client-Id", required = false) String clientId, @RequestHeader(value = "Client-Secret", required = false) String clientSecret, @RequestHeader(value = "Client-SA-Secret", required = false) String clientServiceAccountSecret) {
         if (clientAuthorizationToken != null) {
             if(clientId !=null || clientSecret != null || clientServiceAccountSecret!=null) {
                 throw new InvalidRequestException("You've provided a Client-Authorization header, so you shouldn't define any of Client-Id, Client-Secret or Client-SA-Secret.");
             }
-            clientToken = new ClientAuthToken(clientAuthorizationToken);
         }
         if (clientId != null) {
             if(clientSecret == null && clientServiceAccountSecret == null){
@@ -101,21 +80,15 @@ public class RestControllerAdvice {
             else if (clientSecret != null && clientServiceAccountSecret != null){
                 throw new InvalidRequestException("You should provide either a Client-Secret or a Client-SA-Secret header, but not both.");
             }
-            if (clientSecret != null) {
-                clientToken = toAuthentication.fetchToken(clientId, clientSecret);
-            }
-            if (clientServiceAccountSecret != null) {
-                if(userToken != null ){
-                    throw new InvalidRequestException("You should not provide a Client-SA-Secret header when you've already provided an Authorization header.");
-                }
-                //A special treatment for service accounts - the service account of the given client will act as a user account and the client. This allows to
-                clientToken = toAuthentication.fetchToken(clientId, clientServiceAccountSecret);
-                userToken = new UserAuthToken(clientToken.getBearerToken());
+            if (clientServiceAccountSecret != null && userAuthorizationToken!=null) {
+               throw new InvalidRequestException("You should not provide a Client-SA-Secret header when you've already provided an Authorization header.");
             }
         }
-        AuthTokens authTokens = new AuthTokens(userToken, clientToken);
-        authTokens.setTransactionId(transactionId);
-        authContext.setAuthTokens(authTokens);
+    }
+
+    @ExceptionHandler({InstanceNotFoundException.class})
+    protected ResponseEntity<?> handleInstanceNotFound(RuntimeException ex, WebRequest request) {
+        return ResponseEntity.notFound().build();
     }
 
     @ExceptionHandler({InvalidRequestException.class, AmbiguousException.class})

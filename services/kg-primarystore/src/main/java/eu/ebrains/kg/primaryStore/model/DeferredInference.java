@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 EPFL/Human Brain Project PCO
+ * Copyright 2021 EPFL/Human Brain Project PCO
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,7 @@
 package eu.ebrains.kg.primaryStore.model;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import eu.ebrains.kg.arango.commons.aqlBuilder.ArangoVocabulary;
 import eu.ebrains.kg.commons.model.SpaceName;
 
 import java.util.UUID;
@@ -24,7 +25,7 @@ import java.util.UUID;
 public class DeferredInference {
     private SpaceName space;
     private UUID uuid;
-    @JsonProperty("_key")
+    @JsonProperty(ArangoVocabulary.KEY)
     private String key;
 
     public SpaceName getSpace() {

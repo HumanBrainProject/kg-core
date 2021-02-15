@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-  ~ Copyright 2020 EPFL/Human Brain Project PCO
+  ~ Copyright 2021 EPFL/Human Brain Project PCO
   ~
   ~ Licensed under the Apache License, Version 2.0 (the "License");
   ~ you may not use this file except in compliance with the License.
@@ -35,7 +35,6 @@
         <module>config/kg-microservice</module>
 
 
-        <module>services/kg-admin</module>
         <module>services/kg-ids</module>
         <module>services/kg-authentication</module>
         <module>services/kg-core-api</module>
@@ -46,10 +45,8 @@
         <module>services/kg-inference</module>
         <module>services/kg-jsonld</module>
         <module>services/kg-primarystore</module>
-        <module>services/kg-query</module>
         <module>services/kg-releasing</module>
         <module>services/kg-service-discovery</module>
-        <module>services/kg-spatial-search</module>
 
 
         <!--<module>mocks/kg-core-api-mock</module>-->

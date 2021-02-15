@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 EPFL/Human Brain Project PCO
+ * Copyright 2021 EPFL/Human Brain Project PCO
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,13 +17,13 @@
 package eu.ebrains.kg.core.api.types.test;
 
 import com.arangodb.ArangoDB;
+import eu.ebrains.kg.authentication.api.AuthenticationAPI;
 import eu.ebrains.kg.commons.jsonld.NormalizedJsonLd;
 import eu.ebrains.kg.commons.model.IngestConfiguration;
 import eu.ebrains.kg.commons.model.ResponseConfiguration;
 import eu.ebrains.kg.commons.model.Result;
 import eu.ebrains.kg.commons.model.SpaceName;
 import eu.ebrains.kg.commons.permission.roles.RoleMapping;
-import eu.ebrains.kg.commons.serviceCall.ToAuthentication;
 import eu.ebrains.kg.core.api.AbstractTest;
 import eu.ebrains.kg.core.api.Instances;
 import eu.ebrains.kg.core.api.Types;
@@ -41,8 +41,8 @@ public class GetTypesByNameTest extends AbstractTest {
 
     public  Result<Map<String, Result<NormalizedJsonLd>>> response;
 
-    public GetTypesByNameTest(ArangoDB.Builder database, ToAuthentication authenticationSvc, SpaceName spaceName, boolean withProperties, RoleMapping[] roles, Types types, Instances instances) {
-        super(database, authenticationSvc, roles);
+    public GetTypesByNameTest(ArangoDB.Builder database, AuthenticationAPI authenticationAPI,  SpaceName spaceName, boolean withProperties, RoleMapping[] roles, Types types, Instances instances) {
+        super(database, authenticationAPI,  roles);
         this.instances = instances;
         this.types = types;
         this.spaceName = spaceName;

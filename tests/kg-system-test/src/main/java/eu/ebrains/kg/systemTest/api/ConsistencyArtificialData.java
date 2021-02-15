@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 EPFL/Human Brain Project PCO
+ * Copyright 2021 EPFL/Human Brain Project PCO
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,6 +26,8 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequestMapping("/tests/consistencyOfArtificialData")
 public class ConsistencyArtificialData {
+
+    //TODO translate those tests into tests running on kg-core-all-in-one bundle without the web layer.
 
     private final InternalArtificialData internalArtificialData;
 

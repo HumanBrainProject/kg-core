@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 EPFL/Human Brain Project PCO
+ * Copyright 2021 EPFL/Human Brain Project PCO
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,13 +17,13 @@
 package eu.ebrains.kg.core.api.properties.test;
 
 import com.arangodb.ArangoDB;
+import eu.ebrains.kg.authentication.api.AuthenticationAPI;
 import eu.ebrains.kg.commons.jsonld.JsonLdId;
 import eu.ebrains.kg.commons.jsonld.NormalizedJsonLd;
 import eu.ebrains.kg.commons.model.IngestConfiguration;
 import eu.ebrains.kg.commons.model.ResponseConfiguration;
 import eu.ebrains.kg.commons.permission.roles.RoleMapping;
 import eu.ebrains.kg.commons.semantics.vocabularies.EBRAINSVocabulary;
-import eu.ebrains.kg.commons.serviceCall.ToAuthentication;
 import eu.ebrains.kg.core.api.AbstractTest;
 import eu.ebrains.kg.core.api.Instances;
 import eu.ebrains.kg.core.api.Properties;
@@ -39,8 +39,8 @@ public class DefinePropertyGlobalTest extends AbstractTest {
     public String type;
 
 
-    public DefinePropertyGlobalTest(ArangoDB.Builder database, ToAuthentication authenticationSvc, RoleMapping[] roles, Instances instances, Properties properties) {
-        super(database, authenticationSvc, roles);
+    public DefinePropertyGlobalTest(ArangoDB.Builder database, AuthenticationAPI authenticationAPI, RoleMapping[] roles, Instances instances, Properties properties) {
+        super(database, authenticationAPI, roles);
         this.instances = instances;
         this.properties = properties;
     }
@@ -62,11 +62,10 @@ public class DefinePropertyGlobalTest extends AbstractTest {
 
     NormalizedJsonLd createPropertyDefinition(String property, String type) {
         NormalizedJsonLd payload = new NormalizedJsonLd();
-        if(type!=null) {
+        if (type != null) {
             payload.addTypes(EBRAINSVocabulary.META_PROPERTY_IN_TYPE_DEFINITION_TYPE);
             payload.addProperty(EBRAINSVocabulary.META_TYPE, new JsonLdId(type));
-        }
-        else{
+        } else {
             payload.addTypes(EBRAINSVocabulary.META_PROPERTY_DEFINITION_TYPE);
         }
         payload.addProperty(EBRAINSVocabulary.META_PROPERTY, new JsonLdId(property));

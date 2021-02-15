@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 EPFL/Human Brain Project PCO
+ * Copyright 2021 EPFL/Human Brain Project PCO
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,32 +16,32 @@
 
 package eu.ebrains.kg.core.controller;
 
+import eu.ebrains.kg.commons.api.Authentication;
 import eu.ebrains.kg.commons.model.Client;
-import eu.ebrains.kg.core.serviceCall.CoreToAuthentication;
 import org.springframework.stereotype.Component;
 
 @Component
 public class CoreClientController {
 
     private final CoreSpaceController spaceController;
-    private final CoreToAuthentication coreToAuthentication;
+    private final Authentication.Client authentication;
 
-    public CoreClientController(CoreSpaceController spaceController, CoreToAuthentication coreToAuthentication) {
+    public CoreClientController(CoreSpaceController spaceController, Authentication.Client authentication) {
         this.spaceController = spaceController;
-        this.coreToAuthentication = coreToAuthentication;
+        this.authentication = authentication;
     }
 
     public Client addClient(String id) {
         Client client = new Client(id);
         spaceController.createSpaceDefinition(client.getSpace(), false);
-        coreToAuthentication.registerClient(client);
+        authentication.registerClient(client);
         return client;
     }
 
     public Client deleteClient(String id) {
         Client client = new Client(id);
         spaceController.removeSpaceDefinition(client.getSpace().getName(), false);
-        coreToAuthentication.unregisterClient(client.getName());
+        authentication.unregisterClient(client.getName());
         return client;
     }
 

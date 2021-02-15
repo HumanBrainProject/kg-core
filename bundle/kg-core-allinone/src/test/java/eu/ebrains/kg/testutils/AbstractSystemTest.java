@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 EPFL/Human Brain Project PCO
+ * Copyright 2021 EPFL/Human Brain Project PCO
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,7 +18,9 @@ package eu.ebrains.kg.testutils;
 
 import com.arangodb.ArangoDB;
 import eu.ebrains.kg.KgCoreAllInOne;
-import eu.ebrains.kg.commons.AuthContext;
+import eu.ebrains.kg.authentication.api.AuthenticationAPI;
+import eu.ebrains.kg.authentication.keycloak.KeycloakController;
+import eu.ebrains.kg.commons.AuthTokenContext;
 import eu.ebrains.kg.commons.IdUtils;
 import eu.ebrains.kg.commons.model.IngestConfiguration;
 import eu.ebrains.kg.commons.model.PaginationParam;
@@ -47,7 +49,13 @@ public abstract class AbstractSystemTest {
     protected String type = "https://core.kg.ebrains.eu/TestPayload";
 
     @MockBean
-    protected AuthContext authContext;
+    protected AuthTokenContext authTokenContext;
+
+    @MockBean
+    protected AuthenticationAPI authenticationAPI;
+
+    @MockBean
+    protected KeycloakController keycloakController;
 
     @Autowired
     @Qualifier("arangoBuilderForGraphDB")

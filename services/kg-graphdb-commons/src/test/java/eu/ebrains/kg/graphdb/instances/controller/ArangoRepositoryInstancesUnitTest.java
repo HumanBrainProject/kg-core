@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 EPFL/Human Brain Project PCO
+ * Copyright 2021 EPFL/Human Brain Project PCO
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,7 +20,7 @@ import eu.ebrains.kg.commons.AuthContext;
 import eu.ebrains.kg.commons.IdUtils;
 import eu.ebrains.kg.commons.JsonAdapter;
 import eu.ebrains.kg.commons.jsonld.NormalizedJsonLd;
-import eu.ebrains.kg.commons.permissions.controller.PermissionSvc;
+import eu.ebrains.kg.commons.permissions.controller.Permissions;
 import eu.ebrains.kg.graphdb.commons.controller.ArangoDatabases;
 import eu.ebrains.kg.graphdb.commons.controller.ArangoRepositoryCommons;
 import eu.ebrains.kg.graphdb.commons.controller.ArangoUtils;
@@ -40,7 +40,7 @@ public class ArangoRepositoryInstancesUnitTest {
     @Test
     public void mergeEmbeddedDocuments() {
         //Given
-        ArangoRepositoryInstances repository = new ArangoRepositoryInstances(Mockito.mock(ArangoRepositoryCommons.class), Mockito.mock(PermissionsController.class), Mockito.mock(PermissionSvc.class), Mockito.mock(AuthContext.class), Mockito.mock(ArangoUtils.class), Mockito.mock(QueryController.class), Mockito.mock(ArangoRepositoryTypes.class), Mockito.mock(ArangoDatabases.class), Mockito.mock(IdUtils.class));
+        ArangoRepositoryInstances repository = new ArangoRepositoryInstances(Mockito.mock(ArangoRepositoryCommons.class), Mockito.mock(PermissionsController.class), Mockito.mock(Permissions.class), Mockito.mock(AuthContext.class), Mockito.mock(ArangoUtils.class), Mockito.mock(QueryController.class), Mockito.mock(ArangoRepositoryTypes.class), Mockito.mock(ArangoDatabases.class), Mockito.mock(IdUtils.class));
         JsonAdapter jsonAdapter = new JsonAdapter4Test();
         String originalDoc = "{\"helloWorld\": {\"@id\": \"http://foobar\"}, \"@id\": \"http://foo\"}";
         NormalizedJsonLd original = jsonAdapter.fromJson(originalDoc, NormalizedJsonLd.class);

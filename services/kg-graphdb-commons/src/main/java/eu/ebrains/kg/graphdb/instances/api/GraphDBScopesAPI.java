@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 EPFL/Human Brain Project PCO
+ * Copyright 2021 EPFL/Human Brain Project PCO
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 
 package eu.ebrains.kg.graphdb.instances.api;
 
+import eu.ebrains.kg.commons.api.GraphDBScopes;
 import eu.ebrains.kg.commons.markers.ExposesMinimalData;
 import eu.ebrains.kg.commons.model.DataStage;
 import eu.ebrains.kg.commons.model.ScopeElement;
@@ -23,13 +24,12 @@ import eu.ebrains.kg.commons.model.SpaceName;
 import eu.ebrains.kg.graphdb.instances.controller.ArangoRepositoryInstances;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.stereotype.Component;
 
 import java.util.UUID;
 
-@RestController
-@RequestMapping("/internal/graphdb/{stage}/scopes")
-public class GraphDBScopesAPI {
+@Component
+public class GraphDBScopesAPI implements GraphDBScopes.Client {
 
     private final Logger logger = LoggerFactory.getLogger(getClass());
     private final ArangoRepositoryInstances repository;
@@ -38,9 +38,9 @@ public class GraphDBScopesAPI {
         this.repository = repository;
     }
 
-    @GetMapping("/{space}/{id}")
+    @Override
     @ExposesMinimalData
-    public ScopeElement getScopeForInstance(@PathVariable("space") String space, @PathVariable("id") UUID id, @PathVariable("stage") DataStage stage, @RequestParam(value = "fetchLabels", defaultValue = "true") boolean fetchLabels){
+    public ScopeElement getScopeForInstance(String space, UUID id, DataStage stage, boolean fetchLabels){
        return this.repository.getScopeForInstance(new SpaceName(space), id, stage, fetchLabels);
     }
 

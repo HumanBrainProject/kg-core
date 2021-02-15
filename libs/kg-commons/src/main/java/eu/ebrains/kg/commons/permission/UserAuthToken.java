@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 EPFL/Human Brain Project PCO
+ * Copyright 2021 EPFL/Human Brain Project PCO
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,9 @@
 
 package eu.ebrains.kg.commons.permission;
 
-public class UserAuthToken {
+import java.io.Serializable;
+
+public class UserAuthToken implements Serializable {
 
     private final String userToken;
 

@@ -19,6 +19,7 @@ package eu.ebrains.kg.core.api;
 import eu.ebrains.kg.arango.commons.model.InternalSpace;
 import eu.ebrains.kg.commons.AuthContext;
 import eu.ebrains.kg.commons.Version;
+import eu.ebrains.kg.commons.api.PrimaryStoreEvents;
 import eu.ebrains.kg.commons.config.openApiGroups.Admin;
 import eu.ebrains.kg.commons.jsonld.JsonLdConsts;
 import eu.ebrains.kg.commons.jsonld.JsonLdId;
@@ -28,7 +29,6 @@ import eu.ebrains.kg.commons.model.Event;
 import eu.ebrains.kg.commons.model.Result;
 import eu.ebrains.kg.commons.model.SpaceName;
 import eu.ebrains.kg.commons.semantics.vocabularies.EBRAINSVocabulary;
-import eu.ebrains.kg.core.serviceCall.CoreToPrimaryStore;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import org.springframework.http.HttpStatus;
@@ -47,11 +47,11 @@ import java.util.UUID;
 @Admin
 public class Properties {
 
-    private final CoreToPrimaryStore primaryStoreSvc;
+    private final PrimaryStoreEvents.Client primaryStore;
     private final AuthContext authContext;
 
-    public Properties(CoreToPrimaryStore primaryStoreSvc, AuthContext authContext) {
-        this.primaryStoreSvc = primaryStoreSvc;
+    public Properties(PrimaryStoreEvents.Client primaryStore, AuthContext authContext) {
+        this.primaryStore = primaryStore;
         this.authContext = authContext;
     }
 
@@ -90,7 +90,7 @@ public class Properties {
         } else {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Result.nok(HttpStatus.BAD_REQUEST.value(), String.format("Only one \"%s\" is allowed.", JsonLdConsts.TYPE)));
         }
-        primaryStoreSvc.postEvent(Event.createUpsertEvent(targetSpace, UUID.nameUUIDFromBytes(payload.id().getId().getBytes(StandardCharsets.UTF_8)), Event.Type.INSERT, payload), false, authContext.getAuthTokens());
+        primaryStore.postEvent(Event.createUpsertEvent(targetSpace, UUID.nameUUIDFromBytes(payload.id().getId().getBytes(StandardCharsets.UTF_8)), Event.Type.INSERT, payload), false);
         return ResponseEntity.status(HttpStatus.OK).build();
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 EPFL/Human Brain Project PCO
+ * Copyright 2021 EPFL/Human Brain Project PCO
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,7 @@
 package eu.ebrains.kg.graphdb.queries.api;
 
 import eu.ebrains.kg.commons.AuthContext;
+import eu.ebrains.kg.commons.api.GraphDBQueries;
 import eu.ebrains.kg.commons.jsonld.NormalizedJsonLd;
 import eu.ebrains.kg.commons.model.Paginated;
 import eu.ebrains.kg.commons.model.PaginationParam;
@@ -25,19 +26,13 @@ import eu.ebrains.kg.commons.query.KgQuery;
 import eu.ebrains.kg.graphdb.queries.controller.QueryController;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.stereotype.Component;
 
-@RestController
-@RequestMapping("/internal/graphdb/queries")
-public class GraphDBQueriesAPI {
+@Component
+public class GraphDBQueriesAPI implements GraphDBQueries.Client {
 
     private final Logger logger = LoggerFactory.getLogger(getClass());
     private final AuthContext authContext;
-
-
     private final QueryController queryController;
 
     public GraphDBQueriesAPI(AuthContext authContext, QueryController queryController) {
@@ -45,9 +40,8 @@ public class GraphDBQueriesAPI {
         this.authContext = authContext;
     }
 
-
-    @PostMapping
-    public Paginated<NormalizedJsonLd> executeQuery(@RequestBody KgQuery query, PaginationParam paginationParam){
+    @Override
+    public Paginated<NormalizedJsonLd> executeQuery(KgQuery query, PaginationParam paginationParam){
         UserWithRoles userWithRoles = authContext.getUserWithRoles();
         checkPermissionForQueryExecution(userWithRoles);
         return queryController.query(userWithRoles, query, paginationParam, null, false);

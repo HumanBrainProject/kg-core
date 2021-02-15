@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 EPFL/Human Brain Project PCO
+ * Copyright 2021 EPFL/Human Brain Project PCO
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,13 +17,13 @@
 package eu.ebrains.kg.core.api.instances.tests;
 
 import com.arangodb.ArangoDB;
+import eu.ebrains.kg.authentication.api.AuthenticationAPI;
 import eu.ebrains.kg.commons.IdUtils;
 import eu.ebrains.kg.commons.jsonld.NormalizedJsonLd;
 import eu.ebrains.kg.commons.model.ReleaseStatus;
 import eu.ebrains.kg.commons.model.Result;
 import eu.ebrains.kg.commons.params.ReleaseTreeScope;
 import eu.ebrains.kg.commons.permission.roles.RoleMapping;
-import eu.ebrains.kg.commons.serviceCall.ToAuthentication;
 import eu.ebrains.kg.core.api.Instances;
 
 import java.util.Arrays;
@@ -40,8 +40,8 @@ public class GetReleaseStatusByIdsTest extends AbstractInstanceTest {
 
     public IdUtils idUtils;
 
-    public GetReleaseStatusByIdsTest(ArangoDB.Builder database, ToAuthentication authenticationSvc, IdUtils idUtils, Instances instances, RoleMapping[] roles) {
-        super(database, authenticationSvc, instances, roles);
+    public GetReleaseStatusByIdsTest(ArangoDB.Builder database, AuthenticationAPI authenticationAPI, IdUtils idUtils, Instances instances, RoleMapping[] roles) {
+        super(database, authenticationAPI,  instances, roles);
         this.idUtils = idUtils;
     }
 

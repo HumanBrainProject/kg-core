@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 EPFL/Human Brain Project PCO
+ * Copyright 2021 EPFL/Human Brain Project PCO
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,16 +16,14 @@
 
 package eu.ebrains.kg.primaryStore.controller;
 
-import eu.ebrains.kg.commons.AuthTokens;
+import eu.ebrains.kg.commons.api.Indexing;
+import eu.ebrains.kg.commons.api.Inference;
 import eu.ebrains.kg.commons.model.DataStage;
 import eu.ebrains.kg.commons.model.PersistedEvent;
 import eu.ebrains.kg.commons.model.SpaceName;
-import eu.ebrains.kg.commons.models.UserWithRoles;
 import eu.ebrains.kg.primaryStore.model.DeferredInference;
 import eu.ebrains.kg.primaryStore.model.ExecutedDeferredInference;
 import eu.ebrains.kg.primaryStore.model.FailedEvent;
-import eu.ebrains.kg.primaryStore.serviceCall.PrimaryStoreToIndexing;
-import eu.ebrains.kg.primaryStore.serviceCall.PrimaryStoreToInference;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.scheduling.annotation.Async;
@@ -40,7 +38,7 @@ import java.util.stream.Collectors;
 @Component
 public class InferenceProcessor {
 
-    private final PrimaryStoreToIndexing indexingSvc;
+    private final Indexing.Client indexing;
 
     private final SSEProducer sseProducer;
 
@@ -48,28 +46,28 @@ public class InferenceProcessor {
 
     private final EventController eventController;
 
-    private final PrimaryStoreToInference inferenceSvc;
+    private final Inference.Client inference;
 
     private static final int LIMIT_DEFERRED_INFERENCE_RETRIES = 10;
 
     private final Logger logger = LoggerFactory.getLogger(getClass());
 
-    public InferenceProcessor(PrimaryStoreToIndexing indexingSvc, SSEProducer sseProducer, EventRepository eventRepository, EventController eventController, PrimaryStoreToInference inferenceSvc, UserResolver userResolver) {
-        this.indexingSvc = indexingSvc;
+    public InferenceProcessor(Indexing.Client indexing, SSEProducer sseProducer, EventRepository eventRepository, EventController eventController, Inference.Client inference) {
+        this.indexing = indexing;
         this.sseProducer = sseProducer;
         this.eventRepository = eventRepository;
         this.eventController = eventController;
-        this.inferenceSvc = inferenceSvc;
+        this.inference = inference;
     }
 
     @Async
-    public CompletableFuture<ExecutedDeferredInference> asyncDoDeferInference(AuthTokens authTokens, DeferredInference deferredInference, UserWithRoles userWithRoles){
-        return CompletableFuture.completedFuture(doDeferInference(authTokens, deferredInference, userWithRoles, 0));
+    public CompletableFuture<ExecutedDeferredInference> asyncDoDeferInference(DeferredInference deferredInference){
+        return CompletableFuture.completedFuture(doDeferInference(deferredInference,  0));
     }
 
-    private ExecutedDeferredInference doDeferInference(AuthTokens authTokens, DeferredInference deferredInference, UserWithRoles userWithRoles, int retry){
+    private ExecutedDeferredInference doDeferInference(DeferredInference deferredInference, int retry){
         try {
-            List<PersistedEvent> persistedEvents = triggerInference(deferredInference.getSpace(), deferredInference.getUuid(), userWithRoles, authTokens);
+            List<PersistedEvent> persistedEvents = triggerInference(deferredInference.getSpace(), deferredInference.getUuid());
             eventRepository.removeDeferredInference(deferredInference);
             return new ExecutedDeferredInference(persistedEvents, deferredInference, true, null);
         } catch (Exception e) {
@@ -81,20 +79,20 @@ public class InferenceProcessor {
                 int retryInSecs = retry*retry;
                 logger.warn(String.format("Was not able to infer deferred instance %s - I will retry for the %d time in %d seconds", deferredInference.getKey(), retry, retryInSecs), e);
                 try {
-                    Thread.sleep(retryInSecs *1000);
+                    Thread.sleep(retryInSecs * 1000L);
                 } catch (InterruptedException ex) {
                     ex.printStackTrace();
                 }
-                return doDeferInference(authTokens, deferredInference, userWithRoles, ++retry);
+                return doDeferInference(deferredInference, ++retry);
             }
         }
     }
 
-    public List<PersistedEvent> triggerInference(SpaceName space, UUID documentId, UserWithRoles userWithRoles, AuthTokens authTokens){
-        List<PersistedEvent> events = inferenceSvc.infer(space, documentId, authTokens).stream().map(e -> eventController.persistEvent(authTokens, e, DataStage.IN_PROGRESS, userWithRoles, null)).collect(Collectors.toList());
+    public List<PersistedEvent> triggerInference(SpaceName space, UUID documentId){
+        List<PersistedEvent> events = inference.infer(space.getName(), documentId).stream().map(e -> eventController.persistEvent(e, DataStage.IN_PROGRESS)).collect(Collectors.toList());
         events.forEach(evt -> {
             try {
-                indexingSvc.indexEvent(evt, authTokens);
+                indexing.indexEvent(evt);
             } catch (Exception e) {
                 eventRepository.recordFailedEvent(new FailedEvent(evt, e, ZonedDateTime.now()));
                 throw e;

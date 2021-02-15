@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 EPFL/Human Brain Project PCO
+ * Copyright 2021 EPFL/Human Brain Project PCO
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -115,7 +115,7 @@ public class QueriesTest extends AbstractFunctionalityTest {
     @Test
     public void simpleTestQueryInProgressWithAllInProgressRights() throws IOException {
         //Given
-        TestSimpleQueryTest test = new TestSimpleQueryTest(database, authenticationSvc, rolesAllSpacesInProgress, queries, instances, ExposedStage.IN_PROGRESS, idUtils, false);
+        TestSimpleQueryTest test = new TestSimpleQueryTest(database, authenticationAPI, rolesAllSpacesInProgress, queries, instances, ExposedStage.IN_PROGRESS, idUtils, false);
 
         //When
         test.execute(() -> {
@@ -129,7 +129,7 @@ public class QueriesTest extends AbstractFunctionalityTest {
     @Test
     public void simpleTestQueryReleasedWithReleasedRights() throws IOException {
         //Given
-        TestSimpleQueryTest test = new TestSimpleQueryTest(database, authenticationSvc, rolesAllSpacesReleased, queries, instances, ExposedStage.RELEASED, idUtils, true);
+        TestSimpleQueryTest test = new TestSimpleQueryTest(database, authenticationAPI, rolesAllSpacesReleased, queries, instances, ExposedStage.RELEASED, idUtils, true);
 
         //When
         test.execute(() -> {
@@ -142,7 +142,7 @@ public class QueriesTest extends AbstractFunctionalityTest {
     @Test
     public void simpleTestQueryReleasedWithSpaceAInProgressAndSpaceBReleasedRights() throws IOException {
         //Given
-        TestSimpleQueryTest test = new TestSimpleQueryTest(database, authenticationSvc, rolesSpaceAInProgressSpaceBReleasedOnly, queries, instances, ExposedStage.RELEASED, idUtils, true);
+        TestSimpleQueryTest test = new TestSimpleQueryTest(database, authenticationAPI, rolesSpaceAInProgressSpaceBReleasedOnly, queries, instances, ExposedStage.RELEASED, idUtils, true);
 
         //When
         test.execute(() -> {
@@ -155,7 +155,7 @@ public class QueriesTest extends AbstractFunctionalityTest {
     @Test
     public void simpleTestQueryReleasedWithSpaceAReleasedAndSpaceBInProgressRights() throws IOException {
         //Given
-        TestSimpleQueryTest test = new TestSimpleQueryTest(database, authenticationSvc, rolesSpaceAReleasedSpaceBInProgress, queries, instances, ExposedStage.RELEASED, idUtils, true);
+        TestSimpleQueryTest test = new TestSimpleQueryTest(database, authenticationAPI, rolesSpaceAReleasedSpaceBInProgress, queries, instances, ExposedStage.RELEASED, idUtils, true);
 
         //When
         test.execute(() -> {
@@ -169,7 +169,7 @@ public class QueriesTest extends AbstractFunctionalityTest {
     @Test
     public void simpleTestQueryReleasedWithInProgressRights() throws IOException {
         //Given
-        TestSimpleQueryTest test = new TestSimpleQueryTest(database, authenticationSvc, rolesAllSpacesInProgress, queries, instances, ExposedStage.RELEASED, idUtils, true);
+        TestSimpleQueryTest test = new TestSimpleQueryTest(database, authenticationAPI, rolesAllSpacesInProgress, queries, instances, ExposedStage.RELEASED, idUtils, true);
 
         //When
         test.execute(() -> {
@@ -217,7 +217,7 @@ public class QueriesTest extends AbstractFunctionalityTest {
     @Test
     public void simpleTestQueryInProgressSpaceAInProgressOnly() throws IOException {
         //Given
-        TestSimpleQueryTest test = new TestSimpleQueryTest(database, authenticationSvc, rolesSpaceAInProgressOnly, queries, instances, ExposedStage.IN_PROGRESS, idUtils, false);
+        TestSimpleQueryTest test = new TestSimpleQueryTest(database, authenticationAPI, rolesSpaceAInProgressOnly, queries, instances, ExposedStage.IN_PROGRESS, idUtils, false);
 
         //When
         test.execute(() -> {
@@ -230,7 +230,7 @@ public class QueriesTest extends AbstractFunctionalityTest {
     @Test
     public void simpleTestQueryReleasedSpaceAReleasedOnly() throws IOException {
         //Given
-        TestSimpleQueryTest test = new TestSimpleQueryTest(database, authenticationSvc, rolesSpaceAReleasedOnly, queries, instances, ExposedStage.RELEASED, idUtils, true);
+        TestSimpleQueryTest test = new TestSimpleQueryTest(database, authenticationAPI, rolesSpaceAReleasedOnly, queries, instances, ExposedStage.RELEASED, idUtils, true);
 
         //When
         test.execute(() -> {
@@ -243,7 +243,7 @@ public class QueriesTest extends AbstractFunctionalityTest {
     @Test
     public void simpleTestQueryReleasedSpaceAInProgressOnly() throws IOException {
         //Given
-        TestSimpleQueryTest test = new TestSimpleQueryTest(database, authenticationSvc, rolesSpaceAInProgressOnly, queries, instances, ExposedStage.RELEASED, idUtils, true);
+        TestSimpleQueryTest test = new TestSimpleQueryTest(database, authenticationAPI, rolesSpaceAInProgressOnly, queries, instances, ExposedStage.RELEASED, idUtils, true);
 
         //When
         test.execute(() -> {
@@ -256,7 +256,7 @@ public class QueriesTest extends AbstractFunctionalityTest {
     @Test
     public void simpleTestQueryInProgressSpaceAInProgressSpaceBReleasedOnly() throws IOException {
         //Given
-        TestSimpleQueryTest test = new TestSimpleQueryTest(database, authenticationSvc, rolesSpaceAInProgressSpaceBReleasedOnly, queries, instances, ExposedStage.IN_PROGRESS, idUtils, false);
+        TestSimpleQueryTest test = new TestSimpleQueryTest(database, authenticationAPI, rolesSpaceAInProgressSpaceBReleasedOnly, queries, instances, ExposedStage.IN_PROGRESS, idUtils, false);
 
         //When
         test.execute(() -> {
@@ -269,7 +269,7 @@ public class QueriesTest extends AbstractFunctionalityTest {
     @Test
     public void simpleTestQueryInProgressSpaceAReleasedSpaceBInProgress() throws IOException {
         //Given
-        TestSimpleQueryTest test = new TestSimpleQueryTest(database, authenticationSvc, rolesSpaceAReleasedSpaceBInProgress, queries, instances, ExposedStage.IN_PROGRESS, idUtils, false);
+        TestSimpleQueryTest test = new TestSimpleQueryTest(database, authenticationAPI, rolesSpaceAReleasedSpaceBInProgress, queries, instances, ExposedStage.IN_PROGRESS, idUtils, false);
 
         //When
         test.execute(() -> {
@@ -286,7 +286,7 @@ public class QueriesTest extends AbstractFunctionalityTest {
     @Test
     public void simpleTestQueryInProgressNoRights() throws IOException {
         //Given
-        TestSimpleQueryTest test = new TestSimpleQueryTest(database, authenticationSvc, noRights, queries, instances, ExposedStage.IN_PROGRESS, idUtils, false);
+        TestSimpleQueryTest test = new TestSimpleQueryTest(database, authenticationAPI, noRights, queries, instances, ExposedStage.IN_PROGRESS, idUtils, false);
 
         //When
         test.execute(() -> {
@@ -299,7 +299,7 @@ public class QueriesTest extends AbstractFunctionalityTest {
     @Test
     public void simpleTestQueryInProgressSpaceAReleasedOnly() throws IOException {
         //Given
-        TestSimpleQueryTest test = new TestSimpleQueryTest(database, authenticationSvc, rolesSpaceAReleasedOnly, queries, instances, ExposedStage.IN_PROGRESS, idUtils, false);
+        TestSimpleQueryTest test = new TestSimpleQueryTest(database, authenticationAPI, rolesSpaceAReleasedOnly, queries, instances, ExposedStage.IN_PROGRESS, idUtils, false);
 
         //When
         test.execute(() -> {
@@ -312,7 +312,7 @@ public class QueriesTest extends AbstractFunctionalityTest {
     @Test
     public void simpleTestQueryInProgressOnlyReleasedRights() throws IOException {
         //Given
-        TestSimpleQueryTest test = new TestSimpleQueryTest(database, authenticationSvc, rolesAllSpacesReleased, queries, instances, ExposedStage.IN_PROGRESS, idUtils, false);
+        TestSimpleQueryTest test = new TestSimpleQueryTest(database, authenticationAPI, rolesAllSpacesReleased, queries, instances, ExposedStage.IN_PROGRESS, idUtils, false);
 
         //When
         test.execute(() -> {
@@ -326,7 +326,7 @@ public class QueriesTest extends AbstractFunctionalityTest {
     @Test
     public void simpleTestQueryReleasedNoRights() throws IOException {
         //Given
-        TestSimpleQueryTest test = new TestSimpleQueryTest(database, authenticationSvc, noRights, queries, instances, ExposedStage.RELEASED, idUtils, true);
+        TestSimpleQueryTest test = new TestSimpleQueryTest(database, authenticationAPI, noRights, queries, instances, ExposedStage.RELEASED, idUtils, true);
 
         //When
         test.execute(() -> {
@@ -344,7 +344,7 @@ public class QueriesTest extends AbstractFunctionalityTest {
     @Test
     public void simpleTestQueryAllReleasedNoData() throws IOException {
         //Given
-        TestSimpleQueryTest test = new TestSimpleQueryTest(database, authenticationSvc, allRoles, queries, instances, ExposedStage.RELEASED, idUtils, false);
+        TestSimpleQueryTest test = new TestSimpleQueryTest(database, authenticationAPI, allRoles, queries, instances, ExposedStage.RELEASED, idUtils, false);
 
         //When
         test.execute(() -> {

@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 EPFL/Human Brain Project PCO
+ * Copyright 2021 EPFL/Human Brain Project PCO
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -55,7 +55,7 @@ public class PropertiesTest extends AbstractFunctionalityTest {
     @Test
     public void definePropertyGlobalOk() {
         //Given
-        DefinePropertyGlobalTest test = new DefinePropertyGlobalTest(database, authenticationSvc, PROPERTY_DEFINITION_ROLES, instances, properties);
+        DefinePropertyGlobalTest test = new DefinePropertyGlobalTest(database, authenticationAPI, PROPERTY_DEFINITION_ROLES, instances, properties);
 
         //When
         test.execute(() -> {
@@ -72,7 +72,7 @@ public class PropertiesTest extends AbstractFunctionalityTest {
     @Test
     public void definePropertyGlobalForbidden() {
         //Given
-        DefinePropertyGlobalTest test = new DefinePropertyGlobalTest(database, authenticationSvc, NON_PROPERTY_DEFINITION_ROLES, instances, properties);
+        DefinePropertyGlobalTest test = new DefinePropertyGlobalTest(database, authenticationAPI, NON_PROPERTY_DEFINITION_ROLES, instances, properties);
 
         //When
         test.execute(ForbiddenException.class);

@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 EPFL/Human Brain Project PCO
+ * Copyright 2021 EPFL/Human Brain Project PCO
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -317,7 +317,7 @@ public class ArangoRepositoryCommons {
         AQL aql = aqlQuery.getAql();
         String value = aql.build().getValue();
         long launch = new Date().getTime();
-        ArangoCursor<String> result = db.query(value, aqlQuery.getBindVars(), aql.getQueryOptions(), String.class);
+        ArangoCursor<NormalizedJsonLd> result = db.query(value, aqlQuery.getBindVars(), aql.getQueryOptions(), NormalizedJsonLd.class);
         logger.debug(String.format("Received %d results from Arango in %dms", result.getCount(), new Date().getTime() - launch));
         Long totalCount;
         if (aql.getPaginationParam() != null && aql.getPaginationParam().getSize() != null) {
@@ -326,9 +326,8 @@ public class ArangoRepositoryCommons {
             totalCount = result.getCount() != null ? result.getCount().longValue() : null;
         }
         List<T> mappedResult;
-        List<NormalizedJsonLd> normalizedJsonLds = result.asListRemaining().stream().map(i -> jsonAdapter.fromJson(i, NormalizedJsonLd.class)).collect(Collectors.toList());
+        List<NormalizedJsonLd> normalizedJsonLds = result.asListRemaining();
         logger.debug(String.format("Done parsing the results after %dms", new Date().getTime() - launch));
-
         if (mapper != null) {
             mappedResult = normalizedJsonLds.stream().map(mapper).collect(Collectors.toList());
         } else {

@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 EPFL/Human Brain Project PCO
+ * Copyright 2021 EPFL/Human Brain Project PCO
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,7 +15,7 @@
  */
 
 package eu.ebrains.kg.ids.api;
-
+import eu.ebrains.kg.commons.api.Ids;
 import eu.ebrains.kg.commons.exception.AmbiguousIdException;
 import eu.ebrains.kg.commons.jsonld.JsonLdId;
 import eu.ebrains.kg.commons.jsonld.JsonLdIdMapping;
@@ -26,18 +26,14 @@ import eu.ebrains.kg.ids.controller.IdRepository;
 import eu.ebrains.kg.ids.model.PersistedId;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
-import org.springframework.web.bind.annotation.*;
 
 import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
 
 @Component
-@RestController
-@RequestMapping("/internal/ids")
-public class IdsAPI {
+public class IdsAPI implements Ids.Client {
 
     private final IdRepository idRepository;
 
@@ -47,8 +43,8 @@ public class IdsAPI {
         this.idRepository = idRepository;
     }
 
-    @PostMapping("/{stage}")
-    public List<JsonLdId> createOrUpdateId(@RequestBody IdWithAlternatives idWithAlternatives, @PathVariable("stage") DataStage stage) {
+    @Override
+    public List<JsonLdId> createOrUpdateId(IdWithAlternatives idWithAlternatives,  DataStage stage) {
         if (idWithAlternatives != null && idWithAlternatives.getId() != null) {
             logger.debug(String.format("Updating id %s%s", idWithAlternatives.getId(), idWithAlternatives.getAlternatives() != null ? "with alternatives " + String.join(", ", idWithAlternatives.getAlternatives()) : ""));
             PersistedId persistedId = new PersistedId();
@@ -60,20 +56,18 @@ public class IdsAPI {
         throw new IllegalArgumentException("Invalid payload");
     }
 
-
-    @DeleteMapping("/{stage}/{id}")
-    public ResponseEntity<List<JsonLdId>> deprecateId(@PathVariable("stage") DataStage stage, @PathVariable("id") UUID id, @RequestParam(value = "revert", required = false, defaultValue = "false") boolean revert) {
+    @Override
+    public List<JsonLdId> deprecateId(DataStage stage, UUID id, boolean revert) {
         PersistedId foundId = idRepository.getId(id, stage);
         if(foundId==null){
-            return ResponseEntity.notFound().build();
+            return null;
         }
         foundId.setDeprecated(!revert);
-        return ResponseEntity.ok(idRepository.upsert(stage, foundId));
+        return idRepository.upsert(stage, foundId);
     }
 
-
-    @PostMapping(value = "/{stage}/resolved")
-    public List<JsonLdIdMapping> resolveId(@RequestBody List<IdWithAlternatives> idWithAlternatives, @PathVariable("stage") DataStage stage) throws AmbiguousIdException {
+    @Override
+    public List<JsonLdIdMapping> resolveId(List<IdWithAlternatives> idWithAlternatives, DataStage stage) throws AmbiguousIdException {
         if (idWithAlternatives == null || idWithAlternatives.isEmpty()) {
             return Collections.emptyList();
         }

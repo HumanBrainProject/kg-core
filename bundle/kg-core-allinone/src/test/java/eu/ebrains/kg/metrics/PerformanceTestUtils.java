@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 EPFL/Human Brain Project PCO
+ * Copyright 2021 EPFL/Human Brain Project PCO
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,6 @@
 
 package eu.ebrains.kg.metrics;
 
-import eu.ebrains.kg.commons.AuthTokens;
 import eu.ebrains.kg.commons.jsonld.JsonLdDoc;
 import eu.ebrains.kg.commons.model.Result;
 import eu.ebrains.kg.testutils.TestDataFactory;
@@ -141,23 +140,23 @@ public class PerformanceTestUtils {
         }
     }
 
-    public <T> List<ResponseEntity<Result<T>>> executeMany(int numberOfFields, boolean normalize, int numberOfIteration, boolean parallelize, Link link, CallableWithPayload<ResponseEntity<Result<T>>> r, ThreadLocal<AuthTokens> authTokens) {
+    public <T> List<ResponseEntity<Result<T>>> executeMany(int numberOfFields, boolean normalize, int numberOfIteration, boolean parallelize, Link link, CallableWithPayload<ResponseEntity<Result<T>>> r) {
         List<ResponseEntity<Result<T>>> result = null;
         if (parallelize) {
             for (int i = 0; i < THREADS_ORDER.length; i++) {
-                result = runWithThreads(numberOfFields, normalize, link, numberOfIteration, i * numberOfIteration, r, THREADS_ORDER[i], authTokens);
+                result = runWithThreads(numberOfFields, normalize, link, numberOfIteration, i * numberOfIteration, r, THREADS_ORDER[i]);
             }
             for (int i = THREADS_ORDER.length - 1; i >= 0; i--) {
-                result = runWithThreads(numberOfFields, normalize, link, numberOfIteration, THREADS_ORDER.length * numberOfIteration + (THREADS_ORDER.length - i) * numberOfIteration, r, THREADS_ORDER[i], authTokens);
+                result = runWithThreads(numberOfFields, normalize, link, numberOfIteration, THREADS_ORDER.length * numberOfIteration + (THREADS_ORDER.length - i) * numberOfIteration, r, THREADS_ORDER[i]);
             }
         } else {
-            result = runWithThreads(numberOfFields, normalize, link, numberOfIteration, 0, r, 1, authTokens);
+            result = runWithThreads(numberOfFields, normalize, link, numberOfIteration, 0, r, 1);
         }
         return result;
     }
 
 
-    private <T> List<ResponseEntity<Result<T>>> runWithThreads(int numberOfFields, boolean normalize, Link link, int numberOfIteration, int idOffset, CallableWithPayload<ResponseEntity<Result<T>>> r, int threads, ThreadLocal<AuthTokens> authTokens) {
+    private <T> List<ResponseEntity<Result<T>>> runWithThreads(int numberOfFields, boolean normalize, Link link, int numberOfIteration, int idOffset, CallableWithPayload<ResponseEntity<Result<T>>> r, int threads) {
         List<ResponseEntity<Result<T>>> result;
         Instant start = Instant.now();
         ExecutorService executorService = Executors.newFixedThreadPool(threads);
@@ -166,9 +165,6 @@ public class PerformanceTestUtils {
         for (int i = 0; i < numberOfIteration; i++) {
             final int iteration = i + idOffset;
             futureResults.add(executorService.submit(() -> {
-                AuthTokens authToken = new AuthTokens();
-                authToken.setTransactionId(UUID.randomUUID());
-                authTokens.set(authToken);
                 return r.call(TestDataFactory.createTestData(numberOfFields, !normalize, iteration, link == null ? null : link == Link.NEXT ? iteration + 1 : iteration - 1));
             }));
         }

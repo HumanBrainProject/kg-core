@@ -16,16 +16,17 @@
 
 package eu.ebrains.kg.core.controller;
 
+import eu.ebrains.kg.commons.api.GraphDBInstances;
+import eu.ebrains.kg.commons.api.GraphDBQueries;
 import eu.ebrains.kg.commons.jsonld.InstanceId;
 import eu.ebrains.kg.commons.jsonld.NormalizedJsonLd;
 import eu.ebrains.kg.commons.model.*;
 import eu.ebrains.kg.commons.query.KgQuery;
 import eu.ebrains.kg.commons.semantics.vocabularies.EBRAINSVocabulary;
-import eu.ebrains.kg.core.serviceCall.CoreInstancesToGraphDB;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
 
-import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 /**
  * The query controller contains the orchestration logic for the query operations
@@ -33,12 +34,13 @@ import java.util.UUID;
 @Component
 public class CoreQueryController {
 
-    private final CoreInstancesToGraphDB graphDB4InstancesSvc;
-
+    private final GraphDBInstances.Client graphDBInstances;
+    private final GraphDBQueries.Client graphDBQueries;
     private final CoreInstanceController instanceController;
 
-    public CoreQueryController(CoreInstancesToGraphDB graphDB4InstancesSvc, CoreInstanceController instanceController) {
-        this.graphDB4InstancesSvc = graphDB4InstancesSvc;
+    public CoreQueryController(GraphDBInstances.Client graphDBInstances, GraphDBQueries.Client graphDBQueries, CoreInstanceController instanceController) {
+        this.graphDBInstances = graphDBInstances;
+        this.graphDBQueries = graphDBQueries;
         this.instanceController = instanceController;
     }
 
@@ -51,27 +53,29 @@ public class CoreQueryController {
     }
 
     public Paginated<NormalizedJsonLd> listQueries(String search, PaginationParam paginationParam){
-        return graphDB4InstancesSvc.getQueriesByType(DataStage.IN_PROGRESS, paginationParam, search, false, null);
+        return graphDBInstances.getQueriesByType(DataStage.IN_PROGRESS, search, false, false, paginationParam,null);
     }
 
     public Paginated<NormalizedJsonLd> listQueriesPerRootType(String search, Type type, PaginationParam paginationParam){
-        return graphDB4InstancesSvc.getQueriesByType(DataStage.IN_PROGRESS, paginationParam, search, false, type);
+        return graphDBInstances.getQueriesByType(DataStage.IN_PROGRESS, search, false, false, paginationParam, type.getName());
     }
 
     public KgQuery fetchQueryById(InstanceId instanceId, DataStage stage){
-        NormalizedJsonLd instance = graphDB4InstancesSvc.getInstance(DataStage.IN_PROGRESS, instanceId, true, false, false);
-        //Only return the instance if it is actually a query
-        if(instance.types().contains(EBRAINSVocabulary.META_QUERY_TYPE)) {
-            return new KgQuery(instance, stage);
+        if(instanceId!=null) {
+            NormalizedJsonLd instance = graphDBInstances.getInstanceById(instanceId.getSpace().getName(), instanceId.getUuid(), DataStage.IN_PROGRESS, true, false, false, true);
+            //Only return the instance if it is actually a query
+            if (instance!=null && instance.types()!=null && instance.types().contains(EBRAINSVocabulary.META_QUERY_TYPE)) {
+                return new KgQuery(instance, stage);
+            }
         }
         return null;
     }
 
     public Paginated<NormalizedJsonLd> executeQuery(KgQuery query, PaginationParam paginationParam){
-        return graphDB4InstancesSvc.executeQuery(query, paginationParam);
+        return graphDBQueries.executeQuery(query, paginationParam);
     }
 
-    public List<InstanceId> deleteQuery(InstanceId instanceId){
+    public Set<InstanceId> deleteQuery(InstanceId instanceId){
         return instanceController.deleteInstance(instanceId, null);
     }
 }

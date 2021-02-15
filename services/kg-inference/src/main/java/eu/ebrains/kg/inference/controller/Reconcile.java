@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 EPFL/Human Brain Project PCO
+ * Copyright 2021 EPFL/Human Brain Project PCO
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,15 +17,13 @@
 package eu.ebrains.kg.inference.controller;
 
 import eu.ebrains.kg.commons.IdUtils;
+import eu.ebrains.kg.commons.api.GraphDBInstances;
 import eu.ebrains.kg.commons.jsonld.*;
 import eu.ebrains.kg.commons.model.DataStage;
 import eu.ebrains.kg.commons.model.Event;
 import eu.ebrains.kg.commons.model.SpaceName;
 import eu.ebrains.kg.commons.semantics.vocabularies.EBRAINSVocabulary;
 import eu.ebrains.kg.commons.semantics.vocabularies.SchemaOrgVocabulary;
-import eu.ebrains.kg.inference.serviceCall.GraphDBSvc;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
 import java.time.ZonedDateTime;
@@ -84,17 +82,14 @@ import java.util.stream.Collectors;
 @Component
 public class Reconcile {
 
-    private final GraphDBSvc graphDBSvc;
+    private final GraphDBInstances.Client graphDBInstances;
 
     private final IdUtils idUtils;
 
-    public Reconcile(GraphDBSvc graphDBSvc, IdUtils idUtils) {
-        this.graphDBSvc = graphDBSvc;
+    public Reconcile(GraphDBInstances.Client graphDBInstances, IdUtils idUtils) {
+        this.graphDBInstances = graphDBInstances;
         this.idUtils = idUtils;
     }
-
-
-    private final Logger logger = LoggerFactory.getLogger(getClass());
 
     static class InvolvedPayloads {
         Set<IndexedJsonLdDoc> documents = new HashSet<>();
@@ -103,12 +98,12 @@ public class Reconcile {
 
 
     private InvolvedPayloads findInvolvedDocuments(SpaceName space, UUID id, Set<UUID> handledDocumentIds, Set<UUID> handledInstanceIds, InvolvedPayloads involvedPayloads) {
-        List<IndexedJsonLdDoc> relatedInstancesByIdentifiers = graphDBSvc.getRelatedInstancesByIdentifiers(space, id, DataStage.NATIVE, true);
+        List<IndexedJsonLdDoc> relatedInstancesByIdentifiers = graphDBInstances.getDocumentWithRelatedInstancesByIdentifiers(space == null ? null : space.getName(), id, DataStage.NATIVE, true, false).stream().map(IndexedJsonLdDoc::from).collect(Collectors.toList());
         involvedPayloads.documents.addAll(relatedInstancesByIdentifiers);
         handledDocumentIds.add(id);
         Set<UUID> nonProcessedRelatedDocumentIds = relatedInstancesByIdentifiers.stream().map(IndexedJsonLdDoc::getDocumentId).filter(docId -> !handledDocumentIds.contains(docId)).collect(Collectors.toSet());
         //Find already existing instances for this document
-        List<InferredJsonLdDoc> inferredInstances = graphDBSvc.getRelatedInstancesByIncomingRelation(space, id, DataStage.IN_PROGRESS, InferredJsonLdDoc.INFERENCE_OF, true).stream().map(InferredJsonLdDoc::from).collect(Collectors.toList());
+        List<InferredJsonLdDoc> inferredInstances = graphDBInstances.getDocumentWithIncomingRelatedInstances(space == null ? null : space.getName(), id, DataStage.IN_PROGRESS, InferredJsonLdDoc.INFERENCE_OF, true, false, false).stream().map(InferredJsonLdDoc::from).collect(Collectors.toList());
         if (inferredInstances.size() > 1) {
             throw new IllegalStateException(String.format("There are %d inferred instances for the id %s (%s)- this is not acceptable", inferredInstances.size(), id, inferredInstances.stream().map(i -> i.asIndexed().getDocumentId().toString()).collect(Collectors.joining(", "))));
         } else if (inferredInstances.size() == 1) {
@@ -144,7 +139,7 @@ public class Reconcile {
             ReconcileUnit reconcileUnit = new ReconcileUnit();
             ids.forEach(id -> reconcileUnits.put(id, reconcileUnit));
         });
-        documents.stream().forEach(doc -> {
+        documents.forEach(doc -> {
             ReconcileUnit reconcileUnit = reconcileUnits.get(doc.getDoc().allIdentifiersIncludingId().stream().findFirst().orElse(null));
             reconcileUnit.documents.add(doc);
         });
@@ -183,7 +178,7 @@ public class Reconcile {
     InferenceResult compareInferredInstances(Set<IndexedJsonLdDoc> existingInstances, Set<InferredJsonLdDoc> newInstances) {
         Map<InferredJsonLdDoc, Set<IndexedJsonLdDoc>> newToExistingMapping = new HashMap<>();
         for (InferredJsonLdDoc newInstance : newInstances) {
-            newToExistingMapping.computeIfAbsent(newInstance, f-> new HashSet<>());
+            newToExistingMapping.computeIfAbsent(newInstance, f -> new HashSet<>());
             IndexedJsonLdDoc newInstanceDoc = newInstance.asIndexed();
             Set<String> allIdentifiersIncludingId = newInstanceDoc.getDoc().allIdentifiersIncludingId();
             existingInstances.forEach(existing -> {
@@ -225,12 +220,12 @@ public class Reconcile {
         for (InferredJsonLdDoc inferredJsonLdDoc : inferenceResult.toBeInserted) {
             IndexedJsonLdDoc indexedJsonLdDoc = inferredJsonLdDoc.asIndexed();
             JsonLdId id = indexedJsonLdDoc.getDoc().id();
-            if(id==null){
+            if (id == null) {
                 //If we want to insert a new inferred instance which has not existed before, it can be that there is no ID yet. We therefore provide a new ID for this one.
                 id = idUtils.buildAbsoluteUrl(UUID.randomUUID());
                 indexedJsonLdDoc.getDoc().setId(id);
             }
-            result.add(Event.createUpsertEvent(space,  idUtils.getUUID(id), Event.Type.INSERT, indexedJsonLdDoc.getDoc()));
+            result.add(Event.createUpsertEvent(space, idUtils.getUUID(id), Event.Type.INSERT, indexedJsonLdDoc.getDoc()));
         }
         for (InferredJsonLdDoc inferredJsonLdDoc : inferenceResult.toBeUpdated.keySet()) {
             //An update requires the uuid of the original document

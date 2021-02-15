@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 EPFL/Human Brain Project PCO
+ * Copyright 2021 EPFL/Human Brain Project PCO
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,8 +21,8 @@ import com.netflix.discovery.EurekaClient;
 import eu.ebrains.kg.commons.IdUtils;
 import eu.ebrains.kg.commons.model.SpaceName;
 import eu.ebrains.kg.docker.SpringDockerComposeRunner;
+import eu.ebrains.kg.test.GraphDB4Test;
 import eu.ebrains.kg.test.TestObjectFactory;
-import eu.ebrains.kg.test.TestToGraphDB;
 import org.junit.Before;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -47,7 +47,7 @@ public class TypeTest {
     Types types;
 
     @Autowired
-    TestToGraphDB graphDBSyncSvcForTest;
+    GraphDB4Test graphDBSyncSvcForTest;
 
     private final SpaceName space = TestObjectFactory.SIMPSONS;
 

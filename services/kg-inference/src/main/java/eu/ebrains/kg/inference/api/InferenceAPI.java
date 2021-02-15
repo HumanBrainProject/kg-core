@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 EPFL/Human Brain Project PCO
+ * Copyright 2021 EPFL/Human Brain Project PCO
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,37 +16,26 @@
 
 package eu.ebrains.kg.inference.api;
 
-import eu.ebrains.kg.commons.IdUtils;
+import eu.ebrains.kg.commons.api.Inference;
 import eu.ebrains.kg.commons.model.Event;
 import eu.ebrains.kg.commons.model.SpaceName;
 import eu.ebrains.kg.inference.controller.Reconcile;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.stereotype.Component;
 
 import java.util.List;
 import java.util.UUID;
 
+@Component
+public class InferenceAPI implements Inference.Client {
 
-@RestController
-@RequestMapping("/internal/inference")
-public class InferenceAPI {
+    private final Reconcile reconcile;
 
-    private final Logger logger = LoggerFactory.getLogger(getClass());
-    ;
+    public InferenceAPI(Reconcile reconcile) {
+        this.reconcile = reconcile;
+    }
 
-    @Autowired
-    Reconcile reconcile;
-
-    @Autowired
-    IdUtils idUtils;
-
-    @GetMapping("/{space}/{id}")
-    public List<Event> infer(@PathVariable("space") String space, @PathVariable("id") UUID id) {
+    @Override
+    public List<Event> infer(String space, UUID id) {
         //Something happened (insert / update / delete) to the native document referenced by the id.
         return this.reconcile.reconcile(new SpaceName(space), id);
     }

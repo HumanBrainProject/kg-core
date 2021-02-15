@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 EPFL/Human Brain Project PCO
+ * Copyright 2021 EPFL/Human Brain Project PCO
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,12 +19,14 @@ package eu.ebrains.kg.commons;
 import eu.ebrains.kg.commons.permission.ClientAuthToken;
 import eu.ebrains.kg.commons.permission.UserAuthToken;
 
+import java.io.Serializable;
+import java.util.Objects;
 import java.util.UUID;
 
 /**
  * This is a DTO carrying the token information
  */
-public class AuthTokens {
+public class AuthTokens implements Serializable {
 
     protected UserAuthToken userAuthToken;
     protected ClientAuthToken clientAuthToken;
@@ -60,5 +62,18 @@ public class AuthTokens {
 
     public void setClientAuthToken(ClientAuthToken clientAuthToken) {
         this.clientAuthToken = clientAuthToken;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        AuthTokens that = (AuthTokens) o;
+        return Objects.equals(userAuthToken, that.userAuthToken) && Objects.equals(clientAuthToken, that.clientAuthToken);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(userAuthToken, clientAuthToken);
     }
 }

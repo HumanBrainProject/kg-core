@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 EPFL/Human Brain Project PCO
+ * Copyright 2021 EPFL/Human Brain Project PCO
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,34 +16,40 @@
 
 package eu.ebrains.kg.primaryStore.controller;
 
+import eu.ebrains.kg.commons.AuthContext;
+import eu.ebrains.kg.commons.api.Authentication;
 import eu.ebrains.kg.commons.model.DataStage;
 import eu.ebrains.kg.commons.model.Event;
 import eu.ebrains.kg.commons.model.User;
 import eu.ebrains.kg.commons.models.UserWithRoles;
-import eu.ebrains.kg.commons.serviceCall.ToAuthentication;
 import org.springframework.stereotype.Component;
 
 @Component
 public class UserResolver {
 
-    public final ToAuthentication authenticationSvc;
+    private final Authentication.Client authentication;
+    private final AuthContext authContext;
 
-    public UserResolver(ToAuthentication authenticationSvc) {
-        this.authenticationSvc = authenticationSvc;
+    public UserResolver(Authentication.Client authentication, AuthContext authContext) {
+        this.authentication = authentication;
+        this.authContext = authContext;
     }
 
-    public User resolveUser(Event event, UserWithRoles userWithRoles){
+    public User resolveUser(Event event){
          //The user information is only relevant for the native space -> for any later stage, it will be represented as part of the alternatives.
         if (event.getType().getStage() == DataStage.NATIVE) {
             if (event.getUserId() != null) {
                 //The caller defines a user id - we try to resolve it and take the user information from the submitted one (happens e.g. if a technical client acts "in-behalf-of".
-                User usr = authenticationSvc.getUserById(event.getUserId());
+                User usr = authentication.getOtherUserInfo(event.getUserId());
                 if (usr == null) {
                     usr = new User(String.format("unresolved-%s", event.getUserId()), String.format("Unresolved %s", event.getUserId()), null, null, null, event.getUserId());
                 }
                 return usr;
-            } else if(userWithRoles!=null){
-                return userWithRoles.getUser();
+            } else {
+                UserWithRoles userWithRoles = authContext.getUserWithRoles();
+                if(userWithRoles!=null) {
+                    return authContext.getUserWithRoles().getUser();
+                }
             }
         }
         return null;

@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 EPFL/Human Brain Project PCO
+ * Copyright 2021 EPFL/Human Brain Project PCO
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,15 +16,14 @@
 
 package eu.ebrains.kg.core.controller;
 
-import eu.ebrains.kg.commons.AuthTokens;
 import eu.ebrains.kg.commons.IdUtils;
+import eu.ebrains.kg.commons.api.GraphDBDocuments;
+import eu.ebrains.kg.commons.api.GraphDBInstances;
+import eu.ebrains.kg.commons.api.PrimaryStoreEvents;
 import eu.ebrains.kg.commons.exception.UnauthorizedException;
 import eu.ebrains.kg.commons.jsonld.*;
 import eu.ebrains.kg.commons.model.DataStage;
 import eu.ebrains.kg.commons.model.SpaceName;
-import eu.ebrains.kg.core.serviceCall.CoreAsyncToIds;
-import eu.ebrains.kg.core.serviceCall.CoreToGraphDB;
-import eu.ebrains.kg.core.serviceCall.CoreToPrimaryStore;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.scheduling.annotation.Async;
@@ -40,38 +39,43 @@ import java.util.stream.Collectors;
 @Component
 public class CoreInferenceController {
 
-    private final CoreToGraphDB graphSvc;
+    private final GraphDBInstances.Client graphDBInstances;
+    private final GraphDBDocuments.Client graphDBDocuments;
     private final IdUtils idUtils;
-    private final CoreToPrimaryStore primaryStoreSvc;
-    private final CoreAsyncToIds idsSvc;
+    private final PrimaryStoreEvents.Client primaryStoreEvents;
+    private final IdsController ids;
 
-    public CoreInferenceController(CoreToGraphDB graphSvc, IdUtils idUtils, CoreToPrimaryStore primaryStoreSvc, CoreAsyncToIds idsSvc) {
-        this.graphSvc = graphSvc;
+    public CoreInferenceController(GraphDBInstances.Client graphDBInstances, GraphDBDocuments.Client graphDBDocuments, IdUtils idUtils, PrimaryStoreEvents.Client primaryStoreEvents, IdsController ids) {
+        this.graphDBInstances = graphDBInstances;
+        this.graphDBDocuments = graphDBDocuments;
         this.idUtils = idUtils;
-        this.primaryStoreSvc = primaryStoreSvc;
-        this.idsSvc = idsSvc;
+        this.primaryStoreEvents = primaryStoreEvents;
+        this.ids = ids;
     }
 
     private final Logger logger = LoggerFactory.getLogger(getClass());
 
     @Async
-    public void asyncTriggerInference(SpaceName space, String identifier, AuthTokens authTokens){
-        triggerInference(space, identifier, authTokens);
+    public void asyncTriggerInference(SpaceName space, String identifier){
+        triggerInference(space, identifier);
     }
 
-    public void triggerInference(SpaceName space, String identifier, AuthTokens authTokens) {
+    public void triggerInference(SpaceName space, String identifier) {
         List<UUID> uuids;
+        if(space == null){
+            throw new IllegalArgumentException("No space provided");
+        }
         if (identifier == null) {
-            uuids = graphSvc.getDocumentIdsBySpace(space, authTokens).stream().map(UUID::fromString).collect(Collectors.toList());
+            uuids = graphDBDocuments.getDocumentIdsBySpace(space.getName()).stream().map(UUID::fromString).collect(Collectors.toList());
         } else {
-            uuids = graphSvc.getRelatedInstancesByIdentifiers(space, identifier, DataStage.NATIVE, authTokens).stream().map(IndexedJsonLdDoc::getDocumentId).collect(Collectors.toList());
+            uuids = graphDBInstances.getInstancesByIdentifier(identifier, space.getName(), DataStage.NATIVE).stream().map(d -> IndexedJsonLdDoc.from(d).getDocumentId()).collect(Collectors.toList());
             if (uuids.isEmpty()) {
                 //We can't find any uuids - it could be that the passed identifier is the id of the IN_PROGRESS stage -> we therefore have to try to look it up...
                 UUID uuid = extractInternalUUID(identifier);
                 if (uuid != null) {
-                    InstanceId instanceId = idsSvc.resolveId(DataStage.IN_PROGRESS, uuid, authTokens);
+                    InstanceId instanceId = ids.resolveId(DataStage.IN_PROGRESS, uuid);
                     if (instanceId != null) {
-                        NormalizedJsonLd instance = graphSvc.getInstance(DataStage.IN_PROGRESS, instanceId, false, false, false, authTokens);
+                        NormalizedJsonLd instance = graphDBInstances.getInstanceById(instanceId.getSpace().getName(), instanceId.getUuid(), DataStage.IN_PROGRESS,  false, false, false, true);
                         List<JsonLdId> inferenceOf = InferredJsonLdDoc.from(instance).getInferenceOf();
                         //To be sure, we re-infer all of the previous sources...
                         uuids = inferenceOf.stream().map(idUtils::getUUID).filter(Objects::nonNull).collect(Collectors.toList());
@@ -83,7 +87,7 @@ public class CoreInferenceController {
         for (UUID documentId : uuids) {
             try {
                 logger.info(String.format("Inferring document with UUID %s in space %s", documentId, space.getName()));
-                primaryStoreSvc.inferInstance(space, documentId, authTokens);
+                primaryStoreEvents.infer(space.getName(), documentId);
             } catch (Exception e) {
                 logger.error(String.format("Was not able to infer document with UUID %s", documentId), e);
                 if (e instanceof UnauthorizedException) {
@@ -112,7 +116,7 @@ public class CoreInferenceController {
         return uuid;
     }
 
-    public void triggerDeferredInference(AuthTokens authTokens, SpaceName space, boolean synchronous) {
-        primaryStoreSvc.inferDeferred(authTokens, space, synchronous);
+    public void triggerDeferredInference(SpaceName space, boolean synchronous) {
+        primaryStoreEvents.inferDeferred(space.getName(), synchronous);
     }
 }

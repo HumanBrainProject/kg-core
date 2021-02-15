@@ -19,6 +19,8 @@ package eu.ebrains.kg.core.api;
 import eu.ebrains.kg.arango.commons.model.InternalSpace;
 import eu.ebrains.kg.commons.AuthContext;
 import eu.ebrains.kg.commons.Version;
+import eu.ebrains.kg.commons.api.GraphDBTypes;
+import eu.ebrains.kg.commons.api.PrimaryStoreEvents;
 import eu.ebrains.kg.commons.config.openApiGroups.Admin;
 import eu.ebrains.kg.commons.config.openApiGroups.Advanced;
 import eu.ebrains.kg.commons.config.openApiGroups.Simple;
@@ -31,8 +33,6 @@ import eu.ebrains.kg.commons.model.*;
 import eu.ebrains.kg.commons.semantics.vocabularies.EBRAINSVocabulary;
 import eu.ebrains.kg.commons.semantics.vocabularies.SchemaOrgVocabulary;
 import eu.ebrains.kg.core.model.ExposedStage;
-import eu.ebrains.kg.core.serviceCall.CoreToPrimaryStore;
-import eu.ebrains.kg.core.serviceCall.CoreTypesToGraphDB;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import org.springdoc.api.annotations.ParameterObject;
@@ -51,16 +51,14 @@ import java.util.stream.Collectors;
 @RequestMapping(Version.API)
 public class Types {
 
-    private final CoreTypesToGraphDB graphDBSvc;
-
+    private final GraphDBTypes.Client graphDBTypes;
+    private final PrimaryStoreEvents.Client primaryStoreEvents;
     private final AuthContext authContext;
 
-    private final CoreToPrimaryStore primaryStoreSvc;
-
-    public Types(CoreTypesToGraphDB graphDBSvc, AuthContext authContext, CoreToPrimaryStore primaryStoreSvc) {
-        this.graphDBSvc = graphDBSvc;
+    public Types(GraphDBTypes.Client graphDBTypes, PrimaryStoreEvents.Client primaryStoreEvents, AuthContext authContext) {
+        this.graphDBTypes = graphDBTypes;
+        this.primaryStoreEvents = primaryStoreEvents;
         this.authContext = authContext;
-        this.primaryStoreSvc = primaryStoreSvc;
     }
 
     @Operation(summary = "Returns the types available - either with property information or without")
@@ -68,7 +66,17 @@ public class Types {
     @ExposesType
     @Simple
     public PaginatedResult<NormalizedJsonLd> getTypes(@RequestParam("stage") ExposedStage stage, @RequestParam(value = "space", required = false) @Parameter(description = "The space by which the types should be filtered or \"" + SpaceName.PRIVATE_SPACE + "\" for your private space.") String space, @RequestParam(value = "withProperties", defaultValue = "false") boolean withProperties, @RequestParam(value = "withIncomingLinks", defaultValue = "false") boolean withIncomingLinks, @ParameterObject PaginationParam paginationParam) {
-        return PaginatedResult.ok(graphDBSvc.getTypes(stage.getStage(), authContext.resolveSpaceName(space), withProperties, withIncomingLinks, withProperties, paginationParam));
+        if(withProperties){
+            return PaginatedResult.ok(graphDBTypes.getTypesWithProperties(stage.getStage(), getResolvedSpaceName(space), true, withIncomingLinks, paginationParam));
+        }
+        else {
+            return PaginatedResult.ok(graphDBTypes.getTypes(stage.getStage(), getResolvedSpaceName(space), withIncomingLinks, paginationParam));
+        }
+    }
+
+    private String getResolvedSpaceName(String space){
+        SpaceName spaceName = authContext.resolveSpaceName(space);
+        return spaceName!=null ? spaceName.getName() : null;
     }
 
     @Operation(summary = "Returns the types according to the list of names - either with property information or without")
@@ -76,7 +84,14 @@ public class Types {
     @ExposesType
     @Advanced
     public Result<Map<String, Result<NormalizedJsonLd>>> getTypesByName(@RequestBody List<String> listOfTypeNames, @RequestParam("stage") ExposedStage stage, @RequestParam(value = "withProperties", defaultValue = "false") boolean withProperties, @RequestParam(value = "space", required = false) @Parameter(description = "The space by which the types should be filtered or \"" + SpaceName.PRIVATE_SPACE + "\" for your private space.") String space) {
-        return Result.ok(graphDBSvc.getTypesByNameList(listOfTypeNames, stage.getStage(), authContext.resolveSpaceName(space), withProperties));
+        SpaceName spaceName = authContext.resolveSpaceName(space);
+        if(withProperties){
+            //TODO check for withIncomingLinks
+            return Result.ok(graphDBTypes.getTypesWithPropertiesByName(listOfTypeNames, stage.getStage(), true, true, getResolvedSpaceName(space)));
+        }
+        else{
+            return Result.ok(graphDBTypes.getTypesByName(listOfTypeNames, stage.getStage(), getResolvedSpaceName(space)));
+        }
     }
 
     @Operation(summary = "Specify a type")
@@ -92,7 +107,7 @@ public class Types {
         }
         payload.setId(EBRAINSVocabulary.createIdForStructureDefinition("clients", targetSpace.getName(), "types", type.getId()));
         payload.put(JsonLdConsts.TYPE, EBRAINSVocabulary.META_TYPEDEFINITION_TYPE);
-        primaryStoreSvc.postEvent(Event.createUpsertEvent(targetSpace, UUID.nameUUIDFromBytes(payload.id().getId().getBytes(StandardCharsets.UTF_8)), Event.Type.INSERT, payload), false, authContext.getAuthTokens());
+        primaryStoreEvents.postEvent(Event.createUpsertEvent(targetSpace, UUID.nameUUIDFromBytes(payload.id().getId().getBytes(StandardCharsets.UTF_8)), Event.Type.INSERT, payload), false);
         return ResponseEntity.ok(Result.ok());
     }
 
@@ -102,7 +117,7 @@ public class Types {
     @ExposesType
     @Admin
     public Result<List<NormalizedJsonLd>> candidatesForDeprecation() {
-        Paginated<NormalizedJsonLd> types = graphDBSvc.getTypes(DataStage.IN_PROGRESS, null, true, false, true, new PaginationParam());
+        Paginated<NormalizedJsonLd> types = graphDBTypes.getTypesWithProperties(DataStage.IN_PROGRESS, null, true, false, new PaginationParam());
         return Result.ok(types.getData().stream().filter(type -> type.getAs(EBRAINSVocabulary.META_OCCURRENCES, Double.class).intValue() == 0).collect(Collectors.toList()));
     }
 
@@ -112,7 +127,7 @@ public class Types {
     @WritesData
     @Admin
     public ResponseEntity<Result<Void>> deprecateType(@RequestParam(value = "type", required = false) String type) {
-        Result<NormalizedJsonLd> typeStats = graphDBSvc.getTypesByNameList(Collections.singletonList(type), DataStage.IN_PROGRESS, null, true).get(type);
+        Result<NormalizedJsonLd> typeStats = graphDBTypes.getTypesWithPropertiesByName(Collections.singletonList(type), DataStage.IN_PROGRESS, true, false, null).get(type);
         if (typeStats == null || typeStats.getData() == null) {
             return ResponseEntity.notFound().build();
         } else if (typeStats.getData().getAs(EBRAINSVocabulary.META_OCCURRENCES, Double.class).intValue() == 0) {
@@ -122,7 +137,7 @@ public class Types {
             payload.addTypes(EBRAINSVocabulary.META_TYPEDEFINITION_TYPE);
             payload.put(EBRAINSVocabulary.META_TYPE, type);
             Event deprecateType = new Event(spaceName, typeId, payload, Event.Type.META_DEPRECATION, new Date());
-            primaryStoreSvc.postEvent(deprecateType, false, authContext.getAuthTokens());
+            primaryStoreEvents.postEvent(deprecateType, false);
             return ResponseEntity.ok(Result.ok());
         } else {
             return ResponseEntity.status(HttpStatus.CONFLICT).body(Result.nok(HttpStatus.CONFLICT.value(), "Was not able to deprecate type %s because it occurs %d times in the database"));

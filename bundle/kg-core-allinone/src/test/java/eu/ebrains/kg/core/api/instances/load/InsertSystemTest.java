@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 EPFL/Human Brain Project PCO
+ * Copyright 2021 EPFL/Human Brain Project PCO
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,9 +18,12 @@ package eu.ebrains.kg.core.api.instances.load;
 
 import eu.ebrains.kg.metrics.PerformanceTestUtils;
 import org.junit.Test;
+import org.springframework.test.context.TestPropertySource;
 
 import java.io.IOException;
 
+
+@TestPropertySource(properties = {"logging.level.eu.ebrains.kg=WARN"})
 public class InsertSystemTest extends AbstractInstancesLoadTest {
 
     @Test

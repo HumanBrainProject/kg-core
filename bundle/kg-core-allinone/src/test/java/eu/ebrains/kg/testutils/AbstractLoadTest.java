@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 EPFL/Human Brain Project PCO
+ * Copyright 2021 EPFL/Human Brain Project PCO
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,8 +16,13 @@
 
 package eu.ebrains.kg.testutils;
 
+import com.arangodb.ArangoDB;
 import eu.ebrains.kg.commons.AuthTokens;
-import eu.ebrains.kg.commons.serviceCall.ToAuthentication;
+import eu.ebrains.kg.commons.model.User;
+import eu.ebrains.kg.commons.models.UserWithRoles;
+import eu.ebrains.kg.commons.permission.ClientAuthToken;
+import eu.ebrains.kg.commons.permission.UserAuthToken;
+import eu.ebrains.kg.core.api.AbstractTest;
 import eu.ebrains.kg.metrics.MethodExecution;
 import eu.ebrains.kg.metrics.PerformanceTestUtils;
 import eu.ebrains.kg.metrics.TestInformation;
@@ -26,7 +31,6 @@ import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.mockito.Mockito;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.mock.mockito.MockBean;
 
 import java.io.IOException;
@@ -47,16 +51,6 @@ public abstract class AbstractLoadTest extends AbstractSystemTest {
 
     private Map<UUID, List<MethodExecution>> metrics;
 
-    public static ThreadLocal<AuthTokens> authTokens = new ThreadLocal<>(){
-        @Override
-        protected AuthTokens initialValue()
-        {
-            return null;
-        }
-    };
-
-    @Autowired
-    protected ToAuthentication authenticationSvc;
 
     @BeforeClass
     public static void loadResources() {
@@ -70,15 +64,16 @@ public abstract class AbstractLoadTest extends AbstractSystemTest {
 
     @Before
     public void setup() {
-        Mockito.doReturn(authenticationSvc.getUserWithRoles()).when(authContext).getUserWithRoles();
-        Mockito.doAnswer(a -> authTokens.get()).when(authContext).getAuthTokens();
-        Mockito.doAnswer(a -> {
-            Object argument = a.getArgument(0);
-            if(argument instanceof AuthTokens){
-                authTokens.set((AuthTokens)argument);
-            }
-            return null;
-        }).when(authContext).setAuthTokens(Mockito.any());
+        clearDatabase();
+        //We execute the load tests as an admin...
+        User user = new User("bobEverythingGoes", "Bob Everything Goes", "fakeAdmin@ebrains.eu", "Bob Everything", "Goes", "admin");
+        UserWithRoles userWithRoles = new UserWithRoles(user, AbstractTest.ADMIN_ROLE, AbstractTest.ADMIN_CLIENT_ROLE, "testClient");
+        Mockito.doReturn(user).when(authenticationAPI).getMyUserInfo();
+        Mockito.doReturn(userWithRoles).when(authenticationAPI).getRoles();
+        AuthTokens authTokens=new AuthTokens();
+        authTokens.setUserAuthToken(new UserAuthToken("userToken"));
+        authTokens.setClientAuthToken(new ClientAuthToken("clientToken"));
+        Mockito.doReturn(authTokens).when(authTokenContext).getAuthTokens();
         testRunId = UUID.randomUUID().toString();
         Mockito.doReturn(testRunId).when(testInformation).getRunId();
         metrics = Collections.synchronizedMap(new HashMap<>());
@@ -92,5 +87,13 @@ public abstract class AbstractLoadTest extends AbstractSystemTest {
         }
     }
 
+
+    private void clearDatabase() {
+        ArangoDB arango = database.build();
+        arango.getDatabases().stream().filter(db -> db.startsWith("kg")).forEach(db -> {
+            System.out.println(String.format("Removing database %s", db));
+            arango.db(db).drop();
+        });
+    }
 
 }

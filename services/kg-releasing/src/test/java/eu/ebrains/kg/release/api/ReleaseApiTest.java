@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 EPFL/Human Brain Project PCO
+ * Copyright 2021 EPFL/Human Brain Project PCO
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,7 +23,7 @@ import eu.ebrains.kg.commons.jsonld.NormalizedJsonLd;
 import eu.ebrains.kg.commons.model.DataStage;
 import eu.ebrains.kg.commons.model.SpaceName;
 import eu.ebrains.kg.docker.SpringDockerComposeRunner;
-import eu.ebrains.kg.test.TestToGraphDB;
+import eu.ebrains.kg.test.GraphDB4Test;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -60,7 +60,7 @@ public class ReleaseApiTest {
     }
 
     @Autowired
-    TestToGraphDB graphDb;
+    GraphDB4Test graphDb;
 
     @Autowired
     IdUtils idUtils;
