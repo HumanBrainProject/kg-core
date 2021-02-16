@@ -212,7 +212,7 @@ public class Instances {
     @ExposesData
     @Advanced
     public Result<Map<String, Result<NormalizedJsonLd>>> getInstancesByIdentifiers(@RequestBody List<String> identifiers, @RequestParam("stage") ExposedStage stage, @ParameterObject ResponseConfiguration responseConfiguration) {
-        List<IdWithAlternatives> idWithAlternatives = identifiers.stream().map(identifier -> new IdWithAlternatives(UUID.randomUUID(), null, Collections.singleton(identifier))).collect(Collectors.toList());
+        List<IdWithAlternatives> idWithAlternatives = identifiers.stream().filter(Objects::nonNull).map(identifier -> new IdWithAlternatives(UUID.randomUUID(), null, Collections.singleton(identifier))).collect(Collectors.toList());
         Map<UUID, String> uuidToIdentifier = idWithAlternatives.stream().collect(Collectors.toMap(IdWithAlternatives::getId, v -> v.getAlternatives().iterator().next()));
         List<JsonLdIdMapping> jsonLdIdMappings = idsController.resolveIds(stage.getStage(), idWithAlternatives);
         Map<String, InstanceId> identifierToInstanceIdLookup = new HashMap<>();
@@ -331,7 +331,7 @@ public class Instances {
     @Advanced
     public Result<Map<UUID, Result<ReleaseStatus>>> getReleaseStatusByIds(@RequestBody List<UUID> listOfIds, @RequestParam("releaseTreeScope") ReleaseTreeScope releaseTreeScope) {
         List<InstanceId> instanceIds = idsController.resolveIdsByUUID(DataStage.IN_PROGRESS, listOfIds, false);
-        return Result.ok(instanceIds.stream().filter(instanceId -> !instanceId.isDeprecated()).collect(Collectors.toMap(InstanceId::getUuid, instanceId -> {
+        return Result.ok(instanceIds.stream().filter(instanceId -> !instanceId.isDeprecated() &&  instanceId.getUuid()!=null).collect(Collectors.toMap(InstanceId::getUuid, instanceId -> {
                     try {
                         return Result.ok(release.getReleaseStatus(instanceId.getSpace().getName(), instanceId.getUuid(), releaseTreeScope));
                     }
@@ -358,7 +358,7 @@ public class Instances {
     @Advanced
     public Result<SuggestionResult> getSuggestedLinksForProperty(@RequestBody NormalizedJsonLd payload, @RequestParam("stage") ExposedStage stage, @RequestParam(value = "property") String propertyName, @PathVariable("id") UUID id, @RequestParam(value = "type", required = false) String type, @RequestParam(value = "search", required = false) String search, @ParameterObject PaginationParam paginationParam) {
         InstanceId instanceId = idsController.resolveId(DataStage.IN_PROGRESS, id);
-        return Result.ok(graphDBInstances.getSuggestedLinksForProperty(payload, stage.getStage(), instanceId!=null ? instanceId.getSpace().getName() : null, id, propertyName, type != null && !type.isBlank() ? new Type(type).getName() : null, search, paginationParam));
+        return Result.ok(graphDBInstances.getSuggestedLinksForProperty(payload, stage.getStage(), instanceId!=null && instanceId.getSpace()!=null ? instanceId.getSpace().getName() : null, id, propertyName, type != null && !type.isBlank() ? new Type(type).getName() : null, search, paginationParam));
     }
 
 

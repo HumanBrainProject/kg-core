@@ -160,7 +160,7 @@ public class CoreInstanceController {
 
     public Map<String, Result<NormalizedJsonLd>> getInstancesByIds(List<String> ids, DataStage stage, ResponseConfiguration responseConfiguration) {
         Map<String, Result<NormalizedJsonLd>> result = new HashMap<>();
-        List<UUID> validUUIDs = ids.stream().map(id -> {
+        List<UUID> validUUIDs = ids.stream().filter(Objects::nonNull).map(id -> {
             try {
                 return id != null ? UUID.fromString(id) : null;
             } catch (IllegalArgumentException e) {
