@@ -171,11 +171,13 @@ public class CoreInstanceController {
         idsAfterResolution.stream().filter(instanceId -> !instanceId.isDeprecated()).filter(InstanceId::isUnresolved).forEach(id -> result.put(id.getUuid().toString(), Result.nok(HttpStatus.NOT_FOUND.value(), HttpStatus.NOT_FOUND.getReasonPhrase())));
         Map<UUID, Result<NormalizedJsonLd>> instancesByIds = graphDBInstances.getInstancesByIds(idsAfterResolution.stream().filter(i -> !i.isUnresolved() && !i.isDeprecated()).map(InstanceId::serialize).collect(Collectors.toList()), stage, responseConfiguration.isReturnEmbedded(), responseConfiguration.isReturnAlternatives(), responseConfiguration.isReturnIncomingLinks());
         instancesByIds.forEach((k, v) -> result.put(k.toString(), v));
-        for (String id : ids) {
-            if (!result.containsKey(id)) {
-                result.put(id, Result.nok(HttpStatus.NOT_FOUND.value(), id));
-            }
-        }
+        ids.stream().filter(Objects::nonNull).forEach(
+                id -> {
+                    if (!result.containsKey(id)) {
+                        result.put(id, Result.nok(HttpStatus.NOT_FOUND.value(), id));
+                    }
+                }
+        );
         if (responseConfiguration.isReturnAlternatives()) {
             resolveAlternatives(stage, instancesByIds.values().stream().map(Result::getData).collect(Collectors.toList()));
         }
@@ -186,7 +188,7 @@ public class CoreInstanceController {
     }
 
     public Paginated<NormalizedJsonLd> getInstances(DataStage stage, Type type, SpaceName space, String searchByLabel, ResponseConfiguration responseConfiguration, PaginationParam paginationParam) {
-        Paginated<NormalizedJsonLd> instancesByType = graphDBInstances.getInstancesByType(stage, type!=null ? type.getName() : null, space!=null ? space.getName() : null, searchByLabel, responseConfiguration.isReturnAlternatives(), responseConfiguration.isReturnEmbedded(), responseConfiguration.isSortByLabel(), paginationParam);
+        Paginated<NormalizedJsonLd> instancesByType = graphDBInstances.getInstancesByType(stage, type != null ? type.getName() : null, space != null ? space.getName() : null, searchByLabel, responseConfiguration.isReturnAlternatives(), responseConfiguration.isReturnEmbedded(), responseConfiguration.isSortByLabel(), paginationParam);
         if (responseConfiguration.isReturnAlternatives()) {
             resolveAlternatives(stage, instancesByType.getData());
         }
@@ -203,7 +205,7 @@ public class CoreInstanceController {
                     DataStage.IN_PROGRESS,
                     responseConfiguration.isReturnEmbedded(),
                     responseConfiguration.isReturnAlternatives(),
-		    responseConfiguration.isReturnIncomingLinks());
+                    responseConfiguration.isReturnIncomingLinks());
             if (responseConfiguration.isReturnAlternatives()) {
                 resolveAlternatives(DataStage.IN_PROGRESS, instancesByIds.values().stream().map(Result::getData).collect(Collectors.toList()));
             }
@@ -333,7 +335,7 @@ public class CoreInstanceController {
 
     public GraphEntity getNeighbors(UUID id, DataStage stage) {
         InstanceId instanceId = ids.resolveId(stage, id);
-        if(instanceId!=null) {
+        if (instanceId != null) {
             return graphDBInstances.getNeighbors(instanceId.getSpace().getName(), instanceId.getUuid(), stage);
         }
         return null;
