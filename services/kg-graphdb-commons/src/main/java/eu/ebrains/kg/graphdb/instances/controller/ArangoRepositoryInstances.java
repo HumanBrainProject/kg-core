@@ -535,7 +535,7 @@ public class ArangoRepositoryInstances {
         aql.addLine(AQL.trust("RETURN MERGE(FOR instanceId IN @instanceIds"));
         bindVars.put("instanceIds", documents.stream().map(ArangoDocumentReference::getId).collect(Collectors.toList()));
         aql.addLine(AQL.trust("LET doc = DOCUMENT(instanceId)"));
-        aql.addLine(AQL.trust("LET inbnd = ("));
+        aql.addLine(AQL.trust("LET inbnd = UNIQUE("));
         aql.indent().addLine(AQL.trust("FOR inbnd, e IN 1..1 INBOUND doc " + edges));
         aql.addLine(AQL.trust("RETURN {"));
         aql.indent().addLine(AQL.trust("\"" + SchemaOrgVocabulary.IDENTIFIER + "\": e.`_originalLabel`,"));
