@@ -25,6 +25,7 @@ import org.springframework.stereotype.Component;
 import javax.servlet.http.HttpServletRequest;
 import java.util.UUID;
 
+
 @Component
 /**
  * This is the access point for getting the token of the current user and the client.
@@ -33,27 +34,43 @@ import java.util.UUID;
  */
 public class AuthTokenContext {
     private final HttpServletRequest request;
+    private final KeycloakSvc keycloakSvc;
     private final static Logger logger = LoggerFactory.getLogger(AuthTokenContext.class);
 
     // IntelliJ reports the injection of HttpServletRequest to be an error -> but it actually is not...
-    public AuthTokenContext(HttpServletRequest request) {
+    public AuthTokenContext(KeycloakSvc keycloakSvc, HttpServletRequest request) {
         this.request = request;
+        this.keycloakSvc = keycloakSvc;
     }
 
-    public AuthTokens getAuthTokens(){
-        //TODO handle client-id and client-secret or client-sa-secret authentication.
-        String userAuthorization = request.getHeader("Authorization");
+    public AuthTokens getAuthTokens() {
         String clientAuthorization = request.getHeader("Client-Authorization");
+        String userAuthorization = request.getHeader("Authorization");
+        if(clientAuthorization==null) {
+            String clientId = request.getHeader("Client-Id");
+            String clientSecret = request.getHeader("Client-Secret");
+            String clientSaSecret = request.getHeader("Client-SA-Secret");
+            if (clientId != null) {
+                //TODO token caching!?
+                if (clientSecret != null) {
+                    clientAuthorization = keycloakSvc.getToken(clientId, clientSecret);
+                } else if (clientSaSecret != null) {
+                    clientAuthorization = keycloakSvc.getToken(clientId, clientSaSecret);
+                    if(userAuthorization==null) {
+                        userAuthorization = clientAuthorization;
+                    }
+                }
+            }
+        }
         String transactionId = request.getHeader("Transaction-Id");
         AuthTokens authTokens = new AuthTokens(
                 userAuthorization != null ? new UserAuthToken(userAuthorization) : null,
                 clientAuthorization != null ? new ClientAuthToken(clientAuthorization) : null
         );
-        if(transactionId!=null) {
+        if (transactionId != null) {
             try {
                 authTokens.setTransactionId(UUID.fromString(transactionId));
-            }
-            catch(IllegalArgumentException e){
+            } catch (IllegalArgumentException e) {
                 logger.warn(String.format("Was receiving an invalid (non-UUID) transaction-id: %s", transactionId));
             }
         }

@@ -14,9 +14,8 @@
  * limitations under the License.
  */
 
-package eu.ebrains.kg.commons.serviceCall;
+package eu.ebrains.kg.commons;
 
-import eu.ebrains.kg.commons.api.Authentication;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
@@ -30,18 +29,18 @@ import java.util.Map;
 @Component
 public class KeycloakSvc {
 
-    private final Authentication.Client authentication;
     private String endpoint;
     private final WebClient.Builder internalWebClient;
+    private final WebClient.Builder loadBalancedWebClient;
 
-    public KeycloakSvc(Authentication.Client authentication, @Qualifier("direct") WebClient.Builder internalWebClient) {
-        this.authentication = authentication;
+    public KeycloakSvc(@Qualifier("loadbalanced") WebClient.Builder loadBalancedWebClient, @Qualifier("direct") WebClient.Builder internalWebClient) {
         this.internalWebClient = internalWebClient;
+        this.loadBalancedWebClient = loadBalancedWebClient;
     }
 
     private String getEndpoint() {
         if (endpoint == null) {
-            endpoint = authentication.tokenEndpoint();
+            endpoint = this.loadBalancedWebClient.build().get().uri("http://kg-authentication/internal/authentication/users/authorization/tokenEndpoint").retrieve().bodyToMono(String.class).block();
         }
         return endpoint;
     }

@@ -521,4 +521,16 @@ public class InstancesTest extends AbstractFunctionalityTest {
         });
     }
 
+
+    @Test
+    public void getSuggestions() {
+        //Given
+        GetSuggestionsTest test = new GetSuggestionsTest(database, authenticationAPI, idUtils, instances, NON_RELEASE_STATUS_ROLES);
+
+        //When
+        test.execute(() -> {
+            //Then
+            assertNotNull(test.response);
+        });
+    }
 }

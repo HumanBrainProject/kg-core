@@ -32,13 +32,10 @@
         <module>libs-4-test/kg-test-utils</module>
         <module>libs/kg-arango-commons</module>
         <module>config/kg-microservice</module>
-
-
         <module>services/kg-ids</module>
         <module>services/kg-authentication</module>
         <module>services/kg-core-api</module>
         <module>services/kg-graphdb-commons</module>
-        <!--<module>services/kg-graphdb-async</module>-->
         <module>services/kg-graphdb-sync</module>
         <module>services/kg-indexing</module>
         <module>services/kg-inference</module>
@@ -46,16 +43,7 @@
         <module>services/kg-primarystore</module>
         <module>services/kg-releasing</module>
         <module>services/kg-service-discovery</module>
-
-
-        <!--<module>mocks/kg-core-api-mock</module>-->
-
         <module>tests/kg-system-test</module>
-        <!--<module>tests/kg-core-to-query-comparison</module>-->
-
-        <module>adapters/kg-nexus-v0-adapter</module>
-        <!--<module>adapters/kg-nexus-v1-adapter</module>-->
-
         <module>bundle/kg-core-allinone</module>
     </modules>
 
