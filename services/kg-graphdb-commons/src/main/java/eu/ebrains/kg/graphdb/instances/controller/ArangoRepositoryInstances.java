@@ -317,7 +317,7 @@ public class ArangoRepositoryInstances {
         Map<UUID, Result<NormalizedJsonLd>> documentsByReferenceListWithMinimalReadAccess = getDocumentsByReferenceList(stage, hasOnlyMinimalReadPermissions.stream().map(ArangoDocumentReference::fromInstanceId).collect(Collectors.toList()), false, false, false);
 
         //Reduce the payload to the minimal fields
-        documentsByReferenceListWithMinimalReadAccess.values().forEach(d -> d.getData().keepPropertiesOnly(getMinimalFields(stage, d.getData().types())));
+        documentsByReferenceListWithMinimalReadAccess.values().stream().filter(Objects::nonNull).map(Result::getData).filter(Objects::nonNull).forEach(d -> d.keepPropertiesOnly(getMinimalFields(stage, d.types())));
         documentsByReferenceList.putAll(documentsByReferenceListWithMinimalReadAccess);
 
         //Define responses for no-permission instances
