@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 EPFL/Human Brain Project PCO
+ * Copyright 2021 EPFL/Human Brain Project PCO
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,6 +29,7 @@ public class Type {
 
     private String name;
     private String labelProperty;
+    private transient Boolean ignoreIncomingLinks;
 
     public String getLabelProperty() {
         return labelProperty;
@@ -53,6 +54,14 @@ public class Type {
         return URLEncoder.encode(getName(), StandardCharsets.UTF_8);
     }
 
+    public Boolean getIgnoreIncomingLinks() {
+        return ignoreIncomingLinks;
+    }
+
+    public void setIgnoreIncomingLinks(Boolean ignoreIncomingLinks) {
+        this.ignoreIncomingLinks = ignoreIncomingLinks;
+    }
+
     @Override
     public boolean equals(Object obj) {
         Type that = (Type) obj;
@@ -62,6 +71,7 @@ public class Type {
     public static Type fromPayload(NormalizedJsonLd payload) {
         Type targetType = new Type(payload.primaryIdentifier());
         targetType.setLabelProperty(payload.getAs(EBRAINSVocabulary.META_TYPE_LABEL_PROPERTY, String.class));
+        targetType.setIgnoreIncomingLinks(payload.getAs(EBRAINSVocabulary.META_IGNORE_INCOMING_LINKS, Boolean.class));
         return targetType;
     }
 

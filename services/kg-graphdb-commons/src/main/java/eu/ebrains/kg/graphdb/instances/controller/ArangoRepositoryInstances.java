@@ -97,17 +97,22 @@ public class ArangoRepositoryInstances {
         List<NormalizedJsonLd> singleDoc = Collections.singletonList(document.getDoc());
         handleAlternativesAndEmbedded(singleDoc, stage, alternatives, embedded);
         exposeRevision(singleDoc);
-        if (removeInternalProperties) {
-            document.getDoc().removeAllInternalProperties();
-        }
+
         if (incomingLinks) {
             ArangoDocumentReference arangoDocumentReference = ArangoDocumentReference.fromInstanceId(new InstanceId(id, space));
-            NormalizedJsonLd instanceIncomingLinks = getIncomingLinks(Collections.singletonList(arangoDocumentReference), stage);
-            if (!CollectionUtils.isEmpty(instanceIncomingLinks)) {
-                String idString = id.toString();
-                NormalizedJsonLd d = document.getDoc();
-                handleIncomingLinks(stage, idString, d, instanceIncomingLinks);
+            List<Type> extendedTypeInfo = typesRepo.getTypeInformation(authContext.getUserWithRoles().getClientId(), stage, document.getDoc().types().stream().map(Type::new).collect(Collectors.toSet()));
+            boolean ignoreIncomingLinks = extendedTypeInfo.stream().anyMatch(t -> t.getIgnoreIncomingLinks() != null && t.getIgnoreIncomingLinks());
+            if(!ignoreIncomingLinks) {
+                NormalizedJsonLd instanceIncomingLinks = getIncomingLinks(Collections.singletonList(arangoDocumentReference), stage);
+                if (!CollectionUtils.isEmpty(instanceIncomingLinks)) {
+                    String idString = id.toString();
+                    NormalizedJsonLd d = document.getDoc();
+                    handleIncomingLinks(stage, idString, d, instanceIncomingLinks);
+                }
             }
+        }
+        if (removeInternalProperties) {
+            document.getDoc().removeAllInternalProperties();
         }
         NormalizedJsonLd doc = document.getDoc();
         if (doc != null && !permissions.hasPermission(authContext.getUserWithRoles(), Functionality.READ, space, id)) {
@@ -278,17 +283,24 @@ public class ArangoRepositoryInstances {
         if (!normalizedJsonLds.isEmpty()) {
             handleAlternativesAndEmbedded(normalizedJsonLds, stage, alternatives, embedded);
             exposeRevision(normalizedJsonLds);
-            normalizedJsonLds.forEach(NormalizedJsonLd::removeAllInternalProperties);
+
 
             if (incomingLinks) {
-                NormalizedJsonLd instanceIncomingLinks = getIncomingLinks(documentReferences, stage);
-                if (!CollectionUtils.isEmpty(instanceIncomingLinks)) {
-                    normalizedJsonLds.forEach(d -> {
-                        String id = idUtils.getUUID(d.id()).toString();
-                        handleIncomingLinks(stage, id, d, instanceIncomingLinks);
-                    });
+                List<Type> involvedTypes = normalizedJsonLds.stream().map(JsonLdDoc::types).flatMap(Collection::stream).distinct().map(Type::new).collect(Collectors.toList());
+                List<Type> extendedTypeInfo = typesRepo.getTypeInformation(authContext.getUserWithRoles().getClientId(), stage, involvedTypes);
+                Set<String> excludedTypes = extendedTypeInfo.stream().filter(t -> t.getIgnoreIncomingLinks() != null && t.getIgnoreIncomingLinks()).map(Type::getName).collect(Collectors.toSet());
+                List<ArangoDocumentReference> toInspectForIncomingLinks = normalizedJsonLds.stream().filter(n -> n.types().stream().noneMatch(excludedTypes::contains)).map(n -> ArangoDocument.from(n).getId()).collect(Collectors.toList());
+                if(!CollectionUtils.isEmpty(toInspectForIncomingLinks)) {
+                    NormalizedJsonLd instanceIncomingLinks = getIncomingLinks(toInspectForIncomingLinks, stage);
+                    if (!CollectionUtils.isEmpty(instanceIncomingLinks)) {
+                        normalizedJsonLds.forEach(d -> {
+                            String id = idUtils.getUUID(d.id()).toString();
+                            handleIncomingLinks(stage, id, d, instanceIncomingLinks);
+                        });
+                    }
                 }
             }
+            normalizedJsonLds.forEach(NormalizedJsonLd::removeAllInternalProperties);
         }
         return result;
     }
