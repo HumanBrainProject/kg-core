@@ -20,10 +20,9 @@ import eu.ebrains.kg.commons.jsonld.JsonLdDoc;
 import eu.ebrains.kg.commons.jsonld.NormalizedJsonLd;
 
 import java.util.List;
-import java.util.Map;
 
 public interface JsonLd {
     interface Client extends JsonLd {}
     NormalizedJsonLd normalize(JsonLdDoc payload, boolean keepNullValues);
-    List<Map<?,?>> applyVocab(List<NormalizedJsonLd> documents, String vocab);
+    List<JsonLdDoc> applyVocab(List<NormalizedJsonLd> documents, String vocab);
 }

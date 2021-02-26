@@ -20,6 +20,7 @@ import eu.ebrains.kg.commons.api.GraphDBInstances;
 import eu.ebrains.kg.commons.api.GraphDBQueries;
 import eu.ebrains.kg.commons.api.JsonLd;
 import eu.ebrains.kg.commons.jsonld.InstanceId;
+import eu.ebrains.kg.commons.jsonld.JsonLdDoc;
 import eu.ebrains.kg.commons.jsonld.NormalizedJsonLd;
 import eu.ebrains.kg.commons.model.*;
 import eu.ebrains.kg.commons.query.KgQuery;
@@ -28,7 +29,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 /**
@@ -76,14 +76,14 @@ public class CoreQueryController {
         return null;
     }
 
-    public Paginated<? extends Map<?, ?>> executeQuery(KgQuery query, PaginationParam paginationParam){
+    public Paginated<? extends JsonLdDoc> executeQuery(KgQuery query, PaginationParam paginationParam){
         QueryResult paginatedQueryResult = graphDBQueries.executeQuery(query, paginationParam);
         if(paginatedQueryResult!=null){
             if(paginatedQueryResult.getResponseVocab() != null){
                 Paginated<NormalizedJsonLd> result = paginatedQueryResult.getResult();
                 if(result!=null) {
                     List<NormalizedJsonLd> data = result.getData();
-                    List<Map<?, ?>> dataWithAppliedContext = jsonLd.applyVocab(data, paginatedQueryResult.getResponseVocab());
+                    List<JsonLdDoc> dataWithAppliedContext = jsonLd.applyVocab(data, paginatedQueryResult.getResponseVocab());
                     return new Paginated<>(dataWithAppliedContext, result.getTotalResults(), result.getSize(), result.getFrom());
                 }
             }

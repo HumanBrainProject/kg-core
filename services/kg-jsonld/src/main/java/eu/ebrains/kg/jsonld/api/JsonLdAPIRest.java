@@ -23,7 +23,6 @@ import org.springframework.web.bind.annotation.*;
 import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
-import java.util.Map;
 
 @RestController
 @RequestMapping("/internal/jsonld")
@@ -41,7 +40,7 @@ public class JsonLdAPIRest implements eu.ebrains.kg.commons.api.JsonLd {
     }
 
     @PostMapping("/withVocab")
-    public List<Map<?,?>> applyVocab(@RequestBody List<NormalizedJsonLd> documents, @RequestParam(value = "vocab") String vocab) {
+    public List<JsonLdDoc> applyVocab(@RequestBody List<NormalizedJsonLd> documents, @RequestParam(value = "vocab") String vocab) {
         return this.jsonLdAPI.applyVocab(documents, URLDecoder.decode(vocab, StandardCharsets.UTF_8));
     }
 

@@ -40,7 +40,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 
@@ -81,7 +80,7 @@ public class Queries {
     @Operation(summary = "Execute the query in the payload in test mode (e.g. for execution before saving with the KG QueryBuilder)")
     @PostMapping
     @ExposesData
-    public PaginatedResult<? extends Map<?,?>> testQuery(@RequestBody JsonLdDoc query, @ParameterObject PaginationParam paginationParam, @RequestParam("stage") ExposedStage stage) {
+    public PaginatedResult<? extends JsonLdDoc> testQuery(@RequestBody JsonLdDoc query, @ParameterObject PaginationParam paginationParam, @RequestParam("stage") ExposedStage stage) {
         NormalizedJsonLd normalizedJsonLd = jsonLd.normalize(query, true);
         KgQuery q = new KgQuery(normalizedJsonLd, stage.getStage());
         return PaginatedResult.ok(queryController.executeQuery(q, paginationParam));
@@ -137,7 +136,7 @@ public class Queries {
     @Operation(summary = "Execute a stored query to receive the instances")
     @GetMapping("/{queryId}/instances")
     @ExposesData
-    public PaginatedResult<? extends Map<?,?>> executeQueryById(@PathVariable("queryId") UUID queryId, @ParameterObject PaginationParam paginationParam, @RequestParam("stage") ExposedStage stage) {
+    public PaginatedResult<? extends JsonLdDoc> executeQueryById(@PathVariable("queryId") UUID queryId, @ParameterObject PaginationParam paginationParam, @RequestParam("stage") ExposedStage stage) {
         InstanceId instanceId = ids.resolveId(DataStage.IN_PROGRESS, queryId);
         KgQuery query = queryController.fetchQueryById(instanceId, stage.getStage());
         return PaginatedResult.ok(queryController.executeQuery(query, paginationParam));
