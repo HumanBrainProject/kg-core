@@ -18,15 +18,15 @@ package eu.ebrains.kg.commons.query;
 
 import eu.ebrains.kg.commons.jsonld.NormalizedJsonLd;
 import eu.ebrains.kg.commons.model.DataStage;
-import eu.ebrains.kg.commons.model.EntityId;
 
 import java.util.List;
+import java.util.UUID;
 
 public class KgQuery {
 
     private NormalizedJsonLd payload;
     private DataStage stage;
-    private List<EntityId> idRestrictions;
+    private List<UUID> idRestrictions;
 
     public KgQuery() {
     }
@@ -54,11 +54,11 @@ public class KgQuery {
         return this;
     }
 
-    public List<EntityId> getIdRestrictions() {
+    public List<UUID> getIdRestrictions() {
         return idRestrictions;
     }
 
-    public KgQuery setIdRestrictions(List<EntityId> idRestrictions) {
+    public KgQuery setIdRestrictions(List<UUID> idRestrictions) {
         this.idRestrictions = idRestrictions;
         return this;
     }

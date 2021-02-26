@@ -40,6 +40,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.Collections;
 import java.util.Set;
 import java.util.UUID;
 
@@ -80,9 +81,12 @@ public class Queries {
     @Operation(summary = "Execute the query in the payload in test mode (e.g. for execution before saving with the KG QueryBuilder)")
     @PostMapping
     @ExposesData
-    public PaginatedResult<? extends JsonLdDoc> testQuery(@RequestBody JsonLdDoc query, @ParameterObject PaginationParam paginationParam, @RequestParam("stage") ExposedStage stage) {
+    public PaginatedResult<? extends JsonLdDoc> testQuery(@RequestBody JsonLdDoc query, @ParameterObject PaginationParam paginationParam, @RequestParam("stage") ExposedStage stage, @RequestParam(value = "instanceId", required = false) UUID instanceId) {
         NormalizedJsonLd normalizedJsonLd = jsonLd.normalize(query, true);
         KgQuery q = new KgQuery(normalizedJsonLd, stage.getStage());
+        if(instanceId!=null){
+            q.setIdRestrictions(Collections.singletonList(instanceId));
+        }
         return PaginatedResult.ok(queryController.executeQuery(q, paginationParam));
     }
 
@@ -136,9 +140,12 @@ public class Queries {
     @Operation(summary = "Execute a stored query to receive the instances")
     @GetMapping("/{queryId}/instances")
     @ExposesData
-    public PaginatedResult<? extends JsonLdDoc> executeQueryById(@PathVariable("queryId") UUID queryId, @ParameterObject PaginationParam paginationParam, @RequestParam("stage") ExposedStage stage) {
-        InstanceId instanceId = ids.resolveId(DataStage.IN_PROGRESS, queryId);
-        KgQuery query = queryController.fetchQueryById(instanceId, stage.getStage());
+    public PaginatedResult<? extends JsonLdDoc> executeQueryById(@PathVariable("queryId") UUID queryId, @ParameterObject PaginationParam paginationParam, @RequestParam("stage") ExposedStage stage, @RequestParam(value = "instanceId", required = false) UUID instanceId) {
+        InstanceId queryInstance = ids.resolveId(DataStage.IN_PROGRESS, queryId);
+        KgQuery query = queryController.fetchQueryById(queryInstance, stage.getStage());
+        if(instanceId!=null){
+            query.setIdRestrictions(Collections.singletonList(instanceId));
+        }
         return PaginatedResult.ok(queryController.executeQuery(query, paginationParam));
     }
 

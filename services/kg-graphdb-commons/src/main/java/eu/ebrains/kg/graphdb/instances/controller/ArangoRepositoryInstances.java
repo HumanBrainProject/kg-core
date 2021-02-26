@@ -857,7 +857,7 @@ public class ArangoRepositoryInstances {
         List<NormalizedJsonLd> results = typeQueries.map(q ->        {
             QueryResult queryResult = queryController.query(authContext.getUserWithRoles(),
                     new KgQuery(q, stage).setIdRestrictions(
-                            Collections.singletonList(new EntityId(id.toString()))), null, null, true);
+                            Collections.singletonList(id)), null, null, true);
             return queryResult!=null && queryResult.getResult() != null ? queryResult.getResult().getData() : null;
         }).filter(Objects::nonNull).flatMap(Collection::stream).collect(Collectors.toList());
         return translateResultToScope(results, stage, fetchLabels, instance);
