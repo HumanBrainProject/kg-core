@@ -14,16 +14,24 @@
  * limitations under the License.
  */
 
-package eu.ebrains.kg.commons.api;
+package eu.ebrains.kg.commons.model;
 
-import eu.ebrains.kg.commons.jsonld.JsonLdDoc;
 import eu.ebrains.kg.commons.jsonld.NormalizedJsonLd;
 
-import java.util.List;
-import java.util.Map;
+public class QueryResult {
+    private final Paginated<NormalizedJsonLd> result;
+    private final String responseVocab;
 
-public interface JsonLd {
-    interface Client extends JsonLd {}
-    NormalizedJsonLd normalize(JsonLdDoc payload, boolean keepNullValues);
-    List<Map<?,?>> applyVocab(List<NormalizedJsonLd> documents, String vocab);
+    public QueryResult(Paginated<NormalizedJsonLd> result, String responseVocab) {
+        this.result = result;
+        this.responseVocab = responseVocab;
+    }
+
+    public Paginated<NormalizedJsonLd> getResult() {
+        return result;
+    }
+
+    public String getResponseVocab() {
+        return responseVocab;
+    }
 }

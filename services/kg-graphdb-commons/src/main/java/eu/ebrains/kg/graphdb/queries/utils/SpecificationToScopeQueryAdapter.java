@@ -69,7 +69,7 @@ public class SpecificationToScopeQueryAdapter {
         root.add(internalIdProperty());
         root.add(spaceProperty());
         originalSpec.getProperties().stream().map(this::handleProperty).forEach(root::addAll);
-        return new Specification(root, originalSpec.getDocumentFilter(), originalSpec.getRootType());
+        return new Specification(root, originalSpec.getDocumentFilter(), originalSpec.getRootType(), originalSpec.getResponseVocab());
     }
 
 

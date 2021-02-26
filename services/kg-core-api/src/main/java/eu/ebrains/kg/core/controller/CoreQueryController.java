@@ -18,6 +18,7 @@ package eu.ebrains.kg.core.controller;
 
 import eu.ebrains.kg.commons.api.GraphDBInstances;
 import eu.ebrains.kg.commons.api.GraphDBQueries;
+import eu.ebrains.kg.commons.api.JsonLd;
 import eu.ebrains.kg.commons.jsonld.InstanceId;
 import eu.ebrains.kg.commons.jsonld.NormalizedJsonLd;
 import eu.ebrains.kg.commons.model.*;
@@ -26,6 +27,8 @@ import eu.ebrains.kg.commons.semantics.vocabularies.EBRAINSVocabulary;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
 
+import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 /**
@@ -37,11 +40,13 @@ public class CoreQueryController {
     private final GraphDBInstances.Client graphDBInstances;
     private final GraphDBQueries.Client graphDBQueries;
     private final CoreInstanceController instanceController;
+    private final JsonLd.Client jsonLd;
 
-    public CoreQueryController(GraphDBInstances.Client graphDBInstances, GraphDBQueries.Client graphDBQueries, CoreInstanceController instanceController) {
+    public CoreQueryController(GraphDBInstances.Client graphDBInstances, GraphDBQueries.Client graphDBQueries, CoreInstanceController instanceController, JsonLd.Client jsonLd) {
         this.graphDBInstances = graphDBInstances;
         this.graphDBQueries = graphDBQueries;
         this.instanceController = instanceController;
+        this.jsonLd = jsonLd;
     }
 
     public ResponseEntity<Result<NormalizedJsonLd>> createNewQuery(NormalizedJsonLd query, UUID queryId, SpaceName space){
@@ -71,8 +76,20 @@ public class CoreQueryController {
         return null;
     }
 
-    public Paginated<NormalizedJsonLd> executeQuery(KgQuery query, PaginationParam paginationParam){
-        return graphDBQueries.executeQuery(query, paginationParam);
+    public Paginated<? extends Map<?, ?>> executeQuery(KgQuery query, PaginationParam paginationParam){
+        QueryResult paginatedQueryResult = graphDBQueries.executeQuery(query, paginationParam);
+        if(paginatedQueryResult!=null){
+            if(paginatedQueryResult.getResponseVocab() != null){
+                Paginated<NormalizedJsonLd> result = paginatedQueryResult.getResult();
+                if(result!=null) {
+                    List<NormalizedJsonLd> data = result.getData();
+                    List<Map<?, ?>> dataWithAppliedContext = jsonLd.applyVocab(data, paginatedQueryResult.getResponseVocab());
+                    return new Paginated<>(dataWithAppliedContext, result.getTotalResults(), result.getSize(), result.getFrom());
+                }
+            }
+            return paginatedQueryResult.getResult();
+        }
+        return null;
     }
 
     public Set<InstanceId> deleteQuery(InstanceId instanceId){

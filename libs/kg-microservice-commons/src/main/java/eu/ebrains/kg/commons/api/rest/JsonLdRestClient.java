@@ -24,6 +24,13 @@ import eu.ebrains.kg.commons.jsonld.NormalizedJsonLd;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
+import java.util.Arrays;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+
 @RestClient
 public class JsonLdRestClient implements JsonLd.Client {
 
@@ -44,5 +51,14 @@ public class JsonLdRestClient implements JsonLd.Client {
                 payload,
                 authTokenContext.getAuthTokens(),
                 NormalizedJsonLd.class);
+    }
+
+    @Override
+    public List<Map<?, ?>> applyVocab(List<NormalizedJsonLd> documents, String vocab) {
+        LinkedHashMap<?,?>[] result = serviceCall.post(String.format("%s/withVocab?vocab=%s", SERVICE_URL, URLEncoder.encode(vocab, StandardCharsets.UTF_8)),
+                documents,
+                authTokenContext.getAuthTokens(),
+                LinkedHashMap[].class);
+        return result!=null ? Arrays.asList(result): null;
     }
 }

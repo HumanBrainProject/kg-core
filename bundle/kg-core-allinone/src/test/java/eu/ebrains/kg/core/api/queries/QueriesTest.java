@@ -33,10 +33,7 @@ import org.junit.experimental.categories.Category;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
+import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -90,6 +87,9 @@ public class QueriesTest extends AbstractFunctionalityTest {
         this.noRights = roleCombinations(noReadRights, noReadRights).stream().map(r -> roles(r.getA(), r.getB())).collect(Collectors.toList());
     }
 
+    private List<NormalizedJsonLd> mapToListOfNormalizedJsonLds(List<? extends Map<?, ?>> documents) {
+        return documents.stream().map(d -> new NormalizedJsonLd((Map<String, ?>) d)).collect(Collectors.toList());
+    }
 
     private void assertAllComplete(TestSimpleQueryTest test, List<NormalizedJsonLd> normalizedJsonLds) {
         NormalizedJsonLd resultForA = normalizedJsonLds.stream().filter(n -> n.getAs(test.nameOfRoot, String.class).equals(test.instanceA.getAs(SchemaOrgVocabulary.NAME, String.class))).findFirst().orElse(null);
@@ -120,8 +120,8 @@ public class QueriesTest extends AbstractFunctionalityTest {
         //When
         test.execute(() -> {
             //Then
-            List<NormalizedJsonLd> normalizedJsonLds = test.assureValidPayload(test.response);
-            assertAllComplete(test, normalizedJsonLds);
+            List<? extends Map<?, ?>> results = test.assureValidPayload(test.response);
+            assertAllComplete(test, mapToListOfNormalizedJsonLds(results));
         });
     }
 
@@ -134,8 +134,8 @@ public class QueriesTest extends AbstractFunctionalityTest {
         //When
         test.execute(() -> {
             //Then
-            List<NormalizedJsonLd> normalizedJsonLds = test.assureValidPayload(test.response);
-            assertAllComplete(test, normalizedJsonLds);
+            List<? extends Map<?, ?>> results = test.assureValidPayload(test.response);
+            assertAllComplete(test, mapToListOfNormalizedJsonLds(results));
         });
     }
 
@@ -147,8 +147,8 @@ public class QueriesTest extends AbstractFunctionalityTest {
         //When
         test.execute(() -> {
             //Then
-            List<NormalizedJsonLd> normalizedJsonLds = test.assureValidPayload(test.response);
-            assertAllComplete(test, normalizedJsonLds);
+            List<? extends Map<?, ?>> results = test.assureValidPayload(test.response);
+            assertAllComplete(test, mapToListOfNormalizedJsonLds(results));
         });
     }
 
@@ -160,8 +160,8 @@ public class QueriesTest extends AbstractFunctionalityTest {
         //When
         test.execute(() -> {
             //Then
-            List<NormalizedJsonLd> normalizedJsonLds = test.assureValidPayload(test.response);
-            assertAllComplete(test, normalizedJsonLds);
+            List<? extends Map<?, ?>> results = test.assureValidPayload(test.response);
+            assertAllComplete(test, mapToListOfNormalizedJsonLds(results));
         });
     }
 
@@ -174,8 +174,8 @@ public class QueriesTest extends AbstractFunctionalityTest {
         //When
         test.execute(() -> {
             //Then
-            List<NormalizedJsonLd> normalizedJsonLds = test.assureValidPayload(test.response);
-            assertAllComplete(test, normalizedJsonLds);
+            List<? extends Map<?, ?>> results = test.assureValidPayload(test.response);
+            assertAllComplete(test, mapToListOfNormalizedJsonLds(results));
             assertTrue("We are asking for the released instances with in progress rights -> this implies access rights for released instances too and we expect the payload to be complete", true);
         });
     }
@@ -222,8 +222,8 @@ public class QueriesTest extends AbstractFunctionalityTest {
         //When
         test.execute(() -> {
             //Then
-            List<NormalizedJsonLd> normalizedJsonLds = test.assureValidPayload(test.response);
-            assertSpaceAOnly(test, normalizedJsonLds);
+            List<? extends Map<?, ?>> results = test.assureValidPayload(test.response);
+            assertSpaceAOnly(test, mapToListOfNormalizedJsonLds(results));
         });
     }
 
@@ -235,8 +235,8 @@ public class QueriesTest extends AbstractFunctionalityTest {
         //When
         test.execute(() -> {
             //Then
-            List<NormalizedJsonLd> normalizedJsonLds = test.assureValidPayload(test.response);
-            assertSpaceAOnly(test, normalizedJsonLds);
+            List<? extends Map<?, ?>> results = test.assureValidPayload(test.response);
+            assertSpaceAOnly(test, mapToListOfNormalizedJsonLds(results));
         });
     }
 
@@ -248,8 +248,8 @@ public class QueriesTest extends AbstractFunctionalityTest {
         //When
         test.execute(() -> {
             //Then
-            List<NormalizedJsonLd> normalizedJsonLds = test.assureValidPayload(test.response);
-            assertSpaceAOnly(test, normalizedJsonLds);
+            List<? extends Map<?, ?>> results = test.assureValidPayload(test.response);
+            assertSpaceAOnly(test, mapToListOfNormalizedJsonLds(results));
         });
     }
 
@@ -261,8 +261,8 @@ public class QueriesTest extends AbstractFunctionalityTest {
         //When
         test.execute(() -> {
             //Then
-            List<NormalizedJsonLd> normalizedJsonLds = test.assureValidPayload(test.response);
-            assertSpaceAOnly(test, normalizedJsonLds);
+            List<? extends Map<?, ?>> results = test.assureValidPayload(test.response);
+            assertSpaceAOnly(test, mapToListOfNormalizedJsonLds(results));
         });
     }
 
@@ -274,8 +274,8 @@ public class QueriesTest extends AbstractFunctionalityTest {
         //When
         test.execute(() -> {
             //Then
-            List<NormalizedJsonLd> normalizedJsonLds = test.assureValidPayload(test.response);
-            assertSpaceBOnly(test, normalizedJsonLds);
+            List<? extends Map<?, ?>> results = test.assureValidPayload(test.response);
+            assertSpaceBOnly(test, mapToListOfNormalizedJsonLds(results));
         });
     }
 
@@ -291,7 +291,7 @@ public class QueriesTest extends AbstractFunctionalityTest {
         //When
         test.execute(() -> {
             //Then
-            List<NormalizedJsonLd> normalizedJsonLds = test.assureValidPayload(test.response);
+            List<? extends Map<?, ?>> normalizedJsonLds = test.assureValidPayload(test.response);
             assertTrue("We expect the response to be empty because we don't have any rights.", normalizedJsonLds.isEmpty());
         });
     }
@@ -304,7 +304,7 @@ public class QueriesTest extends AbstractFunctionalityTest {
         //When
         test.execute(() -> {
             //Then
-            List<NormalizedJsonLd> normalizedJsonLds = test.assureValidPayload(test.response);
+            List<? extends Map<?, ?>> normalizedJsonLds = test.assureValidPayload(test.response);
             assertTrue("We expect the response to be empty because we only have released rights for space a.", normalizedJsonLds.isEmpty());
         });
     }
@@ -317,7 +317,7 @@ public class QueriesTest extends AbstractFunctionalityTest {
         //When
         test.execute(() -> {
             //Then
-            List<NormalizedJsonLd> normalizedJsonLds = test.assureValidPayload(test.response);
+            List<? extends Map<?, ?>> normalizedJsonLds = test.assureValidPayload(test.response);
             assertTrue("We expect the response to be empty because we query in progress but only have rights for released.", normalizedJsonLds.isEmpty());
         });
     }
@@ -331,7 +331,7 @@ public class QueriesTest extends AbstractFunctionalityTest {
         //When
         test.execute(() -> {
             //Then
-            List<NormalizedJsonLd> normalizedJsonLds = test.assureValidPayload(test.response);
+            List<? extends Map<?, ?>> normalizedJsonLds = test.assureValidPayload(test.response);
             assertTrue("We were querying the released instances but have no rights. So we expect the response to be empty.", normalizedJsonLds.isEmpty());
         });
     }
@@ -349,7 +349,7 @@ public class QueriesTest extends AbstractFunctionalityTest {
         //When
         test.execute(() -> {
             //Then
-            List<NormalizedJsonLd> normalizedJsonLds = test.assureValidPayload(test.response);
+            List<? extends Map<?, ?>> normalizedJsonLds = test.assureValidPayload(test.response);
             assertTrue("We were querying the released instances but no instances have been released. So we expect the response to be empty.", normalizedJsonLds.isEmpty());
         });
     }

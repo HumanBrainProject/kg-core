@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 EPFL/Human Brain Project PCO
+ * Copyright 2021 EPFL/Human Brain Project PCO
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -31,11 +31,10 @@ public class JsonAdapter {
 
     public String toJson(Object object) {
         try {
-            if(object == null){
+            if (object == null) {
                 return null;
-            }
-            else if (object instanceof String){
-                return (String)object;
+            } else if (object instanceof String) {
+                return (String) object;
             }
             return objectMapper.writer().writeValueAsString(object);
         } catch (JsonProcessingException e) {
@@ -45,7 +44,7 @@ public class JsonAdapter {
 
     public <T> T fromJson(String payload, Class<T> clazz) {
         try {
-            if(payload == null){
+            if (payload == null) {
                 return null;
             }
             return objectMapper.readValue(payload, clazz);

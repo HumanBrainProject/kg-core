@@ -23,10 +23,9 @@ import com.arangodb.model.AqlQueryOptions;
 import eu.ebrains.kg.arango.commons.model.AQLQuery;
 import eu.ebrains.kg.arango.commons.model.ArangoCollectionReference;
 import eu.ebrains.kg.arango.commons.model.InternalSpace;
-import eu.ebrains.kg.commons.jsonld.NormalizedJsonLd;
 import eu.ebrains.kg.commons.model.EntityId;
-import eu.ebrains.kg.commons.model.Paginated;
 import eu.ebrains.kg.commons.model.PaginationParam;
+import eu.ebrains.kg.commons.model.QueryResult;
 import eu.ebrains.kg.commons.models.UserWithRoles;
 import eu.ebrains.kg.commons.query.KgQuery;
 import eu.ebrains.kg.graphdb.commons.controller.ArangoDatabases;
@@ -69,7 +68,7 @@ public class QueryController {
     }
 
 
-    public Paginated<NormalizedJsonLd> query(UserWithRoles userWithRoles, KgQuery query, PaginationParam paginationParam, Map<String, String> filterValues, boolean scopeMode) {
+    public QueryResult query(UserWithRoles userWithRoles, KgQuery query, PaginationParam paginationParam, Map<String, String> filterValues, boolean scopeMode) {
         ArangoDatabase database = arangoDatabases.getByStage(query.getStage());
         Specification specification = specificationInterpreter.readSpecification(query.getPayload(), null);
         if(scopeMode){
@@ -81,7 +80,7 @@ public class QueryController {
         AQLQuery aql = new DataQueryBuilder(specification, paginationParam, whitelistFilter, filterValues, database.getCollections().stream().map(c -> new ArangoCollectionReference(c.getName(), c.getType() == CollectionType.EDGES)).collect(Collectors.toList())).build();
         aql.addBindVar("idRestriction", query.getIdRestrictions() == null ? Collections.emptyList() : query.getIdRestrictions().stream().map(EntityId::getId).collect(Collectors.toList()));
         try {
-            return arangoRepositoryCommons.queryDocuments(database, aql);
+            return new QueryResult(arangoRepositoryCommons.queryDocuments(database, aql), specification.getResponseVocab());
         } catch (ArangoDBException ex) {
             logger.error(String.format("Was not able to execute query: %s", aql));
             throw ex;

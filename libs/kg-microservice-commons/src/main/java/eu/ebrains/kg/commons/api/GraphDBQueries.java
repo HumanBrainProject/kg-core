@@ -16,13 +16,12 @@
 
 package eu.ebrains.kg.commons.api;
 
-import eu.ebrains.kg.commons.jsonld.NormalizedJsonLd;
-import eu.ebrains.kg.commons.model.Paginated;
 import eu.ebrains.kg.commons.model.PaginationParam;
+import eu.ebrains.kg.commons.model.QueryResult;
 import eu.ebrains.kg.commons.query.KgQuery;
 
 public interface GraphDBQueries {
     interface Client extends GraphDBQueries {}
 
-    Paginated<NormalizedJsonLd> executeQuery(KgQuery query, PaginationParam paginationParam);
+    QueryResult executeQuery(KgQuery query, PaginationParam paginationParam);
 }

@@ -34,6 +34,7 @@ import java.io.IOException;
 import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 
 public class TestSimpleQueryTest extends AbstractTest {
 
@@ -51,7 +52,7 @@ public class TestSimpleQueryTest extends AbstractTest {
 
     public JsonLdDoc query;
 
-    public PaginatedResult<NormalizedJsonLd> response;
+    public PaginatedResult<? extends Map<?,?>> response;
     public final String nameOfRoot = "http://test/nameOfRoot";
     public final String nameOfARel = "http://test/nameOfArelated";
     public final String nameOfB = "http://test/nameOfB";

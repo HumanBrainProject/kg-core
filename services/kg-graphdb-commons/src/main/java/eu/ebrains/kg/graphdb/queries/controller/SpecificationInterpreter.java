@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 EPFL/Human Brain Project PCO
+ * Copyright 2021 EPFL/Human Brain Project PCO
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -42,15 +42,18 @@ public class SpecificationInterpreter {
     public Specification readSpecification(NormalizedJsonLd jsonObject, Map<String, String> allParameters) {
         List<SpecProperty> specFields = null;
         Type rootType = null;
-        if(jsonObject.containsKey(GraphQueryKeys.GRAPH_QUERY_META.getFieldName())){
-            Map meta = jsonObject.getAs(GraphQueryKeys.GRAPH_QUERY_META.getFieldName(), Map.class);
-            if(meta !=null){
-                NormalizedJsonLd metaData = new NormalizedJsonLd(meta);
-                if(metaData.containsKey(GraphQueryKeys.GRAPH_QUERY_TYPE.getFieldName())){
-                    String type = metaData.getAs(GraphQueryKeys.GRAPH_QUERY_TYPE.getFieldName(), String.class);
-                    if(type!=null){
+        String responseVocab = null;
+        if (jsonObject.containsKey(GraphQueryKeys.GRAPH_QUERY_META.getFieldName())) {
+            NormalizedJsonLd meta = jsonObject.getAs(GraphQueryKeys.GRAPH_QUERY_META.getFieldName(), NormalizedJsonLd.class);
+            if (meta != null) {
+                if (meta.containsKey(GraphQueryKeys.GRAPH_QUERY_TYPE.getFieldName())) {
+                    String type = meta.getAs(GraphQueryKeys.GRAPH_QUERY_TYPE.getFieldName(), String.class);
+                    if (type != null) {
                         rootType = new Type(type);
                     }
+                }
+                if(meta.containsKey(GraphQueryKeys.GRAPH_QUERY_RESPONSE_VOCAB.getFieldName())){
+                    responseVocab = meta.getAs(GraphQueryKeys.GRAPH_QUERY_RESPONSE_VOCAB.getFieldName(), String.class);
                 }
             }
         }
@@ -60,13 +63,13 @@ public class SpecificationInterpreter {
         }
         PropertyFilter fieldFilter = null;
         if (jsonObject.containsKey(GraphQueryKeys.GRAPH_QUERY_FILTER.getFieldName())) {
-            fieldFilter = createFieldFilter((Map)jsonObject.get(GraphQueryKeys.GRAPH_QUERY_FILTER.getFieldName()));
+            fieldFilter = createFieldFilter((Map) jsonObject.get(GraphQueryKeys.GRAPH_QUERY_FILTER.getFieldName()));
         }
-        return new Specification(specFields, fieldFilter, rootType);
+        return new Specification(specFields, fieldFilter, rootType, responseVocab);
     }
 
 
-    private List<SpecProperty> createSpecFields(Object origin, Map<String, String> allParameters)  {
+    private List<SpecProperty> createSpecFields(Object origin, Map<String, String> allParameters) {
         List<SpecProperty> result = new ArrayList<>();
         if (origin instanceof List) {
             List originArray = (List) origin;
@@ -97,7 +100,7 @@ public class SpecificationInterpreter {
                             SpecProperty.SingleItemStrategy singleItemStrategy = null;
                             String groupedInstances = GraphQueryKeys.GRAPH_QUERY_GROUPED_INSTANCES_DEFAULT.getFieldName();
                             if (originObj.containsKey(GraphQueryKeys.GRAPH_QUERY_PROPERTY_NAME.getFieldName())) {
-                                fieldName = (String)((Map)originObj.get(GraphQueryKeys.GRAPH_QUERY_PROPERTY_NAME.getFieldName())).get(JsonLdConsts.ID);
+                                fieldName = (String) ((Map) originObj.get(GraphQueryKeys.GRAPH_QUERY_PROPERTY_NAME.getFieldName())).get(JsonLdConsts.ID);
                             }
                             if (fieldName == null) {
                                 //Fall back to the name of the last traversal item if the fieldname is not defined.
@@ -107,25 +110,25 @@ public class SpecificationInterpreter {
                                 specFields = createSpecFields(originObj.get(GraphQueryKeys.GRAPH_QUERY_STRUCTURE.getFieldName()), allParameters);
                             }
                             if (originObj.containsKey(GraphQueryKeys.GRAPH_QUERY_REQUIRED.getFieldName())) {
-                                required = (Boolean)originObj.get(GraphQueryKeys.GRAPH_QUERY_REQUIRED.getFieldName());
+                                required = (Boolean) originObj.get(GraphQueryKeys.GRAPH_QUERY_REQUIRED.getFieldName());
                             }
                             if (originObj.containsKey(GraphQueryKeys.GRAPH_QUERY_SORT.getFieldName())) {
-                                sortAlphabetically = (Boolean)originObj.get(GraphQueryKeys.GRAPH_QUERY_SORT.getFieldName());
+                                sortAlphabetically = (Boolean) originObj.get(GraphQueryKeys.GRAPH_QUERY_SORT.getFieldName());
                             }
                             if (originObj.containsKey(GraphQueryKeys.GRAPH_QUERY_ENSURE_ORDER.getFieldName())) {
-                                ensureOrder = (Boolean)originObj.get(GraphQueryKeys.GRAPH_QUERY_ENSURE_ORDER.getFieldName());
+                                ensureOrder = (Boolean) originObj.get(GraphQueryKeys.GRAPH_QUERY_ENSURE_ORDER.getFieldName());
                             }
                             if (originObj.containsKey(GraphQueryKeys.GRAPH_QUERY_GROUPED_INSTANCES.getFieldName())) {
-                                groupedInstances = (String)((Map)originObj.get(GraphQueryKeys.GRAPH_QUERY_GROUPED_INSTANCES.getFieldName())).get(JsonLdConsts.ID);
+                                groupedInstances = (String) ((Map) originObj.get(GraphQueryKeys.GRAPH_QUERY_GROUPED_INSTANCES.getFieldName())).get(JsonLdConsts.ID);
                             }
                             if (originObj.containsKey(GraphQueryKeys.GRAPH_QUERY_GROUP_BY.getFieldName())) {
-                                groupBy = (Boolean)originObj.get(GraphQueryKeys.GRAPH_QUERY_GROUP_BY.getFieldName());
+                                groupBy = (Boolean) originObj.get(GraphQueryKeys.GRAPH_QUERY_GROUP_BY.getFieldName());
                             }
                             if (originObj.containsKey(GraphQueryKeys.GRAPH_QUERY_FILTER.getFieldName())) {
-                                fieldFilter = createFieldFilter((Map)originObj.get(GraphQueryKeys.GRAPH_QUERY_FILTER.getFieldName()));
+                                fieldFilter = createFieldFilter((Map) originObj.get(GraphQueryKeys.GRAPH_QUERY_FILTER.getFieldName()));
                             }
-                            if(originObj.containsKey(GraphQueryKeys.GRAPH_QUERY_SINGLE_VALUE.getFieldName())){
-                                singleItemStrategy = SpecProperty.SingleItemStrategy.valueOf((String)originObj.get(GraphQueryKeys.GRAPH_QUERY_SINGLE_VALUE.getFieldName()));
+                            if (originObj.containsKey(GraphQueryKeys.GRAPH_QUERY_SINGLE_VALUE.getFieldName())) {
+                                singleItemStrategy = SpecProperty.SingleItemStrategy.valueOf((String) originObj.get(GraphQueryKeys.GRAPH_QUERY_SINGLE_VALUE.getFieldName()));
                             }
 
                             Map<String, Object> customDirectives = new TreeMap<>();
@@ -218,19 +221,18 @@ public class SpecificationInterpreter {
         boolean reverse = false;
         List<Type> types = null;
         if (relativePathElement instanceof Map && ((Map) relativePathElement).containsKey(JsonLdConsts.ID)) {
-            path = (String)((Map) relativePathElement).get(JsonLdConsts.ID);
+            path = (String) ((Map) relativePathElement).get(JsonLdConsts.ID);
             if (((Map) relativePathElement).containsKey(GraphQueryKeys.GRAPH_QUERY_REVERSE.getFieldName())) {
-                reverse = (Boolean)((Map) relativePathElement).get(GraphQueryKeys.GRAPH_QUERY_REVERSE.getFieldName());
+                reverse = (Boolean) ((Map) relativePathElement).get(GraphQueryKeys.GRAPH_QUERY_REVERSE.getFieldName());
             }
             if (((Map) relativePathElement).containsKey(GraphQueryKeys.GRAPH_QUERY_TYPE_FILTER.getFieldName())) {
                 Object typeFilter = ((Map) relativePathElement).get(GraphQueryKeys.GRAPH_QUERY_TYPE_FILTER.getFieldName());
-                if(typeFilter instanceof Collection){
+                if (typeFilter instanceof Collection) {
                     types = ((Collection<?>) typeFilter).stream().filter(t -> t instanceof Map).map(t -> ((Map<?, ?>) t).get(JsonLdConsts.ID)).filter(id -> id instanceof String).map(id -> new Type((String) id)).collect(Collectors.toList());
-                }
-                else if(typeFilter instanceof Map){
+                } else if (typeFilter instanceof Map) {
                     Object id = ((Map) typeFilter).get(JsonLdConsts.ID);
-                    if(id instanceof String){
-                        types = Collections.singletonList(new Type((String)id));
+                    if (id instanceof String) {
+                        types = Collections.singletonList(new Type((String) id));
                     }
                 }
             }
@@ -241,21 +243,21 @@ public class SpecificationInterpreter {
     }
 
 
-    public static PropertyFilter createFieldFilter(Map fieldFilter)  {
+    public static PropertyFilter createFieldFilter(Map fieldFilter) {
         if (fieldFilter.containsKey(GraphQueryKeys.GRAPH_QUERY_FILTER_OP.getFieldName())) {
-            String stringOp = (String)fieldFilter.get(GraphQueryKeys.GRAPH_QUERY_FILTER_OP.getFieldName());
+            String stringOp = (String) fieldFilter.get(GraphQueryKeys.GRAPH_QUERY_FILTER_OP.getFieldName());
             if (stringOp != null) {
                 Op op = Op.valueOf(stringOp.toUpperCase());
                 Value value = null;
                 Parameter parameter = null;
                 if (fieldFilter.containsKey(GraphQueryKeys.GRAPH_QUERY_FILTER_VALUE.getFieldName())) {
-                    String stringValue = (String)fieldFilter.get(GraphQueryKeys.GRAPH_QUERY_FILTER_VALUE.getFieldName());
+                    String stringValue = (String) fieldFilter.get(GraphQueryKeys.GRAPH_QUERY_FILTER_VALUE.getFieldName());
                     if (stringValue != null) {
                         value = new Value(stringValue);
                     }
                 }
                 if (fieldFilter.containsKey(GraphQueryKeys.GRAPH_QUERY_FILTER_PARAM.getFieldName())) {
-                    String stringParameter = (String)fieldFilter.get(GraphQueryKeys.GRAPH_QUERY_FILTER_PARAM.getFieldName());
+                    String stringParameter = (String) fieldFilter.get(GraphQueryKeys.GRAPH_QUERY_FILTER_PARAM.getFieldName());
                     if (stringParameter != null) {
                         parameter = new Parameter(stringParameter);
                     }

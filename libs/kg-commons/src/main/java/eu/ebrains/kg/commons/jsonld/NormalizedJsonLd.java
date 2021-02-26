@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 EPFL/Human Brain Project PCO
+ * Copyright 2021 EPFL/Human Brain Project PCO
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,12 +24,13 @@ import java.util.*;
 import java.util.function.BiConsumer;
 
 /**
- * A  JSON-LD in compacted format with applied context (the original context is kept for reference). It is the JSON-LD which comes the closest to basic JSON.
+ * A  JSON-LD in compacted format with applied context. It is the JSON-LD which comes the closest to basic JSON.
  */
 public class NormalizedJsonLd extends JsonLdDoc {
 
     public NormalizedJsonLd() {
     }
+
 
     public NormalizedJsonLd(Map<? extends String, ?> m) {
         super(m);

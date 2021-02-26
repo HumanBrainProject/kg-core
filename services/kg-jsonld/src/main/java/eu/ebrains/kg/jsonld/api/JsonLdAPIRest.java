@@ -20,6 +20,11 @@ import eu.ebrains.kg.commons.jsonld.JsonLdDoc;
 import eu.ebrains.kg.commons.jsonld.NormalizedJsonLd;
 import org.springframework.web.bind.annotation.*;
 
+import java.net.URLDecoder;
+import java.nio.charset.StandardCharsets;
+import java.util.List;
+import java.util.Map;
+
 @RestController
 @RequestMapping("/internal/jsonld")
 public class JsonLdAPIRest implements eu.ebrains.kg.commons.api.JsonLd {
@@ -33,6 +38,11 @@ public class JsonLdAPIRest implements eu.ebrains.kg.commons.api.JsonLd {
     @PostMapping
     public NormalizedJsonLd normalize(@RequestBody JsonLdDoc payload, @RequestParam(value = "keepNullValues", required = false, defaultValue = "true") boolean keepNullValues) {
         return this.jsonLdAPI.normalize(payload, keepNullValues);
+    }
+
+    @PostMapping("/withVocab")
+    public List<Map<?,?>> applyVocab(@RequestBody List<NormalizedJsonLd> documents, @RequestParam(value = "vocab") String vocab) {
+        return this.jsonLdAPI.applyVocab(documents, URLDecoder.decode(vocab, StandardCharsets.UTF_8));
     }
 
 }

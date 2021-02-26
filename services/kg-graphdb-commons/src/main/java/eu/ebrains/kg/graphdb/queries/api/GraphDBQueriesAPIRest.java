@@ -17,9 +17,8 @@
 package eu.ebrains.kg.graphdb.queries.api;
 
 import eu.ebrains.kg.commons.api.GraphDBQueries;
-import eu.ebrains.kg.commons.jsonld.NormalizedJsonLd;
-import eu.ebrains.kg.commons.model.Paginated;
 import eu.ebrains.kg.commons.model.PaginationParam;
+import eu.ebrains.kg.commons.model.QueryResult;
 import eu.ebrains.kg.commons.query.KgQuery;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -38,7 +37,7 @@ public class GraphDBQueriesAPIRest implements GraphDBQueries {
 
     @Override
     @PostMapping
-    public Paginated<NormalizedJsonLd> executeQuery(@RequestBody KgQuery query, PaginationParam paginationParam){
+    public QueryResult executeQuery(@RequestBody KgQuery query, PaginationParam paginationParam){
         return graphDBQueriesAPI.executeQuery(query, paginationParam);
     }
 

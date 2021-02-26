@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 EPFL/Human Brain Project PCO
+ * Copyright 2021 EPFL/Human Brain Project PCO
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,16 +26,22 @@ public class Specification {
     private final List<SpecProperty> properties;
     private final PropertyFilter documentFilter;
     private final Type rootType;
+    private final String responseVocab;
 
 
     public List<SpecProperty> getProperties() {
         return properties;
     }
 
-    public Specification(List<SpecProperty> properties, PropertyFilter documentFilter, Type rootType) {
+    public Specification(List<SpecProperty> properties, PropertyFilter documentFilter, Type rootType, String responseVocab) {
         this.properties = properties ==null ? Collections.emptyList() : Collections.unmodifiableList(properties);
         this.documentFilter = documentFilter;
         this.rootType = rootType;
+        this.responseVocab = responseVocab;
+    }
+
+    public String getResponseVocab() {
+        return responseVocab;
     }
 
     public PropertyFilter getDocumentFilter() {

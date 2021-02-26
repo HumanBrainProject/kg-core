@@ -23,6 +23,7 @@ public enum GraphQueryKeys {
 
     GRAPH_QUERY_META("meta"),
     GRAPH_QUERY_TYPE("type"),
+    GRAPH_QUERY_RESPONSE_VOCAB("responseVocab"),
     GRAPH_QUERY_NAME("name"),
     GRAPH_QUERY_LABEL("label"),
     GRAPH_QUERY_DESCRIPTION("description"),

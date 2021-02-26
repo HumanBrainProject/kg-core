@@ -16,6 +16,7 @@
 
 package eu.ebrains.kg.core.api;
 
+import eu.ebrains.kg.commons.AuthContext;
 import eu.ebrains.kg.commons.Version;
 import eu.ebrains.kg.commons.api.JsonLd;
 import eu.ebrains.kg.commons.config.openApiGroups.Simple;
@@ -39,6 +40,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 
@@ -52,12 +54,15 @@ public class Queries {
 
     private final CoreQueryController queryController;
 
+    private final AuthContext authContext;
+
     private final JsonLd.Client jsonLd;
 
     private final IdsController ids;
 
-    public Queries(CoreQueryController queryController, JsonLd.Client jsonLd, IdsController ids) {
+    public Queries(CoreQueryController queryController, AuthContext authContext, JsonLd.Client jsonLd, IdsController ids) {
         this.queryController = queryController;
+        this.authContext = authContext;
         this.jsonLd = jsonLd;
         this.ids = ids;
     }
@@ -76,9 +81,10 @@ public class Queries {
     @Operation(summary = "Execute the query in the payload in test mode (e.g. for execution before saving with the KG QueryBuilder)")
     @PostMapping
     @ExposesData
-    public PaginatedResult<NormalizedJsonLd> testQuery(@RequestBody JsonLdDoc query, @ParameterObject PaginationParam paginationParam, @RequestParam("stage") ExposedStage stage) {
+    public PaginatedResult<? extends Map<?,?>> testQuery(@RequestBody JsonLdDoc query, @ParameterObject PaginationParam paginationParam, @RequestParam("stage") ExposedStage stage) {
         NormalizedJsonLd normalizedJsonLd = jsonLd.normalize(query, true);
-        return PaginatedResult.ok(queryController.executeQuery(new KgQuery(normalizedJsonLd, stage.getStage()), paginationParam));
+        KgQuery q = new KgQuery(normalizedJsonLd, stage.getStage());
+        return PaginatedResult.ok(queryController.executeQuery(q, paginationParam));
     }
 
     @Operation(summary = "Get the query specification with the given query id in a specific space")
@@ -115,22 +121,23 @@ public class Queries {
         NormalizedJsonLd normalizedJsonLd = jsonLd.normalize(query, true);
         normalizedJsonLd.addTypes(EBRAINSVocabulary.META_QUERY_TYPE);
         InstanceId resolveId = ids.resolveId(DataStage.IN_PROGRESS, queryId);
+        SpaceName spaceName = authContext.resolveSpaceName(space);
         if(resolveId != null){
-            if(space!=null && !resolveId.getSpace().equals(new SpaceName(space))){
+            if(spaceName!=null && !resolveId.getSpace().equals(spaceName)){
                 return ResponseEntity.status(HttpStatus.CONFLICT).body(Result.nok(HttpStatus.CONFLICT.value(), "The query with this UUID already exists in a different space"));
             }
             return queryController.updateQuery(normalizedJsonLd, resolveId);
         }
-        if(space==null){
+        if(spaceName==null){
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Result.nok(HttpStatus.BAD_REQUEST.value(), "The query with this UUID doesn't exist yet. You therefore need to specify the space where it should be stored."));
         }
-        return queryController.createNewQuery(normalizedJsonLd, queryId, new SpaceName(space));
+        return queryController.createNewQuery(normalizedJsonLd, queryId, spaceName);
     }
 
     @Operation(summary = "Execute a stored query to receive the instances")
     @GetMapping("/{queryId}/instances")
     @ExposesData
-    public PaginatedResult<NormalizedJsonLd> executeQueryById(@PathVariable("queryId") UUID queryId, @ParameterObject PaginationParam paginationParam, @RequestParam("stage") ExposedStage stage) {
+    public PaginatedResult<? extends Map<?,?>> executeQueryById(@PathVariable("queryId") UUID queryId, @ParameterObject PaginationParam paginationParam, @RequestParam("stage") ExposedStage stage) {
         InstanceId instanceId = ids.resolveId(DataStage.IN_PROGRESS, queryId);
         KgQuery query = queryController.fetchQueryById(instanceId, stage.getStage());
         return PaginatedResult.ok(queryController.executeQuery(query, paginationParam));

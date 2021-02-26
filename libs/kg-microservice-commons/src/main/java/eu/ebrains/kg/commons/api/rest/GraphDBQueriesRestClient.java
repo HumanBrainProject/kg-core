@@ -19,10 +19,8 @@ package eu.ebrains.kg.commons.api.rest;
 import eu.ebrains.kg.commons.AuthTokenContext;
 import eu.ebrains.kg.commons.ServiceCall;
 import eu.ebrains.kg.commons.api.GraphDBQueries;
-import eu.ebrains.kg.commons.jsonld.NormalizedJsonLd;
-import eu.ebrains.kg.commons.model.Paginated;
-import eu.ebrains.kg.commons.model.PaginatedDocuments;
 import eu.ebrains.kg.commons.model.PaginationParam;
+import eu.ebrains.kg.commons.model.QueryResult;
 import eu.ebrains.kg.commons.query.KgQuery;
 
 @RestClient
@@ -38,11 +36,11 @@ public class GraphDBQueriesRestClient implements GraphDBQueries.Client {
     }
 
     @Override
-    public Paginated<NormalizedJsonLd> executeQuery(KgQuery query, PaginationParam paginationParam) {
+    public QueryResult executeQuery(KgQuery query, PaginationParam paginationParam) {
         return serviceCall.post(String.format("%s",
                 SERVICE_URL),
                 query,
                 authTokenContext.getAuthTokens(),
-                PaginatedDocuments.class);
+                QueryResult.class);
     }
 }

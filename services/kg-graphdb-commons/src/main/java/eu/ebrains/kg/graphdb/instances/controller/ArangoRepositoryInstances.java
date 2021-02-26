@@ -854,7 +854,12 @@ public class ArangoRepositoryInstances {
         //get scope relevant queries
         //TODO filter user defined queries (only take client queries into account)
         Stream<NormalizedJsonLd> typeQueries = instance.types().stream().map(type -> getQueriesByRootType(stage, null, null, false, false, type).getData()).flatMap(Collection::stream);
-        List<NormalizedJsonLd> results = typeQueries.map(q -> queryController.query(authContext.getUserWithRoles(), new KgQuery(q, stage).setIdRestrictions(Collections.singletonList(new EntityId(id.toString()))), null, null, true).getData()).flatMap(Collection::stream).collect(Collectors.toList());
+        List<NormalizedJsonLd> results = typeQueries.map(q ->        {
+            QueryResult queryResult = queryController.query(authContext.getUserWithRoles(),
+                    new KgQuery(q, stage).setIdRestrictions(
+                            Collections.singletonList(new EntityId(id.toString()))), null, null, true);
+            return queryResult!=null && queryResult.getResult() != null ? queryResult.getResult().getData() : null;
+        }).filter(Objects::nonNull).flatMap(Collection::stream).collect(Collectors.toList());
         return translateResultToScope(results, stage, fetchLabels, instance);
     }
 

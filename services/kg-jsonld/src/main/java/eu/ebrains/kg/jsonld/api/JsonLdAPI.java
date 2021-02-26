@@ -35,6 +35,7 @@ import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 @SuppressWarnings({"unchecked", "rawtypes"})
 @Component
@@ -43,7 +44,6 @@ public class JsonLdAPI implements eu.ebrains.kg.commons.api.JsonLd.Client {
     private final Logger logger = LoggerFactory.getLogger(getClass());
 
     private final static String NULL_PLACEHOLDER = EBRAINSVocabulary.NAMESPACE + "jsonld/nullvalue";
-
 
     private void addNullValuesPlaceholder(Object o) {
         if (o instanceof Map) {
@@ -82,6 +82,23 @@ public class JsonLdAPI implements eu.ebrains.kg.commons.api.JsonLd.Client {
 
     public JsonLdAPI(JsonAdapter jsonAdapter) {
         this.jsonAdapter = jsonAdapter;
+    }
+
+    @Override
+    public List<Map<?,?>> applyVocab(List<NormalizedJsonLd> documents, String vocab) {
+        if (vocab != null) {
+            JsonDocument context = JsonDocument.of(Json.createObjectBuilder().add(JsonLdConsts.VOCAB, vocab).build());
+            return documents.stream().map(d -> {
+                JsonObject doc = Json.createObjectBuilder(d).build();
+                try{
+                    return JsonLd.compact(JsonDocument.of(doc), context).get();
+                } catch (JsonLdError ex) {
+                    logger.error("Was not able to handle payload", ex);
+                    throw new RuntimeException(ex);
+                }
+            }).collect(Collectors.toList());
+        }
+        return null;
     }
 
     @Override
