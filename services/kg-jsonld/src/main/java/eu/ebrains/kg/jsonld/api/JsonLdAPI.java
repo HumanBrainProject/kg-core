@@ -17,24 +17,21 @@
 package eu.ebrains.kg.jsonld.api;
 
 import com.apicatalog.jsonld.JsonLd;
-import com.apicatalog.jsonld.api.JsonLdError;
+import com.apicatalog.jsonld.JsonLdError;
 import com.apicatalog.jsonld.document.JsonDocument;
 import eu.ebrains.kg.commons.JsonAdapter;
 import eu.ebrains.kg.commons.jsonld.JsonLdConsts;
 import eu.ebrains.kg.commons.jsonld.JsonLdDoc;
 import eu.ebrains.kg.commons.jsonld.NormalizedJsonLd;
 import eu.ebrains.kg.commons.semantics.vocabularies.EBRAINSVocabulary;
+import jakarta.json.Json;
+import jakarta.json.JsonArray;
+import jakarta.json.JsonObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
-import javax.json.Json;
-import javax.json.JsonArray;
-import javax.json.JsonObject;
-import java.util.Collection;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @SuppressWarnings({"unchecked", "rawtypes"})
@@ -89,9 +86,9 @@ public class JsonLdAPI implements eu.ebrains.kg.commons.api.JsonLd.Client {
         if (vocab != null) {
             JsonDocument context = JsonDocument.of(Json.createObjectBuilder().add(JsonLdConsts.VOCAB, vocab).build());
             return documents.stream().map(d -> {
-                JsonObject doc = Json.createObjectBuilder(d).build();
+                JsonObject doc = Json.createObjectBuilder(applyLists(d)).build();
                 try{
-                    return jsonAdapter.fromJson(JsonLd.compact(JsonDocument.of(doc), context).get().toString(), JsonLdDoc.class);
+                    return flattenLists(jsonAdapter.fromJson(JsonLd.compact(JsonDocument.of(doc), context).get().toString(), JsonLdDoc.class), null, null);
                 } catch (JsonLdError ex) {
                     logger.error("Was not able to handle payload", ex);
                     throw new RuntimeException(ex);
@@ -124,6 +121,27 @@ public class JsonLdAPI implements eu.ebrains.kg.commons.api.JsonLd.Client {
         }
     }
 
+    private <T> T applyLists(T input) {
+        if (input instanceof List) {
+            ((List) input).forEach(this::applyLists);
+        } else if (input instanceof Map) {
+            Set<Object> keysWithLists = new HashSet<>();
+            for (Object key : ((Map) input).keySet()) {
+                Object el = ((Map) input).get(key);
+                if(el instanceof List){
+                    keysWithLists.add(key);
+                }
+                applyLists(el);
+            }
+            keysWithLists.forEach(k -> {
+                Map<String, Object> listWrapper = new LinkedHashMap();
+                listWrapper.put(JsonLdConsts.LIST, ((Map)input).get(k));
+                ((Map)input).put(k, listWrapper);
+            });
+        }
+        return input;
+    }
+
 
     private <T> T flattenLists(T input, Map parent, String parentKey) {
         if (input instanceof List) {
@@ -131,7 +149,12 @@ public class JsonLdAPI implements eu.ebrains.kg.commons.api.JsonLd.Client {
         } else if (input instanceof Map) {
             if (((Map) input).containsKey(JsonLdConsts.LIST)) {
                 Object list = ((Map) input).get(JsonLdConsts.LIST);
-                parent.put(parentKey, list);
+                if(list instanceof List){
+                    parent.put(parentKey, ((List)list).stream().map(l -> flattenLists(l, null, null)).collect(Collectors.toList()));
+                }
+                else {
+                    parent.put(parentKey, list);
+                }
             } else {
                 for (Object o : ((Map) input).keySet()) {
                     flattenLists(((Map) input).get(o), (Map) input, (String) o);
