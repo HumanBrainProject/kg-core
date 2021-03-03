@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 EPFL/Human Brain Project PCO
+ * Copyright 2021 EPFL/Human Brain Project PCO
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -91,11 +91,12 @@ public class Space {
 
     public NormalizedJsonLd toJsonLd() {
         NormalizedJsonLd payload = new NormalizedJsonLd();
+        String spaceName = getName() != null ? getName().getName() : null;
         payload.put(JsonLdConsts.TYPE, EBRAINSVocabulary.META_SPACEDEFINITION_TYPE);
         payload.setId(createId(name));
-        payload.put(SchemaOrgVocabulary.NAME, getName());
-        payload.put(SchemaOrgVocabulary.IDENTIFIER, getName());
-        payload.put(EBRAINSVocabulary.META_SPACE, getName());
+        payload.put(SchemaOrgVocabulary.NAME, spaceName);
+        payload.put(SchemaOrgVocabulary.IDENTIFIER, spaceName);
+        payload.put(EBRAINSVocabulary.META_SPACE, spaceName);
         if(isAutoRelease()) {
             payload.put(EBRAINSVocabulary.META_AUTORELEASE_SPACE, isAutoRelease());
         }
