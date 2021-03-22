@@ -93,10 +93,10 @@ public class Queries {
     @Operation(summary = "Get the query specification with the given query id in a specific space")
     @GetMapping("/{queryId}")
     @ExposesQuery
-    public Result<NormalizedJsonLd> getQuerySpecification(@PathVariable("queryId") UUID queryId) {
+    public ResponseEntity<Result<NormalizedJsonLd>> getQuerySpecification(@PathVariable("queryId") UUID queryId) {
         InstanceId instanceId = ids.resolveId(DataStage.IN_PROGRESS, queryId);
         KgQuery kgQuery = queryController.fetchQueryById(instanceId, DataStage.IN_PROGRESS);
-        return Result.ok(kgQuery.getPayload());
+        return kgQuery != null ? ResponseEntity.ok(Result.ok(kgQuery.getPayload())): ResponseEntity.notFound().build();
     }
 
     @Operation(summary = "Remove a query specification")
