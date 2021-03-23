@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 EPFL/Human Brain Project PCO
+ * Copyright 2021 EPFL/Human Brain Project PCO
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,6 +20,7 @@ package eu.ebrains.kg.graphdb.ingestion.controller;
 import eu.ebrains.kg.arango.commons.model.ArangoDocumentReference;
 import eu.ebrains.kg.commons.jsonld.NormalizedJsonLd;
 import eu.ebrains.kg.commons.model.DataStage;
+import eu.ebrains.kg.commons.model.SpaceName;
 import eu.ebrains.kg.graphdb.commons.controller.ArangoRepositoryCommons;
 import eu.ebrains.kg.graphdb.commons.model.ArangoDocument;
 import eu.ebrains.kg.graphdb.commons.model.ArangoEdge;
@@ -90,8 +91,8 @@ public class MetaDataController {
         return Stream.concat(genericOperations.stream(), structuralDeleteOperations.stream()).collect(Collectors.toList());
     }
 
-    public List<DBOperation> createMetaStructureDeprecationOperations(NormalizedJsonLd doc) {
-        return semanticsController.createMetaDeprecationOperations(doc);
+    public List<DBOperation> createMetaStructureDeprecationOperations(SpaceName space, NormalizedJsonLd doc) {
+        return semanticsController.createMetaDeprecationOperations(space, doc);
     }
 
     private List<DBOperation> createUpsertOperationsForDocument(DataStage stage, ArangoDocumentReference rootDocumentRef, ArangoDocument document) {

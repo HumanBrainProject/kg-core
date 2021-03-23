@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 EPFL/Human Brain Project PCO
+ * Copyright 2021 EPFL/Human Brain Project PCO
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,16 +19,19 @@ package eu.ebrains.kg.graphdb.ingestion.controller.semantics;
 import eu.ebrains.kg.arango.commons.model.ArangoCollectionReference;
 import eu.ebrains.kg.arango.commons.model.ArangoDocumentReference;
 import eu.ebrains.kg.arango.commons.model.InternalSpace;
+import eu.ebrains.kg.commons.IdUtils;
 import eu.ebrains.kg.commons.TypeUtils;
 import eu.ebrains.kg.commons.jsonld.JsonLdId;
 import eu.ebrains.kg.commons.jsonld.NormalizedJsonLd;
 import eu.ebrains.kg.commons.model.DataStage;
+import eu.ebrains.kg.commons.model.SpaceName;
 import eu.ebrains.kg.commons.semantics.vocabularies.EBRAINSVocabulary;
 import eu.ebrains.kg.graphdb.commons.model.ArangoDocument;
 import eu.ebrains.kg.graphdb.commons.model.ArangoEdge;
 import eu.ebrains.kg.graphdb.ingestion.controller.IdFactory;
 import eu.ebrains.kg.graphdb.ingestion.controller.structure.StaticStructureController;
 import eu.ebrains.kg.graphdb.ingestion.model.DBOperation;
+import eu.ebrains.kg.graphdb.ingestion.model.DeleteInstanceOperation;
 import eu.ebrains.kg.graphdb.ingestion.model.UpsertOperation;
 import org.springframework.stereotype.Component;
 
@@ -38,9 +41,11 @@ import java.util.List;
 
 @Component
 public class PropertyInTypeDefinitionSemanticsHandler extends SemanticsHandler {
+    private final IdUtils idUtils;
 
-    public PropertyInTypeDefinitionSemanticsHandler(TypeUtils typeUtils) {
+    public PropertyInTypeDefinitionSemanticsHandler(TypeUtils typeUtils, IdUtils idUtils) {
         super(typeUtils);
+        this.idUtils = idUtils;
     }
 
     @Override
@@ -66,6 +71,15 @@ public class PropertyInTypeDefinitionSemanticsHandler extends SemanticsHandler {
         edge.setTo(StaticStructureController.createDocumentRefForMetaRepresentation(propertyReference.getId(), ArangoCollectionReference.fromSpace(InternalSpace.PROPERTIES_SPACE)));
         edge.setFrom(StaticStructureController.createDocumentRefForMetaRepresentation(typeReference.getId(), ArangoCollectionReference.fromSpace(InternalSpace.TYPES_SPACE)));
         return new UpsertOperation(globalTypeToPropertyEdgeRef, typeUtils.translate(edge.getPayload(), NormalizedJsonLd.class), globalTypeToPropertyEdgeRef, false, false);
+    }
+
+    @Override
+    public List<DBOperation> createMetaDeprecateOperations(SpaceName documentSpace, NormalizedJsonLd document) {
+        if (document.types() != null && document.types().contains(EBRAINSVocabulary.META_PROPERTY_DEFINITION_TYPE)) {
+            ArangoDocumentReference instanceRef = new ArangoDocumentReference(ArangoCollectionReference.fromSpace(documentSpace), idUtils.getUUID(document.id()));
+            return Collections.singletonList(new DeleteInstanceOperation(instanceRef));
+        }
+        return Collections.emptyList();
     }
 
 }

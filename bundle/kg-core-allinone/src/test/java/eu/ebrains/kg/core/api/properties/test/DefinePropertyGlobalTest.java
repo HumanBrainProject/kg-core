@@ -18,12 +18,10 @@ package eu.ebrains.kg.core.api.properties.test;
 
 import com.arangodb.ArangoDB;
 import eu.ebrains.kg.authentication.api.AuthenticationAPI;
-import eu.ebrains.kg.commons.jsonld.JsonLdId;
 import eu.ebrains.kg.commons.jsonld.NormalizedJsonLd;
 import eu.ebrains.kg.commons.model.IngestConfiguration;
 import eu.ebrains.kg.commons.model.ResponseConfiguration;
 import eu.ebrains.kg.commons.permission.roles.RoleMapping;
-import eu.ebrains.kg.commons.semantics.vocabularies.EBRAINSVocabulary;
 import eu.ebrains.kg.core.api.AbstractTest;
 import eu.ebrains.kg.core.api.Instances;
 import eu.ebrains.kg.core.api.Properties;
@@ -55,20 +53,13 @@ public class DefinePropertyGlobalTest extends AbstractTest {
 
     @Override
     protected void run() {
-        NormalizedJsonLd propertyDefinition = createPropertyDefinition(property, null);
-        properties.defineProperty(propertyDefinition, true);
+        NormalizedJsonLd propertyDefinition = createPropertyDefinition();
+        properties.defineProperty(propertyDefinition, true, property);
     }
 
 
-    NormalizedJsonLd createPropertyDefinition(String property, String type) {
+    NormalizedJsonLd createPropertyDefinition() {
         NormalizedJsonLd payload = new NormalizedJsonLd();
-        if (type != null) {
-            payload.addTypes(EBRAINSVocabulary.META_PROPERTY_IN_TYPE_DEFINITION_TYPE);
-            payload.addProperty(EBRAINSVocabulary.META_TYPE, new JsonLdId(type));
-        } else {
-            payload.addTypes(EBRAINSVocabulary.META_PROPERTY_DEFINITION_TYPE);
-        }
-        payload.addProperty(EBRAINSVocabulary.META_PROPERTY, new JsonLdId(property));
         payload.addProperty("http://foo", "bar");
         return payload;
     }

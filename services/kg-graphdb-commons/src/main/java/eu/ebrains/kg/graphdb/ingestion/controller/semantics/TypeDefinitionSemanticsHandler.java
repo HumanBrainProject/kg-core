@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 EPFL/Human Brain Project PCO
+ * Copyright 2021 EPFL/Human Brain Project PCO
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -54,7 +54,7 @@ public class TypeDefinitionSemanticsHandler extends SemanticsHandler {
     }
 
     @Override
-    public List<DBOperation> createMetaDeprecateOperations(NormalizedJsonLd document) {
+    public List<DBOperation> createMetaDeprecateOperations(SpaceName documentSpace, NormalizedJsonLd document) {
         if(document.types()!=null && document.types().contains(EBRAINSVocabulary.META_TYPEDEFINITION_TYPE)){
             List<DBOperation> operations = new ArrayList<>();
             String typeToBeDeprecated = document.getAs(EBRAINSVocabulary.META_TYPE, String.class);

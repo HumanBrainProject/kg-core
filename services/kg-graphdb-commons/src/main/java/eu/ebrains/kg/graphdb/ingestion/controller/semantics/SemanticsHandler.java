@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 EPFL/Human Brain Project PCO
+ * Copyright 2021 EPFL/Human Brain Project PCO
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,6 +23,7 @@ import eu.ebrains.kg.commons.TypeUtils;
 import eu.ebrains.kg.commons.jsonld.JsonLdId;
 import eu.ebrains.kg.commons.jsonld.NormalizedJsonLd;
 import eu.ebrains.kg.commons.model.DataStage;
+import eu.ebrains.kg.commons.model.SpaceName;
 import eu.ebrains.kg.commons.semantics.vocabularies.EBRAINSVocabulary;
 import eu.ebrains.kg.graphdb.commons.model.ArangoDocument;
 import eu.ebrains.kg.graphdb.commons.model.ArangoEdge;
@@ -46,7 +47,7 @@ public abstract class SemanticsHandler {
         return Collections.emptyList();
     }
 
-    public List<DBOperation> createMetaDeprecateOperations(NormalizedJsonLd document){
+    public List<DBOperation> createMetaDeprecateOperations(SpaceName space, NormalizedJsonLd document){
         return Collections.emptyList();
     }
 

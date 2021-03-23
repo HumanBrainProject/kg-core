@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 EPFL/Human Brain Project PCO
+ * Copyright 2021 EPFL/Human Brain Project PCO
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,6 +19,7 @@ package eu.ebrains.kg.graphdb.ingestion.controller.semantics;
 import eu.ebrains.kg.arango.commons.model.ArangoCollectionReference;
 import eu.ebrains.kg.arango.commons.model.ArangoDocumentReference;
 import eu.ebrains.kg.arango.commons.model.InternalSpace;
+import eu.ebrains.kg.commons.IdUtils;
 import eu.ebrains.kg.commons.TypeUtils;
 import eu.ebrains.kg.commons.jsonld.JsonLdId;
 import eu.ebrains.kg.commons.jsonld.NormalizedJsonLd;
@@ -30,6 +31,7 @@ import eu.ebrains.kg.graphdb.commons.model.ArangoDocument;
 import eu.ebrains.kg.graphdb.commons.model.MetaRepresentation;
 import eu.ebrains.kg.graphdb.ingestion.controller.structure.StaticStructureController;
 import eu.ebrains.kg.graphdb.ingestion.model.DBOperation;
+import eu.ebrains.kg.graphdb.ingestion.model.DeleteInstanceOperation;
 import eu.ebrains.kg.graphdb.ingestion.model.UpsertOperation;
 import org.springframework.stereotype.Component;
 
@@ -41,10 +43,12 @@ import java.util.Map;
 @Component
 public class PropertyDefinitionSemanticsHandler extends SemanticsHandler {
     private final ArangoDatabases databases;
+    private final IdUtils idUtils;
 
-    public PropertyDefinitionSemanticsHandler(TypeUtils typeUtils, ArangoDatabases databases) {
+    public PropertyDefinitionSemanticsHandler(TypeUtils typeUtils, ArangoDatabases databases, IdUtils idUtils) {
         super(typeUtils);
         this.databases = databases;
+        this.idUtils = idUtils;
     }
 
     @Override
@@ -62,6 +66,15 @@ public class PropertyDefinitionSemanticsHandler extends SemanticsHandler {
                 dbOperations.addAll(handleExplicitlyStatedTargetTypes(document, propertyRef));
                 return dbOperations;
             }
+        }
+        return Collections.emptyList();
+    }
+
+    @Override
+    public List<DBOperation> createMetaDeprecateOperations(SpaceName documentSpace, NormalizedJsonLd document) {
+        if (document.types() != null && document.types().contains(EBRAINSVocabulary.META_PROPERTY_DEFINITION_TYPE)) {
+            ArangoDocumentReference instanceRef = new ArangoDocumentReference(ArangoCollectionReference.fromSpace(documentSpace), idUtils.getUUID(document.id()));
+            return Collections.singletonList(new DeleteInstanceOperation(instanceRef));
         }
         return Collections.emptyList();
     }

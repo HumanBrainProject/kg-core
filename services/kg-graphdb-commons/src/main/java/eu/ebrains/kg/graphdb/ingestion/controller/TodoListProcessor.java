@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 EPFL/Human Brain Project PCO
+ * Copyright 2021 EPFL/Human Brain Project PCO
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,6 +24,7 @@ import eu.ebrains.kg.commons.jsonld.InstanceId;
 import eu.ebrains.kg.commons.jsonld.JsonLdId;
 import eu.ebrains.kg.commons.jsonld.NormalizedJsonLd;
 import eu.ebrains.kg.commons.model.DataStage;
+import eu.ebrains.kg.commons.model.SpaceName;
 import eu.ebrains.kg.commons.model.TodoItem;
 import eu.ebrains.kg.commons.model.User;
 import eu.ebrains.kg.commons.semantics.vocabularies.EBRAINSVocabulary;
@@ -124,7 +125,7 @@ public class TodoListProcessor {
                     releaseDocument(rootDocumentReference, todoItem.getPayload());
                     break;
                 case META_DEPRECATION:
-                    deprecateMetaStructure(todoItem.getPayload());
+                    deprecateMetaStructure(todoItem.getSpace(), todoItem.getPayload());
                     logger.info("Handle meta deprecation");
 
             }
@@ -152,8 +153,8 @@ public class TodoListProcessor {
     }
 
 
-    private void deprecateMetaStructure(NormalizedJsonLd payload) {
-        repository.executeTransactionalOnMeta(DataStage.IN_PROGRESS, metaDataController.createMetaStructureDeprecationOperations(payload));
+    private void deprecateMetaStructure(SpaceName space, NormalizedJsonLd payload) {
+        repository.executeTransactionalOnMeta(DataStage.IN_PROGRESS, metaDataController.createMetaStructureDeprecationOperations(space, payload));
         //TODO What about RELEASED stage? In theory, released should be cleaned up automatically (in released, there is no reason for having schemas not in use)
     }
 

@@ -51,7 +51,7 @@ public class TypeInSpaceDefinitionSemanticsHandler extends SemanticsHandler {
 
 
     @Override
-    public List<DBOperation> createMetaDeprecateOperations(NormalizedJsonLd document) {
+    public List<DBOperation> createMetaDeprecateOperations(SpaceName documentSpace, NormalizedJsonLd document) {
         if(document.types()!=null && document.types().contains(EBRAINSVocabulary.META_TYPE_IN_SPACE_DEFINITION_TYPE)){
             List<DBOperation> operations = new ArrayList<>();
             JsonLdId type = document.getAs(EBRAINSVocabulary.META_TYPE, JsonLdId.class);

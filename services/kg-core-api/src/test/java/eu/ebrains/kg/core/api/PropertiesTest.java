@@ -17,12 +17,11 @@
 package eu.ebrains.kg.core.api;
 
 import eu.ebrains.kg.commons.AuthContext;
+import eu.ebrains.kg.commons.IdUtils;
 import eu.ebrains.kg.commons.api.PrimaryStoreEvents;
-import eu.ebrains.kg.commons.jsonld.JsonLdId;
 import eu.ebrains.kg.commons.jsonld.NormalizedJsonLd;
 import eu.ebrains.kg.commons.model.Result;
 import eu.ebrains.kg.commons.model.SpaceName;
-import eu.ebrains.kg.commons.semantics.vocabularies.EBRAINSVocabulary;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -32,7 +31,7 @@ import org.springframework.http.ResponseEntity;
 
 public class PropertiesTest {
     AuthContext authContext = Mockito.mock(AuthContext.class);
-    Properties instance = new Properties(Mockito.mock(PrimaryStoreEvents.Client.class), authContext);
+    Properties instance = new Properties(Mockito.mock(PrimaryStoreEvents.Client.class), authContext, Mockito.mock(IdUtils.class));
 
     @Before
     public void init() {
@@ -42,17 +41,8 @@ public class PropertiesTest {
     @Test
     public void testPropertyDefinitionOk() {
         NormalizedJsonLd ld = new NormalizedJsonLd();
-        ld.addTypes(EBRAINSVocabulary.META_PROPERTY_DEFINITION_TYPE);
-        ld.addProperty(EBRAINSVocabulary.META_PROPERTY, new JsonLdId("http://foobar"));
-        ResponseEntity<Result<Void>> resultResponseEntity = instance.defineProperty(ld, false);
+        ResponseEntity<Result<Void>> resultResponseEntity = instance.defineProperty(ld, false, "http://foobar");
         Assert.assertEquals(HttpStatus.OK, resultResponseEntity.getStatusCode());
     }
 
-    @Test
-    public void testPropertyDefinitionNotOk() {
-        NormalizedJsonLd ld = new NormalizedJsonLd();
-        ld.addTypes(EBRAINSVocabulary.META_PROPERTY_DEFINITION_TYPE);
-        ResponseEntity<Result<Void>> resultResponseEntity = instance.defineProperty(ld, false);
-        Assert.assertEquals(HttpStatus.BAD_REQUEST, resultResponseEntity.getStatusCode());
-    }
 }

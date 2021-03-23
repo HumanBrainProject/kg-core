@@ -18,6 +18,7 @@ package eu.ebrains.kg.core.api;
 
 import eu.ebrains.kg.arango.commons.model.InternalSpace;
 import eu.ebrains.kg.commons.AuthContext;
+import eu.ebrains.kg.commons.IdUtils;
 import eu.ebrains.kg.commons.Version;
 import eu.ebrains.kg.commons.api.PrimaryStoreEvents;
 import eu.ebrains.kg.commons.config.openApiGroups.Admin;
@@ -35,8 +36,9 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
-import java.util.List;
+import java.util.Date;
 import java.util.UUID;
 
 /**
@@ -49,48 +51,74 @@ public class Properties {
 
     private final PrimaryStoreEvents.Client primaryStore;
     private final AuthContext authContext;
+    private final IdUtils idUtils;
 
-    public Properties(PrimaryStoreEvents.Client primaryStore, AuthContext authContext) {
+    public Properties(PrimaryStoreEvents.Client primaryStore, AuthContext authContext, IdUtils idUtils) {
         this.primaryStore = primaryStore;
         this.authContext = authContext;
+        this.idUtils = idUtils;
     }
 
-    @Operation(summary = "Upload a property specification either globally or on a type level for the requesting client")
+    @Operation(summary = "Upload a property specification either globally or for the requesting client")
     @PutMapping("/properties")
     @WritesData
-    public ResponseEntity<Result<Void>> defineProperty(@RequestBody NormalizedJsonLd payload, @Parameter(description = "By default, the specification is only valid for the current client. If this flag is set to true (and the client/user combination has the permission), the specification is applied for all clients (unless they have defined something by themselves)")  @RequestParam(value = "global", required = false) boolean global) {
-        if(!payload.containsKey(EBRAINSVocabulary.META_PROPERTY)) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Result.nok(HttpStatus.BAD_REQUEST.value(), String.format("Property \"%s\" should be specified.", EBRAINSVocabulary.META_PROPERTY)));
-        }
+    public ResponseEntity<Result<Void>> defineProperty(@RequestBody NormalizedJsonLd payload, @Parameter(description = "By default, the specification is only valid for the current client. If this flag is set to true (and the client/user combination has the permission), the specification is applied for all clients (unless they have defined something by themselves)")  @RequestParam(value = "global", required = false) boolean global, @RequestParam("property") String property) {
         SpaceName targetSpace = global ? InternalSpace.GLOBAL_SPEC : authContext.getClientSpace().getName();
-        JsonLdId property = payload.getAs(EBRAINSVocabulary.META_PROPERTY, JsonLdId.class);
-        List<String> listOfType = payload.getAsListOf(JsonLdConsts.TYPE, String.class);
-        if(listOfType.isEmpty()) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Result.nok(HttpStatus.BAD_REQUEST.value(), String.format("Property \"%s\" should be specified.", JsonLdConsts.TYPE)));
-        }
-        if(listOfType.size() == 1){
-            switch (listOfType.get(0)) {
-                case EBRAINSVocabulary.META_PROPERTY_DEFINITION_TYPE: {
-                    payload.setId(EBRAINSVocabulary.createIdForStructureDefinition("clients", targetSpace.getName(), "properties", property.getId()));
-                    break;
-                }
-                case EBRAINSVocabulary.META_PROPERTY_IN_TYPE_DEFINITION_TYPE: {
-                    JsonLdId type = payload.getAs(EBRAINSVocabulary.META_TYPE, JsonLdId.class);
-                    if(type == null || type.getId().isBlank()) {
-                        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Result.nok(HttpStatus.BAD_REQUEST.value(), String.format("Property \"%s\" should be specified. Did you mean to use \"%s\" as \"%s\" ?", EBRAINSVocabulary.META_TYPE, EBRAINSVocabulary.META_PROPERTY_DEFINITION_TYPE, JsonLdConsts.TYPE)));
-                    } else {
-                        payload.setId(EBRAINSVocabulary.createIdForStructureDefinition("clients", targetSpace.getName(), "types", type.getId(), "properties", property.getId()));
-                    }
-                    break;
-                }
-                default: {
-                    return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Result.nok(HttpStatus.BAD_REQUEST.value(), String.format("Type \"%s\" is unknown.", listOfType.get(0))));
-                }
-            }
-        } else {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Result.nok(HttpStatus.BAD_REQUEST.value(), String.format("Only one \"%s\" is allowed.", JsonLdConsts.TYPE)));
-        }
+        String decodedProperty = URLDecoder.decode(property, StandardCharsets.UTF_8);
+        payload.setId(EBRAINSVocabulary.createIdForStructureDefinition("clients", targetSpace.getName(), "properties", property));
+        payload.put(JsonLdConsts.TYPE, EBRAINSVocabulary.META_PROPERTY_DEFINITION_TYPE);
+        payload.put(EBRAINSVocabulary.META_PROPERTY, new JsonLdId(decodedProperty));
         primaryStore.postEvent(Event.createUpsertEvent(targetSpace, UUID.nameUUIDFromBytes(payload.id().getId().getBytes(StandardCharsets.UTF_8)), Event.Type.INSERT, payload), false);
         return ResponseEntity.status(HttpStatus.OK).build();
     }
+
+    @Operation(summary = "Upload a property specification either globally or for the requesting client")
+    @DeleteMapping("/properties")
+    @WritesData
+    public ResponseEntity<Result<Void>> deprecateProperty(@Parameter(description = "By default, the specification is only valid for the current client. If this flag is set to true (and the client/user combination has the permission), the specification is applied for all clients (unless they have defined something by themselves)")  @RequestParam(value = "global", required = false) boolean global, @RequestParam("property") String property) {
+        SpaceName targetSpace = global ? InternalSpace.GLOBAL_SPEC : authContext.getClientSpace().getName();
+        String decodedProperty = URLDecoder.decode(property, StandardCharsets.UTF_8);
+        JsonLdId specId = EBRAINSVocabulary.createIdForStructureDefinition("clients", targetSpace.getName(), "properties", property);
+        UUID specUUID = UUID.nameUUIDFromBytes(specId.getId().getBytes(StandardCharsets.UTF_8));
+         NormalizedJsonLd payload = new NormalizedJsonLd();
+        payload.addTypes(EBRAINSVocabulary.META_PROPERTY_DEFINITION_TYPE);
+        payload.put(EBRAINSVocabulary.META_PROPERTY, new JsonLdId(decodedProperty));
+        Event deprecateProperty = new Event(targetSpace, specUUID, payload, Event.Type.META_DEPRECATION, new Date());
+        primaryStore.postEvent(deprecateProperty, false);
+        return ResponseEntity.ok(Result.ok());
+    }
+
+
+    @Operation(summary = "Deprecate a property specification either globally for the requesting client")
+    @PutMapping("/propertiesForType")
+    @WritesData
+    public ResponseEntity<Result<Void>> definePropertyForType(@RequestBody NormalizedJsonLd payload, @Parameter(description = "By default, the specification is only valid for the current client. If this flag is set to true (and the client/user combination has the permission), the specification is applied for all clients (unless they have defined something by themselves)")  @RequestParam(value = "global", required = false) boolean global, @RequestParam("property") String property, @RequestParam("type") String type) {
+        SpaceName targetSpace = global ? InternalSpace.GLOBAL_SPEC : authContext.getClientSpace().getName();
+        String decodedProperty = URLDecoder.decode(property, StandardCharsets.UTF_8);
+        String decodedType = URLDecoder.decode(type, StandardCharsets.UTF_8);
+        payload.put(EBRAINSVocabulary.META_PROPERTY, new JsonLdId(decodedProperty));
+        payload.put(JsonLdConsts.TYPE, EBRAINSVocabulary.META_PROPERTY_IN_TYPE_DEFINITION_TYPE);
+        payload.put(EBRAINSVocabulary.META_TYPE, new JsonLdId(decodedType));
+        payload.setId(EBRAINSVocabulary.createIdForStructureDefinition("clients", targetSpace.getName(), "types", decodedType, "properties", decodedProperty));
+        primaryStore.postEvent(Event.createUpsertEvent(targetSpace, UUID.nameUUIDFromBytes(payload.id().getId().getBytes(StandardCharsets.UTF_8)), Event.Type.INSERT, payload), false);
+        return ResponseEntity.status(HttpStatus.OK).build();
+    }
+
+    @Operation(summary = "Deprecate a property specification for a specific type either globally or for the requesting client")
+    @DeleteMapping("/propertiesForType")
+    @WritesData
+    public ResponseEntity<Result<Void>> deprecatePropertyForType(@Parameter(description = "By default, the specification is only valid for the current client. If this flag is set to true (and the client/user combination has the permission), the specification is applied for all clients (unless they have defined something by themselves)")  @RequestParam(value = "global", required = false) boolean global, @RequestParam("property") String property, @RequestParam("type") String type) {
+        SpaceName targetSpace = global ? InternalSpace.GLOBAL_SPEC : authContext.getClientSpace().getName();
+        String decodedProperty = URLDecoder.decode(property, StandardCharsets.UTF_8);
+        String decodedType = URLDecoder.decode(type, StandardCharsets.UTF_8);
+        UUID specId = idUtils.getUUID(EBRAINSVocabulary.createIdForStructureDefinition("clients", targetSpace.getName(), "types", decodedType, "properties", decodedProperty));
+        NormalizedJsonLd payload = new NormalizedJsonLd();
+        payload.put(EBRAINSVocabulary.META_PROPERTY, new JsonLdId(decodedProperty));
+        payload.put(EBRAINSVocabulary.META_TYPE, new JsonLdId(decodedType));
+        payload.addTypes(EBRAINSVocabulary.META_PROPERTY_IN_TYPE_DEFINITION_TYPE);
+        Event deprecateProperty = new Event(targetSpace, specId, payload, Event.Type.META_DEPRECATION, new Date());
+        primaryStore.postEvent(deprecateProperty, false);
+        return ResponseEntity.ok(Result.ok());
+    }
+
 }
