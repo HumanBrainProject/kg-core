@@ -111,12 +111,13 @@ public class Properties {
         SpaceName targetSpace = global ? InternalSpace.GLOBAL_SPEC : authContext.getClientSpace().getName();
         String decodedProperty = URLDecoder.decode(property, StandardCharsets.UTF_8);
         String decodedType = URLDecoder.decode(type, StandardCharsets.UTF_8);
-        UUID specId = idUtils.getUUID(EBRAINSVocabulary.createIdForStructureDefinition("clients", targetSpace.getName(), "types", decodedType, "properties", decodedProperty));
+        JsonLdId specId = EBRAINSVocabulary.createIdForStructureDefinition("clients", targetSpace.getName(), "types", decodedType, "properties", decodedProperty);
+        UUID specUUID = UUID.nameUUIDFromBytes(specId.getId().getBytes(StandardCharsets.UTF_8));
         NormalizedJsonLd payload = new NormalizedJsonLd();
         payload.put(EBRAINSVocabulary.META_PROPERTY, new JsonLdId(decodedProperty));
         payload.put(EBRAINSVocabulary.META_TYPE, new JsonLdId(decodedType));
         payload.addTypes(EBRAINSVocabulary.META_PROPERTY_IN_TYPE_DEFINITION_TYPE);
-        Event deprecateProperty = new Event(targetSpace, specId, payload, Event.Type.META_DEPRECATION, new Date());
+        Event deprecateProperty = new Event(targetSpace, specUUID, payload, Event.Type.META_DEPRECATION, new Date());
         primaryStore.postEvent(deprecateProperty, false);
         return ResponseEntity.ok(Result.ok());
     }
