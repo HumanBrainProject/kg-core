@@ -543,7 +543,11 @@ public class ArangoRepositoryInstances {
         Map<String, Object> bindVars = new HashMap<>();
         ArangoDatabase db = databases.getByStage(stage);
         //The edges are injection-safe since they have been checked beforehand - so we can trust these values.
-        String edges = String.join(", ", getAllEdgeCollections(db));
+        Set<String> allEdgeCollections = getAllEdgeCollections(db);
+        if(allEdgeCollections.isEmpty()){
+            return null;
+        }
+        String edges = String.join(", ", allEdgeCollections);
         aql.addLine(AQL.trust("RETURN MERGE(FOR instanceId IN @instanceIds"));
         bindVars.put("instanceIds", documents.stream().map(ArangoDocumentReference::getId).collect(Collectors.toList()));
         aql.addLine(AQL.trust("LET doc = DOCUMENT(instanceId)"));
