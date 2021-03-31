@@ -55,8 +55,8 @@ public class SpaceDefinitionSemanticsHandler extends SemanticsHandler {
     @Override
     public List<DBOperation> createMetaDeprecateOperations(SpaceName documentSpace, NormalizedJsonLd document) {
         if(document.types()!=null && document.types().contains(EBRAINSVocabulary.META_SPACEDEFINITION_TYPE)){
-            String spaceToBeDeprecated = document.getAs(EBRAINSVocabulary.META_SPACE, String.class);
-            ArangoDocumentReference spaceReference = StaticStructureController.createDocumentRefForMetaRepresentation(spaceToBeDeprecated, ArangoCollectionReference.fromSpace(InternalSpace.SPACES_SPACE));
+            SpaceName spaceToBeDeprecated = document.getAs(EBRAINSVocabulary.META_SPACE, SpaceName.class);
+            ArangoDocumentReference spaceReference = StaticStructureController.createDocumentRefForMetaRepresentation(spaceToBeDeprecated.getName(), ArangoCollectionReference.fromSpace(InternalSpace.SPACES_SPACE));
             //We don't check for dependent resources since only spaces without any types (and therefore without any instances) can be deprecated.
             return Collections.singletonList(new DeleteInstanceOperation(spaceReference));
         }
