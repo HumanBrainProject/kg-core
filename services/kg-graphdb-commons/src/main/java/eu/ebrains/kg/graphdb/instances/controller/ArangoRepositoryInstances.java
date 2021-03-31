@@ -105,9 +105,9 @@ public class ArangoRepositoryInstances {
             if(!ignoreIncomingLinks) {
                 NormalizedJsonLd instanceIncomingLinks = getIncomingLinks(Collections.singletonList(arangoDocumentReference), stage);
                 if (!CollectionUtils.isEmpty(instanceIncomingLinks)) {
-                    String idString = id.toString();
+                    resolveIncomingLinks(stage, instanceIncomingLinks);
                     NormalizedJsonLd d = document.getDoc();
-                    handleIncomingLinks(stage, idString, d, instanceIncomingLinks);
+                    d.put(EBRAINSVocabulary.META_INCOMING_LINKS, instanceIncomingLinks.get(id.toString()));
                 }
             }
         }
@@ -122,15 +122,16 @@ public class ArangoRepositoryInstances {
         return doc;
     }
 
-    private void handleIncomingLinks(DataStage stage, String id, NormalizedJsonLd document, NormalizedJsonLd instanceIncomingLinks) {
+    private NormalizedJsonLd resolveIncomingLinks(DataStage stage, NormalizedJsonLd instanceIncomingLinks){
         Set<Type> types = new HashSet<>();
         Set<InstanceId> instanceIds = getInstanceIds(instanceIncomingLinks, types);
         List<NormalizedJsonLd> extendedTypes = typesRepo.getTypes(authContext.getUserWithRoles().getClientId(), stage, types, true, false, false);
         Map<String, NormalizedJsonLd> extendedTypesByName = extendedTypes.stream().collect(Collectors.toMap(NormalizedJsonLd::primaryIdentifier, v -> v));
         Map<UUID, String> labelsForInstances = getLabelsForInstances(stage, instanceIds, extendedTypes.stream().map(Type::fromPayload).collect(Collectors.toList()));
         enrichDocument(instanceIncomingLinks, extendedTypesByName, labelsForInstances);
-        document.put(EBRAINSVocabulary.META_INCOMING_LINKS, instanceIncomingLinks.get(id));
+        return instanceIncomingLinks;
     }
+
 
     private Set<InstanceId> getInstanceIds(NormalizedJsonLd instanceIncomingLinks, Set<Type> types) {
         return instanceIncomingLinks.values()
@@ -293,9 +294,10 @@ public class ArangoRepositoryInstances {
                 if(!CollectionUtils.isEmpty(toInspectForIncomingLinks)) {
                     NormalizedJsonLd instanceIncomingLinks = getIncomingLinks(toInspectForIncomingLinks, stage);
                     if (!CollectionUtils.isEmpty(instanceIncomingLinks)) {
+                        resolveIncomingLinks(stage, instanceIncomingLinks);
                         normalizedJsonLds.forEach(d -> {
                             String id = idUtils.getUUID(d.id()).toString();
-                            handleIncomingLinks(stage, id, d, instanceIncomingLinks);
+                            d.put(EBRAINSVocabulary.META_INCOMING_LINKS, instanceIncomingLinks.get(id));
                         });
                     }
                 }

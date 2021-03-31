@@ -24,6 +24,7 @@ import java.net.URISyntaxException;
 import java.net.URLDecoder;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
+import java.util.Objects;
 
 public class Type {
 
@@ -63,9 +64,16 @@ public class Type {
     }
 
     @Override
-    public boolean equals(Object obj) {
-        Type that = (Type) obj;
-        return this.name.equals(that.getName());
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        Type type = (Type) o;
+        return Objects.equals(name, type.name);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(name);
     }
 
     public static Type fromPayload(NormalizedJsonLd payload) {
