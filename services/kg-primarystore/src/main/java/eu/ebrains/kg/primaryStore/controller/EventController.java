@@ -109,7 +109,7 @@ public class EventController {
 
     public PersistedEvent persistEvent(Event event, DataStage dataStage) {
         UserWithRoles userWithRoles = authContext.getUserWithRoles();
-        logger.info(String.format("Received event of type %s for instance %s in space %s by user %s via client %s", event.getType().name(), event.getDocumentId(), event.getSpaceName().getName(), userWithRoles != null && userWithRoles.getUser() != null ? userWithRoles.getUser().getUserName() : "anonymous", userWithRoles != null && userWithRoles.getClientId() != null ? userWithRoles.getClientId() : "unknown"));
+        logger.info(String.format("Received event of type %s for instance %s in space %s by user %s via client %s", event.getType().name(), event.getDocumentId(), event.getSpaceName() != null ? event.getSpaceName().getName() : null, userWithRoles != null && userWithRoles.getUser() != null ? userWithRoles.getUser().getUserName() : "anonymous", userWithRoles != null && userWithRoles.getClientId() != null ? userWithRoles.getClientId() : "unknown"));
         User user = userResolver.resolveUser(event);
         PersistedEvent persistedEvent = new PersistedEvent(event, dataStage, user, Space.fromJsonLd(graphDBSpaces.getSpace(dataStage, event.getSpaceName() != null ? event.getSpaceName().getName() : null)));
         ensureInternalIdInPayload(persistedEvent, userWithRoles);

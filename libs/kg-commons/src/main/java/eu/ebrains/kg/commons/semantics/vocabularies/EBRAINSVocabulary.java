@@ -69,6 +69,7 @@ public class EBRAINSVocabulary {
     public static final String META_CLIENT_SPACE = META_SPACE + "/clientSpace";
     public static final String META_AUTORELEASE_SPACE = META_SPACE + "/autorelease";
     public static final String META_IGNORE_INCOMING_LINKS=META+"ignoreIncomingLinks";
+    public static final String META_FORCED_REMOVAL= META+"forcedRemoval";
 
     public static final String META_PERMISSIONS = META + "permissions";
     public final static String META_PROPERTYUPDATES = META+"propertyUpdates";

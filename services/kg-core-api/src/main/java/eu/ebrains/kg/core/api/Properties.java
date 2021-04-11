@@ -20,12 +20,14 @@ import eu.ebrains.kg.arango.commons.model.InternalSpace;
 import eu.ebrains.kg.commons.AuthContext;
 import eu.ebrains.kg.commons.IdUtils;
 import eu.ebrains.kg.commons.Version;
+import eu.ebrains.kg.commons.api.GraphDBTypes;
 import eu.ebrains.kg.commons.api.PrimaryStoreEvents;
 import eu.ebrains.kg.commons.config.openApiGroups.Admin;
 import eu.ebrains.kg.commons.jsonld.JsonLdConsts;
 import eu.ebrains.kg.commons.jsonld.JsonLdId;
 import eu.ebrains.kg.commons.jsonld.NormalizedJsonLd;
 import eu.ebrains.kg.commons.markers.WritesData;
+import eu.ebrains.kg.commons.model.DataStage;
 import eu.ebrains.kg.commons.model.Event;
 import eu.ebrains.kg.commons.model.Result;
 import eu.ebrains.kg.commons.model.SpaceName;
@@ -38,8 +40,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
-import java.util.Date;
-import java.util.UUID;
+import java.util.*;
 
 /**
  * The property API allows to add meta information about semantic properties either globally or by type for the requesting client.
@@ -48,12 +49,13 @@ import java.util.UUID;
 @RequestMapping(Version.API)
 @Admin
 public class Properties {
-
+    private final GraphDBTypes.Client graphDBTypes;
     private final PrimaryStoreEvents.Client primaryStore;
     private final AuthContext authContext;
     private final IdUtils idUtils;
 
-    public Properties(PrimaryStoreEvents.Client primaryStore, AuthContext authContext, IdUtils idUtils) {
+    public Properties(GraphDBTypes.Client graphDBTypes, PrimaryStoreEvents.Client primaryStore, AuthContext authContext, IdUtils idUtils) {
+        this.graphDBTypes = graphDBTypes;
         this.primaryStore = primaryStore;
         this.authContext = authContext;
         this.idUtils = idUtils;
@@ -120,6 +122,37 @@ public class Properties {
         Event deprecateProperty = new Event(targetSpace, specUUID, payload, Event.Type.META_DEPRECATION, new Date());
         primaryStore.postEvent(deprecateProperty, false);
         return ResponseEntity.ok(Result.ok());
+    }
+
+    @Operation(summary = "Remove a property definition for a specific type. This is only possible, if there is no data providing this property - please make sure, you update them accordingly.")
+    @DeleteMapping("/propertyDefinitionForType")
+    @WritesData
+    public ResponseEntity<Result<Void>> removePropertyForType(@RequestParam("property") String property, @RequestParam("type") String type) {
+        String decodedProperty = URLDecoder.decode(property, StandardCharsets.UTF_8);
+        String decodedType = URLDecoder.decode(type, StandardCharsets.UTF_8);
+        Map<String, Result<NormalizedJsonLd>> typesByName = graphDBTypes.getTypesWithPropertiesByName(Collections.singletonList(decodedType), DataStage.IN_PROGRESS,true, false, null);
+        if(typesByName!=null && typesByName.containsKey(decodedType)){
+            Result<NormalizedJsonLd> t = typesByName.get(decodedType);
+            List<NormalizedJsonLd> properties = t.getData().getAsListOf(EBRAINSVocabulary.META_PROPERTIES, NormalizedJsonLd.class);
+            Optional<NormalizedJsonLd> prop = properties.stream().filter(p -> p.identifiers().contains(decodedProperty)).findFirst();
+            if(prop.isPresent()){
+                Double occurrences = prop.get().getAs(EBRAINSVocabulary.META_OCCURRENCES, Double.class);
+                if(occurrences!=null && occurrences == 0.0){
+                    NormalizedJsonLd payload = new NormalizedJsonLd();
+                    payload.put(EBRAINSVocabulary.META_PROPERTY, new JsonLdId(decodedProperty));
+                    payload.put(EBRAINSVocabulary.META_TYPE, new JsonLdId(decodedType));
+                    payload.put(EBRAINSVocabulary.META_FORCED_REMOVAL, true);
+                    payload.addTypes(EBRAINSVocabulary.META_PROPERTY_IN_TYPE_DEFINITION_TYPE);
+                    Event deprecateProperty = new Event(InternalSpace.GLOBAL_SPEC, UUID.randomUUID(), payload, Event.Type.META_DEPRECATION, new Date());
+                    primaryStore.postEvent(deprecateProperty, false);
+                    return ResponseEntity.ok().build();
+                }
+                else{
+                    return ResponseEntity.badRequest().body(Result.nok(HttpStatus.BAD_REQUEST.value(), String.format("There are still %.0f documents providing this property for this type -> please get rid of the data first.", occurrences)));
+                }
+            }
+        }
+        return ResponseEntity.notFound().build();
     }
 
 }

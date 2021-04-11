@@ -18,6 +18,7 @@ package eu.ebrains.kg.core.api;
 
 import eu.ebrains.kg.commons.AuthContext;
 import eu.ebrains.kg.commons.IdUtils;
+import eu.ebrains.kg.commons.api.GraphDBTypes;
 import eu.ebrains.kg.commons.api.PrimaryStoreEvents;
 import eu.ebrains.kg.commons.jsonld.NormalizedJsonLd;
 import eu.ebrains.kg.commons.model.Result;
@@ -31,7 +32,7 @@ import org.springframework.http.ResponseEntity;
 
 public class PropertiesTest {
     AuthContext authContext = Mockito.mock(AuthContext.class);
-    Properties instance = new Properties(Mockito.mock(PrimaryStoreEvents.Client.class), authContext, Mockito.mock(IdUtils.class));
+    Properties instance = new Properties(Mockito.mock(GraphDBTypes.Client.class), Mockito.mock(PrimaryStoreEvents.Client.class), authContext, Mockito.mock(IdUtils.class));
 
     @Before
     public void init() {
