@@ -368,8 +368,9 @@ public class ArangoRepositoryInstances {
         Paginated<NormalizedJsonLd> normalizedJsonLdPaginated = arangoRepositoryCommons.queryDocuments(databases.getByStage(stage), new AQLQuery(aql, bindVars));
         List<SuggestedLink> links = normalizedJsonLdPaginated.getData().stream().map(payload -> {
             SuggestedLink link = new SuggestedLink();
-            link.setId(idUtils.getUUID(payload.id()));
-            link.setLabel(payload.getAs(EBRAINSVocabulary.LABEL, String.class, null));
+            UUID uuid = idUtils.getUUID(payload.id());
+            link.setId(uuid);
+            link.setLabel(payload.getAs(EBRAINSVocabulary.LABEL, String.class,  uuid!=null ? uuid.toString() : null));
             link.setType(payload.getAs(EBRAINSVocabulary.META_TYPE, String.class, null));
             link.setSpace(payload.getAs(EBRAINSVocabulary.META_SPACE, String.class, null));
             return link;
