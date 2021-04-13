@@ -129,14 +129,14 @@ public class Spaces {
     @PutMapping("{space}/specification")
     @Admin
     @ExposesInputWithoutEnrichedSensitiveData
-    public ResponseEntity<Result<NormalizedJsonLd>> createSpaceDefinition(@PathVariable(value = "space") @Parameter(description = "The space the definition is valid for. Please note that you can't do so for your private space (\"" + SpaceName.PRIVATE_SPACE + "\")") String space, @RequestParam(value = "autorelease", required = false, defaultValue = "false") boolean autoRelease) {
+    public ResponseEntity<Result<NormalizedJsonLd>> createSpaceDefinition(@PathVariable(value = "space") @Parameter(description = "The space the definition is valid for. Please note that you can't do so for your private space (\"" + SpaceName.PRIVATE_SPACE + "\")") String space, @RequestParam(value = "autorelease", required = false, defaultValue = "false") boolean autoRelease, @RequestParam(value = "clientSpace", required = false, defaultValue = "false") boolean clientSpace) {
         SpaceName spaceName = authContext.resolveSpaceName(space);
         if (spaceName != null) {
             if(spaceName.equals(authContext.getUserWithRoles().getPrivateSpace())){
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Result.nok(HttpStatus.BAD_REQUEST.value(), "Your private space is configured by default - you can't do so yourself."));
             }
         }
-        return ResponseEntity.ok(Result.ok(spaceController.createSpaceDefinition(new Space(spaceName, autoRelease, false), true)));
+        return ResponseEntity.ok(Result.ok(spaceController.createSpaceDefinition(new Space(spaceName, autoRelease, clientSpace), true)));
     }
 
 

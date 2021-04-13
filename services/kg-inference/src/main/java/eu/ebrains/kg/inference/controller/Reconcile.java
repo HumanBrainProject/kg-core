@@ -295,7 +295,13 @@ public class Reconcile {
                         IndexedJsonLdDoc firstDoc = documentsForKey.get(0);
                         switch (key) {
                             case JsonLdConsts.ID:
-                                //We don't handle the ID merging - if there are conflicting ids, we create a new one - but this is in the responsibility of the event generation process.
+                                List<JsonLdId> distinctIds = documentsForKey.stream().map(d -> d.getDoc().id()).distinct().collect(Collectors.toList());
+                                if(distinctIds.size()==1){
+                                    inferredDocument.asIndexed().getDoc().setId(distinctIds.get(0));
+                                }
+                                else {
+                                    //We don't handle the ID merging - if there are conflicting ids, we create a new one - but this is in the responsibility of the event generation process.
+                                }
                                 break;
                             case SchemaOrgVocabulary.IDENTIFIER:
                                 Set<String> identifiers = documentsForKey.stream().map(d -> d.getDoc().identifiers()).flatMap(Collection::stream).collect(Collectors.toSet());
