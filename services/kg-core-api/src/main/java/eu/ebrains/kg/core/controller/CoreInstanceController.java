@@ -179,7 +179,7 @@ public class CoreInstanceController {
                 }
         );
         if (responseConfiguration.isReturnAlternatives()) {
-            resolveAlternatives(stage, instancesByIds.values().stream().map(Result::getData).collect(Collectors.toList()));
+            resolveAlternatives(stage, instancesByIds.values().stream().map(Result::getData).filter(Objects::nonNull).collect(Collectors.toList()));
         }
         if (responseConfiguration.isReturnPermissions()) {
             enrichWithPermissionInformation(stage, instancesByIds.values());
@@ -305,10 +305,12 @@ public class CoreInstanceController {
         List<FunctionalityInstance> permissions = userWithRoles.getPermissions();
         documents.forEach(result -> {
                     NormalizedJsonLd doc = result.getData();
-                    String space = doc.getAs(EBRAINSVocabulary.META_SPACE, String.class);
-                    SpaceName sp = space != null ? new SpaceName(space) : null;
-                    Set<Functionality> functionalities = permissions.stream().filter(p -> Functionality.FunctionalityGroup.INSTANCE == p.getFunctionality().getFunctionalityGroup() && stage != null && stage == p.getFunctionality().getStage()).filter(p -> p.appliesTo(sp, idUtils.getUUID(doc.id()))).map(FunctionalityInstance::getFunctionality).collect(Collectors.toSet());
-                    doc.put(EBRAINSVocabulary.META_PERMISSIONS, functionalities);
+                    if(doc!=null) {
+                        String space = doc.getAs(EBRAINSVocabulary.META_SPACE, String.class);
+                        SpaceName sp = space != null ? new SpaceName(space) : null;
+                        Set<Functionality> functionalities = permissions.stream().filter(p -> Functionality.FunctionalityGroup.INSTANCE == p.getFunctionality().getFunctionalityGroup() && stage != null && stage == p.getFunctionality().getStage()).filter(p -> p.appliesTo(sp, idUtils.getUUID(doc.id()))).map(FunctionalityInstance::getFunctionality).collect(Collectors.toSet());
+                        doc.put(EBRAINSVocabulary.META_PERMISSIONS, functionalities);
+                    }
                 }
         );
     }
