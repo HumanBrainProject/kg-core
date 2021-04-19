@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 EPFL/Human Brain Project PCO
+ * Copyright 2021 EPFL/Human Brain Project PCO
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -77,7 +77,13 @@ public class InstanceId {
             if (i != -1) {
                 String space = instanceId.substring(0, i).trim();
                 String uuid = instanceId.substring(i + 1).trim();
-                return new InstanceId(UUID.fromString(uuid), new SpaceName(space));
+                try {
+                    return new InstanceId(UUID.fromString(uuid), new SpaceName(space));
+                }
+                catch(IllegalArgumentException e){
+                    //If the uuid is not a real UUID, this is not a valid instance id
+                    return null;
+                }
             }
         }
         return null;

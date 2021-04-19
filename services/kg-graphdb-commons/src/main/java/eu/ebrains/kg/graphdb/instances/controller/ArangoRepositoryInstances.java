@@ -102,7 +102,7 @@ public class ArangoRepositoryInstances {
             ArangoDocumentReference arangoDocumentReference = ArangoDocumentReference.fromInstanceId(new InstanceId(id, space));
             List<Type> extendedTypeInfo = typesRepo.getTypeInformation(authContext.getUserWithRoles().getClientId(), stage, document.getDoc().types().stream().map(Type::new).collect(Collectors.toSet()));
             boolean ignoreIncomingLinks = extendedTypeInfo.stream().anyMatch(t -> t.getIgnoreIncomingLinks() != null && t.getIgnoreIncomingLinks());
-            if(!ignoreIncomingLinks) {
+            if (!ignoreIncomingLinks) {
                 NormalizedJsonLd instanceIncomingLinks = getIncomingLinks(Collections.singletonList(arangoDocumentReference), stage);
                 if (!CollectionUtils.isEmpty(instanceIncomingLinks)) {
                     resolveIncomingLinks(stage, instanceIncomingLinks);
@@ -122,7 +122,7 @@ public class ArangoRepositoryInstances {
         return doc;
     }
 
-    private NormalizedJsonLd resolveIncomingLinks(DataStage stage, NormalizedJsonLd instanceIncomingLinks){
+    private NormalizedJsonLd resolveIncomingLinks(DataStage stage, NormalizedJsonLd instanceIncomingLinks) {
         Set<Type> types = new HashSet<>();
         Set<InstanceId> instanceIds = getInstanceIds(instanceIncomingLinks, types);
         List<NormalizedJsonLd> extendedTypes = typesRepo.getTypes(authContext.getUserWithRoles().getClientId(), stage, types, true, false, false);
@@ -291,7 +291,7 @@ public class ArangoRepositoryInstances {
                 List<Type> extendedTypeInfo = typesRepo.getTypeInformation(authContext.getUserWithRoles().getClientId(), stage, involvedTypes);
                 Set<String> excludedTypes = extendedTypeInfo.stream().filter(t -> t.getIgnoreIncomingLinks() != null && t.getIgnoreIncomingLinks()).map(Type::getName).collect(Collectors.toSet());
                 List<ArangoDocumentReference> toInspectForIncomingLinks = normalizedJsonLds.stream().filter(n -> n.types().stream().noneMatch(excludedTypes::contains)).map(n -> ArangoDocument.from(n).getId()).collect(Collectors.toList());
-                if(!CollectionUtils.isEmpty(toInspectForIncomingLinks)) {
+                if (!CollectionUtils.isEmpty(toInspectForIncomingLinks)) {
                     NormalizedJsonLd instanceIncomingLinks = getIncomingLinks(toInspectForIncomingLinks, stage);
                     if (!CollectionUtils.isEmpty(instanceIncomingLinks)) {
                         resolveIncomingLinks(stage, instanceIncomingLinks);
@@ -347,10 +347,36 @@ public class ArangoRepositoryInstances {
         // Suggestions are special in terms of permissions: We even allow instances to show up which are in spaces the
         // user doesn't have read access for. This is only acceptable because we're returning a restricted result with
         // minimal information.
-
-
         if (types == null || types.isEmpty()) {
             return new Paginated<>();
+        }
+        if (search != null) {
+            InstanceId instanceId = InstanceId.deserialize(search);
+            if (instanceId != null) {
+                if(excludeIds == null || !excludeIds.contains(instanceId.getUuid())) {
+                    //It is a lookup for an instance id -> let's do a shortcut.
+                    NormalizedJsonLd result = getInstance(stage, instanceId.getSpace(), instanceId.getUuid(), false, true, false, false);
+                    if (result != null) {
+                        Optional<Type> type = types.stream().filter(t -> result.types().contains(t.getName())).findFirst();
+                        if (type.isPresent()) {
+                            SuggestedLink l = new SuggestedLink();
+                            UUID uuid = idUtils.getUUID(result.id());
+                            l.setId(uuid);
+                            Type firstType = type.get();
+                            String labelProperty = firstType.getLabelProperty();
+                            if (labelProperty != null) {
+                                l.setLabel(result.getAs(labelProperty, String.class, uuid != null ? uuid.toString() : null));
+                            } else {
+                                l.setLabel(uuid != null ? uuid.toString() : null);
+                            }
+                            l.setType(firstType.getName());
+                            l.setSpace(result.getAs(EBRAINSVocabulary.META_SPACE, String.class, null));
+                            return new Paginated<>(Collections.singletonList(l), 1, 1, 0);
+                        }
+                    }
+                }
+                return new Paginated<>(Collections.emptyList(), 0, 0, 0);
+            }
         }
         Map<String, Object> bindVars = new HashMap<>();
         AQL aql = new AQL();
@@ -370,7 +396,7 @@ public class ArangoRepositoryInstances {
             SuggestedLink link = new SuggestedLink();
             UUID uuid = idUtils.getUUID(payload.id());
             link.setId(uuid);
-            link.setLabel(payload.getAs(EBRAINSVocabulary.LABEL, String.class,  uuid!=null ? uuid.toString() : null));
+            link.setLabel(payload.getAs(EBRAINSVocabulary.LABEL, String.class, uuid != null ? uuid.toString() : null));
             link.setType(payload.getAs(EBRAINSVocabulary.META_TYPE, String.class, null));
             link.setSpace(payload.getAs(EBRAINSVocabulary.META_SPACE, String.class, null));
             return link;
@@ -378,11 +404,12 @@ public class ArangoRepositoryInstances {
         return new Paginated<>(links, normalizedJsonLdPaginated.getTotalResults(), normalizedJsonLdPaginated.getSize(), normalizedJsonLdPaginated.getFrom());
     }
 
+
     private void addSearchFilter(Map<String, Object> bindVars, AQL aql, String search) {
         if (search != null && !search.isBlank()) {
             List<String> searchTerms = Arrays.stream(search.trim().split(" ")).filter(s -> !s.isBlank()).map(s -> "%" + s.replaceAll("%", "") + "%").collect(Collectors.toList());
             if (!searchTerms.isEmpty()) {
-                aql.addLine(AQL.trust("LET found = (FOR name IN APPEND([typeDefinition.labelProperty, \""+ArangoVocabulary.KEY+"\"], typeDefinition.searchableProperties) FILTER "));
+                aql.addLine(AQL.trust("LET found = (FOR name IN APPEND([typeDefinition.labelProperty, \"" + ArangoVocabulary.KEY + "\"], typeDefinition.searchableProperties) FILTER "));
                 for (int i = 0; i < searchTerms.size(); i++) {
                     aql.addLine(AQL.trust("LIKE(v[name], @search" + i + ", true) "));
                     if (i < searchTerms.size() - 1) {
@@ -401,11 +428,11 @@ public class ArangoRepositoryInstances {
         ArangoCollectionReference typeCollection = ArangoCollectionReference.fromSpace(InternalSpace.TYPE_SPACE);
         bindVars.put("@typeCollection", typeCollection.getCollectionName());
         for (int i = 0; i < types.size(); i++) {
-            aql.addLine(AQL.trust(" {typeName: @typeName" + i + ", type: DOCUMENT(@@typeCollection, @documentId" + i + "), labelProperty: @labelProperty" + i + ", searchableProperties : @searchableProperties"+i+"}"));
+            aql.addLine(AQL.trust(" {typeName: @typeName" + i + ", type: DOCUMENT(@@typeCollection, @documentId" + i + "), labelProperty: @labelProperty" + i + ", searchableProperties : @searchableProperties" + i + "}"));
             bindVars.put("documentId" + i, typeCollection.docWithStableId(types.get(i).getName()).getDocumentId().toString());
             bindVars.put("labelProperty" + i, types.get(i).getLabelProperty());
             bindVars.put("typeName" + i, types.get(i).getName());
-            bindVars.put("searchableProperties" + i, searchableProperties!=null ? searchableProperties.get(types.get(i).getName()) : null);
+            bindVars.put("searchableProperties" + i, searchableProperties != null ? searchableProperties.get(types.get(i).getName()) : null);
             if (i < types.size() - 1) {
                 aql.add(AQL.trust(","));
             }
@@ -547,7 +574,7 @@ public class ArangoRepositoryInstances {
         ArangoDatabase db = databases.getByStage(stage);
         //The edges are injection-safe since they have been checked beforehand - so we can trust these values.
         Set<String> allEdgeCollections = getAllEdgeCollections(db);
-        if(allEdgeCollections.isEmpty()){
+        if (allEdgeCollections.isEmpty()) {
             return null;
         }
         String edges = String.join(", ", allEdgeCollections);
@@ -830,7 +857,7 @@ public class ArangoRepositoryInstances {
         aql.addLine(AQL.trust("}"));
 
         aql.addLine(AQL.trust("RETURN MERGE(FOR id IN @ids"));
-        bindVars.put("ids", ids!=null ? ids.stream().filter(Objects::nonNull).map(InstanceId::serialize).collect(Collectors.toSet()) : null);
+        bindVars.put("ids", ids != null ? ids.stream().filter(Objects::nonNull).map(InstanceId::serialize).collect(Collectors.toSet()) : null);
         aql.indent().addLine(AQL.trust("LET doc = DOCUMENT(id)"));
         aql.addLine(AQL.trust("FILTER doc != null"));
         aql.addLine(AQL.trust("FILTER doc.`" + JsonLdConsts.TYPE + "`"));
@@ -861,11 +888,11 @@ public class ArangoRepositoryInstances {
         //get scope relevant queries
         //TODO filter user defined queries (only take client queries into account)
         Stream<NormalizedJsonLd> typeQueries = instance.types().stream().map(type -> getQueriesByRootType(stage, null, null, false, false, type).getData()).flatMap(Collection::stream);
-        List<NormalizedJsonLd> results = typeQueries.map(q ->        {
+        List<NormalizedJsonLd> results = typeQueries.map(q -> {
             QueryResult queryResult = queryController.query(authContext.getUserWithRoles(),
                     new KgQuery(q, stage).setIdRestrictions(
                             Collections.singletonList(id)), null, null, true);
-            return queryResult!=null && queryResult.getResult() != null ? queryResult.getResult().getData() : null;
+            return queryResult != null && queryResult.getResult() != null ? queryResult.getResult().getData() : null;
         }).filter(Objects::nonNull).flatMap(Collection::stream).collect(Collectors.toList());
         return translateResultToScope(results, stage, fetchLabels, instance);
     }

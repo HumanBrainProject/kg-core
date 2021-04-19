@@ -358,6 +358,21 @@ public class Instances {
     @Advanced
     public Result<SuggestionResult> getSuggestedLinksForProperty(@RequestBody NormalizedJsonLd payload, @RequestParam("stage") ExposedStage stage, @RequestParam(value = "property") String propertyName, @PathVariable("id") UUID id, @RequestParam(value = "type", required = false) String type, @RequestParam(value = "search", required = false) String search, @ParameterObject PaginationParam paginationParam) {
         InstanceId instanceId = idsController.resolveId(DataStage.IN_PROGRESS, id);
+        if(search!=null) {
+            try {
+                //The search string is a UUID -> let's try to resolve it - if we're successful, we can shortcut the lookup process.
+                UUID uuid = UUID.fromString(search);
+                InstanceId resolvedSearchId = idsController.resolveId(DataStage.IN_PROGRESS, uuid);
+                if(resolvedSearchId!=null){
+                    search = resolvedSearchId.serialize();
+                }
+            }
+            catch(IllegalArgumentException e){
+                //The search string is not an id -> we therefore don't treat it.
+            }
+        }
+
+
         return Result.ok(graphDBInstances.getSuggestedLinksForProperty(payload, stage.getStage(), instanceId!=null && instanceId.getSpace()!=null ? instanceId.getSpace().getName() : null, id, propertyName, type != null && !type.isBlank() ? new Type(type).getName() : null, search, paginationParam));
     }
 
