@@ -126,7 +126,7 @@ public class CoreInstanceController {
 
     private NormalizedJsonLd patchInstance(InstanceId instanceId, NormalizedJsonLd normalizedJsonLd, boolean removeNonDefinedKeys, ZonedDateTime eventDateTime) {
         InstanceId nativeId = new InstanceId(idUtils.getDocumentIdForUserAndInstance(authContext.getUserId(), instanceId.getUuid()), instanceId.getSpace(), instanceId.isDeprecated());
-        NormalizedJsonLd instance = graphDBInstances.getInstanceById(nativeId.getSpace().getName(), nativeId.getUuid(), DataStage.NATIVE, true, false, false, true);
+        NormalizedJsonLd instance = graphDBInstances.getInstanceById(nativeId.getSpace().getName(), nativeId.getUuid(), DataStage.NATIVE, true, false, false, null, true);
         if (instance == null) {
             Map<String, ZonedDateTime> updateTimes = new HashMap<>();
             normalizedJsonLd.keySet().forEach(k -> updateTimes.put(k, eventDateTime != null ? eventDateTime : ZonedDateTime.now()));
@@ -158,7 +158,7 @@ public class CoreInstanceController {
         }
     }
 
-    public Map<String, Result<NormalizedJsonLd>> getInstancesByIds(List<String> ids, DataStage stage, ResponseConfiguration responseConfiguration) {
+    public Map<String, Result<NormalizedJsonLd>> getInstancesByIds(List<String> ids, DataStage stage, ExtendedResponseConfiguration responseConfiguration) {
         Map<String, Result<NormalizedJsonLd>> result = new HashMap<>();
         List<UUID> validUUIDs = ids.stream().filter(Objects::nonNull).map(id -> {
             try {
@@ -169,7 +169,7 @@ public class CoreInstanceController {
         }).filter(Objects::nonNull).collect(Collectors.toList());
         List<InstanceId> idsAfterResolution = this.ids.resolveIdsByUUID(stage, validUUIDs, true);
         idsAfterResolution.stream().filter(instanceId -> !instanceId.isDeprecated()).filter(InstanceId::isUnresolved).forEach(id -> result.put(id.getUuid().toString(), Result.nok(HttpStatus.NOT_FOUND.value(), HttpStatus.NOT_FOUND.getReasonPhrase())));
-        Map<UUID, Result<NormalizedJsonLd>> instancesByIds = graphDBInstances.getInstancesByIds(idsAfterResolution.stream().filter(i -> !i.isUnresolved() && !i.isDeprecated()).map(InstanceId::serialize).collect(Collectors.toList()), stage, responseConfiguration.isReturnEmbedded(), responseConfiguration.isReturnAlternatives(), responseConfiguration.isReturnIncomingLinks());
+        Map<UUID, Result<NormalizedJsonLd>> instancesByIds = graphDBInstances.getInstancesByIds(idsAfterResolution.stream().filter(i -> !i.isUnresolved() && !i.isDeprecated()).map(InstanceId::serialize).collect(Collectors.toList()), stage, responseConfiguration.isReturnEmbedded(), responseConfiguration.isReturnAlternatives(), responseConfiguration.isReturnIncomingLinks(), responseConfiguration.getIncomingLinksPageSize());
         instancesByIds.forEach((k, v) -> result.put(k.toString(), v));
         ids.stream().filter(Objects::nonNull).forEach(
                 id -> {
@@ -205,7 +205,7 @@ public class CoreInstanceController {
                     DataStage.IN_PROGRESS,
                     responseConfiguration.isReturnEmbedded(),
                     responseConfiguration.isReturnAlternatives(),
-                    responseConfiguration.isReturnIncomingLinks());
+                    responseConfiguration instanceof ExtendedResponseConfiguration && ((ExtendedResponseConfiguration) responseConfiguration).isReturnIncomingLinks(), responseConfiguration instanceof ExtendedResponseConfiguration ? ((ExtendedResponseConfiguration)responseConfiguration).getIncomingLinksPageSize(): null);
             if (responseConfiguration.isReturnAlternatives()) {
                 resolveAlternatives(DataStage.IN_PROGRESS, instancesByIds.values().stream().map(Result::getData).collect(Collectors.toList()));
             }
@@ -223,13 +223,13 @@ public class CoreInstanceController {
         return result instanceof AmbiguousResult ? ResponseEntity.status(HttpStatus.CONFLICT).body(result) : ResponseEntity.ok(result);
     }
 
-    public NormalizedJsonLd getInstanceById(UUID id, DataStage stage, ResponseConfiguration responseConfiguration) {
+    public NormalizedJsonLd getInstanceById(UUID id, DataStage stage, ExtendedResponseConfiguration responseConfiguration) {
         InstanceId instanceId = ids.resolveId(stage, id);
         if (instanceId == null || instanceId.isDeprecated()) {
             return null;
         }
         if (responseConfiguration.isReturnPayload()) {
-            NormalizedJsonLd instance = graphDBInstances.getInstanceById(instanceId.getSpace().getName(), instanceId.getUuid(), stage, responseConfiguration.isReturnEmbedded(), responseConfiguration.isReturnAlternatives(), responseConfiguration.isReturnIncomingLinks(), true);
+            NormalizedJsonLd instance = graphDBInstances.getInstanceById(instanceId.getSpace().getName(), instanceId.getUuid(), stage, responseConfiguration.isReturnEmbedded(), responseConfiguration.isReturnAlternatives(), responseConfiguration.isReturnIncomingLinks(), responseConfiguration.getIncomingLinksPageSize(), true);
             if (responseConfiguration.isReturnAlternatives()) {
                 resolveAlternatives(stage, Collections.singletonList(instance));
             }

@@ -46,7 +46,7 @@ public class GraphDB4Test {
     }
 
     public IndexedJsonLdDoc get(DataStage stage, SpaceName space, UUID id) {
-        return IndexedJsonLdDoc.from(graphDBInstances.getInstanceById(space.getName(), id, stage, false, false, false, true));
+        return IndexedJsonLdDoc.from(graphDBInstances.getInstanceById(space.getName(), id, stage, false, false, false, null, true));
     }
 
 }

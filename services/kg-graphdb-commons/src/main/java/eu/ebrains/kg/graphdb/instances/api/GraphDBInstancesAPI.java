@@ -57,8 +57,8 @@ public class GraphDBInstancesAPI implements GraphDBInstances.Client {
     }
 
     @Override
-    public NormalizedJsonLd getInstanceById(String space, UUID id, DataStage stage, boolean returnEmbedded, boolean returnAlternatives, boolean returnIncomingLinks, boolean removeInternalProperties) {
-        return repository.getInstance(stage, new SpaceName(space), id, returnEmbedded, removeInternalProperties, returnAlternatives, returnIncomingLinks);
+    public NormalizedJsonLd getInstanceById(String space, UUID id, DataStage stage, boolean returnEmbedded, boolean returnAlternatives, boolean returnIncomingLinks, Integer incomingLinksPageSize, boolean removeInternalProperties) {
+        return repository.getInstance(stage, new SpaceName(space), id, returnEmbedded, removeInternalProperties, returnAlternatives, returnIncomingLinks, incomingLinksPageSize );
     }
 
     @Override
@@ -92,16 +92,16 @@ public class GraphDBInstancesAPI implements GraphDBInstances.Client {
 
     @Override
     @ExposesData
-    public Map<UUID, Result<NormalizedJsonLd>> getInstancesByIds(List<String> ids, DataStage stage, boolean returnEmbedded, boolean returnAlternatives, boolean returnIncomingLinks) {
+    public Map<UUID, Result<NormalizedJsonLd>> getInstancesByIds(List<String> ids, DataStage stage, boolean returnEmbedded, boolean returnAlternatives, boolean returnIncomingLinks, Integer incomingLinksPageSize) {
         List<InstanceId> instanceIds = ids.stream().map(InstanceId::deserialize).filter(Objects::nonNull).collect(Collectors.toList());
-        return repository.getDocumentsByIdList(stage, instanceIds, returnEmbedded, returnAlternatives, returnIncomingLinks);
+        return repository.getDocumentsByIdList(stage, instanceIds, returnEmbedded, returnAlternatives, returnIncomingLinks, incomingLinksPageSize);
     }
 
     @Override
     @ExposesMinimalData
     public Map<UUID, String> getLabels(List<String> ids, DataStage stage) {
         Set<InstanceId> instanceIds = ids.stream().map(InstanceId::deserialize).filter(Objects::nonNull).collect(Collectors.toSet());
-        Set<Type> types = getInstancesByIds(ids, stage, false, false, false).values().stream().map(Result::getData).map(JsonLdDoc::types).flatMap(Collection::stream).distinct().map(Type::new).collect(Collectors.toSet());
+        Set<Type> types = getInstancesByIds(ids, stage, false, false, false, null).values().stream().map(Result::getData).map(JsonLdDoc::types).flatMap(Collection::stream).distinct().map(Type::new).collect(Collectors.toSet());
         List<Type> extendedTypes = typeRepository.getTypeInformation(authContext.getUserWithRoles().getClientId(), stage, types);
         return repository.getLabelsForInstances(stage, instanceIds, extendedTypes);
     }
@@ -152,7 +152,7 @@ public class GraphDBInstancesAPI implements GraphDBInstances.Client {
             types = Collections.singletonList(new Type(URLDecoder.decode(type, StandardCharsets.UTF_8)));
         } else {
             if (payload == null) {
-                payload = repository.getInstance(stage, new SpaceName(space), id, true, true, false, false);
+                payload = repository.getInstance(stage, new SpaceName(space), id, true, true, false, false, null);
             }
             if (payload != null) {
                 types = payload.types().stream().map(Type::new).collect(Collectors.toList());

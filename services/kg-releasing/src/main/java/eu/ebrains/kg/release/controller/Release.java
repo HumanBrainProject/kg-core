@@ -64,6 +64,6 @@ public class Release {
     }
 
     private IndexedJsonLdDoc getInstance(DataStage stage, SpaceName space, UUID id) {
-        return IndexedJsonLdDoc.from(graphDBInstances.getInstanceById(space.getName(), id, stage, true, false, false, true));
+        return IndexedJsonLdDoc.from(graphDBInstances.getInstanceById(space.getName(), id, stage, true, false, false, null, true));
     }
 }

@@ -113,6 +113,7 @@ public class OpenAPIv3 {
 
         OAuthFlow oAuthFlow = new OAuthFlow();
         oAuthFlow.authorizationUrl(loginEndpoint);
+        oAuthFlow.addExtension("client_id", "kg");
         SecurityScheme userToken = new SecurityScheme().name("Authorization").type(SecurityScheme.Type.OAUTH2).flows(new OAuthFlows().implicit(oAuthFlow)).description("The user authentication");
 
         SecurityRequirement userWithoutClientReq = new SecurityRequirement().addList("Authorization");

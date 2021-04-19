@@ -43,9 +43,9 @@ public class GraphDBInstancesRestClient implements GraphDBInstances.Client {
     }
 
     @Override
-    public NormalizedJsonLd getInstanceById(String space, UUID id, DataStage stage, boolean returnEmbedded, boolean returnAlternatives, boolean returnIncomingLinks, boolean removeInternalProperties) {
-        return serviceCall.get(String.format("%s/%s/instances/%s/%s?returnEmbedded=%b&returnAlternatives=%b&returnIncomingLinks=%b",
-                SERVICE_URL, stage.name(), space, id, returnEmbedded, returnAlternatives, returnIncomingLinks),
+    public NormalizedJsonLd getInstanceById(String space, UUID id, DataStage stage, boolean returnEmbedded, boolean returnAlternatives, boolean returnIncomingLinks, Integer incomingLinksPageSize, boolean removeInternalProperties) {
+        return serviceCall.get(String.format("%s/%s/instances/%s/%s?returnEmbedded=%b&returnAlternatives=%b&returnIncomingLinks=%b&incomingLinksPageSize=%d",
+                SERVICE_URL, stage.name(), space, id, returnEmbedded, returnAlternatives, returnIncomingLinks, incomingLinksPageSize),
                 authTokenContext.getAuthTokens(),
                 NormalizedJsonLd.class);
     }
@@ -67,9 +67,9 @@ public class GraphDBInstancesRestClient implements GraphDBInstances.Client {
     }
 
     @Override
-    public Map<UUID, Result<NormalizedJsonLd>> getInstancesByIds(List<String> instanceIds, DataStage stage, boolean returnEmbedded, boolean returnAlternatives, boolean returnIncomingLinks) {
-        return serviceCall.post(String.format("%s/%s/instancesByIds?returnEmbedded=%b&returnAlternatives=%b&returnIncomingLinks=%b",
-                SERVICE_URL, stage.name(), returnEmbedded, returnAlternatives, returnIncomingLinks),
+    public Map<UUID, Result<NormalizedJsonLd>> getInstancesByIds(List<String> instanceIds, DataStage stage, boolean returnEmbedded, boolean returnAlternatives, boolean returnIncomingLinks, Integer incomingLinksPageSize) {
+        return serviceCall.post(String.format("%s/%s/instancesByIds?returnEmbedded=%b&returnAlternatives=%b&returnIncomingLinks=%b&incomingLinksPageSize%d",
+                SERVICE_URL, stage.name(), returnEmbedded, returnAlternatives, returnIncomingLinks, incomingLinksPageSize),
                 instanceIds,
                 authTokenContext.getAuthTokens(),
                 IdPayloadMapping.class);

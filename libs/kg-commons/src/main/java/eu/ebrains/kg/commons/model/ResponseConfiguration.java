@@ -22,7 +22,6 @@ public class ResponseConfiguration {
     private boolean returnPermissions = false;
     private boolean returnAlternatives = false;
     private boolean returnEmbedded = true;
-    private boolean returnIncomingLinks = false;
     private boolean sortByLabel = true;
 
     public boolean isSortByLabel() {
@@ -62,14 +61,6 @@ public class ResponseConfiguration {
 
     public boolean isReturnEmbedded() {
         return returnEmbedded;
-    }
-
-    public boolean isReturnIncomingLinks() {
-        return returnIncomingLinks;
-    }
-
-    public void setReturnIncomingLinks(boolean returnIncomingLinks) {
-        this.returnIncomingLinks = returnIncomingLinks;
     }
 
     public ResponseConfiguration setReturnEmbedded(boolean returnEmbedded) {

@@ -22,9 +22,9 @@ import eu.ebrains.kg.authentication.api.AuthenticationAPI;
 import eu.ebrains.kg.authentication.keycloak.KeycloakController;
 import eu.ebrains.kg.commons.AuthTokenContext;
 import eu.ebrains.kg.commons.IdUtils;
+import eu.ebrains.kg.commons.model.ExtendedResponseConfiguration;
 import eu.ebrains.kg.commons.model.IngestConfiguration;
 import eu.ebrains.kg.commons.model.PaginationParam;
-import eu.ebrains.kg.commons.model.ResponseConfiguration;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -38,7 +38,7 @@ import org.springframework.test.context.junit4.SpringRunner;
 public abstract class AbstractSystemTest {
 
     protected PaginationParam EMPTY_PAGINATION = new PaginationParam();
-    protected ResponseConfiguration DEFAULT_RESPONSE_CONFIG = new ResponseConfiguration();
+    protected ExtendedResponseConfiguration DEFAULT_RESPONSE_CONFIG = new ExtendedResponseConfiguration();
     protected IngestConfiguration DEFAULT_INGEST_CONFIG = new IngestConfiguration().setNormalizePayload(false);
 
 
