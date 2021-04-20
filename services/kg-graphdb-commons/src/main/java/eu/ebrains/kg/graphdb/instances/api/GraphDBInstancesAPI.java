@@ -57,7 +57,12 @@ public class GraphDBInstancesAPI implements GraphDBInstances.Client {
     }
 
     @Override
-    public NormalizedJsonLd getInstanceById(String space, UUID id, DataStage stage, boolean returnEmbedded, boolean returnAlternatives, boolean returnIncomingLinks, Integer incomingLinksPageSize, boolean removeInternalProperties) {
+    public Paginated<NormalizedJsonLd> getIncomingLinks(String space, UUID id, DataStage stage, String property, String type, PaginationParam paginationParam) {
+        return repository.getIncomingLinks(stage, new SpaceName(space), id, property, type, paginationParam);
+    }
+
+    @Override
+    public NormalizedJsonLd getInstanceById(String space, UUID id, DataStage stage, boolean returnEmbedded, boolean returnAlternatives, boolean returnIncomingLinks, Long incomingLinksPageSize, boolean removeInternalProperties) {
         return repository.getInstance(stage, new SpaceName(space), id, returnEmbedded, removeInternalProperties, returnAlternatives, returnIncomingLinks, incomingLinksPageSize );
     }
 
@@ -92,7 +97,7 @@ public class GraphDBInstancesAPI implements GraphDBInstances.Client {
 
     @Override
     @ExposesData
-    public Map<UUID, Result<NormalizedJsonLd>> getInstancesByIds(List<String> ids, DataStage stage, boolean returnEmbedded, boolean returnAlternatives, boolean returnIncomingLinks, Integer incomingLinksPageSize) {
+    public Map<UUID, Result<NormalizedJsonLd>> getInstancesByIds(List<String> ids, DataStage stage, boolean returnEmbedded, boolean returnAlternatives, boolean returnIncomingLinks, Long incomingLinksPageSize) {
         List<InstanceId> instanceIds = ids.stream().map(InstanceId::deserialize).filter(Objects::nonNull).collect(Collectors.toList());
         return repository.getDocumentsByIdList(stage, instanceIds, returnEmbedded, returnAlternatives, returnIncomingLinks, incomingLinksPageSize);
     }

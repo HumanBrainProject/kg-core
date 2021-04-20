@@ -18,13 +18,13 @@ package eu.ebrains.kg.commons.model;
 
 public class ExtendedResponseConfiguration extends ResponseConfiguration {
     private boolean returnIncomingLinks = false;
-    private Integer incomingLinksPageSize = null;
+    private Long incomingLinksPageSize = null;
 
-    public Integer getIncomingLinksPageSize() {
+    public Long getIncomingLinksPageSize() {
         return incomingLinksPageSize;
     }
 
-    public void setIncomingLinksPageSize(Integer incomingLinksPageSize) {
+    public void setIncomingLinksPageSize(Long incomingLinksPageSize) {
         this.incomingLinksPageSize = incomingLinksPageSize;
     }
 

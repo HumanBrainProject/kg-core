@@ -223,6 +223,14 @@ public class CoreInstanceController {
         return result instanceof AmbiguousResult ? ResponseEntity.status(HttpStatus.CONFLICT).body(result) : ResponseEntity.ok(result);
     }
 
+    public Paginated<NormalizedJsonLd> getIncomingLinks(UUID id, DataStage stage, String property, Type type, PaginationParam pagination){
+        InstanceId instanceId = ids.resolveId(stage, id);
+        if(instanceId == null || instanceId.isDeprecated()){
+            return null;
+        }
+        return graphDBInstances.getIncomingLinks(instanceId.getSpace().getName(), instanceId.getUuid(), stage, property, type.getName(), pagination);
+    }
+
     public NormalizedJsonLd getInstanceById(UUID id, DataStage stage, ExtendedResponseConfiguration responseConfiguration) {
         InstanceId instanceId = ids.resolveId(stage, id);
         if (instanceId == null || instanceId.isDeprecated()) {

@@ -43,7 +43,15 @@ public class GraphDBInstancesRestClient implements GraphDBInstances.Client {
     }
 
     @Override
-    public NormalizedJsonLd getInstanceById(String space, UUID id, DataStage stage, boolean returnEmbedded, boolean returnAlternatives, boolean returnIncomingLinks, Integer incomingLinksPageSize, boolean removeInternalProperties) {
+    public Paginated<NormalizedJsonLd> getIncomingLinks(String space, UUID id, DataStage stage, String property, String type, PaginationParam paginationParam) {
+        return serviceCall.get(String.format("%s/%s/instances/%s/%s?property=%s&type=%s&from=%d&size=%d",
+                SERVICE_URL, stage.name(), space, id, URLEncoder.encode(property, StandardCharsets.UTF_8), URLEncoder.encode(type, StandardCharsets.UTF_8), paginationParam.getFrom(), paginationParam.getSize()),
+                authTokenContext.getAuthTokens(),
+                PaginatedDocuments.class);
+    }
+
+    @Override
+    public NormalizedJsonLd getInstanceById(String space, UUID id, DataStage stage, boolean returnEmbedded, boolean returnAlternatives, boolean returnIncomingLinks, Long incomingLinksPageSize, boolean removeInternalProperties) {
         return serviceCall.get(String.format("%s/%s/instances/%s/%s?returnEmbedded=%b&returnAlternatives=%b&returnIncomingLinks=%b&incomingLinksPageSize=%d",
                 SERVICE_URL, stage.name(), space, id, returnEmbedded, returnAlternatives, returnIncomingLinks, incomingLinksPageSize),
                 authTokenContext.getAuthTokens(),
@@ -67,7 +75,7 @@ public class GraphDBInstancesRestClient implements GraphDBInstances.Client {
     }
 
     @Override
-    public Map<UUID, Result<NormalizedJsonLd>> getInstancesByIds(List<String> instanceIds, DataStage stage, boolean returnEmbedded, boolean returnAlternatives, boolean returnIncomingLinks, Integer incomingLinksPageSize) {
+    public Map<UUID, Result<NormalizedJsonLd>> getInstancesByIds(List<String> instanceIds, DataStage stage, boolean returnEmbedded, boolean returnAlternatives, boolean returnIncomingLinks, Long incomingLinksPageSize) {
         return serviceCall.post(String.format("%s/%s/instancesByIds?returnEmbedded=%b&returnAlternatives=%b&returnIncomingLinks=%b&incomingLinksPageSize%d",
                 SERVICE_URL, stage.name(), returnEmbedded, returnAlternatives, returnIncomingLinks, incomingLinksPageSize),
                 instanceIds,

@@ -43,6 +43,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.net.URLDecoder;
+import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -164,6 +166,15 @@ public class Instances {
         NormalizedJsonLd instanceById = instanceController.getInstanceById(id, stage.getStage(), responseConfiguration);
         return instanceById != null ? ResponseEntity.ok(Result.ok(instanceById).setExecutionDetails(startTime, new Date())) : ResponseEntity.notFound().build();
     }
+
+    @Operation(summary = "Get incoming links for a specific instance (paginated)")
+    @GetMapping("/instances/{id}/incomingLinks")
+    @ExposesData
+    @Advanced
+    public Result<Paginated<NormalizedJsonLd>> getIncomingLinks(@PathVariable("id") UUID id, @RequestParam("stage") ExposedStage stage, @RequestParam("property") String property, @RequestParam("type") String type, @ParameterObject PaginationParam paginationParam) {
+        return Result.ok(instanceController.getIncomingLinks(id, stage.getStage(), URLDecoder.decode(property, StandardCharsets.UTF_8), type!=null ? new Type(type) : null, paginationParam));
+    }
+
 
     @Operation(summary = "Get the scope for the instance by its KG-internal ID")
     @GetMapping("/instances/{id}/scope")
