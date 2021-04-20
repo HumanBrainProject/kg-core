@@ -100,7 +100,7 @@ public class ArangoRepositoryInstances {
                 if (t instanceof Map) {
                     Object data = ((Map) t).get("data");
                     if (data instanceof List) {
-                        return new Paginated<>((List<NormalizedJsonLd>) data, (long) ((Map) t).get("totalResults"), (long) ((Map) t).get("size"), (long) ((Map) t).get("from"));
+                        return new Paginated<>((List<NormalizedJsonLd>) data, (long) ((Map) t).get("total"), (long) ((Map) t).get("size"), (long) ((Map) t).get("from"));
                     }
                 }
             }
@@ -660,7 +660,7 @@ public class ArangoRepositoryInstances {
         aql.addLine(AQL.trust("COLLECT type = x.`" + JsonLdConsts.TYPE + "` INTO instancesByIdentifierAndType"));
         aql.addLine(AQL.trust("FOR t in type"));
         aql.addLine(AQL.trust("LET instances = (FOR instance IN instancesByIdentifierAndType[*].x SORT instance.`" + JsonLdConsts.ID + "` LIMIT "+(from!=null ? from : 0)+", " + (pageSize != null ? pageSize : DEFAULT_INCOMING_PAGESIZE) + " RETURN KEEP(instance, \"" + JsonLdConsts.ID + "\", \"" + EBRAINSVocabulary.META_SPACE + "\"))"));
-        aql.addLine(AQL.trust("RETURN { [t] : {\"data\": instances, \"totalResults\": LENGTH(instancesByIdentifierAndType[*].i),\"size\": LENGTH(instances), \"from\": "+(from!=null ? from : 0)+"}})"));
+        aql.addLine(AQL.trust("RETURN { [t] : {\"data\": instances, \"total\": LENGTH(instancesByIdentifierAndType[*].i),\"size\": LENGTH(instances), \"from\": "+(from!=null ? from : 0)+"}})"));
         aql.addLine(AQL.trust("RETURN {"));
         aql.addLine(AQL.trust("[identifier]: MERGE(instancesById)"));
         aql.addLine(AQL.trust("})"));

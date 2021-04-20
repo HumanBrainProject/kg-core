@@ -171,8 +171,8 @@ public class Instances {
     @GetMapping("/instances/{id}/incomingLinks")
     @ExposesData
     @Advanced
-    public Result<Paginated<NormalizedJsonLd>> getIncomingLinks(@PathVariable("id") UUID id, @RequestParam("stage") ExposedStage stage, @RequestParam("property") String property, @RequestParam("type") String type, @ParameterObject PaginationParam paginationParam) {
-        return Result.ok(instanceController.getIncomingLinks(id, stage.getStage(), URLDecoder.decode(property, StandardCharsets.UTF_8), type!=null ? new Type(type) : null, paginationParam));
+    public PaginatedResult<NormalizedJsonLd> getIncomingLinks(@PathVariable("id") UUID id, @RequestParam("stage") ExposedStage stage, @RequestParam("property") String property, @RequestParam("type") String type, @ParameterObject PaginationParam paginationParam) {
+        return PaginatedResult.ok(instanceController.getIncomingLinks(id, stage.getStage(), URLDecoder.decode(property, StandardCharsets.UTF_8), type!=null ? new Type(type) : null, paginationParam));
     }
 
 
