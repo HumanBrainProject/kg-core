@@ -32,7 +32,11 @@ public interface GraphDBInstances {
 
     interface Client extends GraphDBInstances {}
 
-    NormalizedJsonLd getInstanceById(String space, UUID id, DataStage stage, boolean returnEmbedded, boolean returnAlternatives, boolean returnIncomingLinks, boolean removeInternalProperties);
+    @ExposesData
+    Paginated<NormalizedJsonLd> getIncomingLinks(String space, UUID id, DataStage stage, String property, String type, PaginationParam paginationParam);
+
+    @ExposesData
+    NormalizedJsonLd getInstanceById(String space, UUID id, DataStage stage, boolean returnEmbedded, boolean returnAlternatives, boolean returnIncomingLinks, Long incomingLinksPageSize, boolean removeInternalProperties);
 
     @ExposesData
     Paginated<NormalizedJsonLd> getInstancesByType(DataStage stage, String type, String space, String searchByLabel, boolean returnAlternatives, boolean returnEmbedded, boolean sortByLabel, PaginationParam paginationParam);
@@ -41,7 +45,7 @@ public interface GraphDBInstances {
     Paginated<NormalizedJsonLd> getQueriesByType(DataStage stage, String searchByLabel, boolean returnAlternatives, boolean returnEmbedded, PaginationParam paginationParam, String rootType);
 
     @ExposesData
-    Map<UUID, Result<NormalizedJsonLd>> getInstancesByIds(List<String> instanceIds, DataStage stage, boolean returnEmbedded, boolean returnAlternatives, boolean returnIncomingLinks);
+    Map<UUID, Result<NormalizedJsonLd>> getInstancesByIds(List<String> instanceIds, DataStage stage, boolean returnEmbedded, boolean returnAlternatives, boolean returnIncomingLinks, Long incomingLinksPageSize);
 
     @ExposesMinimalData
     Map<UUID, String> getLabels(List<String> instanceIds, DataStage stage);

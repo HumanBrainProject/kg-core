@@ -40,7 +40,7 @@ public abstract class AbstractTest {
     protected static final int bigPayload = 100;
 
     protected IngestConfiguration defaultIngestConfiguration = new IngestConfiguration().setNormalizePayload(false).setDeferInference(false);
-    protected ResponseConfiguration defaultResponseConfiguration = new ResponseConfiguration().setReturnEmbedded(true).setReturnPermissions(false).setReturnAlternatives(false).setReturnPayload(true);
+    protected ExtendedResponseConfiguration defaultResponseConfiguration = new ExtendedResponseConfiguration();
     protected PaginationParam defaultPaginationParam = new PaginationParam().setFrom(0).setSize(20l);
 
     public final static List<String> ADMIN_ROLE = Collections.singletonList(RoleMapping.ADMIN.toRole(null).getName());
@@ -59,6 +59,7 @@ public abstract class AbstractTest {
         this.database = database;
         this.roleCollections = roleCollections;
         this.authentication = authentication;
+        this.defaultResponseConfiguration.setReturnEmbedded(true).setReturnPermissions(false).setReturnAlternatives(false).setReturnPayload(true);
     }
 
     protected void beAdmin() {

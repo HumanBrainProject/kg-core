@@ -113,7 +113,7 @@ public class Users {
     @ExposesUserPicture
     public ResponseEntity<Map<UUID, String>> getUserPictures(@RequestBody List<UUID> userIds) {
         SpaceName targetSpace = InternalSpace.USERS_PICTURE_SPACE;
-        Map<UUID, Result<NormalizedJsonLd>> instancesByIds = graphDBInstances.getInstancesByIds(userIds.stream().filter(Objects::nonNull).map(userId -> new InstanceId(createUserPictureId(userId), targetSpace).serialize()).collect(Collectors.toList()), DataStage.IN_PROGRESS, false, false, false);
+        Map<UUID, Result<NormalizedJsonLd>> instancesByIds = graphDBInstances.getInstancesByIds(userIds.stream().filter(Objects::nonNull).map(userId -> new InstanceId(createUserPictureId(userId), targetSpace).serialize()).collect(Collectors.toList()), DataStage.IN_PROGRESS, false, false, false, null);
         Map<UUID, UUID> userPictureIdToUserId = userIds.stream().collect(Collectors.toMap(this::createUserPictureId, v-> v));
         return ResponseEntity.ok(instancesByIds.keySet().stream().filter(k -> instancesByIds.get(k).getData() != null && instancesByIds.get(k).getData().getAs(EBRAINSVocabulary.META_PICTURE, String.class) != null).collect(Collectors.toMap(userPictureIdToUserId::get, v -> "data:image/jpeg;base64,"+instancesByIds.get(v).getData().getAs(EBRAINSVocabulary.META_PICTURE, String.class))));
     }
@@ -124,7 +124,7 @@ public class Users {
     @ExposesUserPicture
     public ResponseEntity<String> getUserPicture(@PathVariable("id") UUID userId) {
         SpaceName targetSpace = InternalSpace.USERS_PICTURE_SPACE;
-        NormalizedJsonLd instance = graphDBInstances.getInstanceById(targetSpace.getName(), createUserPictureId(userId), DataStage.IN_PROGRESS, false, false, false, true);
+        NormalizedJsonLd instance = graphDBInstances.getInstanceById(targetSpace.getName(), createUserPictureId(userId), DataStage.IN_PROGRESS, false, false, false, null, true);
         if(instance!=null){
             String picture = instance.getAs(EBRAINSVocabulary.META_PICTURE, String.class);
             if(picture!=null){

@@ -72,6 +72,8 @@ public class ArangoRepositoryInstances {
     private final ArangoDatabases databases;
     private final IdUtils idUtils;
 
+    public final static int DEFAULT_INCOMING_PAGESIZE = 10;
+
     public ArangoRepositoryInstances(ArangoRepositoryCommons arangoRepositoryCommons, PermissionsController permissionsController, Permissions permissions, AuthContext authContext, ArangoUtils arangoUtils, QueryController queryController, ArangoRepositoryTypes typesRepo, ArangoDatabases databases, IdUtils idUtils) {
         this.arangoRepositoryCommons = arangoRepositoryCommons;
         this.permissionsController = permissionsController;
@@ -84,9 +86,30 @@ public class ArangoRepositoryInstances {
         this.idUtils = idUtils;
     }
 
+    @ExposesMinimalData
+    public Paginated<NormalizedJsonLd> getIncomingLinks(DataStage stage, SpaceName space, UUID id, String property, String type, PaginationParam paginationParam){
+        NormalizedJsonLd instanceIncomingLinks = fetchIncomingLinks(Collections.singletonList(ArangoDocumentReference.fromInstanceId(new InstanceId(id, space))), stage, paginationParam.getFrom(), paginationParam.getSize(), property, type);
+        if (!CollectionUtils.isEmpty(instanceIncomingLinks)) {
+            resolveIncomingLinks(stage, instanceIncomingLinks);
+        }
+        Object i = instanceIncomingLinks.get(id.toString());
+        if(i instanceof Map) {
+            Object p = ((Map)i).get(property);
+            if (p instanceof Map) {
+                Object t = ((Map) p).get(type);
+                if (t instanceof Map) {
+                    Object data = ((Map) t).get("data");
+                    if (data instanceof List) {
+                        return new Paginated<>((List<NormalizedJsonLd>) data, (long) ((Map) t).get("total"), (long) ((Map) t).get("size"), (long) ((Map) t).get("from"));
+                    }
+                }
+            }
+        }
+        return new Paginated<>(Collections.emptyList(),0, 0, 0);
+    }
 
     @ExposesData
-    public NormalizedJsonLd getInstance(DataStage stage, SpaceName space, UUID id, boolean embedded, boolean removeInternalProperties, boolean alternatives, boolean incomingLinks) {
+    public NormalizedJsonLd getInstance(DataStage stage, SpaceName space, UUID id, boolean embedded, boolean removeInternalProperties, boolean alternatives, boolean incomingLinks, Long incomingLinksPageSize) {
         if (!permissions.hasPermission(authContext.getUserWithRoles(), Functionality.MINIMAL_READ, space, id)) {
             throw new ForbiddenException(String.format("You don't have read rights on the instance with the id %s", id));
         }
@@ -103,7 +126,7 @@ public class ArangoRepositoryInstances {
             List<Type> extendedTypeInfo = typesRepo.getTypeInformation(authContext.getUserWithRoles().getClientId(), stage, document.getDoc().types().stream().map(Type::new).collect(Collectors.toSet()));
             boolean ignoreIncomingLinks = extendedTypeInfo.stream().anyMatch(t -> t.getIgnoreIncomingLinks() != null && t.getIgnoreIncomingLinks());
             if (!ignoreIncomingLinks) {
-                NormalizedJsonLd instanceIncomingLinks = getIncomingLinks(Collections.singletonList(arangoDocumentReference), stage);
+                NormalizedJsonLd instanceIncomingLinks = fetchIncomingLinks(Collections.singletonList(arangoDocumentReference), stage, 0l, incomingLinksPageSize, null, null);
                 if (!CollectionUtils.isEmpty(instanceIncomingLinks)) {
                     resolveIncomingLinks(stage, instanceIncomingLinks);
                     NormalizedJsonLd d = document.getDoc();
@@ -138,41 +161,64 @@ public class ArangoRepositoryInstances {
                 .stream()
                 .map(i -> (Collection<?>) ((Map<?, ?>) i).values())
                 .flatMap(Collection::stream)
-                .map(v -> (List<Map<? extends String, ?>>) v)
-                .flatMap(Collection::stream)
-                .map(jsonLd -> {
-                    NormalizedJsonLd normalizedJsonLd = new NormalizedJsonLd(jsonLd);
-                    List<Type> typeList = normalizedJsonLd.types().stream().map(Type::new).collect(Collectors.toList());
-                    types.addAll(typeList);
-                    return new InstanceId(idUtils.getUUID(normalizedJsonLd.id()), new SpaceName(normalizedJsonLd.getAs(EBRAINSVocabulary.META_SPACE, String.class)));
-                })
-                .collect(Collectors.toSet());
+                .map(v -> {
+                    Map<? extends String, ?> typeMap = (Map<? extends String, ?>) v;
+                    typeMap.keySet().forEach(k -> {
+                        types.add(new Type(k));
+                    });
+                    List<NormalizedJsonLd> normalizedJsonLds = new ArrayList<>();
+                    for (Object jsonLd : ((Map) v).values()) {
+                        if (jsonLd instanceof Map) {
+                            Object data = ((Map) jsonLd).get("data");
+                            if (data instanceof List) {
+                                ((List) data).forEach(d -> {
+                                    if (d instanceof Map) {
+                                        normalizedJsonLds.add(new NormalizedJsonLd((Map) d));
+                                    }
+                                });
+
+                            }
+                        }
+                    }
+                    return normalizedJsonLds;
+                }).flatMap(Collection::stream).map(normalizedJsonLd ->
+                        new InstanceId(idUtils.getUUID(normalizedJsonLd.id()), new SpaceName(normalizedJsonLd.getAs(EBRAINSVocabulary.META_SPACE, String.class)))
+                ).collect(Collectors.toSet());
     }
 
     private void enrichDocument(NormalizedJsonLd instanceIncomingLinks, Map<String, NormalizedJsonLd> extendedTypesByName, Map<UUID, String> labelsForInstances) {
-        instanceIncomingLinks.values()
-                .stream()
-                .map(i -> (Collection<?>) ((Map<?, ?>) i).values())
-                .flatMap(Collection::stream)
-                .map(v -> (List<Map<String, Object>>) v)
-                .flatMap(Collection::stream)
-                .forEach(v -> {
-                    NormalizedJsonLd normalizedJsonLd = new NormalizedJsonLd(v);
-                    String label = labelsForInstances.get(idUtils.getUUID(normalizedJsonLd.id()));
-                    List<NormalizedJsonLd> extendedTypesList = normalizedJsonLd.types().stream().map(extendedTypesByName::get).collect(Collectors.toList());
-                    v.put(EBRAINSVocabulary.LABEL, label);
-                    v.put(EBRAINSVocabulary.META_TYPES, extendedTypesList.stream().map(Type::fromPayload).collect(Collectors.toList()));
-                    NormalizedJsonLd propertyDefinition = extendedTypesList.stream()
-                            .map(e -> e.getAsListOf(EBRAINSVocabulary.META_PROPERTIES, NormalizedJsonLd.class))
-                            .flatMap(Collection::stream)
-                            .filter(f -> f.identifiers().contains(normalizedJsonLd.primaryIdentifier()))
+        List<String> typeInformationBlacklist = Arrays.asList(EBRAINSVocabulary.META_PROPERTIES, SchemaOrgVocabulary.IDENTIFIER, SchemaOrgVocabulary.DESCRIPTION, EBRAINSVocabulary.META_SPACES);
+        instanceIncomingLinks.keySet().forEach(instance -> {
+            Map<String, Map<String, Map<String, Object>>> propertyMap = (Map<String, Map<String, Map<String, Object>>>) instanceIncomingLinks.get(instance);
+            propertyMap.keySet().forEach(property -> {
+                Map<String, Map<String, Object>> typeMap = propertyMap.get(property);
+                typeMap.keySet().forEach(type -> {
+                    Map<String, Object> typeDefinition = typeMap.get(type);
+                    NormalizedJsonLd extendedTypeInfo = extendedTypesByName.get(type);
+                    if (extendedTypeInfo != null) {
+                        extendedTypeInfo.keySet().stream().filter(k -> !typeInformationBlacklist.contains(k)).forEach(extendedTypeInfoKey -> typeDefinition.put(extendedTypeInfoKey, extendedTypeInfo.get(extendedTypeInfoKey)));
+                    }
+                    NormalizedJsonLd propertyDefinition = extendedTypeInfo.getAsListOf(EBRAINSVocabulary.META_PROPERTIES, NormalizedJsonLd.class).stream()
+                            .filter(f -> f.identifiers().contains(property))
                             .findFirst()
                             .orElse(null);
                     if (propertyDefinition != null) {
                         String nameForReverseLink = propertyDefinition.getAs(EBRAINSVocabulary.META_NAME_REVERSE_LINK, String.class);
-                        v.put(SchemaOrgVocabulary.NAME, nameForReverseLink);
+                        typeDefinition.put(EBRAINSVocabulary.META_NAME_REVERSE_LINK, nameForReverseLink);
+                    }
+                    Map<String, Object> values = typeMap.get(type);
+                    if (values != null && values.get("data") instanceof Collection) {
+                        ((Collection<?>) values.get("data")).stream()
+                                .map(el -> ((Map<String, Object>) el))
+                                .forEach(el -> {
+                                    NormalizedJsonLd normalizedJsonLd = new NormalizedJsonLd(el);
+                                    String label = labelsForInstances.get(idUtils.getUUID(normalizedJsonLd.id()));
+                                    el.put(EBRAINSVocabulary.LABEL, label);
+                                });
                     }
                 });
+            });
+        });
     }
 
     private Set<String> getMinimalFields(DataStage stage, List<String> types) {
@@ -220,7 +266,7 @@ public class ArangoRepositoryInstances {
                     return alternative != null ? alternative.stream().map(a -> a.getAsListOf(EBRAINSVocabulary.META_USER, String.class)).flatMap(List::stream).collect(Collectors.toList()) : Collections.<String>emptyList();
                 }).flatMap(List::stream).collect(Collectors.toList())).flatMap(List::stream).map(id -> ArangoCollectionReference.fromSpace(InternalSpace.USERS_SPACE).doc(idUtils.getUUID(new JsonLdId(id)))).distinct().collect(Collectors.toList());
         //We always resolve users in native space, since users are only maintained there...
-        Map<UUID, Result<NormalizedJsonLd>> usersById = getDocumentsByReferenceList(DataStage.NATIVE, userIdsToResolve, false, false, false);
+        Map<UUID, Result<NormalizedJsonLd>> usersById = getDocumentsByReferenceList(DataStage.NATIVE, userIdsToResolve, false, false, false, null);
         alternatives.stream().flatMap(Arrays::stream).forEach(d ->
                 d.keySet().stream().filter(k -> !NormalizedJsonLd.isInternalKey(k) && !JsonLdConsts.isJsonLdConst(k)).forEach(k -> {
                     Object obj = d.get(k);
@@ -250,7 +296,7 @@ public class ArangoRepositoryInstances {
                 }));
     }
 
-    private Map<UUID, Result<NormalizedJsonLd>> getDocumentsByReferenceList(DataStage stage, List<ArangoDocumentReference> documentReferences, boolean embedded, boolean alternatives, boolean incomingLinks) {
+    private Map<UUID, Result<NormalizedJsonLd>> getDocumentsByReferenceList(DataStage stage, List<ArangoDocumentReference> documentReferences, boolean embedded, boolean alternatives, boolean incomingLinks, Long incomingLinksPageSize) {
         ArangoDatabase db = databases.getByStage(stage);
         AQL aql = new AQL().addLine(AQL.trust("RETURN {"));
         int counter = 0;
@@ -292,7 +338,8 @@ public class ArangoRepositoryInstances {
                 Set<String> excludedTypes = extendedTypeInfo.stream().filter(t -> t.getIgnoreIncomingLinks() != null && t.getIgnoreIncomingLinks()).map(Type::getName).collect(Collectors.toSet());
                 List<ArangoDocumentReference> toInspectForIncomingLinks = normalizedJsonLds.stream().filter(n -> n.types().stream().noneMatch(excludedTypes::contains)).map(n -> ArangoDocument.from(n).getId()).collect(Collectors.toList());
                 if (!CollectionUtils.isEmpty(toInspectForIncomingLinks)) {
-                    NormalizedJsonLd instanceIncomingLinks = getIncomingLinks(toInspectForIncomingLinks, stage);
+
+                    NormalizedJsonLd instanceIncomingLinks = fetchIncomingLinks(toInspectForIncomingLinks, stage, 0l, incomingLinksPageSize, null, null);
                     if (!CollectionUtils.isEmpty(instanceIncomingLinks)) {
                         resolveIncomingLinks(stage, instanceIncomingLinks);
                         normalizedJsonLds.forEach(d -> {
@@ -320,15 +367,15 @@ public class ArangoRepositoryInstances {
     }
 
     @ExposesData
-    public Map<UUID, Result<NormalizedJsonLd>> getDocumentsByIdList(DataStage stage, List<InstanceId> instanceIds, boolean embedded, boolean alternatives, boolean incomingLinks) {
+    public Map<UUID, Result<NormalizedJsonLd>> getDocumentsByIdList(DataStage stage, List<InstanceId> instanceIds, boolean embedded, boolean alternatives, boolean incomingLinks, Long incomingLinksPageSize) {
         UserWithRoles userWithRoles = authContext.getUserWithRoles();
 
         Set<InstanceId> hasReadPermissions = instanceIds.stream().filter(i -> permissions.hasPermission(userWithRoles, permissionsController.getReadFunctionality(stage), i.getSpace(), i.getUuid())).collect(Collectors.toSet());
         Set<InstanceId> hasOnlyMinimalReadPermissions = instanceIds.stream().filter(i -> !hasReadPermissions.contains(i) && permissions.hasPermission(userWithRoles, permissionsController.getMinimalReadFunctionality(stage), i.getSpace(), i.getUuid())).collect(Collectors.toSet());
         Set<InstanceId> hasNoPermissions = instanceIds.stream().filter(i -> !hasReadPermissions.contains(i) && !hasOnlyMinimalReadPermissions.contains(i)).collect(Collectors.toSet());
 
-        Map<UUID, Result<NormalizedJsonLd>> documentsByReferenceList = getDocumentsByReferenceList(stage, hasReadPermissions.stream().map(ArangoDocumentReference::fromInstanceId).collect(Collectors.toList()), embedded, alternatives, incomingLinks);
-        Map<UUID, Result<NormalizedJsonLd>> documentsByReferenceListWithMinimalReadAccess = getDocumentsByReferenceList(stage, hasOnlyMinimalReadPermissions.stream().map(ArangoDocumentReference::fromInstanceId).collect(Collectors.toList()), false, false, false);
+        Map<UUID, Result<NormalizedJsonLd>> documentsByReferenceList = getDocumentsByReferenceList(stage, hasReadPermissions.stream().map(ArangoDocumentReference::fromInstanceId).collect(Collectors.toList()), embedded, alternatives, incomingLinks, incomingLinksPageSize);
+        Map<UUID, Result<NormalizedJsonLd>> documentsByReferenceListWithMinimalReadAccess = getDocumentsByReferenceList(stage, hasOnlyMinimalReadPermissions.stream().map(ArangoDocumentReference::fromInstanceId).collect(Collectors.toList()), false, false, false, null);
 
         //Reduce the payload to the minimal fields
         documentsByReferenceListWithMinimalReadAccess.values().stream().filter(Objects::nonNull).map(Result::getData).filter(Objects::nonNull).forEach(d -> d.keepPropertiesOnly(getMinimalFields(stage, d.types())));
@@ -353,9 +400,9 @@ public class ArangoRepositoryInstances {
         if (search != null) {
             InstanceId instanceId = InstanceId.deserialize(search);
             if (instanceId != null) {
-                if(excludeIds == null || !excludeIds.contains(instanceId.getUuid())) {
+                if (excludeIds == null || !excludeIds.contains(instanceId.getUuid())) {
                     //It is a lookup for an instance id -> let's do a shortcut.
-                    NormalizedJsonLd result = getInstance(stage, instanceId.getSpace(), instanceId.getUuid(), false, true, false, false);
+                    NormalizedJsonLd result = getInstance(stage, instanceId.getSpace(), instanceId.getUuid(), false, true, false, false, null);
                     if (result != null) {
                         Optional<Type> type = types.stream().filter(t -> result.types().contains(t.getName())).findFirst();
                         if (type.isPresent()) {
@@ -568,32 +615,55 @@ public class ArangoRepositoryInstances {
     }
 
     @ExposesMinimalData
-    public NormalizedJsonLd getIncomingLinks(List<ArangoDocumentReference> documents, DataStage stage) {
+    public NormalizedJsonLd fetchIncomingLinks(List<ArangoDocumentReference> documents, DataStage stage, Long from, Long pageSize, String restrictToProperty, String restrictToType) {
         AQL aql = new AQL();
         Map<String, Object> bindVars = new HashMap<>();
         ArangoDatabase db = databases.getByStage(stage);
-        //The edges are injection-safe since they have been checked beforehand - so we can trust these values.
-        Set<String> allEdgeCollections = getAllEdgeCollections(db);
-        if (allEdgeCollections.isEmpty()) {
-            return null;
+        Set<String> edgeCollections;
+        if(restrictToProperty!=null){
+            ArangoCollectionReference ref = ArangoCollectionReference.fromSpace(new SpaceName(restrictToProperty), true);
+            if(db.collection(ref.getCollectionName()).exists()){
+                edgeCollections = Collections.singleton(AQL.preventAqlInjection(ref.getCollectionName()).getValue());
+            }
+            else{
+                return null;
+            }
         }
-        String edges = String.join(", ", allEdgeCollections);
+        else {
+            //The edges are injection-safe since they have been checked beforehand - so we can trust these values.
+            edgeCollections = getAllEdgeCollections(db);
+            if (edgeCollections.isEmpty()) {
+                return null;
+            }
+        }
+        String edges = String.join(", ", edgeCollections);
         aql.addLine(AQL.trust("RETURN MERGE(FOR instanceId IN @instanceIds"));
         bindVars.put("instanceIds", documents.stream().map(ArangoDocumentReference::getId).collect(Collectors.toList()));
         aql.addLine(AQL.trust("LET doc = DOCUMENT(instanceId)"));
         aql.addLine(AQL.trust("LET inbnd = UNIQUE("));
         aql.indent().addLine(AQL.trust("FOR inbnd, e IN 1..1 INBOUND doc " + edges));
+        if(restrictToType!=null){
+            aql.addLine(AQL.trust("FILTER @typeRestriction IN inbnd.`@type`"));
+            bindVars.put("typeRestriction", restrictToType);
+        }
         aql.addLine(AQL.trust("RETURN {"));
         aql.indent().addLine(AQL.trust("\"" + SchemaOrgVocabulary.IDENTIFIER + "\": e.`_originalLabel`,"));
         aql.addLine(AQL.trust("\"" + JsonLdConsts.ID + "\": inbnd.`@id`,"));
         aql.addLine(AQL.trust("\"" + JsonLdConsts.TYPE + "\": inbnd.`@type`,"));
         aql.addLine(AQL.trust("\"" + EBRAINSVocabulary.META_SPACE + "\": inbnd.`" + EBRAINSVocabulary.META_SPACE + "`"));
         aql.outdent().outdent().addLine(AQL.trust("})"));
+
         aql.addLine(AQL.trust("LET groupedByInstances = (FOR i IN inbnd"));
         aql.addLine(AQL.trust("COLLECT identifier = i.`" + SchemaOrgVocabulary.IDENTIFIER + "` INTO instancesByIdentifier"));
+        aql.addLine(AQL.trust("LET instancesById = ("));
+        aql.addLine(AQL.trust("FOR x IN instancesByIdentifier[*].i"));
+        aql.addLine(AQL.trust("COLLECT type = x.`" + JsonLdConsts.TYPE + "` INTO instancesByIdentifierAndType"));
+        aql.addLine(AQL.trust("FOR t in type"));
+        aql.addLine(AQL.trust("LET instances = (FOR instance IN instancesByIdentifierAndType[*].x SORT instance.`" + JsonLdConsts.ID + "` LIMIT "+(from!=null ? from : 0)+", " + (pageSize != null ? pageSize : DEFAULT_INCOMING_PAGESIZE) + " RETURN KEEP(instance, \"" + JsonLdConsts.ID + "\", \"" + EBRAINSVocabulary.META_SPACE + "\"))"));
+        aql.addLine(AQL.trust("RETURN { [t] : {\"data\": instances, \"total\": LENGTH(instancesByIdentifierAndType[*].i),\"size\": LENGTH(instances), \"from\": "+(from!=null ? from : 0)+"}})"));
         aql.addLine(AQL.trust("RETURN {"));
-        aql.indent().addLine(AQL.trust(" [identifier]: instancesByIdentifier[*].i"));
-        aql.outdent().addLine(AQL.trust("})"));
+        aql.addLine(AQL.trust("[identifier]: MERGE(instancesById)"));
+        aql.addLine(AQL.trust("})"));
         aql.addLine(AQL.trust("FILTER groupedByInstances != null"));
         aql.addLine(AQL.trust("RETURN {"));
         aql.indent().addLine(AQL.trust(" [doc._key]: MERGE(groupedByInstances)"));
@@ -884,7 +954,7 @@ public class ArangoRepositoryInstances {
     //FIXME reduce to minimal data permission
     public ScopeElement getScopeForInstance(SpaceName space, UUID id, DataStage stage, boolean fetchLabels) {
         //get instance
-        NormalizedJsonLd instance = getInstance(stage, space, id, false, false, false, false);
+        NormalizedJsonLd instance = getInstance(stage, space, id, false, false, false, false, null);
         //get scope relevant queries
         //TODO filter user defined queries (only take client queries into account)
         Stream<NormalizedJsonLd> typeQueries = instance.types().stream().map(type -> getQueriesByRootType(stage, null, null, false, false, type).getData()).flatMap(Collection::stream);

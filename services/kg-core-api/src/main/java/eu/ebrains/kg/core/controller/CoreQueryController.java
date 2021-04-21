@@ -67,7 +67,7 @@ public class CoreQueryController {
 
     public KgQuery fetchQueryById(InstanceId instanceId, DataStage stage){
         if(instanceId!=null) {
-            NormalizedJsonLd instance = graphDBInstances.getInstanceById(instanceId.getSpace().getName(), instanceId.getUuid(), DataStage.IN_PROGRESS, true, false, false, true);
+            NormalizedJsonLd instance = graphDBInstances.getInstanceById(instanceId.getSpace().getName(), instanceId.getUuid(), DataStage.IN_PROGRESS, true, false, false, null, true);
             //Only return the instance if it is actually a query
             if (instance!=null && instance.types()!=null && instance.types().contains(EBRAINSVocabulary.META_QUERY_TYPE)) {
                 return new KgQuery(instance, stage);

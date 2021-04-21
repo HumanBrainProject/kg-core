@@ -26,6 +26,8 @@ import eu.ebrains.kg.commons.model.*;
 import eu.ebrains.kg.commons.params.ReleaseTreeScope;
 import org.springframework.web.bind.annotation.*;
 
+import java.net.URLDecoder;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -40,10 +42,16 @@ public class GraphDBInstancesAPIRest implements GraphDBInstances {
         this.graphDBInstancesAPI = graphDBInstancesAPI;
     }
 
+    @GetMapping("instances/{space}/{id}/incomingLinks")
+    @ExposesData
+    public Paginated<NormalizedJsonLd> getIncomingLinks(@PathVariable("space") String space, @PathVariable("id") UUID id, @PathVariable("stage") DataStage stage, @RequestParam(value = "property") String property, @RequestParam(value = "type") String type, PaginationParam paginationParam) {
+        return graphDBInstancesAPI.getIncomingLinks(space!= null ? URLDecoder.decode(space, StandardCharsets.UTF_8) : null, id, stage, property, type != null ? URLDecoder.decode(type, StandardCharsets.UTF_8) : null, paginationParam);
+    }
+
     @GetMapping("instances/{space}/{id}")
     @ExposesData
-    public NormalizedJsonLd getInstanceById(@PathVariable("space") String space, @PathVariable("id") UUID id, @PathVariable("stage") DataStage stage, @RequestParam(value = "returnEmbedded", defaultValue = "false") boolean returnEmbedded, @RequestParam(value = "returnAlternatives", required = false, defaultValue = "false") boolean returnAlternatives, @RequestParam(value = "returnIncomingLinks", required = false, defaultValue = "false") boolean returnIncomingLinks, @RequestParam(value = "removeInternalProperties", required = false, defaultValue = "true") boolean removeInternalProperties) {
-        return graphDBInstancesAPI.getInstanceById(space, id, stage, returnEmbedded, returnAlternatives, returnIncomingLinks, removeInternalProperties);
+    public NormalizedJsonLd getInstanceById(@PathVariable("space") String space, @PathVariable("id") UUID id, @PathVariable("stage") DataStage stage, @RequestParam(value = "returnEmbedded", defaultValue = "false") boolean returnEmbedded, @RequestParam(value = "returnAlternatives", required = false, defaultValue = "false") boolean returnAlternatives, @RequestParam(value = "returnIncomingLinks", required = false, defaultValue = "false") boolean returnIncomingLinks, @RequestParam(value = "incomingLinksPageSize", required = false) Long incomingLinksPageSize, @RequestParam(value = "removeInternalProperties", required = false, defaultValue = "true") boolean removeInternalProperties) {
+        return graphDBInstancesAPI.getInstanceById(space, id, stage, returnEmbedded, returnAlternatives, returnIncomingLinks, incomingLinksPageSize, removeInternalProperties);
     }
 
     @GetMapping("instancesByType")
@@ -60,8 +68,8 @@ public class GraphDBInstancesAPIRest implements GraphDBInstances {
 
     @PostMapping("instancesByIds")
     @ExposesData
-    public Map<UUID, Result<NormalizedJsonLd>> getInstancesByIds(@RequestBody List<String> ids, @PathVariable("stage") DataStage stage, @RequestParam(value = "returnEmbedded", required = false, defaultValue = "false") boolean returnEmbedded, @RequestParam(value = "returnAlternatives", required = false, defaultValue = "false") boolean returnAlternatives, @RequestParam(value = "returnIncomingLinks", required = false, defaultValue = "false") boolean returnIncomingLinks) {
-        return graphDBInstancesAPI.getInstancesByIds(ids, stage, returnEmbedded, returnAlternatives, returnIncomingLinks);
+    public Map<UUID, Result<NormalizedJsonLd>> getInstancesByIds(@RequestBody List<String> ids, @PathVariable("stage") DataStage stage, @RequestParam(value = "returnEmbedded", required = false, defaultValue = "false") boolean returnEmbedded, @RequestParam(value = "returnAlternatives", required = false, defaultValue = "false") boolean returnAlternatives, @RequestParam(value = "returnIncomingLinks", required = false, defaultValue = "false") boolean returnIncomingLinks, @RequestParam(value = "incomingLinksPageSize", required = false) Long incomingLinksPageSize) {
+        return graphDBInstancesAPI.getInstancesByIds(ids, stage, returnEmbedded, returnAlternatives, returnIncomingLinks, incomingLinksPageSize);
     }
 
     @PostMapping("instancesByIds/labels")
