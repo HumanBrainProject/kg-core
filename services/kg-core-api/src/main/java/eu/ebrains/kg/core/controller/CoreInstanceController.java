@@ -138,7 +138,7 @@ public class CoreInstanceController {
             Set<String> oldKeys = new HashSet<>(instance.keySet());
             normalizedJsonLd.keySet().forEach(k -> {
                 Object value = normalizedJsonLd.get(k);
-                if (value == null) {
+                if (value != null && value.equals(EBRAINSVocabulary.RESET_VALUE)) {
                     updateTimes.remove(k);
                     instance.remove(k);
                 } else {

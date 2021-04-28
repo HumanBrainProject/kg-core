@@ -281,7 +281,7 @@ public class Reconcile {
             for (String key : keys) {
                 //We don't need the property update times in inferred -> this is an information for reconciliation only and therefore should only be in NATIVE
                 if (!key.equals(EBRAINSVocabulary.META_PROPERTYUPDATES)) {
-                    List<IndexedJsonLdDoc> documentsForKey = originalInstances.stream().filter(i -> i.getDoc().containsKey(key)).collect(Collectors.toList());
+                    List<IndexedJsonLdDoc> documentsForKey = originalInstances.stream().filter(i ->  i.getDoc().containsKey(key) || i.getDoc().getAs(EBRAINSVocabulary.META_PROPERTYUPDATES, Map.class, Collections.emptyMap()).containsKey(key)).collect(Collectors.toList());
                     if (documentsForKey.size() == 1) {
                         //Single occurrence - the merge is easy. :)
                         NormalizedJsonLd doc = documentsForKey.get(0).getDoc();
@@ -315,10 +315,11 @@ public class Reconcile {
                                 break;
                             default:
                                 inferredDocument.asIndexed().getDoc().addProperty(key, firstDoc.getDoc().get(key));
-                                Map<Object, List<IndexedJsonLdDoc>> documentsByValue = documentsForKey.stream().collect(Collectors.groupingBy(d -> d.getDoc().get(key)));
+                                Object nullGroup = new Object();
+                                Map<Object, List<IndexedJsonLdDoc>> documentsByValue = documentsForKey.stream().collect(Collectors.groupingBy(d -> d.getDoc().getOrDefault(key, nullGroup)));
                                 alternatives.put(key, documentsByValue.keySet().stream().map(value -> {
                                     List<IndexedJsonLdDoc> docs = documentsByValue.get(value);
-                                    return createAlternative(key, value, docs.contains(firstDoc), docs.stream().filter(d -> d.getDoc() != null && d.getDoc().getAs(EBRAINSVocabulary.META_USER, NormalizedJsonLd.class) != null).map(doc -> doc.getDoc().getAs(EBRAINSVocabulary.META_USER, NormalizedJsonLd.class).id()).distinct().collect(Collectors.toList()));
+                                    return createAlternative(key, value == nullGroup ? null : value, docs.contains(firstDoc), docs.stream().filter(d -> d.getDoc() != null && d.getDoc().getAs(EBRAINSVocabulary.META_USER, NormalizedJsonLd.class) != null).map(doc -> doc.getDoc().getAs(EBRAINSVocabulary.META_USER, NormalizedJsonLd.class).id()).distinct().collect(Collectors.toList()));
                                 }).filter(Objects::nonNull).collect(Collectors.toList()));
                                 break;
                         }
