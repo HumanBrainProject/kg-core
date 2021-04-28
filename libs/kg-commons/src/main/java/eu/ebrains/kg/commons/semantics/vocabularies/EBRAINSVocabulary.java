@@ -39,6 +39,7 @@ public class EBRAINSVocabulary {
         return new JsonLdId(sb.toString());
     }
 
+    public static final String RESET_VALUE = NAMESPACE+"resetValue";
 
     public static final String META = NAMESPACE+"meta/";
     public static final String META_SPACES = META + "spaces";

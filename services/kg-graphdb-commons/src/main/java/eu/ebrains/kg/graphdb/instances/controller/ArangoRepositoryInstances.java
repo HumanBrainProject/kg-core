@@ -290,6 +290,10 @@ public class ArangoRepositoryInstances {
                                     return reducedUser;
                                 }).collect(Collectors.toList());
                                 alternative.put(EBRAINSVocabulary.META_USER, users);
+                                //A special case: if the value has alternatives but the last value is null, we need to set the value explicitly, since it won't be properly stored in the alternatives payload.
+                                if(!alternative.containsKey(EBRAINSVocabulary.META_VALUE)){
+                                    alternative.put(EBRAINSVocabulary.META_VALUE, null);
+                                }
                             }
                         });
                     }
