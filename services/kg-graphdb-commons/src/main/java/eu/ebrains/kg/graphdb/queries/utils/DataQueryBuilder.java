@@ -21,6 +21,7 @@ import eu.ebrains.kg.arango.commons.model.AQLQuery;
 import eu.ebrains.kg.arango.commons.model.ArangoCollectionReference;
 import eu.ebrains.kg.arango.commons.model.InternalSpace;
 import eu.ebrains.kg.commons.model.PaginationParam;
+import eu.ebrains.kg.graphdb.queries.model.fieldFilter.Op;
 import eu.ebrains.kg.graphdb.queries.model.fieldFilter.PropertyFilter;
 import eu.ebrains.kg.graphdb.queries.model.spec.SpecProperty;
 import eu.ebrains.kg.graphdb.queries.model.spec.SpecTraverse;
@@ -58,7 +59,7 @@ public class DataQueryBuilder {
         //Setup the root instance
         defineRootInstance();
 
-        if(whiteListFilter!=null) {
+        if (whiteListFilter != null) {
             q.addDocumentFilterWithWhitelistFilter(rootAlias.getArangoDocName());
         }
 
@@ -94,7 +95,7 @@ public class DataQueryBuilder {
     }
 
     public void defineRootInstance() {
-        if(whiteListFilter!=null) {
+        if (whiteListFilter != null) {
             this.q.specifyWhitelist();
             this.bindVars.putAll(whiteListFilter);
         }
@@ -227,8 +228,8 @@ public class DataQueryBuilder {
         TrustedAqlValue handleTraverse(boolean hasSort, SpecProperty.SingleItemStrategy singleItemStrategy, SpecTraverse traverse, ArangoAlias alias, Stack<ArangoAlias> aliasStack, boolean ensureOrder) {
             AQL aql = new AQL();
             aql.add(trust("LET ${alias} = "));
-            if(singleItemStrategy!=null){
-                switch (singleItemStrategy){
+            if (singleItemStrategy != null) {
+                switch (singleItemStrategy) {
                     case FIRST:
                         aql.add(trust("FIRST("));
                         break;
@@ -246,24 +247,23 @@ public class DataQueryBuilder {
             if (ensureOrder) {
                 aql.add(trust(", ${aliasDoc}_e"));
             }
-            if(traverseExists(traverse)) {
+            if (traverseExists(traverse)) {
                 aql.addLine(trust(" IN 1..1 ${direction} ${parentAliasDoc} `${edgeCollection}`"));
-            }
-            else{
+            } else {
                 //TODO if the collection doesn't exist, the query could be simplified a lot - so there is quite some potential for optimization.
                 aql.addLine(trust(" IN [] "));
             }
-            if(whiteListFilter!=null) {
+            if (whiteListFilter != null) {
                 aql.indent().addDocumentFilterWithWhitelistFilter(alias.getArangoDocName());
             }
-            if(traverse.typeRestrictions!=null){
+            if (traverse.typeRestrictions != null) {
                 aql.addLine(trust(" FILTER "));
                 for (int i = 0; i < traverse.typeRestrictions.size(); i++) {
-                    aql.add(trust(" \"${aliasDoc_typefilter_"+i+"}\" IN ${aliasDoc}.`@type`"));
-                    if(i<traverse.typeRestrictions.size()-1){
+                    aql.add(trust(" \"${aliasDoc_typefilter_" + i + "}\" IN ${aliasDoc}.`@type`"));
+                    if (i < traverse.typeRestrictions.size() - 1) {
                         aql.add(trust(" OR "));
                     }
-                    aql.setParameter("aliasDoc_typefilter_"+i, traverse.typeRestrictions.get(i).getName());
+                    aql.setParameter("aliasDoc_typefilter_" + i, traverse.typeRestrictions.get(i).getName());
                 }
             }
             if (ensureOrder) {
@@ -354,7 +354,7 @@ public class DataQueryBuilder {
                                 sortStructure.setParameter("traverseField", a.getArangoName());
                                 properties.addLine(sortStructure.build());
                             }
-                            if(traversalProperty.singleItem != null){
+                            if (traversalProperty.singleItem != null) {
                                 properties.addLine(trust(")"));
                             }
                         }
@@ -620,10 +620,16 @@ public class DataQueryBuilder {
                 aql.addLine(trust("AND ${field} !=[]"));
             }
             if (field.propertyFilter != null && field.propertyFilter.getOp() != null && !field.propertyFilter.getOp().isInstanceFilter()) {
-                TrustedAqlValue fieldFilter = createFieldFilter(field.propertyFilter);
-                if (fieldFilter != null) {
-                    aql.addLine(trust("AND LOWER(${field})${fieldFilter}"));
-                    aql.setTrustedParameter("fieldFilter", fieldFilter);
+                if (field.propertyFilter.getOp() == Op.IS_EMPTY) {
+                    aql.addLine(trust("AND (${field} ==null"));
+                    aql.addLine(trust("OR ${field} ==\"\""));
+                    aql.addLine(trust("OR ${field} == [])"));
+                } else {
+                    TrustedAqlValue fieldFilter = createFieldFilter(field.propertyFilter);
+                    if (fieldFilter != null) {
+                        aql.addLine(trust("AND LOWER(${field})${fieldFilter}"));
+                        aql.setTrustedParameter("fieldFilter", fieldFilter);
+                    }
                 }
             }
             aql.setTrustedParameter("field", getRepresentationOfField(alias, field));
@@ -669,6 +675,7 @@ public class DataQueryBuilder {
 
         private TrustedAqlValue createFieldFilter(PropertyFilter fieldFilter) {
             AQL aql = new AQL();
+
             TrustedAqlValue value;
             switch (fieldFilter.getOp()) {
                 case REGEX:

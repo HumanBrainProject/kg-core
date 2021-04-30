@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 EPFL/Human Brain Project PCO
+ * Copyright 2021 EPFL/Human Brain Project PCO
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,7 +18,7 @@ package eu.ebrains.kg.graphdb.queries.model.fieldFilter;
 
 public enum Op {
 
-    STARTS_WITH("starts with", ExampleValues.SIMPLE_STRING_EXAMPLE, false), ENDS_WITH("ends with", ExampleValues.SIMPLE_STRING_EXAMPLE, false), CONTAINS("contains", ExampleValues.SIMPLE_STRING_EXAMPLE, false), EQUALS("equals", ExampleValues.SIMPLE_STRING_EXAMPLE, false), REGEX("regular expression", ExampleValues.REGEX_EXAMPLE, false), MBB("minimal bounding box", ExampleValues.MBB_EXAMPLE, true), TYPE("type", null, true), ID("id", null, true);
+    IS_EMPTY("empty", null, false), STARTS_WITH("starts with", ExampleValues.SIMPLE_STRING_EXAMPLE, false), ENDS_WITH("ends with", ExampleValues.SIMPLE_STRING_EXAMPLE, false), CONTAINS("contains", ExampleValues.SIMPLE_STRING_EXAMPLE, false), EQUALS("equals", ExampleValues.SIMPLE_STRING_EXAMPLE, false), REGEX("regular expression", ExampleValues.REGEX_EXAMPLE, false), MBB("minimal bounding box", ExampleValues.MBB_EXAMPLE, true), TYPE("type", null, true), ID("id", null, true);
 
     private final String name;
     private final String example;
