@@ -65,9 +65,9 @@ public class Types {
     @GetMapping("/types")
     @ExposesType
     @Simple
-    public PaginatedResult<NormalizedJsonLd> getTypes(@RequestParam("stage") ExposedStage stage, @RequestParam(value = "space", required = false) @Parameter(description = "The space by which the types should be filtered or \"" + SpaceName.PRIVATE_SPACE + "\" for your private space.") String space, @RequestParam(value = "withProperties", defaultValue = "false") boolean withProperties, @RequestParam(value = "withIncomingLinks", defaultValue = "false") boolean withIncomingLinks, @ParameterObject PaginationParam paginationParam) {
+    public PaginatedResult<NormalizedJsonLd> getTypes(@RequestParam("stage") ExposedStage stage, @RequestParam(value = "space", required = false) @Parameter(description = "The space by which the types should be filtered or \"" + SpaceName.PRIVATE_SPACE + "\" for your private space.") String space, @RequestParam(value = "withProperties", defaultValue = "false") boolean withProperties, @RequestParam(value = "withIncomingLinks", defaultValue = "false") boolean withIncomingLinks, @RequestParam(value = "withCounts", defaultValue = "false") @Parameter(description = "Only applies if withProperties is set to true") boolean withCounts, @ParameterObject PaginationParam paginationParam) {
         if(withProperties){
-            return PaginatedResult.ok(graphDBTypes.getTypesWithProperties(stage.getStage(), getResolvedSpaceName(space), true, withIncomingLinks, paginationParam));
+            return PaginatedResult.ok(graphDBTypes.getTypesWithProperties(stage.getStage(), getResolvedSpaceName(space), withCounts, withIncomingLinks, paginationParam));
         }
         else {
             return PaginatedResult.ok(graphDBTypes.getTypes(stage.getStage(), getResolvedSpaceName(space), withIncomingLinks, paginationParam));

@@ -33,16 +33,18 @@ public class GetTypesTest extends AbstractTest {
     private final SpaceName spaceName;
     private final boolean withProperties;
     private final boolean withIncomingLinks;
+    private final boolean withCounts;
 
     public PaginatedResult<NormalizedJsonLd> response;
 
-    public GetTypesTest(ArangoDB.Builder database, AuthenticationAPI authenticationAPI,  SpaceName spaceName, boolean withProperties, boolean withIncomingLinks, RoleMapping[] roles, Types types, Instances instances) {
+    public GetTypesTest(ArangoDB.Builder database, AuthenticationAPI authenticationAPI,  SpaceName spaceName, boolean withProperties, boolean withIncomingLinks, boolean withCounts, RoleMapping[] roles, Types types, Instances instances) {
         super(database, authenticationAPI,  roles);
         this.instances = instances;
         this.types = types;
         this.spaceName = spaceName;
         this.withProperties = withProperties;
         this.withIncomingLinks = withIncomingLinks;
+        this.withCounts = withCounts;
     }
 
     @Override
@@ -54,6 +56,6 @@ public class GetTypesTest extends AbstractTest {
 
     @Override
     protected void run() {
-        response = this.types.getTypes(ExposedStage.IN_PROGRESS, spaceName == null ? null : spaceName.getName(), withProperties, withIncomingLinks, new PaginationParam());
+        response = this.types.getTypes(ExposedStage.IN_PROGRESS, spaceName == null ? null : spaceName.getName(), withProperties, withIncomingLinks, withCounts, new PaginationParam());
     }
 }

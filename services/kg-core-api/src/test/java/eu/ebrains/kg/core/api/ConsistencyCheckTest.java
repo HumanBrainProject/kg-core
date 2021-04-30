@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 EPFL/Human Brain Project PCO
+ * Copyright 2021 EPFL/Human Brain Project PCO
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -84,10 +84,10 @@ public class ConsistencyCheckTest {
             System.out.println(String.format("Created instance %s", id.getId()));
         }
         Assert.assertEquals(createInstances, getAllInstancesFromInProgress(ExposedStage.IN_PROGRESS).size());
-        Assert.assertEquals(1, types.getTypes(ExposedStage.IN_PROGRESS, null, false, false, EMPTY_PAGINATION).getSize());
-        List<NormalizedJsonLd> typeWithProperties = types.getTypes(ExposedStage.IN_PROGRESS, null, true, true, EMPTY_PAGINATION).getData();
-        Assert.assertEquals(1, typeWithProperties.size());
-        NormalizedJsonLd typeWithProperty = typeWithProperties.get(0);
+        Assert.assertEquals(1, types.getTypes(ExposedStage.IN_PROGRESS, null, false, false, false, EMPTY_PAGINATION).getSize());
+        List<NormalizedJsonLd> typeWithPropertiesAndCounts = types.getTypes(ExposedStage.IN_PROGRESS, null, true, true, true, EMPTY_PAGINATION).getData();
+        Assert.assertEquals(1, typeWithPropertiesAndCounts.size());
+        NormalizedJsonLd typeWithProperty = typeWithPropertiesAndCounts.get(0);
         Assert.assertEquals(type, typeWithProperty.get(SchemaOrgVocabulary.IDENTIFIER));
     }
 
