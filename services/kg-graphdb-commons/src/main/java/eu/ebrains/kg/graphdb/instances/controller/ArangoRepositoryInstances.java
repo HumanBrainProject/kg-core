@@ -650,6 +650,7 @@ public class ArangoRepositoryInstances {
             aql.addLine(AQL.trust("FILTER @typeRestriction IN inbnd.`@type`"));
             bindVars.put("typeRestriction", restrictToType);
         }
+        aql.addLine(AQL.trust("FILTER inbnd != NULL"));
         aql.addLine(AQL.trust("RETURN {"));
         aql.indent().addLine(AQL.trust("\"" + SchemaOrgVocabulary.IDENTIFIER + "\": e.`_originalLabel`,"));
         aql.addLine(AQL.trust("\"" + JsonLdConsts.ID + "\": inbnd.`@id`,"));
