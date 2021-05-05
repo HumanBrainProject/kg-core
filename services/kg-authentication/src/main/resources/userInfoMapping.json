@@ -1,0 +1,27 @@
+{
+  "roles": {
+    "kg": [],
+    "team": [
+      {
+        "from": "collab-kg-devs-administrator",
+        "to": ":admin"
+      },
+      {
+        "from": "collab-kg-public-(administrator|editor|viewer)",
+        "to": ":consumer"
+      },
+      {
+        "from": "collab-(.*)-administrator",
+        "to": "$1:owner"
+      },
+      {
+        "from": "collab-(.*)-editor",
+        "to": "$1:editor"
+      },
+      {
+        "from": "collab-(.*)-viewer",
+        "to": "$1:reviewer"
+      }
+    ]
+  }
+}
