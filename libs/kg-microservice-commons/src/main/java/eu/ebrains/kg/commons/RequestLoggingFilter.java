@@ -58,22 +58,22 @@ public class RequestLoggingFilter extends OncePerRequestFilter {
             } catch (UnauthorizedException ex) {
                 userWithRoles = null;
             }
-            logger.info("{}, {}, {}, {}, {}, {}, {}", StructuredArguments.keyValue("event", "API request"),
+            logger.info("{}, {}, {}, {}, {}, {}, {}", StructuredArguments.keyValue("action", "API request"),
                     StructuredArguments.keyValue("id", apiRequestId),
                     StructuredArguments.keyValue("method", request.getMethod()),
                     StructuredArguments.keyValue("path", request.getRequestURI()),
                     StructuredArguments.keyValue("query", request.getQueryString()),
-                    StructuredArguments.keyValue("user", userWithRoles != null && userWithRoles.getUser() != null ? userWithRoles.getUser().getNativeId() : "anonymous"),
-                    StructuredArguments.keyValue("client", userWithRoles != null ? userWithRoles.getClientId() : "unknown"));
+                    StructuredArguments.keyValue("authenticatedUser", userWithRoles != null && userWithRoles.getUser() != null ? userWithRoles.getUser().getNativeId() : "anonymous"),
+                    StructuredArguments.keyValue("authenticatedClient", userWithRoles != null ? userWithRoles.getClientId() : "unknown"));
             filterChain.doFilter(request, response);
-            logger.info("{}, {}, {}, {}, {}, {}, {}, {}", StructuredArguments.keyValue("event", "API response"),
+            logger.info("{}, {}, {}, {}, {}, {}, {}, {}", StructuredArguments.keyValue("action", "API response"),
                     StructuredArguments.keyValue("id", apiRequestId),
                     StructuredArguments.keyValue("method", request.getMethod()),
                     StructuredArguments.keyValue("path", request.getRequestURI()),
                     StructuredArguments.keyValue("query", request.getQueryString()),
                     StructuredArguments.keyValue("statusCode", response.getStatus()),
-                    StructuredArguments.keyValue("user", userWithRoles != null && userWithRoles.getUser() != null ? userWithRoles.getUser().getNativeId() : "anonymous"),
-                    StructuredArguments.keyValue("client", userWithRoles != null ? userWithRoles.getClientId() : "unknown"));
+                    StructuredArguments.keyValue("authenticatedUser", userWithRoles != null && userWithRoles.getUser() != null ? userWithRoles.getUser().getNativeId() : "anonymous"),
+                    StructuredArguments.keyValue("authenticatedClient", userWithRoles != null ? userWithRoles.getClientId() : "unknown"));
         } else {
             filterChain.doFilter(request, response);
         }
