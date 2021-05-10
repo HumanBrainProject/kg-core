@@ -14,7 +14,7 @@
  * limitations under the License.
  *
  * This open source software code was developed in part or in whole in the
- * Human Brain Project, funded from the European Union’s Horizon 2020
+ * Human Brain Project, funded from the European Union's Horizon 2020
  * Framework Programme for Research and Innovation under
  * Specific Grant Agreements No. 720270, No. 785907, and No. 945539
  * (Human Brain Project SGA1, SGA2 and SGA3).
@@ -22,21 +22,18 @@
 
 package eu.ebrains.kg.authentication.keycloak;
 
-import com.google.common.io.CharStreams;
 import eu.ebrains.kg.authentication.model.ClientRoleMapping;
 import eu.ebrains.kg.commons.JsonAdapter;
-import eu.ebrains.kg.commons.model.Client;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.core.io.ClassPathResource;
+import org.springframework.core.io.Resource;
 import org.springframework.stereotype.Component;
 
-import java.io.File;
+import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.io.Reader;
-import java.nio.file.Files;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -51,30 +48,35 @@ public class KeycloakUserInfoMapping {
         this.jsonAdapter = jsonAdapter;
     }
 
-    public final static class UserInfoMapping extends LinkedHashMap<String, LinkedHashMap<String, List<ClientRoleMapping>>>{}
+    public final static class UserInfoMapping extends LinkedHashMap<String, LinkedHashMap<String, List<ClientRoleMapping>>> {
+    }
 
     @Cacheable("userInfoMappings")
-    public UserInfoMapping getMappings(){
-        try {
-            File resource = new ClassPathResource("userInfoMapping.json").getFile();
-            return jsonAdapter.fromJson(new String(Files.readAllBytes(resource.toPath())), UserInfoMapping.class);
-        } catch (IOException e) {
+    public UserInfoMapping getMappings() {
+        Resource resource = new ClassPathResource("userInfoMapping.json");
+        try{
+            try (BufferedReader reader = new BufferedReader(new InputStreamReader(resource.getInputStream()))) {
+                String content = reader.lines().collect(Collectors.joining("\n"));
+                return jsonAdapter.fromJson(content, UserInfoMapping.class);
+            }
+        }
+        catch (IOException e){
             throw new RuntimeException("Was not able to read the userInfoMapping");
         }
     }
 
 
-    public List<String> mapRoleNames(Map<String, Object> userInfo, UserInfoMapping mappings){
+    public List<String> mapRoleNames(Map<String, Object> userInfo, UserInfoMapping mappings) {
         Set<String> roleNames = new HashSet<>();
         mappings.forEach((rolesKey, rolesValue) -> {
-            if(userInfo.containsKey(rolesKey)){
+            if (userInfo.containsKey(rolesKey)) {
                 Object roles = userInfo.get(rolesKey);
-                if(roles instanceof Map){
-                    Map<?,?> rolesMap = (Map<?,?>) roles;
+                if (roles instanceof Map) {
+                    Map<?, ?> rolesMap = (Map<?, ?>) roles;
                     rolesValue.forEach((clientKey, clientValue) -> {
-                        if(rolesMap.containsKey(clientKey)){
+                        if (rolesMap.containsKey(clientKey)) {
                             Object userRolesByKey = rolesMap.get(clientKey);
-                            if(userRolesByKey instanceof List){
+                            if (userRolesByKey instanceof List) {
                                 Set<String> processedRoleNames = ((List<?>) userRolesByKey).stream().filter(r -> r instanceof String).map(r -> (String) r).map(userRole -> {
                                     for (ClientRoleMapping clientRoleMapping : clientValue) {
                                         if (userRole.matches(clientRoleMapping.getFrom())) {
