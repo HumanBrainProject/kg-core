@@ -73,9 +73,9 @@ public class RequestLoggingFilter extends OncePerRequestFilter {
                     StructuredArguments.keyValue("path", request.getRequestURI()),
                     StructuredArguments.keyValue("query", request.getQueryString()),
                     StructuredArguments.keyValue("statusCode", response.getStatus()),
-                    StructuredArguments.keyValue("executionTime", String.format("%d ms", end.getTime()-start.getTime())),
-                    StructuredArguments.keyValue("user", userWithRoles != null && userWithRoles.getUser() != null ? userWithRoles.getUser().getNativeId() : "anonymous"),
-                    StructuredArguments.keyValue("client", userWithRoles != null ? userWithRoles.getClientId() : "unknown"));
+                    StructuredArguments.keyValue("executionDuration", String.format("%d ms", end.getTime()-start.getTime())),
+                    StructuredArguments.keyValue("authenticatedUser", userWithRoles != null && userWithRoles.getUser() != null ? userWithRoles.getUser().getNativeId() : "anonymous"),
+                    StructuredArguments.keyValue("authenticatedClient", userWithRoles != null ? userWithRoles.getClientId() : "unknown"));
         } else {
             filterChain.doFilter(request, response);
         }
