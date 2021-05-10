@@ -20,26 +20,21 @@
  * (Human Brain Project SGA1, SGA2 and SGA3).
  */
 
-package eu.ebrains.kg.commons.model;
+package eu.ebrains.kg.commons.exception;
 
-public class TermsOfUse {
+import eu.ebrains.kg.commons.model.TermsOfUse;
+import eu.ebrains.kg.commons.model.TermsOfUseError;
 
-    private String version;
-    private String data;
+public class NotAcceptedTermsOfUseException extends RuntimeException {
 
-    public TermsOfUse() {
+    private TermsOfUseError termsOfUseError;
+
+    public NotAcceptedTermsOfUseException(TermsOfUse termsOfUse) {
+        super(String.format("You didn't accept the current terms of use yet (version %s).", termsOfUse.getVersion()));
+        this.termsOfUseError = new TermsOfUseError(termsOfUse);
     }
 
-    public TermsOfUse(String version, String data) {
-        this.version = version;
-        this.data = data;
-    }
-
-    public String getVersion() {
-        return version;
-    }
-
-    public String getData() {
-        return data;
+    public TermsOfUseError getTermsOfUseError() {
+        return termsOfUseError;
     }
 }

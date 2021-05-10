@@ -14,7 +14,7 @@
  * limitations under the License.
  *
  * This open source software code was developed in part or in whole in the
- * Human Brain Project, funded from the European Union’s Horizon 2020
+ * Human Brain Project, funded from the European Union's Horizon 2020
  * Framework Programme for Research and Innovation under
  * Specific Grant Agreements No. 720270, No. 785907, and No. 945539
  * (Human Brain Project SGA1, SGA2 and SGA3).
@@ -27,8 +27,9 @@ import com.auth0.jwt.JWTVerifier;
 import com.auth0.jwt.algorithms.Algorithm;
 import com.auth0.jwt.exceptions.JWTVerificationException;
 import com.auth0.jwt.interfaces.Claim;
-import eu.ebrains.kg.authentication.model.UserOrClientProfile;
+import eu.ebrains.kg.authentication.controller.TermsOfUseRepository;
 import eu.ebrains.kg.authentication.model.OpenIdConfig;
+import eu.ebrains.kg.authentication.model.UserOrClientProfile;
 import eu.ebrains.kg.commons.AuthTokenContext;
 import eu.ebrains.kg.commons.JsonAdapter;
 import eu.ebrains.kg.commons.exception.UnauthorizedException;
@@ -84,8 +85,9 @@ public class KeycloakController {
 
     private final KeycloakUserInfoMapping userInfoMapping;
 
+    private final TermsOfUseRepository termsOfUseRepository;
 
-    public KeycloakController(KeycloakConfig config, KeycloakClient keycloakClient, JsonAdapter jsonAdapter, AuthTokenContext authTokenContext, KeycloakUsers keycloakUsers, KeycloakUserInfoMapping userInfoMapping) {
+    public KeycloakController(KeycloakConfig config, KeycloakClient keycloakClient, JsonAdapter jsonAdapter, AuthTokenContext authTokenContext, KeycloakUsers keycloakUsers, KeycloakUserInfoMapping userInfoMapping, TermsOfUseRepository termsOfUseRepository) {
         this.config = config;
         this.jsonAdapter = jsonAdapter;
         this.keycloakClient = keycloakClient;
@@ -93,6 +95,7 @@ public class KeycloakController {
         this.keycloakUsers = keycloakUsers;
         this.jwtVerifier = JWT.require(getAlgorithmFromKeycloakConfig(keycloakClient.getPublicKey())).withIssuer(config.getIssuer()).build(); //Reusable verifier instance;
         this.userInfoMapping = userInfoMapping;
+        this.termsOfUseRepository = termsOfUseRepository;
     }
 
     private OpenIdConfig openIdConfig;

@@ -14,7 +14,7 @@
  * limitations under the License.
  *
  * This open source software code was developed in part or in whole in the
- * Human Brain Project, funded from the European Union’s Horizon 2020
+ * Human Brain Project, funded from the European Union's Horizon 2020
  * Framework Programme for Research and Innovation under
  * Specific Grant Agreements No. 720270, No. 785907, and No. 945539
  * (Human Brain Project SGA1, SGA2 and SGA3).
@@ -102,10 +102,14 @@ public class RestControllerAdvice {
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ex.getMessage());
     }
 
-    @ExceptionHandler({ForbiddenException.class})
+    @ExceptionHandler({ForbiddenException.class, NotAcceptedTermsOfUseException.class})
     protected ResponseEntity<?> handleForbidden(RuntimeException ex, WebRequest request) {
+        if(ex instanceof NotAcceptedTermsOfUseException){
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(((NotAcceptedTermsOfUseException)ex).getTermsOfUseError());
+        }
         return ResponseEntity.status(HttpStatus.FORBIDDEN).body(ex.getMessage());
     }
+
 
     @ExceptionHandler({UnauthorizedException.class})
     protected ResponseEntity<?> handleUnauthorized(RuntimeException ex, WebRequest request) {

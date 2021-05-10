@@ -14,7 +14,7 @@
  * limitations under the License.
  *
  * This open source software code was developed in part or in whole in the
- * Human Brain Project, funded from the European Union’s Horizon 2020
+ * Human Brain Project, funded from the European Union's Horizon 2020
  * Framework Programme for Research and Innovation under
  * Specific Grant Agreements No. 720270, No. 785907, and No. 945539
  * (Human Brain Project SGA1, SGA2 and SGA3).
@@ -116,8 +116,16 @@ public class Users {
 
     @Operation(summary = "Get the current terms of use")
     @GetMapping(value = "/termsOfUse")
-    public ResponseEntity<TermsOfUse> getTermsOfUse() {
-       return ResponseEntity.ok();
+    @Simple
+    public ResponseEntity<TermsOfUseResult> getTermsOfUse() {
+       return ResponseEntity.ok(authentication.getTermsOfUse());
+    }
+
+    @Operation(summary = "Accept the terms of use in the given version")
+    @PostMapping(value = "/termsOfUse/{version}/accept")
+    @Simple
+    public void acceptTermsOfUse(@PathVariable("version") String version) {
+        authentication.acceptTermsOfUse(version);
     }
 
     @Operation(summary = "Get a pictures for a list of users (only found ones are returned)")

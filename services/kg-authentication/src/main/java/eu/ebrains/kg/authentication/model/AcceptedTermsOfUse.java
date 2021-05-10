@@ -20,26 +20,28 @@
  * (Human Brain Project SGA1, SGA2 and SGA3).
  */
 
-package eu.ebrains.kg.commons.model;
+package eu.ebrains.kg.authentication.model;
 
-public class TermsOfUse {
+import java.util.Date;
+
+public class AcceptedTermsOfUse {
 
     private String version;
-    private String data;
+    private Date date;
 
-    public TermsOfUse() {
+    public AcceptedTermsOfUse() {
     }
 
-    public TermsOfUse(String version, String data) {
+    public AcceptedTermsOfUse(String version, Date date) {
         this.version = version;
-        this.data = data;
+        this.date = date;
     }
 
     public String getVersion() {
         return version;
     }
 
-    public String getData() {
-        return data;
+    public Date getDate() {
+        return date;
     }
 }

@@ -14,7 +14,7 @@
  * limitations under the License.
  *
  * This open source software code was developed in part or in whole in the
- * Human Brain Project, funded from the European Union’s Horizon 2020
+ * Human Brain Project, funded from the European Union's Horizon 2020
  * Framework Programme for Research and Innovation under
  * Specific Grant Agreements No. 720270, No. 785907, and No. 945539
  * (Human Brain Project SGA1, SGA2 and SGA3).
@@ -22,12 +22,15 @@
 
 package eu.ebrains.kg.authentication.api;
 
+import eu.ebrains.kg.authentication.controller.TermsOfUseRepository;
 import eu.ebrains.kg.authentication.keycloak.KeycloakController;
 import eu.ebrains.kg.authentication.keycloak.KeycloakInitialSetup;
 import eu.ebrains.kg.authentication.model.UserOrClientProfile;
 import eu.ebrains.kg.commons.api.Authentication;
+import eu.ebrains.kg.commons.exception.NotAcceptedTermsOfUseException;
 import eu.ebrains.kg.commons.model.Credential;
 import eu.ebrains.kg.commons.model.TermsOfUse;
+import eu.ebrains.kg.commons.model.TermsOfUseResult;
 import eu.ebrains.kg.commons.model.User;
 import eu.ebrains.kg.commons.models.UserWithRoles;
 import eu.ebrains.kg.commons.permission.ClientAuthToken;
@@ -43,9 +46,12 @@ public class AuthenticationAPI implements Authentication.Client {
 
     private final KeycloakInitialSetup initialSetup;
 
-    public AuthenticationAPI(KeycloakInitialSetup initialSetup, KeycloakController keycloakController) {
-        this.initialSetup = initialSetup;
+    private final TermsOfUseRepository termsOfUseRepository;
+
+    public AuthenticationAPI(KeycloakController keycloakController, KeycloakInitialSetup initialSetup, TermsOfUseRepository termsOfUseRepository) {
         this.keycloakController = keycloakController;
+        this.initialSetup = initialSetup;
+        this.termsOfUseRepository = termsOfUseRepository;
     }
 
     /** CLIENTS **/
@@ -103,15 +109,26 @@ public class AuthenticationAPI implements Authentication.Client {
         return userProfile != null ? keycloakController.buildUserInfoFromKeycloak(userProfile.getClaims()) : null;
     }
 
+
     @Override
-    public UserWithRoles getRoles() {
+    public UserWithRoles getRoles(boolean checkForTermsOfUse) {
         UserOrClientProfile userProfile = keycloakController.getUserProfile(true);
-        //TODO check if the user has accepted the terms of use
-        UserOrClientProfile clientProfile = keycloakController.getClientProfile(true);
-        return userProfile != null ? new UserWithRoles(keycloakController.buildUserInfoFromKeycloak(userProfile.getClaims()),
-                userProfile.getRoleNames(), clientProfile!=null ? clientProfile.getRoleNames() : null,
-                keycloakController.getClientInfoFromKeycloak(clientProfile!=null ? clientProfile.getClaims() : null)
-        ) : null;
+        if (userProfile != null) {
+            User user = keycloakController.buildUserInfoFromKeycloak(userProfile.getClaims());
+            UserOrClientProfile clientProfile = keycloakController.getClientProfile(true);
+            // We only do the terms of use check for direct access calls (the clients are required to ensure that the user
+            // agrees to the terms of use.
+            if(checkForTermsOfUse && clientProfile==null) {
+                TermsOfUse termsOfUseToAccept = termsOfUseRepository.findTermsOfUseToAccept(user.getNativeId());
+                if (termsOfUseToAccept != null) {
+                    throw new NotAcceptedTermsOfUseException(termsOfUseToAccept);
+                }
+            }
+            return new UserWithRoles(user, userProfile.getRoleNames(), clientProfile != null ? clientProfile.getRoleNames() : null,
+                    keycloakController.getClientInfoFromKeycloak(clientProfile != null ? clientProfile.getClaims() : null));
+        } else {
+            return null;
+        }
     }
 
     @Override
@@ -124,15 +141,36 @@ public class AuthenticationAPI implements Authentication.Client {
         return keycloakController.getUsersByAttribute(attribute, value);
     }
     @Override
-    public TermsOfUse getTermsOfUse() {
-        //TODO to be implemented
-        return new TermsOfUse("v1.0", "These are the terms of use");
+    public TermsOfUseResult getTermsOfUse() {
+        TermsOfUse termsOfUse;
+        UserOrClientProfile userProfile = keycloakController.getUserProfile(false);
+        if (userProfile != null) {
+            User user = keycloakController.buildUserInfoFromKeycloak(userProfile.getClaims());
+            if(user!=null){
+                termsOfUse = termsOfUseRepository.findTermsOfUseToAccept(user.getNativeId());
+                if(termsOfUse!=null) {
+                    return new TermsOfUseResult(termsOfUse, false);
+                }
+            }
+        }
+        termsOfUse = termsOfUseRepository.getCurrentTermsOfUse();
+        return termsOfUse!=null ? new TermsOfUseResult(termsOfUse, true) : null;
     }
 
     @Override
     public void acceptTermsOfUse(String version) {
-        //TODO check if accepted version is the current
-        //TODO register accept terms of use by user
+        User user = getMyUserInfo();
+        if(user !=null) {
+            termsOfUseRepository.acceptTermsOfUse(version, user.getNativeId());
+        }
+        else{
+            throw new IllegalArgumentException("Was not able to resolve the user information");
+        }
+    }
+
+    @Override
+    public void registerTermsOfUse(TermsOfUse termsOfUse){
+        termsOfUseRepository.setCurrentTermsOfUse(termsOfUse);
     }
 
     /** SETUP **/

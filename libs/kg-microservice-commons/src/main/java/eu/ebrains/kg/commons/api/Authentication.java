@@ -14,7 +14,7 @@
  * limitations under the License.
  *
  * This open source software code was developed in part or in whole in the
- * Human Brain Project, funded from the European Union’s Horizon 2020
+ * Human Brain Project, funded from the European Union's Horizon 2020
  * Framework Programme for Research and Innovation under
  * Specific Grant Agreements No. 720270, No. 785907, and No. 945539
  * (Human Brain Project SGA1, SGA2 and SGA3).
@@ -24,6 +24,7 @@ package eu.ebrains.kg.commons.api;
 
 import eu.ebrains.kg.commons.model.Credential;
 import eu.ebrains.kg.commons.model.TermsOfUse;
+import eu.ebrains.kg.commons.model.TermsOfUseResult;
 import eu.ebrains.kg.commons.model.User;
 import eu.ebrains.kg.commons.models.UserWithRoles;
 import eu.ebrains.kg.commons.permission.ClientAuthToken;
@@ -55,7 +56,7 @@ public interface Authentication {
 
     User getMyUserInfo();
 
-    UserWithRoles getRoles();
+    UserWithRoles getRoles(boolean checkForTermsOfUse);
 
     User getOtherUserInfo(String nativeId);
 
@@ -63,7 +64,11 @@ public interface Authentication {
 
     String setup(Credential credential);
 
-    TermsOfUse getTermsOfUse();
+    TermsOfUseResult getTermsOfUse();
 
     void acceptTermsOfUse(String version);
+
+    void registerTermsOfUse(TermsOfUse version);
+
+
 }

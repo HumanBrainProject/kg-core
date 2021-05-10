@@ -20,26 +20,40 @@
  * (Human Brain Project SGA1, SGA2 and SGA3).
  */
 
-package eu.ebrains.kg.commons.model;
+package eu.ebrains.kg.authentication.model;
 
-public class TermsOfUse {
+import com.fasterxml.jackson.annotation.JsonProperty;
+import eu.ebrains.kg.arango.commons.aqlBuilder.ArangoVocabulary;
 
-    private String version;
-    private String data;
+import java.util.List;
 
-    public TermsOfUse() {
+public class TermsOfUseAcceptance {
+
+    @JsonProperty(ArangoVocabulary.KEY)
+    private String key;
+
+    private String userId;
+
+    private List<AcceptedTermsOfUse> acceptedTermsOfUse;
+
+    public TermsOfUseAcceptance() {
     }
 
-    public TermsOfUse(String version, String data) {
-        this.version = version;
-        this.data = data;
+    public TermsOfUseAcceptance(String key, String userId, List<AcceptedTermsOfUse> acceptedTermsOfUse) {
+        this.key = key;
+        this.userId = userId;
+        this.acceptedTermsOfUse = acceptedTermsOfUse;
     }
 
-    public String getVersion() {
-        return version;
+    public String getKey() {
+        return key;
     }
 
-    public String getData() {
-        return data;
+    public String getUserId() {
+        return userId;
+    }
+
+    public List<AcceptedTermsOfUse> getAcceptedTermsOfUse() {
+        return acceptedTermsOfUse;
     }
 }

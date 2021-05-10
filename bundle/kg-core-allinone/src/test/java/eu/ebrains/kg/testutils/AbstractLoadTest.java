@@ -14,7 +14,7 @@
  * limitations under the License.
  *
  * This open source software code was developed in part or in whole in the
- * Human Brain Project, funded from the European Union’s Horizon 2020
+ * Human Brain Project, funded from the European Union's Horizon 2020
  * Framework Programme for Research and Innovation under
  * Specific Grant Agreements No. 720270, No. 785907, and No. 945539
  * (Human Brain Project SGA1, SGA2 and SGA3).
@@ -75,7 +75,7 @@ public abstract class AbstractLoadTest extends AbstractSystemTest {
         User user = new User("bobEverythingGoes", "Bob Everything Goes", "fakeAdmin@ebrains.eu", "Bob Everything", "Goes", "admin");
         UserWithRoles userWithRoles = new UserWithRoles(user, AbstractTest.ADMIN_ROLE, AbstractTest.ADMIN_CLIENT_ROLE, "testClient");
         Mockito.doReturn(user).when(authenticationAPI).getMyUserInfo();
-        Mockito.doReturn(userWithRoles).when(authenticationAPI).getRoles();
+        Mockito.doReturn(userWithRoles).when(authenticationAPI).getRoles(false);
         AuthTokens authTokens=new AuthTokens();
         authTokens.setUserAuthToken(new UserAuthToken("userToken"));
         authTokens.setClientAuthToken(new ClientAuthToken("clientToken"));

@@ -22,24 +22,16 @@
 
 package eu.ebrains.kg.commons.model;
 
-public class TermsOfUse {
+import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 
-    private String version;
-    private String data;
+@JsonPropertyOrder({ "accepted" })
+public class TermsOfUseResult extends TermsOfUse {
 
-    public TermsOfUse() {
+    private Boolean accepted;
+
+    public TermsOfUseResult(TermsOfUse termsOfUse, Boolean accepted) {
+        super(termsOfUse.getVersion(), termsOfUse.getData());
+        this.accepted = accepted;
     }
 
-    public TermsOfUse(String version, String data) {
-        this.version = version;
-        this.data = data;
-    }
-
-    public String getVersion() {
-        return version;
-    }
-
-    public String getData() {
-        return data;
-    }
 }

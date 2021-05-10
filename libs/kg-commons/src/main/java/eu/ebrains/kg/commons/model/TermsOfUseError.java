@@ -22,24 +22,18 @@
 
 package eu.ebrains.kg.commons.model;
 
-public class TermsOfUse {
+import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 
-    private String version;
-    private String data;
+@JsonPropertyOrder({ "error", "howToFix" })
+public class TermsOfUseError extends TermsOfUse {
 
-    public TermsOfUse() {
+    private String error;
+    private String howToFix;
+
+    public TermsOfUseError(TermsOfUse termsOfUse) {
+        super(termsOfUse.getVersion(), termsOfUse.getData());
+        this.error = String.format("You have not accepted the latest version (%s) of the terms of use", termsOfUse.getVersion());
+        this.howToFix = String.format("By calling the POST endpoint of users/termsOfUse/%s/accept you give your consent to the terms of use and can make use of the API.", termsOfUse.getVersion());
     }
 
-    public TermsOfUse(String version, String data) {
-        this.version = version;
-        this.data = data;
-    }
-
-    public String getVersion() {
-        return version;
-    }
-
-    public String getData() {
-        return data;
-    }
 }

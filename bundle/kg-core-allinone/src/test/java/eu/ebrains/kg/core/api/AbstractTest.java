@@ -14,7 +14,7 @@
  * limitations under the License.
  *
  * This open source software code was developed in part or in whole in the
- * Human Brain Project, funded from the European Union’s Horizon 2020
+ * Human Brain Project, funded from the European Union's Horizon 2020
  * Framework Programme for Research and Innovation under
  * Specific Grant Agreements No. 720270, No. 785907, and No. 945539
  * (Human Brain Project SGA1, SGA2 and SGA3).
@@ -72,7 +72,7 @@ public abstract class AbstractTest {
         User user = new User("bobEverythingGoes", "Bob Everything Goes", "fakeAdmin@ebrains.eu", "Bob Everything", "Goes", "admin");
         UserWithRoles userWithRoles = new UserWithRoles(user, ADMIN_ROLE, ADMIN_CLIENT_ROLE, "testClient");
         Mockito.doAnswer(a -> user).when(authentication).getMyUserInfo();
-        Mockito.doAnswer(a -> userWithRoles).when(authentication).getRoles();
+        Mockito.doAnswer(a -> userWithRoles).when(authentication).getRoles(false);
     }
 
     protected void beInCurrentRole() {
@@ -84,7 +84,7 @@ public abstract class AbstractTest {
             User user = new User("alice", "Alice ", "fakeAlice@ebrains.eu", "Alice", "User", "alice");
             UserWithRoles userWithRoles = new UserWithRoles(user, currentRoles.stream().filter(Objects::nonNull).map(Role::getName).collect(Collectors.toList()), ADMIN_CLIENT_ROLE, "testClient");
             Mockito.doAnswer(a -> user).when(authentication).getMyUserInfo();
-            Mockito.doAnswer(a -> userWithRoles).when(authentication).getRoles();
+            Mockito.doAnswer(a -> userWithRoles).when(authentication).getRoles(false);
         }
     }
 
@@ -93,7 +93,7 @@ public abstract class AbstractTest {
         //It's the user not having any righexts - the client is still the same with full rights
         UserWithRoles userWithRoles = new UserWithRoles(user, Collections.emptyList(), ADMIN_CLIENT_ROLE, "testClient");
         Mockito.doAnswer(a -> user).when(authentication).getMyUserInfo();
-        Mockito.doAnswer(a -> userWithRoles).when(authentication).getRoles();
+        Mockito.doAnswer(a -> userWithRoles).when(authentication).getRoles(false);
     }
 
     protected abstract void setup();

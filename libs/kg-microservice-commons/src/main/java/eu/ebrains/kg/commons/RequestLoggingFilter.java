@@ -14,7 +14,7 @@
  * limitations under the License.
  *
  * This open source software code was developed in part or in whole in the
- * Human Brain Project, funded from the European Union’s Horizon 2020
+ * Human Brain Project, funded from the European Union's Horizon 2020
  * Framework Programme for Research and Innovation under
  * Specific Grant Agreements No. 720270, No. 785907, and No. 945539
  * (Human Brain Project SGA1, SGA2 and SGA3).
@@ -35,6 +35,7 @@ import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
+import java.util.Date;
 import java.util.UUID;
 
 @Component
@@ -52,26 +53,27 @@ public class RequestLoggingFilter extends OncePerRequestFilter {
         boolean publicAPI = request.getRequestURI().startsWith(String.format("/%s", Version.API));
         UUID apiRequestId = UUID.randomUUID();
         if (publicAPI) {
-            UserWithRoles userWithRoles;
-            try {
-                userWithRoles = authContext.getUserWithRoles();
-            } catch (UnauthorizedException ex) {
-                userWithRoles = null;
-            }
-            logger.info("{}, {}, {}, {}, {}, {}, {}", StructuredArguments.keyValue("event", "API request"),
+            logger.info("{}, {}, {}, {}, {}", StructuredArguments.keyValue("event", "API request"),
                     StructuredArguments.keyValue("id", apiRequestId),
                     StructuredArguments.keyValue("method", request.getMethod()),
                     StructuredArguments.keyValue("path", request.getRequestURI()),
-                    StructuredArguments.keyValue("query", request.getQueryString()),
-                    StructuredArguments.keyValue("user", userWithRoles != null && userWithRoles.getUser() != null ? userWithRoles.getUser().getNativeId() : "anonymous"),
-                    StructuredArguments.keyValue("client", userWithRoles != null ? userWithRoles.getClientId() : "unknown"));
+                    StructuredArguments.keyValue("query", request.getQueryString()));
+            Date start = new Date();
             filterChain.doFilter(request, response);
-            logger.info("{}, {}, {}, {}, {}, {}, {}, {}", StructuredArguments.keyValue("event", "API response"),
+            Date end = new Date();
+            UserWithRoles userWithRoles;
+            try {
+                userWithRoles = authContext.getUserWithRolesWithoutTermsCheck();
+            } catch (UnauthorizedException ex) {
+                userWithRoles = null;
+            }
+            logger.info("{}, {}, {}, {}, {}, {}, {}, {}, {}", StructuredArguments.keyValue("event", "API response"),
                     StructuredArguments.keyValue("id", apiRequestId),
                     StructuredArguments.keyValue("method", request.getMethod()),
                     StructuredArguments.keyValue("path", request.getRequestURI()),
                     StructuredArguments.keyValue("query", request.getQueryString()),
                     StructuredArguments.keyValue("statusCode", response.getStatus()),
+                    StructuredArguments.keyValue("executionTime", String.format("%d ms", end.getTime()-start.getTime())),
                     StructuredArguments.keyValue("user", userWithRoles != null && userWithRoles.getUser() != null ? userWithRoles.getUser().getNativeId() : "anonymous"),
                     StructuredArguments.keyValue("client", userWithRoles != null ? userWithRoles.getClientId() : "unknown"));
         } else {
