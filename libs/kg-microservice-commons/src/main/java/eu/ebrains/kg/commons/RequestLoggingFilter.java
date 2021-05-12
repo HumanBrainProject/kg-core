@@ -35,7 +35,6 @@ import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
-import java.util.Date;
 import java.util.UUID;
 
 @Component
@@ -53,21 +52,23 @@ public class RequestLoggingFilter extends OncePerRequestFilter {
         boolean publicAPI = request.getRequestURI().startsWith(String.format("/%s", Version.API));
         UUID apiRequestId = UUID.randomUUID();
         if (publicAPI) {
-            logger.info("{}, {}, {}, {}, {}", StructuredArguments.keyValue("event", "API request"),
-                    StructuredArguments.keyValue("id", apiRequestId),
-                    StructuredArguments.keyValue("method", request.getMethod()),
-                    StructuredArguments.keyValue("path", request.getRequestURI()),
-                    StructuredArguments.keyValue("query", request.getQueryString()));
-            Date start = new Date();
-            filterChain.doFilter(request, response);
-            Date end = new Date();
             UserWithRoles userWithRoles;
             try {
-                userWithRoles = authContext.getUserWithRolesWithoutTermsCheck();
+                userWithRoles = authContext.getUserWithRoles();
             } catch (UnauthorizedException ex) {
                 userWithRoles = null;
             }
-            logger.info("{}, {}, {}, {}, {}, {}, {}, {}, {}", StructuredArguments.keyValue("event", "API response"),
+            logger.info("{}, {}, {}, {}, {}, {}, {}", StructuredArguments.keyValue("action", "API request"),
+                    StructuredArguments.keyValue("id", apiRequestId),
+                    StructuredArguments.keyValue("method", request.getMethod()),
+                    StructuredArguments.keyValue("path", request.getRequestURI()),
+                    StructuredArguments.keyValue("query", request.getQueryString()),
+                    StructuredArguments.keyValue("authenticatedUser", userWithRoles != null && userWithRoles.getUser() != null ? userWithRoles.getUser().getNativeId() : "anonymous"),
+                    StructuredArguments.keyValue("authenticatedClient", userWithRoles != null ? userWithRoles.getClientId() : "unknown"));
+            Date start = new Date();
+            filterChain.doFilter(request, response);
+            Date end = new Date();
+            	logger.info("{}, {}, {}, {}, {}, {}, {}, {}, {}", StructuredArguments.keyValue("action", "API response"),
                     StructuredArguments.keyValue("id", apiRequestId),
                     StructuredArguments.keyValue("method", request.getMethod()),
                     StructuredArguments.keyValue("path", request.getRequestURI()),
