@@ -55,7 +55,7 @@ public class TermsOfUseArangoConfiguration {
     @Bean
     @Qualifier("termsOfUseDB")
     public ArangoDatabaseProxy produceTermsOfUseDB(@Qualifier("arangoBuilderForTermsOfUse") ArangoDB.Builder arangoDB) {
-        return new ArangoDatabaseProxy(arangoDB.build(), "kg1-termsOfUse");
+        return new ArangoDatabaseProxy(arangoDB.build(), "kg1-authentication");
     }
 
 }

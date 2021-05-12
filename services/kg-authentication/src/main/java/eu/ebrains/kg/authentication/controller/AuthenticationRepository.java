@@ -25,24 +25,42 @@ package eu.ebrains.kg.authentication.controller;
 import com.arangodb.ArangoCollection;
 import com.arangodb.ArangoDatabase;
 import com.arangodb.model.DocumentCreateOptions;
+import eu.ebrains.kg.arango.commons.aqlBuilder.AQL;
+import eu.ebrains.kg.arango.commons.aqlBuilder.ArangoVocabulary;
+import eu.ebrains.kg.arango.commons.model.ArangoCollectionReference;
 import eu.ebrains.kg.arango.commons.model.ArangoDatabaseProxy;
 import eu.ebrains.kg.authentication.model.AcceptedTermsOfUse;
 import eu.ebrains.kg.authentication.model.ArangoTermsOfUse;
 import eu.ebrains.kg.authentication.model.TermsOfUseAcceptance;
-import eu.ebrains.kg.commons.IdUtils;
 import eu.ebrains.kg.commons.JsonAdapter;
+import eu.ebrains.kg.commons.model.SpaceName;
 import eu.ebrains.kg.commons.model.TermsOfUse;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Component;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Date;
+import java.util.*;
 
 @Component
-public class TermsOfUseRepository {
+public class AuthenticationRepository {
     private final ArangoDatabaseProxy arangoDatabase;
     private final JsonAdapter jsonAdapter;
+
+    public AuthenticationRepository(@Qualifier("termsOfUseDB") ArangoDatabaseProxy arangoDatabase, JsonAdapter jsonAdapter) {
+        this.arangoDatabase = arangoDatabase;
+        this.jsonAdapter = jsonAdapter;
+    }
+
+    private ArangoCollection getPublicSpacesCollection() {
+        ArangoDatabase database = arangoDatabase.getOrCreate();
+        ArangoCollection collection = database.collection("publicSpaces");
+        if (!collection.exists()) {
+            collection.create();
+        }
+        return collection;
+    }
+
 
     private ArangoCollection getTermsOfUseCollection() {
         ArangoDatabase database = arangoDatabase.getOrCreate();
@@ -96,8 +114,36 @@ public class TermsOfUseRepository {
         getTermsOfUseCollection().insertDocuments(Arrays.asList(jsonAdapter.toJson(versioned), jsonAdapter.toJson(current)), new DocumentCreateOptions().overwrite(true).silent(true));
     }
 
-    public TermsOfUseRepository(@Qualifier("termsOfUseDB") ArangoDatabaseProxy arangoDatabase, JsonAdapter jsonAdapter, IdUtils idUtils) {
-        this.arangoDatabase = arangoDatabase;
-        this.jsonAdapter = jsonAdapter;
+    public boolean isSpacePublic(String space){
+        if(space!=null) {
+            return getPublicSpacesCollection().documentExists(ArangoCollectionReference.fromSpace(new SpaceName(space)).getCollectionName());
+        }
+        return false;
     }
+
+    @Cacheable("publicSpaces")
+    public List<String> getPublicSpaces(){
+        AQL aql = new AQL();
+        Map<String, Object> bindVars = new HashMap<>();
+        ArangoCollection publicSpacesCollection = getPublicSpacesCollection();
+        aql.addLine(AQL.trust("FOR s IN @@spaceCollection FILTER s.`name` != NULL RETURN s.`name`"));
+        bindVars.put("@spaceCollection", publicSpacesCollection.name());
+        return arangoDatabase.getOrCreate().query(aql.build().getValue(), bindVars, String.class).asListRemaining();
+    }
+
+
+    @CacheEvict(value = "publicSpaces", allEntries = true)
+    public void setSpacePublic(String space, boolean publicSpace) {
+        String key = ArangoCollectionReference.fromSpace(new SpaceName(space)).getCollectionName();
+        if(publicSpace){
+            Map<String, Object> instance = new HashMap<>();
+            instance.put(ArangoVocabulary.KEY, key);
+            instance.put("name", space);
+            getPublicSpacesCollection().insertDocument(instance, new DocumentCreateOptions().overwrite(true).silent(true));
+        }
+        else{
+            getPublicSpacesCollection().deleteDocument(key);
+        }
+    }
+
 }

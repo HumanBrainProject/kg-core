@@ -14,7 +14,7 @@
  * limitations under the License.
  *
  * This open source software code was developed in part or in whole in the
- * Human Brain Project, funded from the European Union’s Horizon 2020
+ * Human Brain Project, funded from the European Union's Horizon 2020
  * Framework Programme for Research and Innovation under
  * Specific Grant Agreements No. 720270, No. 785907, and No. 945539
  * (Human Brain Project SGA1, SGA2 and SGA3).
@@ -28,6 +28,7 @@ import eu.ebrains.kg.commons.api.Authentication;
 import eu.ebrains.kg.commons.config.openApiGroups.Admin;
 import eu.ebrains.kg.commons.model.Credential;
 import eu.ebrains.kg.commons.model.Space;
+import eu.ebrains.kg.commons.model.TermsOfUse;
 import eu.ebrains.kg.core.controller.CoreSpaceController;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -52,12 +53,18 @@ public class Setup {
         //Create global spec space
         Space space = new Space(InternalSpace.GLOBAL_SPEC, false, false);
         space.setInternalSpace(true);
-        spaceController.createSpaceDefinition(space, true);
+        spaceController.createSpaceDefinition(space, true, true);
     }
 
     @PutMapping("/authentication")
     @Admin
     public void setupAuthentication(@RequestBody Credential credential){
         authentication.setup(credential);
+    }
+
+    @PutMapping("/termsOfUse")
+    @Admin
+    public void registerTermsOfUse(@RequestBody TermsOfUse termsOfUse){
+        authentication.registerTermsOfUse(termsOfUse);
     }
 }

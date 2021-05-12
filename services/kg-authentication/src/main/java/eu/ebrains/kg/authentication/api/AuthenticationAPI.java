@@ -22,19 +22,22 @@
 
 package eu.ebrains.kg.authentication.api;
 
-import eu.ebrains.kg.authentication.controller.TermsOfUseRepository;
+import eu.ebrains.kg.authentication.controller.AuthenticationRepository;
 import eu.ebrains.kg.authentication.keycloak.KeycloakController;
 import eu.ebrains.kg.authentication.keycloak.KeycloakInitialSetup;
 import eu.ebrains.kg.authentication.model.UserOrClientProfile;
 import eu.ebrains.kg.commons.api.Authentication;
 import eu.ebrains.kg.commons.exception.NotAcceptedTermsOfUseException;
+import eu.ebrains.kg.commons.exception.UnauthorizedException;
 import eu.ebrains.kg.commons.model.Credential;
 import eu.ebrains.kg.commons.model.TermsOfUse;
 import eu.ebrains.kg.commons.model.TermsOfUseResult;
 import eu.ebrains.kg.commons.model.User;
 import eu.ebrains.kg.commons.models.UserWithRoles;
 import eu.ebrains.kg.commons.permission.ClientAuthToken;
+import eu.ebrains.kg.commons.permission.Functionality;
 import eu.ebrains.kg.commons.permission.roles.Role;
+import eu.ebrains.kg.commons.permissions.controller.Permissions;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
@@ -46,15 +49,21 @@ public class AuthenticationAPI implements Authentication.Client {
 
     private final KeycloakInitialSetup initialSetup;
 
-    private final TermsOfUseRepository termsOfUseRepository;
+    private final AuthenticationRepository authenticationRepository;
 
-    public AuthenticationAPI(KeycloakController keycloakController, KeycloakInitialSetup initialSetup, TermsOfUseRepository termsOfUseRepository) {
+    private final Permissions permissions;
+
+
+    public AuthenticationAPI(KeycloakController keycloakController, KeycloakInitialSetup initialSetup, AuthenticationRepository authenticationRepository, Permissions permissions) {
         this.keycloakController = keycloakController;
         this.initialSetup = initialSetup;
-        this.termsOfUseRepository = termsOfUseRepository;
+        this.authenticationRepository = authenticationRepository;
+        this.permissions = permissions;
     }
 
-    /** CLIENTS **/
+    /**
+     * CLIENTS
+     **/
     @Override
     public eu.ebrains.kg.commons.model.Client registerClient(eu.ebrains.kg.commons.model.Client client) {
         return keycloakController.registerClient(client);
@@ -70,7 +79,9 @@ public class AuthenticationAPI implements Authentication.Client {
         return new ClientAuthToken(keycloakController.authenticate(clientId, clientSecret));
     }
 
-    /** ROLES **/
+    /**
+     * ROLES
+     **/
     @Override
     public List<User> getUsersInRole(String role) {
         return keycloakController.getUsersInRole(role);
@@ -87,12 +98,14 @@ public class AuthenticationAPI implements Authentication.Client {
     }
 
     @Override
-    public void removeRoles(String rolePattern){
+    public void removeRoles(String rolePattern) {
         keycloakController.removeRolesFromClient(rolePattern);
     }
 
 
-    /** USERS **/
+    /**
+     * USERS
+     **/
     @Override
     public String authEndpoint() {
         return keycloakController.getServerUrl();
@@ -118,14 +131,16 @@ public class AuthenticationAPI implements Authentication.Client {
             UserOrClientProfile clientProfile = keycloakController.getClientProfile(true);
             // We only do the terms of use check for direct access calls (the clients are required to ensure that the user
             // agrees to the terms of use.
+            UserWithRoles userWithRoles = new UserWithRoles(user, userProfile.getRoleNames(), clientProfile != null ? clientProfile.getRoleNames() : null,
+                    keycloakController.getClientInfoFromKeycloak(clientProfile != null ? clientProfile.getClaims() : null));
             if(checkForTermsOfUse && clientProfile==null) {
-                TermsOfUse termsOfUseToAccept = termsOfUseRepository.findTermsOfUseToAccept(user.getNativeId());
+                TermsOfUse termsOfUseToAccept = authenticationRepository.findTermsOfUseToAccept(user.getNativeId());
                 if (termsOfUseToAccept != null) {
                     throw new NotAcceptedTermsOfUseException(termsOfUseToAccept);
                 }
             }
-            return new UserWithRoles(user, userProfile.getRoleNames(), clientProfile != null ? clientProfile.getRoleNames() : null,
-                    keycloakController.getClientInfoFromKeycloak(clientProfile != null ? clientProfile.getClaims() : null));
+            //fetch the public spaces and assign the consumer role for them
+            return userWithRoles;
         } else {
             return null;
         }
@@ -140,42 +155,70 @@ public class AuthenticationAPI implements Authentication.Client {
     public List<User> getUsersByAttribute(String attribute, String value) {
         return keycloakController.getUsersByAttribute(attribute, value);
     }
+
     @Override
     public TermsOfUseResult getTermsOfUse() {
         TermsOfUse termsOfUse;
         UserOrClientProfile userProfile = keycloakController.getUserProfile(false);
         if (userProfile != null) {
             User user = keycloakController.buildUserInfoFromKeycloak(userProfile.getClaims());
-            if(user!=null){
-                termsOfUse = termsOfUseRepository.findTermsOfUseToAccept(user.getNativeId());
-                if(termsOfUse!=null) {
+            if (user != null) {
+                termsOfUse = authenticationRepository.findTermsOfUseToAccept(user.getNativeId());
+                if (termsOfUse != null) {
                     return new TermsOfUseResult(termsOfUse, false);
                 }
             }
         }
-        termsOfUse = termsOfUseRepository.getCurrentTermsOfUse();
-        return termsOfUse!=null ? new TermsOfUseResult(termsOfUse, true) : null;
+        termsOfUse = authenticationRepository.getCurrentTermsOfUse();
+        return termsOfUse != null ? new TermsOfUseResult(termsOfUse, true) : null;
     }
 
     @Override
     public void acceptTermsOfUse(String version) {
         User user = getMyUserInfo();
-        if(user !=null) {
-            termsOfUseRepository.acceptTermsOfUse(version, user.getNativeId());
-        }
-        else{
+        if (user != null) {
+            authenticationRepository.acceptTermsOfUse(version, user.getNativeId());
+        } else {
             throw new IllegalArgumentException("Was not able to resolve the user information");
         }
     }
 
     @Override
-    public void registerTermsOfUse(TermsOfUse termsOfUse){
-        termsOfUseRepository.setCurrentTermsOfUse(termsOfUse);
+    public void registerTermsOfUse(TermsOfUse termsOfUse) {
+        //This is special -> the user doesn't need to accept the terms of use to register them (otherwise we would have a dead-lock)
+        if (!permissions.hasGlobalPermission(this.getRoles(false), Functionality.DEFINE_TERMS_OF_USE)){
+            throw new UnauthorizedException("You don't have the rights to define terms of use");
+        }
+        authenticationRepository.setCurrentTermsOfUse(termsOfUse);
     }
 
-    /** SETUP **/
     @Override
-    public String setup(Credential credential){
+    public boolean isSpacePublic(String space) {
+        return authenticationRepository.isSpacePublic(space);
+    }
+
+    @Override
+    public void setSpacePublic(String space){
+        setSpacePublic(space, true);
+    }
+
+    @Override
+    public void setSpaceProtected(String space){
+        setSpacePublic(space, false);
+    }
+
+    private void setSpacePublic(String space, boolean publicSpace) {
+        if(!permissions.hasGlobalPermission(this.getRoles(true), Functionality.DEFINE_PUBLIC_SPACE)){
+            throw new UnauthorizedException("You don't have the rights do define a space to be public or not.");
+        }
+        authenticationRepository.setSpacePublic(space, publicSpace);
+    }
+
+    /**
+     * SETUP
+     **/
+    @Override
+    public String setup(Credential credential) {
         return initialSetup.initialSetup(credential.getUser(), credential.getPassword());
     }
 

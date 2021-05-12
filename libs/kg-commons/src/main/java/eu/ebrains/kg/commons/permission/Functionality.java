@@ -14,7 +14,7 @@
  * limitations under the License.
  *
  * This open source software code was developed in part or in whole in the
- * Human Brain Project, funded from the European Union’s Horizon 2020
+ * Human Brain Project, funded from the European Union's Horizon 2020
  * Framework Programme for Research and Innovation under
  * Specific Grant Agreements No. 720270, No. 785907, and No. 945539
  * (Human Brain Project SGA1, SGA2 and SGA3).
@@ -36,9 +36,6 @@ public enum Functionality {
     MINIMAL_READ(Permission.Level.GLOBAL_AND_SPACE, FunctionalityGroup.PERMISSIONS, null, null, null),
     MINIMAL_READ_RELEASED(Permission.Level.GLOBAL_AND_SPACE, FunctionalityGroup.PERMISSIONS, null, null, null),
 
-    READ_PERMISSION(Permission.Level.GLOBAL_AND_SPACE, FunctionalityGroup.PERMISSIONS, null, null, null),
-    CREATE_PERMISSION(Permission.Level.GLOBAL_AND_SPACE, FunctionalityGroup.PERMISSIONS, null, null, null ),
-    DELETE_PERMISSION(Permission.Level.GLOBAL_AND_SPACE, FunctionalityGroup.PERMISSIONS, null, null, null),
 
     //Space mgmt
     READ_SPACE(Permission.Level.GLOBAL_AND_SPACE, FunctionalityGroup.SPACES, null, null, null),
@@ -80,7 +77,16 @@ public enum Functionality {
     CREATE_QUERY( Permission.Level.GLOBAL_AND_SPACE, FunctionalityGroup.QUERY, null, Event.Type.INSERT, EBRAINSVocabulary.META_QUERY_TYPE),
     EXECUTE_QUERY( Permission.Level.GLOBAL_AND_SPACE, FunctionalityGroup.QUERY, null, null, null),
     EXECUTE_SYNC_QUERY( Permission.Level.GLOBAL_AND_SPACE, FunctionalityGroup.QUERY, null, null, null),
-    DELETE_QUERY(Permission.Level.GLOBAL_AND_SPACE, FunctionalityGroup.QUERY, null, Event.Type.DELETE, EBRAINSVocabulary.META_QUERY_TYPE);
+    DELETE_QUERY(Permission.Level.GLOBAL_AND_SPACE, FunctionalityGroup.QUERY, null, Event.Type.DELETE, EBRAINSVocabulary.META_QUERY_TYPE),
+
+
+    //Permission management
+    READ_PERMISSION(Permission.Level.GLOBAL_AND_SPACE, FunctionalityGroup.PERMISSIONS, null, null, null),
+    CREATE_PERMISSION(Permission.Level.GLOBAL_AND_SPACE, FunctionalityGroup.PERMISSIONS, null, null, null ),
+    DELETE_PERMISSION(Permission.Level.GLOBAL_AND_SPACE, FunctionalityGroup.PERMISSIONS, null, null, null),
+
+    DEFINE_TERMS_OF_USE( Permission.Level.GLOBAL_ONLY, FunctionalityGroup.PERMISSIONS, null, null, null),
+    DEFINE_PUBLIC_SPACE( Permission.Level.GLOBAL_ONLY, FunctionalityGroup.PERMISSIONS, null, null, null);
 
 
     private final List<Permission.Level> allowedPermissionLevels;

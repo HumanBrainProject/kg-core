@@ -27,7 +27,8 @@ import com.auth0.jwt.JWTVerifier;
 import com.auth0.jwt.algorithms.Algorithm;
 import com.auth0.jwt.exceptions.JWTVerificationException;
 import com.auth0.jwt.interfaces.Claim;
-import eu.ebrains.kg.authentication.controller.TermsOfUseRepository;
+import com.google.common.collect.Streams;
+import eu.ebrains.kg.authentication.controller.AuthenticationRepository;
 import eu.ebrains.kg.authentication.model.OpenIdConfig;
 import eu.ebrains.kg.authentication.model.UserOrClientProfile;
 import eu.ebrains.kg.commons.AuthTokenContext;
@@ -85,9 +86,10 @@ public class KeycloakController {
 
     private final KeycloakUserInfoMapping userInfoMapping;
 
-    private final TermsOfUseRepository termsOfUseRepository;
+    private final AuthenticationRepository authenticationRepository;
 
-    public KeycloakController(KeycloakConfig config, KeycloakClient keycloakClient, JsonAdapter jsonAdapter, AuthTokenContext authTokenContext, KeycloakUsers keycloakUsers, KeycloakUserInfoMapping userInfoMapping, TermsOfUseRepository termsOfUseRepository) {
+
+    public KeycloakController(KeycloakConfig config, KeycloakClient keycloakClient, JsonAdapter jsonAdapter, AuthTokenContext authTokenContext, KeycloakUsers keycloakUsers, KeycloakUserInfoMapping userInfoMapping, AuthenticationRepository authenticationRepository) {
         this.config = config;
         this.jsonAdapter = jsonAdapter;
         this.keycloakClient = keycloakClient;
@@ -95,7 +97,7 @@ public class KeycloakController {
         this.keycloakUsers = keycloakUsers;
         this.jwtVerifier = JWT.require(getAlgorithmFromKeycloakConfig(keycloakClient.getPublicKey())).withIssuer(config.getIssuer()).build(); //Reusable verifier instance;
         this.userInfoMapping = userInfoMapping;
-        this.termsOfUseRepository = termsOfUseRepository;
+        this.authenticationRepository = authenticationRepository;
     }
 
     private OpenIdConfig openIdConfig;
@@ -184,7 +186,6 @@ public class KeycloakController {
 
     public void createRoles(List<Role> roles) {
         roles.forEach(keycloakClient::createRoleForClient);
-        keycloakClient.syncKgScopeWithKgRoles();
     }
 
     public List<Role> getNonExistingRoles(List<Role> roles) {
@@ -210,7 +211,6 @@ public class KeycloakController {
             logger.info(String.format("Removing role %s from client %s", r.getName(), keycloakClient.getClientId()));
             keycloakClient.getClientResource().roles().deleteRole(r.getName());
         });
-        keycloakClient.syncKgScopeWithKgRoles();
     }
 
     private final int maxTries = 10;
@@ -311,6 +311,8 @@ public class KeycloakController {
             Map<String, Object> userInfo = keycloakClient.getRolesFromUserInfoFromCache(token, openIdConfig.getUserInfoEndpoint());
             if(fetchRoles) {
                 List<String> userRoles = userInfoMapping.mapRoleNames(userInfo, userInfoMapping.getMappings());
+                //We attach the consumer roles of the public spaces...
+                userRoles = Streams.concat(userRoles.stream(), authenticationRepository.getPublicSpaces().stream().filter(Objects::nonNull).map(space -> String.format("%s:consumer", space))).distinct().collect(Collectors.toList());
                 return new UserOrClientProfile(claims, userRoles);
             }
             return new UserOrClientProfile(claims, null);

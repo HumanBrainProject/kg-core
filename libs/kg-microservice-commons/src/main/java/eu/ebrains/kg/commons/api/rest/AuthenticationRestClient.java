@@ -135,4 +135,20 @@ public class AuthenticationRestClient implements Authentication.Client {
     public void registerTermsOfUse(TermsOfUse termsOfUse) {
         serviceCall.post(String.format("%s/termsOfUse", SERVICE_URL), termsOfUse, authTokenContext.getAuthTokens(), Void.class);
     }
+
+    @Override
+    public boolean isSpacePublic(String space) {
+        Boolean publicSpace = serviceCall.get(String.format("%s/publicSpaces/%s", SERVICE_URL, space), authTokenContext.getAuthTokens(), Boolean.class);
+        return publicSpace != null && publicSpace;
+    }
+
+    @Override
+    public void setSpacePublic(String space) {
+        serviceCall.put(String.format("%s/publicSpaces/%s", SERVICE_URL, space), null, authTokenContext.getAuthTokens(), Void.class);
+    }
+
+    @Override
+    public void setSpaceProtected(String space) {
+        serviceCall.delete(String.format("%s/publicSpaces/%s", SERVICE_URL, space), authTokenContext.getAuthTokens(), Void.class);
+    }
 }

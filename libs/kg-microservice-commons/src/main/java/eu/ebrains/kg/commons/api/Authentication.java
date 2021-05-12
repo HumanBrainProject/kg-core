@@ -70,5 +70,10 @@ public interface Authentication {
 
     void registerTermsOfUse(TermsOfUse version);
 
+    boolean isSpacePublic(String space);
+
+    void setSpacePublic(String space);
+
+    void setSpaceProtected(String space);
 
 }

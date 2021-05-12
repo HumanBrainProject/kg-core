@@ -14,7 +14,7 @@
  * limitations under the License.
  *
  * This open source software code was developed in part or in whole in the
- * Human Brain Project, funded from the European Union’s Horizon 2020
+ * Human Brain Project, funded from the European Union's Horizon 2020
  * Framework Programme for Research and Innovation under
  * Specific Grant Agreements No. 720270, No. 785907, and No. 945539
  * (Human Brain Project SGA1, SGA2 and SGA3).
@@ -30,7 +30,6 @@ import org.keycloak.admin.client.resource.ClientResource;
 import org.keycloak.admin.client.resource.RealmResource;
 import org.keycloak.representations.idm.ClientRepresentation;
 import org.keycloak.representations.idm.ClientScopeRepresentation;
-import org.keycloak.representations.idm.ProtocolMapperRepresentation;
 import org.keycloak.representations.idm.RoleRepresentation;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -42,11 +41,10 @@ import org.springframework.web.reactive.function.client.WebClient;
 
 import javax.ws.rs.ForbiddenException;
 import javax.ws.rs.NotFoundException;
-import javax.ws.rs.core.Response;
-import java.util.*;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 @Component
 public class KeycloakClient {
@@ -63,13 +61,10 @@ public class KeycloakClient {
 
     private String technicalClientId;
 
-    private final String kgClientScopeName;
-
     public KeycloakClient(KeycloakConfig config, Keycloak kgKeycloak, @Qualifier("direct") WebClient.Builder internalWebClient) {
         this.config = config;
         this.webclient = internalWebClient;
         this.kgKeycloak = kgKeycloak;
-        this.kgClientScopeName = config.getKgClientId() + "-scope";
     }
 
     String getClientId() {
@@ -84,6 +79,11 @@ public class KeycloakClient {
         }
         return null;
     }
+
+    public ClientScopeRepresentation getKgClientScope(){
+        return getRealmResource().clientScopes().findAll().stream().filter(sc -> sc.getName().equals(config.getKgClientId())).findFirst().orElse(null);
+    }
+
 
     private synchronized ClientRepresentation getClient() {
         if (clientResource == null) {
@@ -135,7 +135,6 @@ public class KeycloakClient {
 
     private void configureDefaultClient(boolean initialConfig) {
         try {
-            ClientScopeRepresentation clientScope = createClientScope();
             ClientRepresentation clientRepresentation = new ClientRepresentation();
             clientRepresentation.setClientId(config.getKgClientId());
             clientRepresentation.setEnabled(true);
@@ -144,7 +143,6 @@ public class KeycloakClient {
             clientRepresentation.setStandardFlowEnabled(true);
             clientRepresentation.setFullScopeAllowed(false);
             clientRepresentation.setPublicClient(true);
-            getClientResource().addDefaultClientScope(clientScope.getId());
             Map<String, String> attributes = new HashMap<>();
             attributes.put("display.on.consent.screen", "true");
             attributes.put("access.token.lifespan", "1800");
@@ -161,97 +159,6 @@ public class KeycloakClient {
         }
     }
 
-    public ClientScopeRepresentation getKgClientScope(){
-        return getRealmResource().clientScopes().findAll().stream().filter(sc -> sc.getName().equals(kgClientScopeName)).findFirst().orElse(null);
-    }
-
-    private ClientScopeRepresentation createClientScope() {
-        ClientScopeRepresentation clientScope = getKgClientScope();
-        if (clientScope == null) {
-            clientScope = new ClientScopeRepresentation();
-        }
-        clientScope.setName(kgClientScopeName);
-        clientScope.setProtocol("openid-connect");
-        Map<String, String> attrs = new HashMap<>();
-        attrs.put("display.on.consent.screen", "true");
-        attrs.put("include.in.token.scope", "true");
-        attrs.put("consent.screen.text", "Knowledge Graph: Your roles in the Knowledge Graph. \n " +
-                "By making use of the EBRAINS Knowledge Graph, you agree to the terms of use available at https://kg.ebrains.eu/search-terms-of-use.html");
-        clientScope.setAttributes(attrs);
-        String roleMapperName = "client roles";
-        List<ProtocolMapperRepresentation> protocolMappers = clientScope.getProtocolMappers();
-        if(protocolMappers==null){
-            protocolMappers = new ArrayList<>();
-            clientScope.setProtocolMappers(protocolMappers);
-        }
-        ProtocolMapperRepresentation mapper = protocolMappers.stream().filter(p -> p.getName().equals(roleMapperName)).findFirst().orElse(null);
-        if(mapper == null){
-            mapper = new ProtocolMapperRepresentation();
-        }
-        mapper.setProtocolMapper("oidc-usermodel-client-role-mapper");
-        mapper.setProtocol("openid-connect");
-        mapper.setName("client roles");
-        Map<String, String> c = new HashMap<>();
-        c.put("access.token.claim", "true");
-        c.put("claim.name", "resource_access.kg.roles");
-        c.put("id.token.claim", "false");
-        c.put("jsonType.label", "String");
-        c.put("multivalued", "true");
-        c.put("userinfo.token.claim", "true");
-        c.put("usermodel.clientRoleMapping.clientId", config.getKgClientId());
-        c.put("usermodel.clientRoleMapping.rolePrefix", "");
-        mapper.setConfig(c);
-        if (clientScope.getId()!=null) {
-            getRealmResource().clientScopes().get(clientScope.getId()).update(clientScope);
-        } else {
-            Response response = getRealmResource().clientScopes().create(clientScope);
-            Response.Status status = response.getStatusInfo().toEnum();
-            if (Response.Status.Family.SUCCESSFUL != status.getFamily()) {
-                throw new RuntimeException(status.getReasonPhrase());
-            }
-        }
-        clientScope = getKgClientScope();
-        if ( clientScope != null) {
-            List<ProtocolMapperRepresentation> reloadedProtocolMappers = clientScope.getProtocolMappers();
-            List<String> existingMappers = reloadedProtocolMappers==null ? new ArrayList<>() : reloadedProtocolMappers.stream().map(ProtocolMapperRepresentation::getName).collect(Collectors.toList());
-            List<String> builtinProtocolMappers = Stream.of("given name", "full name", "family name", "email", "username").filter(l -> !existingMappers.contains(l)).collect(Collectors.toList());
-            List<ProtocolMapperRepresentation> mappers = kgKeycloak.serverInfo().getInfo().getBuiltinProtocolMappers().get("openid-connect").stream().filter(p -> builtinProtocolMappers.contains(p.getName())).collect(Collectors.toList());
-            getRealmResource().clientScopes().get(clientScope.getId()).getProtocolMappers().createMapper(mappers);
-            if(mapper.getId()!=null){
-                getRealmResource().clientScopes().get(clientScope.getId()).getProtocolMappers().update(mapper.getId(), mapper);
-            }
-            else{
-                getRealmResource().clientScopes().get(clientScope.getId()).getProtocolMappers().createMapper(mapper);
-            }
-            syncKgScopeWithKgRoles(clientScope.getId());
-        }
-        return clientScope;
-    }
-
-    public void syncKgScopeWithKgRoles(){
-        ClientScopeRepresentation kgClientScope = getKgClientScope();
-        if(kgClientScope!=null) {
-            syncKgScopeWithKgRoles(kgClientScope.getId());
-        }
-    }
-
-    private void syncKgScopeWithKgRoles(String clientScopeId){
-        List<RoleRepresentation> existingRoles = getRealmResource().clientScopes().get(clientScopeId).getScopeMappings().clientLevel(getClient().getId()).listAll();
-        Set<String> existingRoleNames = existingRoles.stream().map(RoleRepresentation::getName).collect(Collectors.toSet());
-        List<RoleRepresentation> clientRoles = getRealmResource().clients().get(getClient().getId()).roles().list();
-        final AtomicInteger counter = new AtomicInteger();
-        //We need to make sure that there are not too many roles reported at once. This is why we split the number of roles into chunks.
-        Collection<List<RoleRepresentation>> newRolesChunks = clientRoles.stream().filter(r -> !existingRoleNames.contains(r.getName())).collect(Collectors.groupingBy(it -> counter.getAndIncrement() / 100)).values();
-        newRolesChunks.forEach(newRoles -> {
-            getRealmResource().clientScopes().get(clientScopeId).getScopeMappings().clientLevel(getClient().getId()).add(newRoles);
-        });
-        Set<String> clientRoleNames = clientRoles.stream().map(RoleRepresentation::getName).collect(Collectors.toSet());
-        Collection<List<RoleRepresentation>> outdatedRolesChunks = existingRoles.stream().filter(r -> !clientRoleNames.contains(r.getName())).collect(Collectors.groupingBy(it -> counter.getAndIncrement() / 100)).values();
-        outdatedRolesChunks.forEach(outdatedRoles -> {
-            getRealmResource().clientScopes().get(clientScopeId).getScopeMappings().clientLevel(getClient().getId()).remove(outdatedRoles);
-        });
-
-    }
 
     private void createDefaultClient() {
         try {

@@ -14,7 +14,7 @@
  * limitations under the License.
  *
  * This open source software code was developed in part or in whole in the
- * Human Brain Project, funded from the European Union’s Horizon 2020
+ * Human Brain Project, funded from the European Union's Horizon 2020
  * Framework Programme for Research and Innovation under
  * Specific Grant Agreements No. 720270, No. 785907, and No. 945539
  * (Human Brain Project SGA1, SGA2 and SGA3).
@@ -482,16 +482,18 @@ public class ArangoRepositoryInstances {
 
     private void iterateThroughTypeList(List<Type> types, Map<String, List<String>> searchableProperties, Map<String, Object> bindVars, AQL aql) {
         aql.addLine(AQL.trust("FOR typeDefinition IN ["));
-        ArangoCollectionReference typeCollection = ArangoCollectionReference.fromSpace(InternalSpace.TYPE_SPACE);
-        bindVars.put("@typeCollection", typeCollection.getCollectionName());
-        for (int i = 0; i < types.size(); i++) {
-            aql.addLine(AQL.trust(" {typeName: @typeName" + i + ", type: DOCUMENT(@@typeCollection, @documentId" + i + "), labelProperty: @labelProperty" + i + ", searchableProperties : @searchableProperties" + i + "}"));
-            bindVars.put("documentId" + i, typeCollection.docWithStableId(types.get(i).getName()).getDocumentId().toString());
-            bindVars.put("labelProperty" + i, types.get(i).getLabelProperty());
-            bindVars.put("typeName" + i, types.get(i).getName());
-            bindVars.put("searchableProperties" + i, searchableProperties != null ? searchableProperties.get(types.get(i).getName()) : null);
-            if (i < types.size() - 1) {
-                aql.add(AQL.trust(","));
+        if(types.size()>0) {
+            ArangoCollectionReference typeCollection = ArangoCollectionReference.fromSpace(InternalSpace.TYPE_SPACE);
+            bindVars.put("@typeCollection", typeCollection.getCollectionName());
+            for (int i = 0; i < types.size(); i++) {
+                aql.addLine(AQL.trust(" {typeName: @typeName" + i + ", type: DOCUMENT(@@typeCollection, @documentId" + i + "), labelProperty: @labelProperty" + i + ", searchableProperties : @searchableProperties" + i + "}"));
+                bindVars.put("documentId" + i, typeCollection.docWithStableId(types.get(i).getName()).getDocumentId().toString());
+                bindVars.put("labelProperty" + i, types.get(i).getLabelProperty());
+                bindVars.put("typeName" + i, types.get(i).getName());
+                bindVars.put("searchableProperties" + i, searchableProperties != null ? searchableProperties.get(types.get(i).getName()) : null);
+                if (i < types.size() - 1) {
+                    aql.add(AQL.trust(","));
+                }
             }
         }
         aql.addLine(AQL.trust("]"));

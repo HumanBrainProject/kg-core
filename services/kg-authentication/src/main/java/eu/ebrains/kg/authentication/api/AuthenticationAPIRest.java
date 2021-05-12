@@ -23,6 +23,7 @@
 package eu.ebrains.kg.authentication.api;
 
 import eu.ebrains.kg.commons.api.Authentication;
+import eu.ebrains.kg.commons.exception.InstanceNotFoundException;
 import eu.ebrains.kg.commons.model.Credential;
 import eu.ebrains.kg.commons.model.TermsOfUse;
 import eu.ebrains.kg.commons.model.TermsOfUseResult;
@@ -159,6 +160,28 @@ public class AuthenticationAPIRest implements Authentication {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND);
         }
         return usersByAttribute;
+    }
+
+    @Override
+    @GetMapping("/publicSpaces/{space}")
+    public boolean isSpacePublic(@PathVariable("space") String space) {
+        boolean spacePublic = authentication.isSpacePublic(space);
+        if(!spacePublic){
+            throw new InstanceNotFoundException(String.format("Space %s is not public", space));
+        }
+        return true;
+    }
+
+    @Override
+    @PutMapping("/publicSpaces/{space}")
+    public void setSpacePublic(@PathVariable("space") String space) {
+        authentication.setSpacePublic(space);
+    }
+
+    @Override
+    @DeleteMapping("/publicSpaces/{space}")
+    public void setSpaceProtected(@PathVariable("space") String space) {
+        authentication.setSpaceProtected(space);
     }
 
     /**
