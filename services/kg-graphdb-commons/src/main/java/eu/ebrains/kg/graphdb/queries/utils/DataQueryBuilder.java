@@ -116,7 +116,7 @@ public class DataQueryBuilder {
     static TrustedAqlValue getRepresentationOfField(ArangoAlias alias, SpecProperty field) {
         AQL representation = new AQL();
         if (field.isDirectChild()) {
-            return representation.add(trust("${parentAlias}.`${originalKey}`")).setTrustedParameter("parentAlias", alias.getArangoDocName()).setParameter("originalKey", field.getLeafPath().pathName).build();
+            return representation.add(trust(String.format("%s${parentAlias}.`${originalKey}`%s", field.isSortContent() ? "SORTED(" : "", field.isSortContent() ? ")" : ""))).setTrustedParameter("parentAlias", alias.getArangoDocName()).setParameter("originalKey", field.getLeafPath().pathName).build();
         } else if (field.hasGrouping()) {
             return representation.add(preventAqlInjection(fromSpecField(field).getArangoName() + "_grp")).build();
         } else {

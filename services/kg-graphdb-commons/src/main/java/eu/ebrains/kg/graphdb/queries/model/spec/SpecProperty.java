@@ -42,6 +42,7 @@ public class SpecProperty {
     public final List<SpecTraverse> path;
     public boolean required;
     public boolean sortAlphabetically;
+    public boolean sortContent;
     public boolean groupBy;
     public boolean ensureOrder;
     public final String groupedInstances;
@@ -49,16 +50,17 @@ public class SpecProperty {
     public final Map<String, Object> customDirectives;
 
 
-    public SpecProperty(String fieldName, List<SpecProperty> property, List<SpecTraverse> path, String groupedInstances, boolean required, boolean sortAlphabetically, boolean groupBy, boolean ensureOrder, PropertyFilter propertyFilter, SingleItemStrategy singleItem) {
-        this(fieldName, property, path, groupedInstances, required, sortAlphabetically, groupBy, ensureOrder, propertyFilter, singleItem, null);
+    public SpecProperty(String fieldName, List<SpecProperty> property, List<SpecTraverse> path, String groupedInstances, boolean required, boolean sortAlphabetically, boolean sortContent, boolean groupBy, boolean ensureOrder, PropertyFilter propertyFilter, SingleItemStrategy singleItem) {
+        this(fieldName, property, path, groupedInstances, required, sortAlphabetically, sortContent, groupBy, ensureOrder, propertyFilter, singleItem, null);
     }
 
-    public SpecProperty(String fieldName, List<SpecProperty> property, List<SpecTraverse> path, String groupedInstances, boolean required, boolean sortAlphabetically, boolean groupBy, boolean ensureOrder, PropertyFilter propertyFilter, SingleItemStrategy singleItem, Map<String, Object> customDirectives) {
+    public SpecProperty(String fieldName, List<SpecProperty> property, List<SpecTraverse> path, String groupedInstances, boolean required, boolean sortAlphabetically, boolean sortContent, boolean groupBy, boolean ensureOrder, PropertyFilter propertyFilter, SingleItemStrategy singleItem, Map<String, Object> customDirectives) {
         this.propertyName = fieldName;
         this.required = required;
         this.property = property != null ? new ArrayList<>(property) : new ArrayList<>();
         this.path = path ==null ? Collections.emptyList() : Collections.unmodifiableList(path);
         this.sortAlphabetically = sortAlphabetically;
+        this.sortContent = sortContent;
         this.groupBy = groupBy;
         this.groupedInstances = groupedInstances;
         this.ensureOrder = ensureOrder;
@@ -142,6 +144,9 @@ public class SpecProperty {
         return sortAlphabetically;
     }
 
+    public boolean isSortContent() {
+        return sortContent;
+    }
 
     public boolean hasGrouping(){
         if(groupedInstances!=null && !groupedInstances.isEmpty() && property !=null && !property.isEmpty()){

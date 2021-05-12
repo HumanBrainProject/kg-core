@@ -100,6 +100,7 @@ public class SpecificationInterpreter {
                             List<SpecProperty> specFields = null;
                             boolean required = false;
                             boolean sortAlphabetically = false;
+                            boolean sortContent = false;
                             boolean groupBy = false;
                             boolean ensureOrder = false;
                             PropertyFilter fieldFilter = null;
@@ -120,6 +121,9 @@ public class SpecificationInterpreter {
                             }
                             if (originObj.containsKey(GraphQueryKeys.GRAPH_QUERY_SORT.getFieldName())) {
                                 sortAlphabetically = (Boolean) originObj.get(GraphQueryKeys.GRAPH_QUERY_SORT.getFieldName());
+                            }
+                            if (originObj.containsKey(GraphQueryKeys.GRAPH_QUERY_SORT_CONTENT.getFieldName())) {
+                                sortContent = (Boolean) originObj.get(GraphQueryKeys.GRAPH_QUERY_SORT_CONTENT.getFieldName());
                             }
                             if (originObj.containsKey(GraphQueryKeys.GRAPH_QUERY_ENSURE_ORDER.getFieldName())) {
                                 ensureOrder = (Boolean) originObj.get(GraphQueryKeys.GRAPH_QUERY_ENSURE_ORDER.getFieldName());
@@ -143,7 +147,7 @@ public class SpecificationInterpreter {
                                     customDirectives.put((String) key, originObj.get((String) key));
                                 }
                             }
-                            fieldsPerRelativePath.add(new SpecProperty(fieldName, specFields, traversalPath, groupedInstances, required, sortAlphabetically, groupBy, ensureOrder, fieldFilter, singleItemStrategy, customDirectives));
+                            fieldsPerRelativePath.add(new SpecProperty(fieldName, specFields, traversalPath, groupedInstances, required, sortAlphabetically, sortContent, groupBy, ensureOrder, fieldFilter, singleItemStrategy, customDirectives));
                         }
                     }
                 }
@@ -152,7 +156,7 @@ public class SpecificationInterpreter {
                     for (int i = 0; i < fieldsPerRelativePath.size(); i++) {
                         SpecProperty specField = fieldsPerRelativePath.get(i);
                         if (rootField == null) {
-                            rootField = new SpecProperty(specField.propertyName, fieldsPerRelativePath, Collections.emptyList(), specField.groupedInstances, specField.required, specField.sortAlphabetically, specField.groupBy, specField.ensureOrder, specField.propertyFilter, specField.singleItem);
+                            rootField = new SpecProperty(specField.propertyName, fieldsPerRelativePath, Collections.emptyList(), specField.groupedInstances, specField.required, specField.sortAlphabetically, specField.sortContent, specField.groupBy, specField.ensureOrder, specField.propertyFilter, specField.singleItem);
                         }
                         specField.sortAlphabetically = false;
                         specField.groupBy = false;
