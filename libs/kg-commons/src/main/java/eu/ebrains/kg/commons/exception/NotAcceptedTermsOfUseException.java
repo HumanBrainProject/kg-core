@@ -20,29 +20,21 @@
  * (Human Brain Project SGA1, SGA2 and SGA3).
  */
 
-package eu.ebrains.kg.authentication.model;
+package eu.ebrains.kg.commons.exception;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
+import eu.ebrains.kg.commons.model.TermsOfUse;
+import eu.ebrains.kg.commons.model.TermsOfUseError;
 
-public class OpenIdConfig {
+public class NotAcceptedTermsOfUseException extends RuntimeException {
 
-    @JsonProperty("authorization_endpoint")
-    private String authorizationEndpoint;
+    private TermsOfUseError termsOfUseError;
 
-    @JsonProperty("token_endpoint")
-    private String tokenEndpoint;
-
-    @JsonProperty("token_introspection_endpoint")
-    private String tokenIntrospectionEndpoint;
-
-    @JsonProperty("userinfo_endpoint")
-    private String userInfoEndpoint;
-
-    public String getTokenEndpoint() {
-        return tokenEndpoint;
+    public NotAcceptedTermsOfUseException(TermsOfUse termsOfUse) {
+        super(String.format("You didn't accept the current terms of use yet (version %s).", termsOfUse.getVersion()));
+        this.termsOfUseError = new TermsOfUseError(termsOfUse);
     }
 
-    public String getUserInfoEndpoint() {
-        return userInfoEndpoint;
+    public TermsOfUseError getTermsOfUseError() {
+        return termsOfUseError;
     }
 }

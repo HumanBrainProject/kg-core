@@ -35,6 +35,7 @@ import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
+import java.util.Date;
 import java.util.UUID;
 
 @Component
@@ -65,13 +66,16 @@ public class RequestLoggingFilter extends OncePerRequestFilter {
                     StructuredArguments.keyValue("query", request.getQueryString()),
                     StructuredArguments.keyValue("authenticatedUser", userWithRoles != null && userWithRoles.getUser() != null ? userWithRoles.getUser().getNativeId() : "anonymous"),
                     StructuredArguments.keyValue("authenticatedClient", userWithRoles != null ? userWithRoles.getClientId() : "unknown"));
+            Date start = new Date();
             filterChain.doFilter(request, response);
-            logger.info("{}, {}, {}, {}, {}, {}, {}, {}", StructuredArguments.keyValue("action", "API response"),
+            Date end = new Date();
+            	logger.info("{}, {}, {}, {}, {}, {}, {}, {}, {}", StructuredArguments.keyValue("action", "API response"),
                     StructuredArguments.keyValue("id", apiRequestId),
                     StructuredArguments.keyValue("method", request.getMethod()),
                     StructuredArguments.keyValue("path", request.getRequestURI()),
                     StructuredArguments.keyValue("query", request.getQueryString()),
                     StructuredArguments.keyValue("statusCode", response.getStatus()),
+                    StructuredArguments.keyValue("executionDuration", String.format("%d ms", end.getTime()-start.getTime())),
                     StructuredArguments.keyValue("authenticatedUser", userWithRoles != null && userWithRoles.getUser() != null ? userWithRoles.getUser().getNativeId() : "anonymous"),
                     StructuredArguments.keyValue("authenticatedClient", userWithRoles != null ? userWithRoles.getClientId() : "unknown"));
         } else {

@@ -22,27 +22,26 @@
 
 package eu.ebrains.kg.authentication.model;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
+import com.auth0.jwt.interfaces.Claim;
 
-public class OpenIdConfig {
+import java.util.List;
+import java.util.Map;
 
-    @JsonProperty("authorization_endpoint")
-    private String authorizationEndpoint;
+public class UserOrClientProfile {
 
-    @JsonProperty("token_endpoint")
-    private String tokenEndpoint;
+    private final Map<String, Claim> claims;
+    private final List<String> roleNames;
 
-    @JsonProperty("token_introspection_endpoint")
-    private String tokenIntrospectionEndpoint;
-
-    @JsonProperty("userinfo_endpoint")
-    private String userInfoEndpoint;
-
-    public String getTokenEndpoint() {
-        return tokenEndpoint;
+    public UserOrClientProfile(Map<String, Claim> claims, List<String> roleNames) {
+        this.claims = claims;
+        this.roleNames = roleNames;
     }
 
-    public String getUserInfoEndpoint() {
-        return userInfoEndpoint;
+    public Map<String, Claim> getClaims() {
+        return claims;
+    }
+
+    public List<String> getRoleNames() {
+        return roleNames;
     }
 }

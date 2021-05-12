@@ -26,6 +26,8 @@ import eu.ebrains.kg.commons.AuthTokenContext;
 import eu.ebrains.kg.commons.ServiceCall;
 import eu.ebrains.kg.commons.api.Authentication;
 import eu.ebrains.kg.commons.model.Credential;
+import eu.ebrains.kg.commons.model.TermsOfUse;
+import eu.ebrains.kg.commons.model.TermsOfUseResult;
 import eu.ebrains.kg.commons.model.User;
 import eu.ebrains.kg.commons.models.UserWithRoles;
 import eu.ebrains.kg.commons.permission.ClientAuthToken;
@@ -100,8 +102,8 @@ public class AuthenticationRestClient implements Authentication.Client {
     }
 
     @Override
-    public UserWithRoles getRoles() {
-        return null;
+    public UserWithRoles getRoles(boolean checkForTermsOfUse) {
+        return serviceCall.get(String.format("%s/users/meWithRoles?checkForTermsOfUse=%b", SERVICE_URL, checkForTermsOfUse), authTokenContext.getAuthTokens(), UserWithRoles.class);
     }
 
     @Override
@@ -117,5 +119,36 @@ public class AuthenticationRestClient implements Authentication.Client {
     @Override
     public String setup(Credential credential) {
         return serviceCall.put(String.format("%s/setup", SERVICE_URL), credential, null, String.class);
+    }
+
+    @Override
+    public TermsOfUseResult getTermsOfUse() {
+        return serviceCall.get(String.format("%s/termsOfUse", SERVICE_URL),  authTokenContext.getAuthTokens(), TermsOfUseResult.class);
+    }
+
+    @Override
+    public void acceptTermsOfUse(String version) {
+        serviceCall.post(String.format("%s/termsOfUse/%s/accept", SERVICE_URL, version), null, authTokenContext.getAuthTokens(), Void.class);
+    }
+
+    @Override
+    public void registerTermsOfUse(TermsOfUse termsOfUse) {
+        serviceCall.post(String.format("%s/termsOfUse", SERVICE_URL), termsOfUse, authTokenContext.getAuthTokens(), Void.class);
+    }
+
+    @Override
+    public boolean isSpacePublic(String space) {
+        Boolean publicSpace = serviceCall.get(String.format("%s/publicSpaces/%s", SERVICE_URL, space), authTokenContext.getAuthTokens(), Boolean.class);
+        return publicSpace != null && publicSpace;
+    }
+
+    @Override
+    public void setSpacePublic(String space) {
+        serviceCall.put(String.format("%s/publicSpaces/%s", SERVICE_URL, space), null, authTokenContext.getAuthTokens(), Void.class);
+    }
+
+    @Override
+    public void setSpaceProtected(String space) {
+        serviceCall.delete(String.format("%s/publicSpaces/%s", SERVICE_URL, space), authTokenContext.getAuthTokens(), Void.class);
     }
 }

@@ -114,6 +114,20 @@ public class Users {
         return ResponseEntity.ok(PaginatedResult.ok(users));
     }
 
+    @Operation(summary = "Get the current terms of use")
+    @GetMapping(value = "/termsOfUse")
+    @Simple
+    public ResponseEntity<TermsOfUseResult> getTermsOfUse() {
+       return ResponseEntity.ok(authentication.getTermsOfUse());
+    }
+
+    @Operation(summary = "Accept the terms of use in the given version")
+    @PostMapping(value = "/termsOfUse/{version}/accept")
+    @Simple
+    public void acceptTermsOfUse(@PathVariable("version") String version) {
+        authentication.acceptTermsOfUse(version);
+    }
+
     @Operation(summary = "Get a pictures for a list of users (only found ones are returned)")
     @PostMapping(value = "/pictures")
     @ExposesUserPicture

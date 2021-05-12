@@ -44,7 +44,11 @@ public class AuthContext {
     }
 
     public UserWithRoles getUserWithRoles() {
-        return authentication.getRoles();
+        return authentication.getRoles(true);
+    }
+
+    public UserWithRoles getUserWithRolesWithoutTermsCheck() {
+        return authentication.getRoles(false);
     }
 
     public Space getClientSpace(){

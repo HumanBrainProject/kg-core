@@ -27,7 +27,10 @@ import com.auth0.jwt.JWTVerifier;
 import com.auth0.jwt.algorithms.Algorithm;
 import com.auth0.jwt.exceptions.JWTVerificationException;
 import com.auth0.jwt.interfaces.Claim;
+import com.google.common.collect.Streams;
+import eu.ebrains.kg.authentication.controller.AuthenticationRepository;
 import eu.ebrains.kg.authentication.model.OpenIdConfig;
+import eu.ebrains.kg.authentication.model.UserOrClientProfile;
 import eu.ebrains.kg.commons.AuthTokenContext;
 import eu.ebrains.kg.commons.JsonAdapter;
 import eu.ebrains.kg.commons.exception.UnauthorizedException;
@@ -81,14 +84,20 @@ public class KeycloakController {
 
     private final JWTVerifier jwtVerifier;
 
+    private final KeycloakUserInfoMapping userInfoMapping;
 
-    public KeycloakController(KeycloakConfig config, KeycloakClient keycloakClient, JsonAdapter jsonAdapter, AuthTokenContext authTokenContext, KeycloakUsers keycloakUsers) {
+    private final AuthenticationRepository authenticationRepository;
+
+
+    public KeycloakController(KeycloakConfig config, KeycloakClient keycloakClient, JsonAdapter jsonAdapter, AuthTokenContext authTokenContext, KeycloakUsers keycloakUsers, KeycloakUserInfoMapping userInfoMapping, AuthenticationRepository authenticationRepository) {
         this.config = config;
         this.jsonAdapter = jsonAdapter;
         this.keycloakClient = keycloakClient;
         this.authTokenContext = authTokenContext;
         this.keycloakUsers = keycloakUsers;
         this.jwtVerifier = JWT.require(getAlgorithmFromKeycloakConfig(keycloakClient.getPublicKey())).withIssuer(config.getIssuer()).build(); //Reusable verifier instance;
+        this.userInfoMapping = userInfoMapping;
+        this.authenticationRepository = authenticationRepository;
     }
 
     private OpenIdConfig openIdConfig;
@@ -177,7 +186,6 @@ public class KeycloakController {
 
     public void createRoles(List<Role> roles) {
         roles.forEach(keycloakClient::createRoleForClient);
-        keycloakClient.syncKgScopeWithKgRoles();
     }
 
     public List<Role> getNonExistingRoles(List<Role> roles) {
@@ -203,7 +211,6 @@ public class KeycloakController {
             logger.info(String.format("Removing role %s from client %s", r.getName(), keycloakClient.getClientId()));
             keycloakClient.getClientResource().roles().deleteRole(r.getName());
         });
-        keycloakClient.syncKgScopeWithKgRoles();
     }
 
     private final int maxTries = 10;
@@ -283,33 +290,32 @@ public class KeycloakController {
     }
 
 
-    public Map<String, Claim> getClientProfile() {
+    public UserOrClientProfile getClientProfile(boolean fetchRoles) {
         if (authTokenContext.getAuthTokens() == null || authTokenContext.getAuthTokens().getClientAuthToken() == null) {
             return null;
         }
-        return getInfo(authTokenContext.getAuthTokens().getClientAuthToken().getBearerToken());
+        return getInfo(authTokenContext.getAuthTokens().getClientAuthToken().getBearerToken(), fetchRoles);
     }
 
-    public Map<String, Claim> getUserProfile() {
+    public UserOrClientProfile getUserProfile(boolean fetchRoles) {
         if (authTokenContext.getAuthTokens() == null || authTokenContext.getAuthTokens().getUserAuthToken() == null) {
             throw new UnauthorizedException("You haven't provided the required credentials! Please define an Authorization header with your bearer token!");
         }
-        return getInfo(authTokenContext.getAuthTokens().getUserAuthToken().getBearerToken());
+        return getInfo(authTokenContext.getAuthTokens().getUserAuthToken().getBearerToken(), fetchRoles);
     }
 
-    Map<String, Claim> getInfo(String token) {
+    UserOrClientProfile getInfo(String token, boolean fetchRoles) {
         String bareToken = token.substring("Bearer ".length());
         try {
             Map<String, Claim> claims = jwtVerifier.verify(bareToken).getClaims();
-            //Additionally to the pure token validation, we also ensure that the token contains the kg-scope scope since this ensures, that the user has accepted the conditions as declared in the "consent" area.
-            Claim scope = claims.get("scope");
-            if (scope != null) {
-                String[] scopes = scope.asString().split(" ");
-                if (Arrays.asList(scopes).contains(keycloakClient.getKgClientScopeName())) {
-                    return claims;
-                }
+            Map<String, Object> userInfo = keycloakClient.getRolesFromUserInfoFromCache(token, openIdConfig.getUserInfoEndpoint());
+            if(fetchRoles) {
+                List<String> userRoles = userInfoMapping.mapRoleNames(userInfo, userInfoMapping.getMappings());
+                //We attach the consumer roles of the public spaces...
+                userRoles = Streams.concat(userRoles.stream(), authenticationRepository.getPublicSpaces().stream().filter(Objects::nonNull).map(space -> String.format("%s:consumer", space))).distinct().collect(Collectors.toList());
+                return new UserOrClientProfile(claims, userRoles);
             }
-            throw new UnauthorizedException(String.format("The provided token does not contain the scope %s which is required", keycloakClient.getKgClientScopeName()));
+            return new UserOrClientProfile(claims, null);
         } catch (JWTVerificationException ex) {
             throw new UnauthorizedException(ex);
         }
@@ -339,35 +345,14 @@ public class KeycloakController {
         }
     }
 
-    public User buildUserInfoFromKeycloak(Map<String, Claim> authUserInfo) {
-        Claim userName = authUserInfo.get("preferred_username");
-        Claim nativeId = authUserInfo.get("sub");
-        Claim name = authUserInfo.get("name");
-        Claim givenName = authUserInfo.get("given_name");
-        Claim familyName = authUserInfo.get("family_name");
-        Claim email = authUserInfo.get("email");
+    public User buildUserInfoFromKeycloak(Map<String, Claim> claims) {
+        Claim userName = claims.get("preferred_username");
+        Claim nativeId = claims.get("sub");
+        Claim name = claims.get("name");
+        Claim givenName = claims.get("given_name");
+        Claim familyName = claims.get("family_name");
+        Claim email = claims.get("email");
         return new User(userName != null ? userName.asString() : null, name != null ? name.asString() : null, email != null ? email.asString() : null, givenName != null ? givenName.asString() : null, familyName != null ? familyName.asString() : null, nativeId != null ? nativeId.asString() : null);
-    }
-
-    public List<String> buildRoleListFromKeycloak(Map<String, Claim> authInfo) {
-        if (authInfo != null) {
-            Claim resourceAccess = authInfo.get("resource_access");
-            if (resourceAccess != null) {
-                Map<String, Object> resourceAccessMap = resourceAccess.asMap();
-                if (resourceAccessMap != null) {
-                    Object kg = resourceAccessMap.get("kg");
-                    if (kg instanceof Map) {
-                        Object roles = ((Map<?, ?>) kg).get("roles");
-                        if (roles instanceof List) {
-                            return ((List<?>) roles).stream().filter(Objects::nonNull).map(Object::toString).collect(Collectors.toList());
-                        }
-                    }
-                }
-            }
-            return Collections.emptyList();
-        } else {
-            return null;
-        }
     }
 
 }

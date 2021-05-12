@@ -23,6 +23,8 @@
 package eu.ebrains.kg.commons.api;
 
 import eu.ebrains.kg.commons.model.Credential;
+import eu.ebrains.kg.commons.model.TermsOfUse;
+import eu.ebrains.kg.commons.model.TermsOfUseResult;
 import eu.ebrains.kg.commons.model.User;
 import eu.ebrains.kg.commons.models.UserWithRoles;
 import eu.ebrains.kg.commons.permission.ClientAuthToken;
@@ -54,11 +56,24 @@ public interface Authentication {
 
     User getMyUserInfo();
 
-    UserWithRoles getRoles();
+    UserWithRoles getRoles(boolean checkForTermsOfUse);
 
     User getOtherUserInfo(String nativeId);
 
     List<User> getUsersByAttribute(String attribute, String value);
 
     String setup(Credential credential);
+
+    TermsOfUseResult getTermsOfUse();
+
+    void acceptTermsOfUse(String version);
+
+    void registerTermsOfUse(TermsOfUse version);
+
+    boolean isSpacePublic(String space);
+
+    void setSpacePublic(String space);
+
+    void setSpaceProtected(String space);
+
 }

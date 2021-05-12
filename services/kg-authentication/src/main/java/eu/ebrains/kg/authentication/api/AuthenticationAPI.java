@@ -22,19 +22,25 @@
 
 package eu.ebrains.kg.authentication.api;
 
-import com.auth0.jwt.interfaces.Claim;
+import eu.ebrains.kg.authentication.controller.AuthenticationRepository;
 import eu.ebrains.kg.authentication.keycloak.KeycloakController;
 import eu.ebrains.kg.authentication.keycloak.KeycloakInitialSetup;
+import eu.ebrains.kg.authentication.model.UserOrClientProfile;
 import eu.ebrains.kg.commons.api.Authentication;
+import eu.ebrains.kg.commons.exception.NotAcceptedTermsOfUseException;
+import eu.ebrains.kg.commons.exception.UnauthorizedException;
 import eu.ebrains.kg.commons.model.Credential;
+import eu.ebrains.kg.commons.model.TermsOfUse;
+import eu.ebrains.kg.commons.model.TermsOfUseResult;
 import eu.ebrains.kg.commons.model.User;
 import eu.ebrains.kg.commons.models.UserWithRoles;
 import eu.ebrains.kg.commons.permission.ClientAuthToken;
+import eu.ebrains.kg.commons.permission.Functionality;
 import eu.ebrains.kg.commons.permission.roles.Role;
+import eu.ebrains.kg.commons.permissions.controller.Permissions;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
-import java.util.Map;
 
 @Component
 public class AuthenticationAPI implements Authentication.Client {
@@ -43,12 +49,21 @@ public class AuthenticationAPI implements Authentication.Client {
 
     private final KeycloakInitialSetup initialSetup;
 
-    public AuthenticationAPI(KeycloakInitialSetup initialSetup, KeycloakController keycloakController) {
-        this.initialSetup = initialSetup;
+    private final AuthenticationRepository authenticationRepository;
+
+    private final Permissions permissions;
+
+
+    public AuthenticationAPI(KeycloakController keycloakController, KeycloakInitialSetup initialSetup, AuthenticationRepository authenticationRepository, Permissions permissions) {
         this.keycloakController = keycloakController;
+        this.initialSetup = initialSetup;
+        this.authenticationRepository = authenticationRepository;
+        this.permissions = permissions;
     }
 
-    /** CLIENTS **/
+    /**
+     * CLIENTS
+     **/
     @Override
     public eu.ebrains.kg.commons.model.Client registerClient(eu.ebrains.kg.commons.model.Client client) {
         return keycloakController.registerClient(client);
@@ -64,7 +79,9 @@ public class AuthenticationAPI implements Authentication.Client {
         return new ClientAuthToken(keycloakController.authenticate(clientId, clientSecret));
     }
 
-    /** ROLES **/
+    /**
+     * ROLES
+     **/
     @Override
     public List<User> getUsersInRole(String role) {
         return keycloakController.getUsersInRole(role);
@@ -81,12 +98,14 @@ public class AuthenticationAPI implements Authentication.Client {
     }
 
     @Override
-    public void removeRoles(String rolePattern){
+    public void removeRoles(String rolePattern) {
         keycloakController.removeRolesFromClient(rolePattern);
     }
 
 
-    /** USERS **/
+    /**
+     * USERS
+     **/
     @Override
     public String authEndpoint() {
         return keycloakController.getServerUrl();
@@ -99,16 +118,32 @@ public class AuthenticationAPI implements Authentication.Client {
 
     @Override
     public User getMyUserInfo() {
-        Map<String, Claim> userProfile = keycloakController.getUserProfile();
-        return userProfile != null ? keycloakController.buildUserInfoFromKeycloak(userProfile) : null;
+        UserOrClientProfile userProfile = keycloakController.getUserProfile(false);
+        return userProfile != null ? keycloakController.buildUserInfoFromKeycloak(userProfile.getClaims()) : null;
     }
 
+
     @Override
-    public UserWithRoles getRoles() {
-        //TODO cache by tokens
-        Map<String, Claim> userProfile = keycloakController.getUserProfile();
-        Map<String, Claim> clientProfile = keycloakController.getClientProfile();
-        return userProfile != null ? new UserWithRoles(keycloakController.buildUserInfoFromKeycloak(userProfile), keycloakController.buildRoleListFromKeycloak(userProfile), keycloakController.buildRoleListFromKeycloak(clientProfile), keycloakController.getClientInfoFromKeycloak(clientProfile)) : null;
+    public UserWithRoles getRoles(boolean checkForTermsOfUse) {
+        UserOrClientProfile userProfile = keycloakController.getUserProfile(true);
+        if (userProfile != null) {
+            User user = keycloakController.buildUserInfoFromKeycloak(userProfile.getClaims());
+            UserOrClientProfile clientProfile = keycloakController.getClientProfile(true);
+            // We only do the terms of use check for direct access calls (the clients are required to ensure that the user
+            // agrees to the terms of use.
+            UserWithRoles userWithRoles = new UserWithRoles(user, userProfile.getRoleNames(), clientProfile != null ? clientProfile.getRoleNames() : null,
+                    keycloakController.getClientInfoFromKeycloak(clientProfile != null ? clientProfile.getClaims() : null));
+            if(checkForTermsOfUse && clientProfile==null) {
+                TermsOfUse termsOfUseToAccept = authenticationRepository.findTermsOfUseToAccept(user.getNativeId());
+                if (termsOfUseToAccept != null) {
+                    throw new NotAcceptedTermsOfUseException(termsOfUseToAccept);
+                }
+            }
+            //fetch the public spaces and assign the consumer role for them
+            return userWithRoles;
+        } else {
+            return null;
+        }
     }
 
     @Override
@@ -121,11 +156,69 @@ public class AuthenticationAPI implements Authentication.Client {
         return keycloakController.getUsersByAttribute(attribute, value);
     }
 
-
-    /** SETUP **/
+    @Override
+    public TermsOfUseResult getTermsOfUse() {
+        TermsOfUse termsOfUse;
+        UserOrClientProfile userProfile = keycloakController.getUserProfile(false);
+        if (userProfile != null) {
+            User user = keycloakController.buildUserInfoFromKeycloak(userProfile.getClaims());
+            if (user != null) {
+                termsOfUse = authenticationRepository.findTermsOfUseToAccept(user.getNativeId());
+                if (termsOfUse != null) {
+                    return new TermsOfUseResult(termsOfUse, false);
+                }
+            }
+        }
+        termsOfUse = authenticationRepository.getCurrentTermsOfUse();
+        return termsOfUse != null ? new TermsOfUseResult(termsOfUse, true) : null;
+    }
 
     @Override
-    public String setup(Credential credential){
+    public void acceptTermsOfUse(String version) {
+        User user = getMyUserInfo();
+        if (user != null) {
+            authenticationRepository.acceptTermsOfUse(version, user.getNativeId());
+        } else {
+            throw new IllegalArgumentException("Was not able to resolve the user information");
+        }
+    }
+
+    @Override
+    public void registerTermsOfUse(TermsOfUse termsOfUse) {
+        //This is special -> the user doesn't need to accept the terms of use to register them (otherwise we would have a dead-lock)
+        if (!permissions.hasGlobalPermission(this.getRoles(false), Functionality.DEFINE_TERMS_OF_USE)){
+            throw new UnauthorizedException("You don't have the rights to define terms of use");
+        }
+        authenticationRepository.setCurrentTermsOfUse(termsOfUse);
+    }
+
+    @Override
+    public boolean isSpacePublic(String space) {
+        return authenticationRepository.isSpacePublic(space);
+    }
+
+    @Override
+    public void setSpacePublic(String space){
+        setSpacePublic(space, true);
+    }
+
+    @Override
+    public void setSpaceProtected(String space){
+        setSpacePublic(space, false);
+    }
+
+    private void setSpacePublic(String space, boolean publicSpace) {
+        if(!permissions.hasGlobalPermission(this.getRoles(true), Functionality.DEFINE_PUBLIC_SPACE)){
+            throw new UnauthorizedException("You don't have the rights do define a space to be public or not.");
+        }
+        authenticationRepository.setSpacePublic(space, publicSpace);
+    }
+
+    /**
+     * SETUP
+     **/
+    @Override
+    public String setup(Credential credential) {
         return initialSetup.initialSetup(credential.getUser(), credential.getPassword());
     }
 

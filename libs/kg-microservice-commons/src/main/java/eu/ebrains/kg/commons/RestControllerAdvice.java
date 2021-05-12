@@ -102,10 +102,14 @@ public class RestControllerAdvice {
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ex.getMessage());
     }
 
-    @ExceptionHandler({ForbiddenException.class})
+    @ExceptionHandler({ForbiddenException.class, NotAcceptedTermsOfUseException.class})
     protected ResponseEntity<?> handleForbidden(RuntimeException ex, WebRequest request) {
+        if(ex instanceof NotAcceptedTermsOfUseException){
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(((NotAcceptedTermsOfUseException)ex).getTermsOfUseError());
+        }
         return ResponseEntity.status(HttpStatus.FORBIDDEN).body(ex.getMessage());
     }
+
 
     @ExceptionHandler({UnauthorizedException.class})
     protected ResponseEntity<?> handleUnauthorized(RuntimeException ex, WebRequest request) {

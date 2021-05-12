@@ -75,7 +75,7 @@ public abstract class AbstractLoadTest extends AbstractSystemTest {
         User user = new User("bobEverythingGoes", "Bob Everything Goes", "fakeAdmin@ebrains.eu", "Bob Everything", "Goes", "admin");
         UserWithRoles userWithRoles = new UserWithRoles(user, AbstractTest.ADMIN_ROLE, AbstractTest.ADMIN_CLIENT_ROLE, "testClient");
         Mockito.doReturn(user).when(authenticationAPI).getMyUserInfo();
-        Mockito.doReturn(userWithRoles).when(authenticationAPI).getRoles();
+        Mockito.doReturn(userWithRoles).when(authenticationAPI).getRoles(false);
         AuthTokens authTokens=new AuthTokens();
         authTokens.setUserAuthToken(new UserAuthToken("userToken"));
         authTokens.setClientAuthToken(new ClientAuthToken("clientToken"));

@@ -23,11 +23,15 @@
 package eu.ebrains.kg.authentication.api;
 
 import eu.ebrains.kg.commons.api.Authentication;
+import eu.ebrains.kg.commons.exception.InstanceNotFoundException;
 import eu.ebrains.kg.commons.model.Credential;
+import eu.ebrains.kg.commons.model.TermsOfUse;
+import eu.ebrains.kg.commons.model.TermsOfUseResult;
 import eu.ebrains.kg.commons.model.User;
 import eu.ebrains.kg.commons.models.UserWithRoles;
 import eu.ebrains.kg.commons.permission.ClientAuthToken;
 import eu.ebrains.kg.commons.permission.roles.Role;
+import io.swagger.v3.oas.annotations.Parameter;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -116,9 +120,24 @@ public class AuthenticationAPIRest implements Authentication {
         return myUserInfo;
     }
 
+    @GetMapping(value = "/termsOfUse", produces = MediaType.APPLICATION_JSON_VALUE)
+    public TermsOfUseResult getTermsOfUse() {
+        return authentication.getTermsOfUse();
+    }
+
+    @PostMapping(value = "/termsOfUse/{version}/accept")
+    public void acceptTermsOfUse(@PathVariable("version") String version) {
+        authentication.acceptTermsOfUse(version);
+    }
+
+    @PostMapping(value = "/termsOfUse")
+    public void registerTermsOfUse(@RequestBody TermsOfUse termsOfUse) {
+        authentication.registerTermsOfUse(termsOfUse);
+    }
+
     @GetMapping(value = "/users/meWithRoles", produces = MediaType.APPLICATION_JSON_VALUE)
-    public UserWithRoles getRoles() {
-        UserWithRoles roles = authentication.getRoles();
+    public UserWithRoles getRoles(@RequestParam(value = "checkForTermsOfUse", defaultValue = "true") @Parameter() boolean checkForTermsOfUse) {
+        UserWithRoles roles = authentication.getRoles(checkForTermsOfUse);
         if (roles == null) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND);
         }
@@ -143,6 +162,28 @@ public class AuthenticationAPIRest implements Authentication {
         return usersByAttribute;
     }
 
+    @Override
+    @GetMapping("/publicSpaces/{space}")
+    public boolean isSpacePublic(@PathVariable("space") String space) {
+        boolean spacePublic = authentication.isSpacePublic(space);
+        if(!spacePublic){
+            throw new InstanceNotFoundException(String.format("Space %s is not public", space));
+        }
+        return true;
+    }
+
+    @Override
+    @PutMapping("/publicSpaces/{space}")
+    public void setSpacePublic(@PathVariable("space") String space) {
+        authentication.setSpacePublic(space);
+    }
+
+    @Override
+    @DeleteMapping("/publicSpaces/{space}")
+    public void setSpaceProtected(@PathVariable("space") String space) {
+        authentication.setSpaceProtected(space);
+    }
+
     /**
      * SETUP
      **/
@@ -151,5 +192,6 @@ public class AuthenticationAPIRest implements Authentication {
     public String setup(@RequestBody Credential credential) {
         return authentication.setup(credential);
     }
+
 
 }

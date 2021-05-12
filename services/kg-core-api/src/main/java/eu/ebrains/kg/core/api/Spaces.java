@@ -25,6 +25,7 @@ package eu.ebrains.kg.core.api;
 import eu.ebrains.kg.arango.commons.model.InternalSpace;
 import eu.ebrains.kg.commons.AuthContext;
 import eu.ebrains.kg.commons.Version;
+import eu.ebrains.kg.commons.api.Authentication;
 import eu.ebrains.kg.commons.api.GraphDBSpaces;
 import eu.ebrains.kg.commons.api.PrimaryStoreEvents;
 import eu.ebrains.kg.commons.config.openApiGroups.Admin;
@@ -68,12 +69,14 @@ public class Spaces {
     private final CoreSpaceController spaceController;
     private final AuthContext authContext;
     private final PrimaryStoreEvents.Client primaryStoreEvents;
+    private final Authentication.Client authentication;
 
-    public Spaces(GraphDBSpaces.Client graphDBSpaces, CoreSpaceController spaceController, AuthContext authContext, PrimaryStoreEvents.Client primaryStoreEvents) {
+    public Spaces(GraphDBSpaces.Client graphDBSpaces, CoreSpaceController spaceController, AuthContext authContext, PrimaryStoreEvents.Client primaryStoreEvents, Authentication.Client authentication) {
         this.graphDBSpaces = graphDBSpaces;
         this.spaceController = spaceController;
         this.authContext = authContext;
         this.primaryStoreEvents = primaryStoreEvents;
+        this.authentication = authentication;
     }
 
     @GetMapping("{space}")
@@ -131,18 +134,49 @@ public class Spaces {
     }
 
 
+    @Operation(summary = "Make a space protected")
+    @DeleteMapping("{space}/public")
+    @WritesData
+    @Admin
+    public void setSpaceToProtected(@PathVariable("space") String space) {
+        authentication.setSpaceProtected(space);
+    }
+
+
+    @Operation(summary = "Make a space public")
+    @PutMapping("{space}/public")
+    @WritesData
+    @Admin
+    public void setSpaceToPublic(@PathVariable("space") String space) {
+        authentication.setSpacePublic(space);
+    }
+
+    @Operation(summary = "Is a space public")
+    @GetMapping("{space}/public")
+    @WritesData
+    @Admin
+    public ResponseEntity<Void> isSpacePublic(@PathVariable("space") String space) {
+        boolean spacePublic = authentication.isSpacePublic(space);
+        if(!spacePublic){
+            return ResponseEntity.notFound().build();
+        }
+        else {
+            return ResponseEntity.status(HttpStatus.OK).build();
+        }
+    }
+
     @Operation(summary = "Explicitly specify a space (incl. creation of roles in the authentication system)")
     @PutMapping("{space}/specification")
     @Admin
     @ExposesInputWithoutEnrichedSensitiveData
-    public ResponseEntity<Result<NormalizedJsonLd>> createSpaceDefinition(@PathVariable(value = "space") @Parameter(description = "The space the definition is valid for. Please note that you can't do so for your private space (\"" + SpaceName.PRIVATE_SPACE + "\")") String space, @RequestParam(value = "autorelease", required = false, defaultValue = "false") boolean autoRelease, @RequestParam(value = "clientSpace", required = false, defaultValue = "false") boolean clientSpace) {
+    public ResponseEntity<Result<NormalizedJsonLd>> createSpaceDefinition(@PathVariable(value = "space") @Parameter(description = "The space the definition is valid for. Please note that you can't do so for your private space (\"" + SpaceName.PRIVATE_SPACE + "\")") String space, @RequestParam(value = "autorelease", required = false, defaultValue = "false") boolean autoRelease, @RequestParam(value = "clientSpace", required = false, defaultValue = "false") boolean clientSpace, @RequestParam(value = "createRoles", required = false, defaultValue = "false") boolean createRoles) {
         SpaceName spaceName = authContext.resolveSpaceName(space);
         if (spaceName != null) {
             if(spaceName.equals(authContext.getUserWithRoles().getPrivateSpace())){
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Result.nok(HttpStatus.BAD_REQUEST.value(), "Your private space is configured by default - you can't do so yourself."));
             }
         }
-        return ResponseEntity.ok(Result.ok(spaceController.createSpaceDefinition(new Space(spaceName, autoRelease, clientSpace), true)));
+        return ResponseEntity.ok(Result.ok(spaceController.createSpaceDefinition(new Space(spaceName, autoRelease, clientSpace), true, createRoles)));
     }
 
 

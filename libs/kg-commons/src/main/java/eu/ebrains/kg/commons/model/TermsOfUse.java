@@ -20,29 +20,26 @@
  * (Human Brain Project SGA1, SGA2 and SGA3).
  */
 
-package eu.ebrains.kg.authentication.model;
+package eu.ebrains.kg.commons.model;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
+public class TermsOfUse {
 
-public class OpenIdConfig {
+    private String version;
+    private String data;
 
-    @JsonProperty("authorization_endpoint")
-    private String authorizationEndpoint;
-
-    @JsonProperty("token_endpoint")
-    private String tokenEndpoint;
-
-    @JsonProperty("token_introspection_endpoint")
-    private String tokenIntrospectionEndpoint;
-
-    @JsonProperty("userinfo_endpoint")
-    private String userInfoEndpoint;
-
-    public String getTokenEndpoint() {
-        return tokenEndpoint;
+    public TermsOfUse() {
     }
 
-    public String getUserInfoEndpoint() {
-        return userInfoEndpoint;
+    public TermsOfUse(String version, String data) {
+        this.version = version;
+        this.data = data;
+    }
+
+    public String getVersion() {
+        return version;
+    }
+
+    public String getData() {
+        return data;
     }
 }

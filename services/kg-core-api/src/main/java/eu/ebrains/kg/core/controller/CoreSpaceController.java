@@ -85,11 +85,13 @@ public class CoreSpaceController {
     }
 
 
-    public NormalizedJsonLd createSpaceDefinition(Space space, boolean global) {
+    public NormalizedJsonLd createSpaceDefinition(Space space, boolean global, boolean createRoles) {
         if (permissions.hasGlobalPermission(authContext.getUserWithRoles(), Functionality.CREATE_SPACE)) {
             NormalizedJsonLd spacePayload = space.toJsonLd();
             primaryStoreEvents.postEvent(Event.createUpsertEvent(global ? InternalSpace.GLOBAL_SPEC : space.getName(), UUID.nameUUIDFromBytes(spacePayload.id().getId().getBytes(StandardCharsets.UTF_8)), Event.Type.INSERT, spacePayload), false);
-            authentication.createRoles(Arrays.stream(RoleMapping.values()).filter(r -> r != RoleMapping.IS_CLIENT).map(r -> r.toRole(space.getName())).collect(Collectors.toList()));
+            if(createRoles) {
+                authentication.createRoles(Arrays.stream(RoleMapping.values()).filter(r -> r != RoleMapping.IS_CLIENT).map(r -> r.toRole(space.getName())).collect(Collectors.toList()));
+            }
             return spacePayload;
         } else {
             throw new ForbiddenException();

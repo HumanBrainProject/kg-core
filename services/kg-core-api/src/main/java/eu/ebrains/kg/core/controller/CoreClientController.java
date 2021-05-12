@@ -39,7 +39,7 @@ public class CoreClientController {
 
     public Client addClient(String id) {
         Client client = new Client(id);
-        spaceController.createSpaceDefinition(client.getSpace(), false);
+        spaceController.createSpaceDefinition(client.getSpace(), false, true);
         authentication.registerClient(client);
         return client;
     }

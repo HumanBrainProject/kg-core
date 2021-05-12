@@ -28,6 +28,7 @@ import eu.ebrains.kg.commons.api.Authentication;
 import eu.ebrains.kg.commons.config.openApiGroups.Admin;
 import eu.ebrains.kg.commons.model.Credential;
 import eu.ebrains.kg.commons.model.Space;
+import eu.ebrains.kg.commons.model.TermsOfUse;
 import eu.ebrains.kg.core.controller.CoreSpaceController;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -52,12 +53,18 @@ public class Setup {
         //Create global spec space
         Space space = new Space(InternalSpace.GLOBAL_SPEC, false, false);
         space.setInternalSpace(true);
-        spaceController.createSpaceDefinition(space, true);
+        spaceController.createSpaceDefinition(space, true, true);
     }
 
     @PutMapping("/authentication")
     @Admin
     public void setupAuthentication(@RequestBody Credential credential){
         authentication.setup(credential);
+    }
+
+    @PutMapping("/termsOfUse")
+    @Admin
+    public void registerTermsOfUse(@RequestBody TermsOfUse termsOfUse){
+        authentication.registerTermsOfUse(termsOfUse);
     }
 }

@@ -23,26 +23,28 @@
 package eu.ebrains.kg.authentication.model;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import eu.ebrains.kg.arango.commons.aqlBuilder.ArangoVocabulary;
+import eu.ebrains.kg.commons.model.TermsOfUse;
 
-public class OpenIdConfig {
+public class ArangoTermsOfUse extends TermsOfUse {
 
-    @JsonProperty("authorization_endpoint")
-    private String authorizationEndpoint;
 
-    @JsonProperty("token_endpoint")
-    private String tokenEndpoint;
+    @JsonProperty(ArangoVocabulary.KEY)
+    private String key;
 
-    @JsonProperty("token_introspection_endpoint")
-    private String tokenIntrospectionEndpoint;
-
-    @JsonProperty("userinfo_endpoint")
-    private String userInfoEndpoint;
-
-    public String getTokenEndpoint() {
-        return tokenEndpoint;
+    private ArangoTermsOfUse() {
+        super();
     }
 
-    public String getUserInfoEndpoint() {
-        return userInfoEndpoint;
+    public ArangoTermsOfUse(String version, String terms, String key) {
+        super(version, terms);
+        this.key = key;
+    }
+
+    public void setKey(String key) {
+        this.key = key;
+    }
+    public String getKey() {
+        return key;
     }
 }

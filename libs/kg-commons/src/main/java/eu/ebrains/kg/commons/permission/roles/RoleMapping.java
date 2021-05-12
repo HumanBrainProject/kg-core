@@ -40,6 +40,7 @@ public enum RoleMapping {
     REVIEWER(true, false, CONSUMER, Functionality.READ, Functionality.SUGGEST, Functionality.INVITE_FOR_REVIEW, Functionality.MINIMAL_READ, Functionality.RELEASE_STATUS),
     EDITOR(true, false, REVIEWER, Functionality.WRITE, Functionality.CREATE, Functionality.INVITE_FOR_SUGGESTION),
     OWNER(true, false, EDITOR, Functionality.RELEASE, Functionality.DELETE, Functionality.UNRELEASE),
+
     ADMIN(true, false, null, Functionality.values()),
 
     //This is a marker role -> it is to be able to flag a user as a technical (client) user.

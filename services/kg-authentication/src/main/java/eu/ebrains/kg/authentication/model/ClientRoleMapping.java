@@ -22,27 +22,25 @@
 
 package eu.ebrains.kg.authentication.model;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
+public class ClientRoleMapping {
 
-public class OpenIdConfig {
+    private String from;
+    private String to;
 
-    @JsonProperty("authorization_endpoint")
-    private String authorizationEndpoint;
 
-    @JsonProperty("token_endpoint")
-    private String tokenEndpoint;
-
-    @JsonProperty("token_introspection_endpoint")
-    private String tokenIntrospectionEndpoint;
-
-    @JsonProperty("userinfo_endpoint")
-    private String userInfoEndpoint;
-
-    public String getTokenEndpoint() {
-        return tokenEndpoint;
+    public String getFrom() {
+        return from;
     }
 
-    public String getUserInfoEndpoint() {
-        return userInfoEndpoint;
+    public void setFrom(String from) {
+        this.from = from;
+    }
+
+    public String getTo() {
+        return to;
+    }
+
+    public void setTo(String to) {
+        this.to = to;
     }
 }

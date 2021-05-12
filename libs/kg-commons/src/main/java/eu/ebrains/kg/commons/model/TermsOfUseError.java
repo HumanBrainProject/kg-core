@@ -20,29 +20,20 @@
  * (Human Brain Project SGA1, SGA2 and SGA3).
  */
 
-package eu.ebrains.kg.authentication.model;
+package eu.ebrains.kg.commons.model;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 
-public class OpenIdConfig {
+@JsonPropertyOrder({ "error", "howToFix" })
+public class TermsOfUseError extends TermsOfUse {
 
-    @JsonProperty("authorization_endpoint")
-    private String authorizationEndpoint;
+    private String error;
+    private String howToFix;
 
-    @JsonProperty("token_endpoint")
-    private String tokenEndpoint;
-
-    @JsonProperty("token_introspection_endpoint")
-    private String tokenIntrospectionEndpoint;
-
-    @JsonProperty("userinfo_endpoint")
-    private String userInfoEndpoint;
-
-    public String getTokenEndpoint() {
-        return tokenEndpoint;
+    public TermsOfUseError(TermsOfUse termsOfUse) {
+        super(termsOfUse.getVersion(), termsOfUse.getData());
+        this.error = String.format("You have not accepted the latest version (%s) of the terms of use", termsOfUse.getVersion());
+        this.howToFix = String.format("By calling the POST endpoint of users/termsOfUse/%s/accept you give your consent to the terms of use and can make use of the API.", termsOfUse.getVersion());
     }
 
-    public String getUserInfoEndpoint() {
-        return userInfoEndpoint;
-    }
 }

@@ -22,27 +22,26 @@
 
 package eu.ebrains.kg.authentication.model;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
+import java.util.Date;
 
-public class OpenIdConfig {
+public class AcceptedTermsOfUse {
 
-    @JsonProperty("authorization_endpoint")
-    private String authorizationEndpoint;
+    private String version;
+    private Date date;
 
-    @JsonProperty("token_endpoint")
-    private String tokenEndpoint;
-
-    @JsonProperty("token_introspection_endpoint")
-    private String tokenIntrospectionEndpoint;
-
-    @JsonProperty("userinfo_endpoint")
-    private String userInfoEndpoint;
-
-    public String getTokenEndpoint() {
-        return tokenEndpoint;
+    public AcceptedTermsOfUse() {
     }
 
-    public String getUserInfoEndpoint() {
-        return userInfoEndpoint;
+    public AcceptedTermsOfUse(String version, Date date) {
+        this.version = version;
+        this.date = date;
+    }
+
+    public String getVersion() {
+        return version;
+    }
+
+    public Date getDate() {
+        return date;
     }
 }
