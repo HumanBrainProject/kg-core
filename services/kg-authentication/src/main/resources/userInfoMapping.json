@@ -3,10 +3,6 @@
     "kg": [],
     "team": [
       {
-        "from": "collab-kg-devs-administrator",
-        "to": ":admin"
-      },
-      {
         "from": "collab-(.*)-administrator",
         "to": "collab-$1:owner"
       },
