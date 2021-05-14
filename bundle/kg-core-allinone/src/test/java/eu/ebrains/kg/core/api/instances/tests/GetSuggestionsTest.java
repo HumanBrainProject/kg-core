@@ -51,8 +51,7 @@ public class GetSuggestionsTest extends AbstractInstanceTest {
 
     protected void run(){
         String key = originalInstance.keySet().stream().filter(k -> !k.startsWith("@")).findFirst().orElse(null);
-        response = instances.getSuggestedLinksForProperty(originalInstance, ExposedStage.IN_PROGRESS, key, null, null, null, new PaginationParam());
-
+        response = instances.getSuggestedLinksForProperty(originalInstance, ExposedStage.IN_PROGRESS, key, idUtils.getUUID(originalInstance.id()), null, null, new PaginationParam());
     }
 
 }
