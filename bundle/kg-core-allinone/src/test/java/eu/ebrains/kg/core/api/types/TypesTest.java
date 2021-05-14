@@ -70,7 +70,7 @@ public class TypesTest extends AbstractFunctionalityTest {
 
         //When
         test.execute(() -> {
-            Result<Map<String, Result<NormalizedJsonLd>>> typesByName = types.getTypesByName(Collections.singletonList(test.typeName), ExposedStage.IN_PROGRESS, false, null);
+            Result<Map<String, Result<NormalizedJsonLd>>> typesByName = types.getTypesByName(Collections.singletonList(test.typeName), ExposedStage.IN_PROGRESS, false, false, null);
             NormalizedJsonLd data = typesByName.getData().get(test.typeName).getData();
             assertNotNull(data);
             assertTrue(data.identifiers().contains(test.typeName));

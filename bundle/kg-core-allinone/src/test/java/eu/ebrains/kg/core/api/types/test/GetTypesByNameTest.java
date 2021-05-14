@@ -64,6 +64,6 @@ public class GetTypesByNameTest extends AbstractTest {
 
     @Override
     protected void run() {
-         response = this.types.getTypesByName(Collections.singletonList(TestDataFactory.TEST_TYPE), ExposedStage.IN_PROGRESS, withProperties, spaceName == null ? null : spaceName.getName());
+         response = this.types.getTypesByName(Collections.singletonList(TestDataFactory.TEST_TYPE), ExposedStage.IN_PROGRESS, withProperties, withProperties, spaceName == null ? null : spaceName.getName());
     }
 }

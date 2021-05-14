@@ -89,11 +89,11 @@ public class Types {
     @PostMapping("/typesByName")
     @ExposesType
     @Advanced
-    public Result<Map<String, Result<NormalizedJsonLd>>> getTypesByName(@RequestBody List<String> listOfTypeNames, @RequestParam("stage") ExposedStage stage, @RequestParam(value = "withProperties", defaultValue = "false") boolean withProperties, @RequestParam(value = "space", required = false) @Parameter(description = "The space by which the types should be filtered or \"" + SpaceName.PRIVATE_SPACE + "\" for your private space.") String space) {
+    public Result<Map<String, Result<NormalizedJsonLd>>> getTypesByName(@RequestBody List<String> listOfTypeNames, @RequestParam("stage") ExposedStage stage, @RequestParam(value = "withProperties", defaultValue = "false") boolean withProperties, @RequestParam(value = "withCounts", defaultValue = "false") @Parameter(description = "Only applies if withProperties is set to true") boolean withCounts, @RequestParam(value = "space", required = false) @Parameter(description = "The space by which the types should be filtered or \"" + SpaceName.PRIVATE_SPACE + "\" for your private space.") String space) {
         SpaceName spaceName = authContext.resolveSpaceName(space);
         if(withProperties){
             //TODO check for withIncomingLinks
-            return Result.ok(graphDBTypes.getTypesWithPropertiesByName(listOfTypeNames, stage.getStage(), true, true, getResolvedSpaceName(space)));
+            return Result.ok(graphDBTypes.getTypesWithPropertiesByName(listOfTypeNames, stage.getStage(), withCounts, true, getResolvedSpaceName(space)));
         }
         else{
             return Result.ok(graphDBTypes.getTypesByName(listOfTypeNames, stage.getStage(), getResolvedSpaceName(space)));

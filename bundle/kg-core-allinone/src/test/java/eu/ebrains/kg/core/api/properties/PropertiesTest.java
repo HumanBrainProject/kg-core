@@ -66,7 +66,7 @@ public class PropertiesTest extends AbstractFunctionalityTest {
         //When
         test.execute(() -> {
             //Then
-            Map<String, Result<NormalizedJsonLd>> result = test.assureValidPayload(this.types.getTypesByName(Collections.singletonList(test.type), ExposedStage.IN_PROGRESS, true, null));
+            Map<String, Result<NormalizedJsonLd>> result = test.assureValidPayload(this.types.getTypesByName(Collections.singletonList(test.type), ExposedStage.IN_PROGRESS, true, true, null));
             NormalizedJsonLd typeDefinition = test.assureValidPayload(result.get(test.type));
             List<NormalizedJsonLd> properties = typeDefinition.getAsListOf(EBRAINSVocabulary.META_PROPERTIES, NormalizedJsonLd.class);
             NormalizedJsonLd propertydef = properties.stream().filter(p -> p.getAs(SchemaOrgVocabulary.IDENTIFIER, String.class).equals(test.property)).findFirst().orElse(null);
