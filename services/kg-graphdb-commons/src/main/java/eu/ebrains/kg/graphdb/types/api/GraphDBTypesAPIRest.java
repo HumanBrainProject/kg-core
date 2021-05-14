@@ -44,12 +44,12 @@ public class GraphDBTypesAPIRest implements GraphDBTypes {
     }
 
     @GetMapping("/types")
-    public Paginated<NormalizedJsonLd> getTypes(@PathVariable("stage") DataStage stage, @RequestParam(value = "space", required = false) String space, @RequestParam(value = "withIncomingLinks", required = false, defaultValue = "false") boolean withIncomingLinks, PaginationParam paginationParam) {
+    public Paginated<NormalizedJsonLd> getTypes(@PathVariable("stage") DataStage stage, @RequestParam(value = "space", required = false) String space, @RequestParam(value = "withIncomingLinks") boolean withIncomingLinks, PaginationParam paginationParam) {
         return graphDBTypesAPI.getTypes(stage, space, withIncomingLinks, paginationParam);
     }
 
     @GetMapping("/typesWithProperties")
-    public Paginated<NormalizedJsonLd> getTypesWithProperties(@PathVariable("stage") DataStage stage, @RequestParam(value = "space", required = false) String space, @RequestParam(value = "withCounts", required = false, defaultValue = "true") boolean withCounts, @RequestParam(value = "withIncomingLinks", required = false, defaultValue = "true") boolean withIncomingLinks, PaginationParam paginationParam) {
+    public Paginated<NormalizedJsonLd> getTypesWithProperties(@PathVariable("stage") DataStage stage, @RequestParam(value = "space", required = false) String space, @RequestParam(value = "withCounts") boolean withCounts, @RequestParam(value = "withIncomingLinks", required = false, defaultValue = "true") boolean withIncomingLinks, PaginationParam paginationParam) {
         return graphDBTypesAPI.getTypesWithProperties(stage, space, withCounts, withIncomingLinks, paginationParam);
     }
 
@@ -59,7 +59,7 @@ public class GraphDBTypesAPIRest implements GraphDBTypes {
     }
 
     @PostMapping("/typesWithPropertiesByName")
-    public Map<String, Result<NormalizedJsonLd>> getTypesWithPropertiesByName(@RequestBody List<String> types, @PathVariable("stage") DataStage stage, @RequestParam(value = "withCounts", required = false, defaultValue = "true") boolean withCounts, @RequestParam(value = "withIncomingLinks", required = false, defaultValue = "true") boolean withIncomingLinks, @RequestParam(value = "space", required = false) String space) {
+    public Map<String, Result<NormalizedJsonLd>> getTypesWithPropertiesByName(@RequestBody List<String> types, @PathVariable("stage") DataStage stage, @RequestParam(value = "withCounts") boolean withCounts, @RequestParam(value = "withIncomingLinks", required = false, defaultValue = "true") boolean withIncomingLinks, @RequestParam(value = "space", required = false) String space) {
         return graphDBTypesAPI.getTypesWithPropertiesByName(types, stage, withCounts, withIncomingLinks, space);
     }
 

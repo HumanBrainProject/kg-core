@@ -397,7 +397,9 @@ public class ArangoRepositoryTypes {
             aql.addLine(AQL.trust("LET targetTypesWithTypeDef = APPEND(targetTypesFromSpaceDef, (FOR t IN targetTypesFromTypeDef"));
             aql.addLine(AQL.trust("FILTER t NOT IN spaceDefinedTargetTypes"));
             aql.addLine(AQL.trust("RETURN {"));
-            aql.addLine(AQL.trust("\"" + EBRAINSVocabulary.META_OCCURRENCES + "\": 0,"));
+            if(withCount) {
+                aql.addLine(AQL.trust("\"" + EBRAINSVocabulary.META_OCCURRENCES + "\": 0,"));
+            }
             aql.addLine(AQL.trust("\"" + EBRAINSVocabulary.META_TYPE + "\": t"));
             aql.addLine(AQL.trust("}"));
             aql.addLine(AQL.trust("))"));
@@ -407,7 +409,9 @@ public class ArangoRepositoryTypes {
             aql.addLine(AQL.trust("LET targetTypes = APPEND(targetTypesWithTypeDef, (FOR t IN targetTypesFromGlobalDef"));
             aql.addLine(AQL.trust("FILTER t NOT IN spaceAndTypeDefinedTargetTypes"));
             aql.addLine(AQL.trust("RETURN {"));
-            aql.addLine(AQL.trust("\"" + EBRAINSVocabulary.META_OCCURRENCES + "\": 0,"));
+            if(withCount) {
+                aql.addLine(AQL.trust("\"" + EBRAINSVocabulary.META_OCCURRENCES + "\": 0,"));
+            }
             aql.addLine(AQL.trust("\"" + EBRAINSVocabulary.META_TYPE + "\": t"));
             aql.addLine(AQL.trust(" }))"));
 
@@ -485,28 +489,29 @@ public class ArangoRepositoryTypes {
             aql.addNewline();
             aql.addComment("Now we're aggregating the information from the spaces queries above.");
 
-            //We need to treat the types with 0-occurrences (usually contract-first) different from the others because they can - by nature - not be part of any space and therefore wouldn't be properly reflected.
-            aql.addLine(AQL.trust("LET targetTypesWithZeroOccurrences = (FOR typeWithNoOccurrences IN groupedGlobalProperties[*].props[**].`" + EBRAINSVocabulary.META_PROPERTY_TARGET_TYPES + "`[**]"));
-            aql.addLine(AQL.trust("FILTER typeWithNoOccurrences.`" + EBRAINSVocabulary.META_OCCURRENCES + "`==0"));
-            aql.addLine(AQL.trust("RETURN {\"" + EBRAINSVocabulary.META_TYPE + "\": typeWithNoOccurrences.`" + EBRAINSVocabulary.META_TYPE + "`"));
-            if (withCount) {
-                aql.addLine(AQL.trust(", \"" + EBRAINSVocabulary.META_OCCURRENCES + "\": 0"));
-            }
-            aql.addLine(AQL.trust("})"));
-            aql.addLine(AQL.trust("LET targetTypes = APPEND(targetTypesWithZeroOccurrences, (FOR globalPropertyBySpace IN groupedGlobalProperties[*].props[**].`" + EBRAINSVocabulary.META_PROPERTY_TARGET_TYPES + "`[**].`" + EBRAINSVocabulary.META_SPACES + "`[**]"));
-            aql.addLine(AQL.trust("FILTER globalPropertyBySpace.`" + EBRAINSVocabulary.META_OCCURRENCES + "`>0"));
-            aql.addLine(AQL.trust("COLLECT globalType = globalPropertyBySpace.`" + EBRAINSVocabulary.META_TYPE + "` INTO globalTypeBySpace"));
-            if (withCount) {
-                aql.addLine(AQL.trust("LET globalTypeCount = SUM((FOR p IN globalTypeBySpace[*].globalPropertyBySpace[**] FILTER @space == null OR  p.`" + EBRAINSVocabulary.META_SPACE + "`==@space RETURN p)[**].`" + EBRAINSVocabulary.META_OCCURRENCES + "`)"));
-            }
-            aql.addLine(AQL.trust("RETURN {"));
-            aql.addLine(AQL.trust("\"" + EBRAINSVocabulary.META_TYPE + "\": globalType,"));
-            if (withCount) {
-                aql.addLine(AQL.trust("\"" + EBRAINSVocabulary.META_OCCURRENCES + "\": globalTypeCount,"));
-            }
-            aql.addLine(AQL.trust("\"" + EBRAINSVocabulary.META_SPACES + "\": globalTypeBySpace[*].globalPropertyBySpace"));
-            aql.addLine(AQL.trust("}))"));
 
+            //We need to treat the types with 0-occurrences (usually contract-first) different from the others because they can - by nature - not be part of any space and therefore wouldn't be properly reflected.
+            if(withCount) {
+                aql.addLine(AQL.trust("LET targetTypesWithZeroOccurrences = (FOR typeWithNoOccurrences IN groupedGlobalProperties[*].props[**].`" + EBRAINSVocabulary.META_PROPERTY_TARGET_TYPES + "`[**]"));
+                aql.addLine(AQL.trust("FILTER typeWithNoOccurrences.`" + EBRAINSVocabulary.META_OCCURRENCES + "`==0"));
+                aql.addLine(AQL.trust("RETURN {\"" + EBRAINSVocabulary.META_TYPE + "\": typeWithNoOccurrences.`" + EBRAINSVocabulary.META_TYPE + "`"));
+                aql.addLine(AQL.trust(", \"" + EBRAINSVocabulary.META_OCCURRENCES + "\": 0"));
+                aql.addLine(AQL.trust("})"));
+                aql.addLine(AQL.trust("LET targetTypes = APPEND(targetTypesWithZeroOccurrences, (FOR globalPropertyBySpace IN groupedGlobalProperties[*].props[**].`" + EBRAINSVocabulary.META_PROPERTY_TARGET_TYPES + "`[**].`" + EBRAINSVocabulary.META_SPACES + "`[**]"));
+                aql.addLine(AQL.trust("FILTER globalPropertyBySpace.`" + EBRAINSVocabulary.META_OCCURRENCES + "`>0"));
+                aql.addLine(AQL.trust("COLLECT globalType = globalPropertyBySpace.`" + EBRAINSVocabulary.META_TYPE + "` INTO globalTypeBySpace"));
+                aql.addLine(AQL.trust("LET globalTypeCount = SUM((FOR p IN globalTypeBySpace[*].globalPropertyBySpace[**] FILTER @space == null OR  p.`" + EBRAINSVocabulary.META_SPACE + "`==@space RETURN p)[**].`" + EBRAINSVocabulary.META_OCCURRENCES + "`)"));
+                aql.addLine(AQL.trust("RETURN {"));
+                aql.addLine(AQL.trust("\"" + EBRAINSVocabulary.META_TYPE + "\": globalType,"));
+                aql.addLine(AQL.trust("\"" + EBRAINSVocabulary.META_OCCURRENCES + "\": globalTypeCount,"));
+                aql.addLine(AQL.trust("\"" + EBRAINSVocabulary.META_SPACES + "\": globalTypeBySpace[*].globalPropertyBySpace"));
+                aql.addLine(AQL.trust("}))"));
+            }
+            else{
+                aql.addLine(AQL.trust("LET targetTypes = (FOR targetTypeForGlobal IN groupedGlobalProperties[*].props[**].`" + EBRAINSVocabulary.META_PROPERTY_TARGET_TYPES + "`[**]"));
+                aql.addLine(AQL.trust("RETURN {\"" + EBRAINSVocabulary.META_TYPE + "\": targetTypeForGlobal.`" + EBRAINSVocabulary.META_TYPE + "`"));
+                aql.addLine(AQL.trust("})"));
+            }
             aql.addLine(AQL.trust("LET filteredTargetTypes = (FOR t IN targetTypes"));
             if (withCount) {
                 aql.addLine(AQL.trust("LET o=t.`" + EBRAINSVocabulary.META_OCCURRENCES + "`"));
@@ -518,11 +523,11 @@ public class ArangoRepositoryTypes {
                 aql.addLine(AQL.trust("COLLECT filteredType=t.`" + EBRAINSVocabulary.META_TYPE + "` INTO resultFilteredTypes KEEP s"));
             }
             aql.addLine(AQL.trust("RETURN {"));
-            aql.addLine(AQL.trust("\"" + EBRAINSVocabulary.META_TYPE + "\": filteredType,"));
             if (withCount) {
                 aql.addLine(AQL.trust("\"" + EBRAINSVocabulary.META_OCCURRENCES + "\": SUM(resultFilteredTypes[*].o),"));
+                aql.addLine(AQL.trust("\"" + EBRAINSVocabulary.META_SPACES + "\": (FOR r IN resultFilteredTypes[*].s FILTER r != null RETURN DISTINCT r),"));
             }
-            aql.addLine(AQL.trust("\"" + EBRAINSVocabulary.META_SPACES + "\": (FOR r IN resultFilteredTypes[*].s FILTER r != null RETURN DISTINCT r)"));
+            aql.addLine(AQL.trust("\"" + EBRAINSVocabulary.META_TYPE + "\": filteredType"));
             aql.addLine(AQL.trust("})"));
 
             aql.addLine(AQL.trust("RETURN MERGE({"));
