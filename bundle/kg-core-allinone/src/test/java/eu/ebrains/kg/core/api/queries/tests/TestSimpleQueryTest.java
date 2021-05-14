@@ -37,10 +37,7 @@ import eu.ebrains.kg.core.model.ExposedStage;
 import eu.ebrains.kg.testutils.TestDataFactory;
 
 import java.io.IOException;
-import java.util.Collection;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 public class TestSimpleQueryTest extends AbstractTest {
 
@@ -142,6 +139,6 @@ public class TestSimpleQueryTest extends AbstractTest {
 
     @Override
     protected void run() {
-        response = queries.testQuery(this.query, defaultPaginationParam, stage, null, null);
+        response = queries.testQuery(this.query, defaultPaginationParam, stage, null, new HashMap<>());
     }
 }
