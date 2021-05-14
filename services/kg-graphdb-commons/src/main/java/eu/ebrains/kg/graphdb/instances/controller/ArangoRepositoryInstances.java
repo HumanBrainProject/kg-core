@@ -154,6 +154,10 @@ public class ArangoRepositoryInstances {
     private NormalizedJsonLd resolveIncomingLinks(DataStage stage, NormalizedJsonLd instanceIncomingLinks) {
         Set<Type> types = new HashSet<>();
         Set<InstanceId> instanceIds = getInstanceIds(instanceIncomingLinks, types);
+        if(instanceIds.isEmpty()){
+            //Nothing to do -> we can just return the original document
+           return instanceIncomingLinks;
+        }
         List<NormalizedJsonLd> extendedTypes = typesRepo.getTypes(authContext.getUserWithRoles().getClientId(), stage, types, true, false, false);
         Map<String, NormalizedJsonLd> extendedTypesByName = extendedTypes.stream().collect(Collectors.toMap(NormalizedJsonLd::primaryIdentifier, v -> v));
         Map<UUID, String> labelsForInstances = getLabelsForInstances(stage, instanceIds, extendedTypes.stream().map(Type::fromPayload).collect(Collectors.toList()));
