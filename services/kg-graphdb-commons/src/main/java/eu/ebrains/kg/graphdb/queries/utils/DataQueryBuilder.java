@@ -33,6 +33,8 @@ import eu.ebrains.kg.graphdb.queries.model.spec.SpecProperty;
 import eu.ebrains.kg.graphdb.queries.model.spec.SpecTraverse;
 import eu.ebrains.kg.graphdb.queries.model.spec.Specification;
 
+import java.net.URLDecoder;
+import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -653,7 +655,7 @@ public class DataQueryBuilder {
             }
             if (DataQueryBuilder.this.filterValues.containsKey(key)) {
                 Object fromMap = DataQueryBuilder.this.filterValues.get(key);
-                value = fromMap != null ? fromMap.toString() : null;
+                value = fromMap != null ? URLDecoder.decode(fromMap.toString(), StandardCharsets.UTF_8) : null;
             }
             if (value == null && fieldFilter.getValue() != null) {
                 value = fieldFilter.getValue().getValue();

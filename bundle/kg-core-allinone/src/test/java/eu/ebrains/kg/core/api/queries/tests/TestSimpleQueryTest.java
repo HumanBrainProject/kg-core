@@ -142,6 +142,6 @@ public class TestSimpleQueryTest extends AbstractTest {
 
     @Override
     protected void run() {
-        response = queries.testQuery(this.query, defaultPaginationParam, stage, null);
+        response = queries.testQuery(this.query, defaultPaginationParam, stage, null, null);
     }
 }

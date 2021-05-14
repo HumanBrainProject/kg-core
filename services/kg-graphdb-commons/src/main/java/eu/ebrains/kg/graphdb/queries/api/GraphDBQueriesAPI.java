@@ -33,6 +33,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
+import java.util.Map;
+
 @Component
 public class GraphDBQueriesAPI implements GraphDBQueries.Client {
 
@@ -46,10 +48,10 @@ public class GraphDBQueriesAPI implements GraphDBQueries.Client {
     }
 
     @Override
-    public QueryResult executeQuery(KgQuery query, PaginationParam paginationParam){
+    public QueryResult executeQuery(KgQuery query, Map<String, String> params, PaginationParam paginationParam){
         UserWithRoles userWithRoles = authContext.getUserWithRoles();
         checkPermissionForQueryExecution(userWithRoles);
-        return queryController.query(userWithRoles, query, paginationParam, null, false);
+        return queryController.query(userWithRoles, query, paginationParam, params, false);
     }
 
     private void checkPermissionForQueryExecution(UserWithRoles userWithRoles){

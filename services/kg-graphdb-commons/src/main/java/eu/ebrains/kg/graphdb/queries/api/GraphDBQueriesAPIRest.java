@@ -26,10 +26,9 @@ import eu.ebrains.kg.commons.api.GraphDBQueries;
 import eu.ebrains.kg.commons.model.PaginationParam;
 import eu.ebrains.kg.commons.model.QueryResult;
 import eu.ebrains.kg.commons.query.KgQuery;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.Map;
 
 @RestController
 @RequestMapping("/internal/graphdb/queries")
@@ -43,8 +42,11 @@ public class GraphDBQueriesAPIRest implements GraphDBQueries {
 
     @Override
     @PostMapping
-    public QueryResult executeQuery(@RequestBody KgQuery query, PaginationParam paginationParam){
-        return graphDBQueriesAPI.executeQuery(query, paginationParam);
+    public QueryResult executeQuery(@RequestBody KgQuery query, @RequestParam(required = false) Map<String, String> params, PaginationParam paginationParam){
+        //Remove non-dynamic parameters from the map.
+        params.remove("size");
+        params.remove("from");
+        return graphDBQueriesAPI.executeQuery(query, params, paginationParam);
     }
 
 }

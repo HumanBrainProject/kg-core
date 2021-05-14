@@ -89,6 +89,33 @@ public class UserWithRoles {
         return new SpaceName("private-"+user.getNativeId());
     }
 
+
+    private List<FunctionalityInstance> reduceFunctionalities(Map<Functionality, List<FunctionalityInstance>> functionalityMap){
+        List<FunctionalityInstance> reducedList = new ArrayList<>();
+        for (Functionality functionality : functionalityMap.keySet()) {
+            Optional<FunctionalityInstance> globalFunctionality = functionalityMap.get(functionality).stream().filter(i -> i.getId() == null && i.getSpace() == null).findAny();
+            if(globalFunctionality.isPresent()){
+                //We have a global permission -> we don't need any other
+                reducedList.add(globalFunctionality.get());
+            }
+            else{
+                Map<SpaceName, List<FunctionalityInstance>> functionalityBySpace = functionalityMap.get(functionality).stream().collect(Collectors.groupingBy(FunctionalityInstance::getSpace));
+                functionalityBySpace.forEach((s, spaceInstances) -> {
+                    Optional<FunctionalityInstance> spacePermission = spaceInstances.stream().filter(i -> i.getId() == null).findAny();
+                    if(spacePermission.isPresent()){
+                        //We have a space permission for this functionality -> instance level permissions are not needed
+                        reducedList.add(spacePermission.get());
+                    }
+                    else{
+                        //We neither have a global nor a space permission -> we need all instance permissions in the list
+                        reducedList.addAll(spaceInstances);
+                    }
+                });
+            }
+        }
+        return reducedList;
+    }
+
     /**
      * Evaluates the roles of a user in the context of a client by combining the roles of both
      *
@@ -101,7 +128,7 @@ public class UserWithRoles {
         }
         //Add an implicit role for the user private space.
         String privateSpaceRole = RoleMapping.OWNER.toRole(getPrivateSpace()).getName();
-        List<FunctionalityInstance> userFunctionalities = Stream.concat(Stream.of(privateSpaceRole), userRoleNames.stream()).map(RoleMapping::fromRole).flatMap(Collection::stream).distinct().collect(Collectors.toList());
+        List<FunctionalityInstance> userFunctionalities = reduceFunctionalities(Stream.concat(Stream.of(privateSpaceRole), userRoleNames.stream()).map(RoleMapping::fromRole).flatMap(Collection::stream).distinct().collect(Collectors.groupingBy(FunctionalityInstance::getFunctionality)));
         List<FunctionalityInstance> result = new ArrayList<>();
         if(clientRoleNames != null) {
             Map<Functionality, List<FunctionalityInstance>> clientFunctionalities = clientRoleNames.stream().map(RoleMapping::fromRole).flatMap(Collection::stream).distinct().collect(Collectors.groupingBy(FunctionalityInstance::getFunctionality));
@@ -116,11 +143,11 @@ public class UserWithRoles {
                     FunctionalityInstance space = null;
                     FunctionalityInstance instance = null;
                     for (FunctionalityInstance clientFunctionality : clientFunctionalities.get(functionality)) {
-                        if (clientFunctionality.getSpace() == null && clientFunctionality.getInstanceId() == null) {
+                        if (clientFunctionality.getSpace() == null && clientFunctionality.getId() == null) {
                             //The client provides this functionality on a global permission layer, so this is ok.
                             global = userRole;
                         }
-                        if (clientFunctionality.getSpace() != null && clientFunctionality.getInstanceId() == null) {
+                        if (clientFunctionality.getSpace() != null && clientFunctionality.getId() == null) {
                             //This is a space-limited functionality for this client...
                             if (userRole.getSpace() == null && userRole.getInstanceId() == null) {
                                 // ... the user has a global permission, so we restrict it to the client space
@@ -160,7 +187,6 @@ public class UserWithRoles {
         else{
            return userFunctionalities;
         }
-        //TODO reduce the result list by removing subpermissions if there are existing in upper hierarchies.
         logger.trace(String.format("Available roles for user %s in client %s: %s", user != null ? user.getUserName() : "anonymous", clientId, String.join(", ", result.stream().map(Object::toString).collect(Collectors.toSet()))));
         return result;
     }

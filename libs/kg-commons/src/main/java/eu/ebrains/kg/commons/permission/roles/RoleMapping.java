@@ -93,22 +93,6 @@ public enum RoleMapping {
             space = roleSplit[0];
             kgrole = roleSplit[1];
         }
-        else{
-            Map<String, String> externalRoleMapping = new HashMap<>();
-            //TODO make this configurable
-            externalRoleMapping.put("-administrator", RoleMapping.OWNER.getName());
-            externalRoleMapping.put("-viewer", RoleMapping.REVIEWER.getName());
-            externalRoleMapping.put("-editor", RoleMapping.EDITOR.getName());
-            String roleMapping = externalRoleMapping.keySet().stream().filter(role::endsWith).findFirst().orElse(null);
-            if(roleMapping!=null && !role.equalsIgnoreCase(roleMapping)){
-                //Alternatively, we also allow roles to be specified from external sources (e.g. the EBRAINS Collaboratory)
-                space = role.substring(0, role.length()-roleMapping.length());
-                if(space.trim().equals("")){
-                    throw new ForbiddenException("Tried to create global access rights with an external role mapping");
-                }
-                kgrole = externalRoleMapping.get(roleMapping);
-            }
-        }
         if(kgrole!=null && space!=null) {
             String fixedKgRole = kgrole;
             RoleMapping userRole = Arrays.stream(RoleMapping.values()).filter(r -> r.getName().equals(fixedKgRole)).findFirst().orElse(null);

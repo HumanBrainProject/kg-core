@@ -26,8 +26,10 @@ import eu.ebrains.kg.commons.model.PaginationParam;
 import eu.ebrains.kg.commons.model.QueryResult;
 import eu.ebrains.kg.commons.query.KgQuery;
 
+import java.util.Map;
+
 public interface GraphDBQueries {
     interface Client extends GraphDBQueries {}
 
-    QueryResult executeQuery(KgQuery query, PaginationParam paginationParam);
+    QueryResult executeQuery(KgQuery query, Map<String, String> params, PaginationParam paginationParam);
 }

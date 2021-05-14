@@ -35,6 +35,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 /**
@@ -75,6 +76,7 @@ public class CoreQueryController {
         if(instanceId!=null) {
             NormalizedJsonLd instance = graphDBInstances.getInstanceById(instanceId.getSpace().getName(), instanceId.getUuid(), DataStage.IN_PROGRESS, true, false, false, null, true);
             //Only return the instance if it is actually a query
+            //FIXME handle minimal access rights (ends up in a 500ed at query time)
             if (instance!=null && instance.types()!=null && instance.types().contains(EBRAINSVocabulary.META_QUERY_TYPE)) {
                 return new KgQuery(instance, stage);
             }
@@ -82,8 +84,8 @@ public class CoreQueryController {
         return null;
     }
 
-    public Paginated<? extends JsonLdDoc> executeQuery(KgQuery query, PaginationParam paginationParam){
-        QueryResult paginatedQueryResult = graphDBQueries.executeQuery(query, paginationParam);
+    public Paginated<? extends JsonLdDoc> executeQuery(KgQuery query, Map<String, String> params, PaginationParam paginationParam){
+        QueryResult paginatedQueryResult = graphDBQueries.executeQuery(query, params, paginationParam);
         if(paginatedQueryResult!=null){
             if(paginatedQueryResult.getResponseVocab() != null){
                 Paginated<NormalizedJsonLd> result = paginatedQueryResult.getResult();

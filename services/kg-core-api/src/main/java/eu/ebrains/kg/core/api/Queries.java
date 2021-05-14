@@ -47,6 +47,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Collections;
+import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 
@@ -87,14 +88,20 @@ public class Queries {
     @Operation(summary = "Execute the query in the payload in test mode (e.g. for execution before saving with the KG QueryBuilder)")
     @PostMapping
     @ExposesData
-    public PaginatedResult<? extends JsonLdDoc> testQuery(@RequestBody JsonLdDoc query, @ParameterObject PaginationParam paginationParam, @RequestParam("stage") ExposedStage stage, @RequestParam(value = "instanceId", required = false) UUID instanceId) {
+    public PaginatedResult<? extends JsonLdDoc> testQuery(@RequestBody JsonLdDoc query, @ParameterObject PaginationParam paginationParam, @RequestParam("stage") ExposedStage stage, @RequestParam(value = "instanceId", required = false) UUID instanceId, @RequestParam(defaultValue = "{}") Map<String, String> allRequestParams) {
+        //Remove the non-dynamic parameters from the map
+        allRequestParams.remove("stage");
+        allRequestParams.remove("instanceId");
+        allRequestParams.remove("from");
+        allRequestParams.remove("size");
         NormalizedJsonLd normalizedJsonLd = jsonLd.normalize(query, true);
         KgQuery q = new KgQuery(normalizedJsonLd, stage.getStage());
         if(instanceId!=null){
             q.setIdRestrictions(Collections.singletonList(instanceId));
         }
-        return PaginatedResult.ok(queryController.executeQuery(q, paginationParam));
+        return PaginatedResult.ok(queryController.executeQuery(q, allRequestParams, paginationParam));
     }
+
 
     @Operation(summary = "Get the query specification with the given query id in a specific space")
     @GetMapping("/{queryId}")
@@ -146,13 +153,18 @@ public class Queries {
     @Operation(summary = "Execute a stored query to receive the instances")
     @GetMapping("/{queryId}/instances")
     @ExposesData
-    public PaginatedResult<? extends JsonLdDoc> executeQueryById(@PathVariable("queryId") UUID queryId, @ParameterObject PaginationParam paginationParam, @RequestParam("stage") ExposedStage stage, @RequestParam(value = "instanceId", required = false) UUID instanceId) {
+    public PaginatedResult<? extends JsonLdDoc> executeQueryById(@PathVariable("queryId") UUID queryId, @ParameterObject PaginationParam paginationParam, @RequestParam("stage") ExposedStage stage, @RequestParam(value = "instanceId", required = false) UUID instanceId, @RequestParam(defaultValue = "{}") Map<String, String> allRequestParams) {
+        //Remove the non-dynamic parameters from the map
+        allRequestParams.remove("stage");
+        allRequestParams.remove("instanceId");
+        allRequestParams.remove("from");
+        allRequestParams.remove("size");
         InstanceId queryInstance = ids.resolveId(DataStage.IN_PROGRESS, queryId);
         KgQuery query = queryController.fetchQueryById(queryInstance, stage.getStage());
         if(instanceId!=null){
             query.setIdRestrictions(Collections.singletonList(instanceId));
         }
-        return PaginatedResult.ok(queryController.executeQuery(query, paginationParam));
+        return PaginatedResult.ok(queryController.executeQuery(query, allRequestParams, paginationParam));
     }
 
 }

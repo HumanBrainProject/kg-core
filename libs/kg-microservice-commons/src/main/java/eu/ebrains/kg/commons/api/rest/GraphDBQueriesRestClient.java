@@ -29,6 +29,8 @@ import eu.ebrains.kg.commons.model.PaginationParam;
 import eu.ebrains.kg.commons.model.QueryResult;
 import eu.ebrains.kg.commons.query.KgQuery;
 
+import java.util.Map;
+
 @RestClient
 public class GraphDBQueriesRestClient implements GraphDBQueries.Client {
 
@@ -42,11 +44,17 @@ public class GraphDBQueriesRestClient implements GraphDBQueries.Client {
     }
 
     @Override
-    public QueryResult executeQuery(KgQuery query, PaginationParam paginationParam) {
-        return serviceCall.post(String.format("%s",
-                SERVICE_URL),
-                query,
-                authTokenContext.getAuthTokens(),
+    public QueryResult executeQuery(KgQuery query, Map<String, String> params, PaginationParam paginationParam) {
+        StringBuilder p = null;
+        if(params!=null) {
+            p = new StringBuilder();
+            p.append("?");
+            for (Map.Entry<String, String> param : params.entrySet()) {
+                p.append(String.format("&%s=%s", param.getKey(), param.getValue()));
+            }
+        }
+        return serviceCall.post(String.format("%s%s",
+                SERVICE_URL, p!=null ? p : ""), query, authTokenContext.getAuthTokens(),
                 QueryResult.class);
     }
 }
