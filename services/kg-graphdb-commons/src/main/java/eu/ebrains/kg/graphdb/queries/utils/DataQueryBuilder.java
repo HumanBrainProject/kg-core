@@ -52,7 +52,7 @@ public class DataQueryBuilder {
     private final Map<String, Object> whiteListFilter;
 
     public static ArangoAlias fromSpecField(SpecProperty specField) {
-        return new ArangoAlias(specField.propertyName);
+        return new ArangoAlias(String.format("%s_%d", specField.propertyName, specField.getAliasPostfix()));
     }
 
     private static ArangoCollectionReference fromSpecTraversal(SpecTraverse traverse) {

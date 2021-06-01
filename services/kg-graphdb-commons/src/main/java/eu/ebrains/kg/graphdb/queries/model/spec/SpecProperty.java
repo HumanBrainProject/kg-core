@@ -40,6 +40,7 @@ public class SpecProperty {
     public String propertyName;
     public final List<SpecProperty> property;
     public final List<SpecTraverse> path;
+    private transient Integer aliasPostfix;
     public boolean required;
     public boolean sortAlphabetically;
     public boolean sortContent;
@@ -49,6 +50,13 @@ public class SpecProperty {
     public PropertyFilter propertyFilter;
     public final Map<String, Object> customDirectives;
 
+    public Integer getAliasPostfix() {
+        return aliasPostfix;
+    }
+
+    public void setAliasPostfix(Integer aliasPostfix) {
+        this.aliasPostfix = aliasPostfix;
+    }
 
     public SpecProperty(String fieldName, List<SpecProperty> property, List<SpecTraverse> path, String groupedInstances, boolean required, boolean sortAlphabetically, boolean sortContent, boolean groupBy, boolean ensureOrder, PropertyFilter propertyFilter, SingleItemStrategy singleItem) {
         this(fieldName, property, path, groupedInstances, required, sortAlphabetically, sortContent, groupBy, ensureOrder, propertyFilter, singleItem, null);

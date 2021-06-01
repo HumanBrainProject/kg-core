@@ -40,11 +40,22 @@ public class Specification {
     }
 
     public Specification(List<SpecProperty> properties, PropertyFilter documentFilter, Type rootType, String responseVocab) {
-        this.properties = properties ==null ? Collections.emptyList() : Collections.unmodifiableList(properties);
+        this.properties = properties ==null ? Collections.emptyList() : Collections.unmodifiableList(addUniqueAliasPostfixToProperties(properties, 0));
         this.documentFilter = documentFilter;
         this.rootType = rootType;
         this.responseVocab = responseVocab;
     }
+
+    private List<SpecProperty> addUniqueAliasPostfixToProperties(List<SpecProperty> properties, Integer counter){
+        for (SpecProperty property : properties) {
+            property.setAliasPostfix(counter++);
+            if(property.property!=null){
+                addUniqueAliasPostfixToProperties(property.property, counter);
+            }
+        }
+        return properties;
+    }
+
 
     public String getResponseVocab() {
         return responseVocab;
