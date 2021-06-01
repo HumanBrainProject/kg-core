@@ -36,6 +36,8 @@ import eu.ebrains.kg.commons.permission.Functionality;
 import eu.ebrains.kg.commons.permission.FunctionalityInstance;
 import eu.ebrains.kg.commons.semantics.vocabularies.EBRAINSVocabulary;
 import eu.ebrains.kg.commons.semantics.vocabularies.SchemaOrgVocabulary;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
@@ -58,6 +60,9 @@ public class CoreInstanceController {
     private final JsonLd.Client jsonLd;
     private final PrimaryStoreEvents.Client primaryStoreEvents;
 
+
+    private final Logger logger = LoggerFactory.getLogger(getClass());
+
     public CoreInstanceController(GraphDBInstances.Client graphDBInstances, GraphDBScopes.Client graphDBScopes, IdsController ids, AuthContext authContext, IdUtils idUtils, JsonLd.Client jsonLd, PrimaryStoreEvents.Client primaryStoreEvents) {
         this.graphDBInstances = graphDBInstances;
         this.graphDBScopes = graphDBScopes;
@@ -75,7 +80,11 @@ public class CoreInstanceController {
         } else {
             normalizedJsonLd = new NormalizedJsonLd(jsonLdDoc);
         }
+        long startIdResolution = new Date().getTime();
         List<InstanceId> instanceIdsInSameSpace = ids.resolveIds(DataStage.IN_PROGRESS, new IdWithAlternatives(id, s, normalizedJsonLd.allIdentifiersIncludingId()), false).stream().filter(i -> s.equals(i.getSpace())).collect(Collectors.toList());
+        logger.debug(String.format("Resolved %d instances for ids in %d ms", instanceIdsInSameSpace.size(), new Date().getTime()-startIdResolution));
+
+
         //Were only interested in those instance ids in the same space. Since merging is not done cross-space, we want to allow instances being created with the same identifiers across spaces.
         if (!instanceIdsInSameSpace.isEmpty()) {
             if (instanceIdsInSameSpace.size() == 1) {

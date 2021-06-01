@@ -40,49 +40,49 @@ import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Component;
 
+import javax.annotation.PostConstruct;
 import java.util.*;
 
 @Component
 public class AuthenticationRepository {
     private final ArangoDatabaseProxy arangoDatabase;
+    private final TermsOfUseRepository termsOfUseRepository;
     private final JsonAdapter jsonAdapter;
 
-    public AuthenticationRepository(@Qualifier("termsOfUseDB") ArangoDatabaseProxy arangoDatabase, JsonAdapter jsonAdapter) {
+    @PostConstruct
+    public void setup() {
+        arangoDatabase.createIfItDoesntExist();
+        arangoDatabase.createCollectionIfItDoesntExist("users");
+        arangoDatabase.createCollectionIfItDoesntExist("publicSpaces");
+    }
+
+    public AuthenticationRepository(@Qualifier("termsOfUseDB") ArangoDatabaseProxy arangoDatabase, JsonAdapter jsonAdapter, TermsOfUseRepository termsOfUseRepository) {
         this.arangoDatabase = arangoDatabase;
+        this.termsOfUseRepository = termsOfUseRepository;
         this.jsonAdapter = jsonAdapter;
     }
 
     private ArangoCollection getPublicSpacesCollection() {
-        ArangoDatabase database = arangoDatabase.getOrCreate();
-        ArangoCollection collection = database.collection("publicSpaces");
-        if (!collection.exists()) {
-            collection.create();
-        }
-        return collection;
-    }
-
-
-    private ArangoCollection getTermsOfUseCollection() {
-        ArangoDatabase database = arangoDatabase.getOrCreate();
-        ArangoCollection collection = database.collection("termsOfUse");
-        if (!collection.exists()) {
-            collection.create();
-        }
-        return collection;
+        ArangoDatabase database = arangoDatabase.get();
+        return database.collection("publicSpaces");
     }
 
     private ArangoCollection getUsersCollection() {
-        ArangoDatabase database = arangoDatabase.getOrCreate();
-        ArangoCollection collection = database.collection("users");
-        if (!collection.exists()) {
-            collection.create();
-        }
-        return collection;
+        ArangoDatabase database = arangoDatabase.get();
+        return database.collection("users");
     }
 
+    @Cacheable("termsOfUseByUser")
     public TermsOfUse findTermsOfUseToAccept(String userId){
-        TermsOfUseAcceptance termsOfUse = jsonAdapter.fromJson(getUsersCollection().getDocument(userId, String.class), TermsOfUseAcceptance.class);
-        TermsOfUse currentTermsOfUse = getCurrentTermsOfUse();
+        String userDoc = getUsersCollection().getDocument(userId, String.class);
+        TermsOfUseAcceptance termsOfUse;
+        if(userDoc!=null) {
+            termsOfUse = jsonAdapter.fromJson(userDoc, TermsOfUseAcceptance.class);
+        }
+        else{
+            termsOfUse = null;
+        }
+        TermsOfUse currentTermsOfUse = termsOfUseRepository.getCurrentTermsOfUse();
         if(currentTermsOfUse!=null) {
             String currentVersion = currentTermsOfUse.getVersion();
             if (termsOfUse != null && termsOfUse.getAcceptedTermsOfUse().stream().anyMatch(t -> t.getVersion().equals(currentVersion))) {
@@ -92,10 +92,7 @@ public class AuthenticationRepository {
         return currentTermsOfUse;
     }
 
-    public TermsOfUse getCurrentTermsOfUse() {
-        return getTermsOfUseCollection().getDocument("current", TermsOfUse.class);
-    }
-
+    @CacheEvict(value="termsOfUseByUser", key = "#userId")
     public void acceptTermsOfUse(String version, String userId){
         TermsOfUseAcceptance userAcceptance = getUsersCollection().getDocument(userId, TermsOfUseAcceptance.class);
         if(userAcceptance == null){
@@ -103,15 +100,6 @@ public class AuthenticationRepository {
         }
         userAcceptance.getAcceptedTermsOfUse().add(new AcceptedTermsOfUse(version, new Date()));
         getUsersCollection().insertDocument(jsonAdapter.toJson(userAcceptance), new DocumentCreateOptions().overwrite(true).silent(true));
-    }
-
-    public void setCurrentTermsOfUse(TermsOfUse termsOfUse) {
-        if(termsOfUse==null || termsOfUse.getData() == null || termsOfUse.getVersion() == null){
-            throw new IllegalArgumentException("Was receiving an invalid terms of use specification");
-        }
-        ArangoTermsOfUse versioned = new ArangoTermsOfUse(termsOfUse.getVersion(), termsOfUse.getData(), termsOfUse.getVersion());
-        ArangoTermsOfUse current = new ArangoTermsOfUse(termsOfUse.getVersion(), termsOfUse.getData(), "current");
-        getTermsOfUseCollection().insertDocuments(Arrays.asList(jsonAdapter.toJson(versioned), jsonAdapter.toJson(current)), new DocumentCreateOptions().overwrite(true).silent(true));
     }
 
     public boolean isSpacePublic(String space){

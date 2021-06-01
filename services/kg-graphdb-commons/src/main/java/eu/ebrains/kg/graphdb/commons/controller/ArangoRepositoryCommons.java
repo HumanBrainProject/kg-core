@@ -42,6 +42,7 @@ import eu.ebrains.kg.graphdb.commons.model.ArangoDocument;
 import eu.ebrains.kg.graphdb.commons.model.ArangoEdge;
 import eu.ebrains.kg.graphdb.commons.model.ArangoInstance;
 import eu.ebrains.kg.graphdb.ingestion.model.*;
+import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
@@ -77,26 +78,41 @@ public class ArangoRepositoryCommons {
     }
 
     public List<ArangoDocumentReference> findEdgeBetweenDocuments(ArangoDatabase db, ArangoDocumentReference origin, ArangoDocumentReference target, ArangoCollectionReference collectionReference) {
-        String query = "FOR doc IN @@collection\n" +
-                "   FILTER doc._from == @origin AND doc._to == @target\n" +
-                "   RETURN doc._id";
+        AQL aql = new AQL();
+        aql.addLine(AQL.trust("FOR doc IN @@collection"));
+        aql.addLine(AQL.trust("FILTER doc._from == @origin AND doc._to == @target"));
+        aql.addLine(AQL.trust("RETURN doc._id"));
         Map<String, Object> bindVars = new HashMap<>();
         bindVars.put("@collection", collectionReference.getCollectionName());
         bindVars.put("origin", origin.getId());
         bindVars.put("target", target.getId());
-        return query(db, query, bindVars, new AqlQueryOptions(), String.class).stream().map(s -> ArangoDocumentReference.fromArangoId(s, true)).collect(Collectors.toList());
+        if(logger.isTraceEnabled()){
+            logger.trace(aql.buildSimpleDebugQuery(bindVars));
+        }
+        long start = new Date().getTime();
+        List<ArangoDocumentReference> result = query(db, aql.build().getValue(), bindVars, new AqlQueryOptions(), String.class).stream().map(s -> ArangoDocumentReference.fromArangoId(s, true)).collect(Collectors.toList());
+        logger.debug(String.format("Resolved %d edges between document %s and %s in %dms", result.size(), origin.getId(), target.getId(), new Date().getTime()-start));
+        return result;
     }
 
     public List<ArangoEdge> findUnresolvedEdgesForIds(DataStage stage, Set<String> ids) {
         ArangoDatabase db = databases.getByStage(stage);
         ArangoCollectionReference unresolvedEdges = ArangoCollectionReference.fromSpace(InternalSpace.UNRESOLVED_SPACE);
         if (db.collection(unresolvedEdges.getCollectionName()).exists()) {
-            String query = "FOR doc IN `" + unresolvedEdges.getCollectionName() + "`\n" +
-                    "   FILTER doc." + IndexedJsonLdDoc.ORIGINAL_TO + " IN @ids\n" +
-                    "   RETURN doc";
+            AQL aql = new AQL();
+            aql.addLine(AQL.trust("FOR doc IN @@unresolvedEdges"));
+            aql.addLine(AQL.trust("FILTER doc." + IndexedJsonLdDoc.ORIGINAL_TO + " IN @ids"));
+            aql.addLine(AQL.trust("RETURN doc"));
             Map<String, Object> bindVars = new HashMap<>();
+            bindVars.put("@unresolvedEdges", unresolvedEdges.getCollectionName());
             bindVars.put("ids", ids);
-            return query(db, query, bindVars, new AqlQueryOptions(), ArangoEdge.class);
+            if(logger.isTraceEnabled()){
+                logger.trace(aql.buildSimpleDebugQuery(bindVars));
+            }
+            long start = new Date().getTime();
+            List<ArangoEdge> result = query(db, aql.build().getValue(), bindVars, new AqlQueryOptions(), ArangoEdge.class);
+            logger.debug(String.format("Found %d unresolved edges for ids %s in %dms", result.size(), StringUtils.join(ids, ", "), new Date().getTime()-start));
+            return result;
         }
         return Collections.emptyList();
     }
@@ -111,20 +127,26 @@ public class ArangoRepositoryCommons {
         if (edgeCollections == null || edgeCollections.isEmpty()) {
             return Collections.emptyList();
         }
-        StringBuilder query = new StringBuilder("LET doc = DOCUMENT(@document)\n" +
-                "LET edges = (FOR v, e IN 1..1 INBOUND doc ");
-        Set<String> collections = edgeCollections.stream().map(e -> "`" + e.getCollectionName() + "`").collect(Collectors.toSet());
-        query.append(String.join(", ", collections));
+        AQL aql = new AQL();
+        aql.addLine(AQL.trust("LET doc = DOCUMENT(@document)"));
+        aql.addLine(AQL.trust("LET edges = (FOR v, e IN 1..1 INBOUND doc "));
+        aql.addLine(AQL.trust(edgeCollections.stream().map(e -> String.format("`%s`", e.getCollectionName())).collect(Collectors.joining(", "))));
         Map<String, Object> bindVars = new HashMap<>();
         if (filterByIds != null) {
-            query.append(" FILTER e." + IndexedJsonLdDoc.ORIGINAL_TO + " IN @ids");
+            aql.addLine(AQL.trust(" FILTER e." + IndexedJsonLdDoc.ORIGINAL_TO + " IN @ids"));
             bindVars.put("ids", filterByIds);
         }
-        query.append("        RETURN e)\n");
-        query.append("FOR edge IN edges\n");
-        query.append("  RETURN edge");
+        aql.addLine(AQL.trust("RETURN e)"));
+        aql.addLine(AQL.trust("FOR edge IN edges"));
+        aql.addLine(AQL.trust("RETURN edge"));
         bindVars.put("document", documentReference.getId());
-        return query(db, query.toString(), bindVars, new AqlQueryOptions(), ArangoEdge.class);
+        if(logger.isTraceEnabled()){
+            logger.trace(aql.buildSimpleDebugQuery(bindVars));
+        }
+        long start = new Date().getTime();
+        List<ArangoEdge> result = query(db, aql.build().getValue(), bindVars, new AqlQueryOptions(), ArangoEdge.class);
+        logger.debug(String.format("Found %d incoming relations for ids %s in %dms", result.size(), documentReference.getId(), new Date().getTime()-start));
+        return result;
     }
 
     private <T> List<T> query(ArangoDatabase db, String query, Map<String, Object> bindVars, AqlQueryOptions options, Class<T> clazz) {
@@ -154,17 +176,23 @@ public class ArangoRepositoryCommons {
     private Set<ArangoDocumentReference> findArangoReferencesForDocumentId(ArangoDatabase db, UUID documentId) {
         ArangoCollectionReference documentIdSpace = ArangoCollectionReference.fromSpace(InternalSpace.DOCUMENT_ID_SPACE);
         if (db.collection(documentIdSpace.getCollectionName()).exists() && db.collection(InternalSpace.DOCUMENT_ID_EDGE_COLLECTION.getCollectionName()).exists()) {
-            String aql = "LET doc = DOCUMENT(@@collection, @documentId)\n" +
-                    "LET docs = (FOR v,e IN 1..1 OUTBOUND doc @@relation\n" +
-                    "    RETURN [v._id, e._id])\n" +
-                    "LET flattened = FLATTEN(docs)\n" +
-                    "FOR d IN flattened\n" +
-                    "  RETURN d";
+            AQL aql = new AQL();
+            aql.addLine(AQL.trust("LET doc = DOCUMENT(@@collection, @documentId)"));
+            aql.addLine(AQL.trust("LET docs = (FOR v,e IN 1..1 OUTBOUND doc @@relation"));
+            aql.indent().addLine(AQL.trust("RETURN [v._id, e._id])")).outdent();
+            aql.addLine(AQL.trust( "LET flattened = FLATTEN(docs)"));
+            aql.addLine(AQL.trust( "FOR d IN flattened"));
+            aql.addLine(AQL.trust( "RETURN d"));
             Map<String, Object> bindVars = new HashMap<>();
             bindVars.put("@collection", documentIdSpace.getCollectionName());
             bindVars.put("documentId", documentId.toString());
             bindVars.put("@relation", InternalSpace.DOCUMENT_ID_EDGE_COLLECTION.getCollectionName());
-            List<String> ids = db.query(aql, bindVars, new AqlQueryOptions(), String.class).asListRemaining();
+            if(logger.isTraceEnabled()){
+                logger.trace(aql.buildSimpleDebugQuery(bindVars));
+            }
+            long start = new Date().getTime();
+            List<String> ids = db.query(aql.build().getValue(), bindVars, new AqlQueryOptions(), String.class).asListRemaining();
+            logger.debug(String.format("Resolved %d references for document id %s in %dms", ids.size(), documentId, new Date().getTime()-start));
             return ids.stream().filter(Objects::nonNull).map(id -> ArangoDocumentReference.fromArangoId(id, null)).collect(Collectors.toSet());
         }
         return Collections.emptySet();
@@ -173,13 +201,19 @@ public class ArangoRepositoryCommons {
     public List<ArangoDocumentReference> getEdgesFrom(DataStage stage, ArangoCollectionReference edgeCollection, ArangoDocumentReference from) {
         ArangoDatabase db = databases.getByStage(stage);
         if (db.collection(edgeCollection.getCollectionName()).exists()) {
-            String aql = "FOR doc IN @@edgeCollection" +
-                    "FILTER doc._from == @from" +
-                    "RETURN doc._id";
+            AQL aql = new AQL();
+            aql.addLine(AQL.trust("FOR doc IN @@edgeCollection"));
+            aql.addLine(AQL.trust("FILTER doc._from == @from"));
+            aql.addLine(AQL.trust("RETURN doc._id"));
             Map<String, Object> bindVars = new HashMap<>();
             bindVars.put("@edgeCollection", edgeCollection.getCollectionName());
             bindVars.put("from", from.getDocumentId());
-            List<String> documentIds = db.query(aql, bindVars, new AqlQueryOptions(), String.class).asListRemaining();
+            if(logger.isTraceEnabled()){
+                logger.trace(aql.buildSimpleDebugQuery(bindVars));
+            }
+            long start=new Date().getTime();
+            List<String> documentIds = db.query(aql.build().getValue(), bindVars, new AqlQueryOptions(), String.class).asListRemaining();
+            logger.debug(String.format("Found %d edges ffrom document id %s in %dms", documentIds.size(), from.getDocumentId(), new Date().getTime()-start));
             return documentIds.stream().map(id -> ArangoDocumentReference.fromArangoId(id, true)).collect(Collectors.toList());
         }
         return Collections.emptyList();
@@ -294,7 +328,10 @@ public class ArangoRepositoryCommons {
             utils.getOrCreateArangoCollection(db, c);
         });
 
+        long startTransactionDate = new Date().getTime();
+
         StreamTransactionEntity tx = db.beginStreamTransaction(new StreamTransactionOptions().writeCollections(collections.stream().map(ArangoCollectionReference::getCollectionName).toArray(String[]::new)));
+        logger.debug(String.format("Starting transaction %s", tx.getId()));
         DocumentDeleteOptions deleteOptions = new DocumentDeleteOptions().streamTransactionId(tx.getId());
         DocumentCreateOptions insertOptions = new DocumentCreateOptions().streamTransactionId(tx.getId());
         DocumentUpdateOptions updateOptions = new DocumentUpdateOptions().streamTransactionId(tx.getId());
@@ -304,10 +341,12 @@ public class ArangoRepositoryCommons {
             edgeResolutionDependencies.values().stream().collect(Collectors.groupingBy(i -> i.getId().getArangoCollectionReference())).forEach((c, v) -> db.collection(c.getCollectionName()).updateDocuments(v.stream().map(doc -> jsonAdapter.toJson(doc.getDoc())).collect(Collectors.toList()), updateOptions));
             insertedDocuments.forEach((c,v)->db.collection(c.getCollectionName()).insertDocuments(v, insertOptions.overwrite(true)));
             db.commitStreamTransaction(tx.getId());
+            logger.debug(String.format("Committing transaction %s after %dms", tx.getId(), new Date().getTime()-startTransactionDate));
         } catch (Exception e) {
-            logger.debug(String.format("Execution of transaction has failed. \n\n TRANSACTION: %s\n\n", tx.getId()));
+            logger.debug(String.format("Execution of transaction has failed after %dms. \n\n TRANSACTION: %s\n\n", new Date().getTime()-startTransactionDate, tx.getId()));
             db.abortStreamTransaction(tx.getId());
         }
+
     }
 
     private Set<ArangoDocumentReference> findRemovalOfAllDependenciesForDocumentId(ArangoDatabase db, ArangoDocumentReference delete, Set<ArangoDocumentReference> skipList) {
@@ -321,6 +360,9 @@ public class ArangoRepositoryCommons {
 
     public <T> Paginated<T> queryDocuments(ArangoDatabase db, AQLQuery aqlQuery, Function<NormalizedJsonLd, T> mapper) {
         AQL aql = aqlQuery.getAql();
+        if(logger.isTraceEnabled()){
+            logger.trace(aql.buildSimpleDebugQuery(aqlQuery.getBindVars()));
+        }
         String value = aql.build().getValue();
         long launch = new Date().getTime();
         ArangoCursor<NormalizedJsonLd> result = db.query(value, aqlQuery.getBindVars(), aql.getQueryOptions(), NormalizedJsonLd.class);

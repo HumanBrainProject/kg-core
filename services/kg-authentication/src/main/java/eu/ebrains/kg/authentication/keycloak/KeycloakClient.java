@@ -192,7 +192,6 @@ public class KeycloakClient {
         }
     }
 
-    @Cacheable("userInfo")
     public Map<String, Object> getRolesFromUserInfoFromCache(String token, String userInfoEndpoint){
         return this.webclient.build().get().uri(userInfoEndpoint).accept(MediaType.APPLICATION_JSON).header("Authorization", token).retrieve().bodyToMono(Map.class).block();
     }

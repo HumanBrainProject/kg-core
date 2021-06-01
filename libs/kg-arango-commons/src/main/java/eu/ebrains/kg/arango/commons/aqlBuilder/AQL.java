@@ -219,8 +219,7 @@ public class AQL {
                         valueRep = "\"" + value.toString() + "\"";
                     }
                 }
-                aql = aql.replaceAll("@" + key, valueRep);
-
+                aql = aql.replaceAll(String.format("@%s(?=[^a-zA-Z])", key), valueRep);
         }
         return aql;
     }

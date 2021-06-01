@@ -39,23 +39,32 @@ import eu.ebrains.kg.graphdb.instances.model.ArangoRelation;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cache.annotation.Cacheable;
+import org.springframework.cache.interceptor.KeyGenerator;
 import org.springframework.stereotype.Component;
+import org.springframework.util.StringUtils;
 
+import java.lang.reflect.Method;
 import java.util.*;
 
 @Component
 public class ArangoUtils {
+    private final ArangoDatabases arangoDatabases;
 
-    @Autowired
-    ArangoDatabases arangoDatabases;
+    private final IdUtils idUtils;
 
-    @Autowired
-    IdUtils idUtils;
+    public ArangoUtils(ArangoDatabases arangoDatabases, IdUtils idUtils) {
+        this.arangoDatabases = arangoDatabases;
+        this.idUtils = idUtils;
+    }
 
     private final Logger logger = LoggerFactory.getLogger(getClass());
 
     private static final CollectionsReadOptions collectionReadOptions = new CollectionsReadOptions().excludeSystem(true);
 
+
+
+    @Cacheable(value="arangoCollection", key="{#db.name(), #c.collectionName}")
     public ArangoCollection getOrCreateArangoCollection(ArangoDatabase db, ArangoCollectionReference c) {
         ArangoCollection collection = db.collection(c.getCollectionName());
         if (!collection.exists()) {

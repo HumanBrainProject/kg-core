@@ -54,7 +54,7 @@ public class UserResolver {
             } else {
                 UserWithRoles userWithRoles = authContext.getUserWithRoles();
                 if(userWithRoles!=null) {
-                    return authContext.getUserWithRoles().getUser();
+                    return userWithRoles.getUser();
                 }
             }
         }

@@ -22,6 +22,7 @@
 
 package eu.ebrains.kg.arango.commons.model;
 
+import com.arangodb.ArangoCollection;
 import com.arangodb.ArangoDB;
 import com.arangodb.ArangoDatabase;
 
@@ -32,17 +33,47 @@ public class ArangoDatabaseProxy {
 
     private final ArangoDB arangoDB;
     private final String databaseName;
+    private boolean exists;
 
     public ArangoDatabaseProxy(ArangoDB arangoDB, String databaseName) {
         this.arangoDB = arangoDB;
         this.databaseName = databaseName;
     }
 
-    public ArangoDatabase getOrCreate(){
+    public synchronized void createIfItDoesntExist(){
         ArangoDatabase db = arangoDB.db(databaseName);
         if(!db.exists()){
             db.create();
         }
+    }
+
+    public ArangoDatabase get(){
+        return arangoDB.db(databaseName);
+    }
+
+    /**
+     * Use {@link #createIfItDoesntExist()} in post construct and {@link #get()} whenever possible to not suffer from the lookup overhead.
+     * @return
+     */
+    public ArangoDatabase getOrCreate(){
+        ArangoDatabase db = arangoDB.db(databaseName);
+        if(!exists){
+            //If the database is flagged to not exist yet, we're asking the database to be sure.
+            exists = db.exists();
+        }
+        if(!exists){
+            //The database really doesn't exist -> let's create it.
+            db.create();
+            exists = true;
+        }
         return db;
+    }
+
+
+    public synchronized void createCollectionIfItDoesntExist(String collection){
+        ArangoCollection c = get().collection(collection);
+        if (!c.exists()) {
+            c.create();
+        }
     }
 }

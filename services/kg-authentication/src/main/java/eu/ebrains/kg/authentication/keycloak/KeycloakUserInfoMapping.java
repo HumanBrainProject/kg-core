@@ -22,7 +22,11 @@
 
 package eu.ebrains.kg.authentication.keycloak;
 
+import com.google.common.collect.Streams;
+import eu.ebrains.kg.authentication.controller.AuthenticationRepository;
 import eu.ebrains.kg.authentication.model.ClientRoleMapping;
+import eu.ebrains.kg.authentication.model.OpenIdConfig;
+import eu.ebrains.kg.authentication.model.UserOrClientProfile;
 import eu.ebrains.kg.commons.JsonAdapter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -42,10 +46,16 @@ public class KeycloakUserInfoMapping {
 
     private final JsonAdapter jsonAdapter;
 
+    private final KeycloakClient keycloakClient;
+
+    private final AuthenticationRepository authenticationRepository;
+
     private final Logger logger = LoggerFactory.getLogger(getClass());
 
-    public KeycloakUserInfoMapping(JsonAdapter jsonAdapter) {
+    public KeycloakUserInfoMapping(JsonAdapter jsonAdapter, KeycloakClient keycloakClient, AuthenticationRepository authenticationRepository) {
         this.jsonAdapter = jsonAdapter;
+        this.keycloakClient = keycloakClient;
+        this.authenticationRepository = authenticationRepository;
     }
 
     public final static class UserInfoMapping extends LinkedHashMap<String, LinkedHashMap<String, List<ClientRoleMapping>>> {
@@ -63,6 +73,14 @@ public class KeycloakUserInfoMapping {
         catch (IOException e){
             throw new RuntimeException("Was not able to read the userInfoMapping");
         }
+    }
+
+    @Cacheable("userRoleMappings")
+    public List<String> getUserOrClientProfile(String token, String userInfoEndpoint){
+        Map<String, Object> userInfo = keycloakClient.getRolesFromUserInfoFromCache(token, userInfoEndpoint);
+        List<String> userRoles = mapRoleNames(userInfo, getMappings());
+        //We attach the consumer roles of the public spaces...
+        return Streams.concat(userRoles.stream(), authenticationRepository.getPublicSpaces().stream().filter(Objects::nonNull).map(space -> String.format("%s:consumer", space))).distinct().collect(Collectors.toList());
     }
 
 

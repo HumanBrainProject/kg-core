@@ -56,7 +56,7 @@ public interface Authentication {
 
     User getMyUserInfo();
 
-    UserWithRoles getRoles(boolean checkForTermsOfUse);
+    UserWithRoles   getRoles(boolean checkForTermsOfUse);
 
     User getOtherUserInfo(String nativeId);
 

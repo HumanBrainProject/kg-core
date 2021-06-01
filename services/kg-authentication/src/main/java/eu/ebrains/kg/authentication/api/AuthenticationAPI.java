@@ -23,6 +23,7 @@
 package eu.ebrains.kg.authentication.api;
 
 import eu.ebrains.kg.authentication.controller.AuthenticationRepository;
+import eu.ebrains.kg.authentication.controller.TermsOfUseRepository;
 import eu.ebrains.kg.authentication.keycloak.KeycloakController;
 import eu.ebrains.kg.authentication.keycloak.KeycloakInitialSetup;
 import eu.ebrains.kg.authentication.model.UserOrClientProfile;
@@ -51,13 +52,16 @@ public class AuthenticationAPI implements Authentication.Client {
 
     private final AuthenticationRepository authenticationRepository;
 
+    private final TermsOfUseRepository termsOfUseRepository;
+
     private final Permissions permissions;
 
 
-    public AuthenticationAPI(KeycloakController keycloakController, KeycloakInitialSetup initialSetup, AuthenticationRepository authenticationRepository, Permissions permissions) {
+    public AuthenticationAPI(KeycloakController keycloakController, KeycloakInitialSetup initialSetup, AuthenticationRepository authenticationRepository, TermsOfUseRepository termsOfUseRepository, Permissions permissions) {
         this.keycloakController = keycloakController;
         this.initialSetup = initialSetup;
         this.authenticationRepository = authenticationRepository;
+        this.termsOfUseRepository = termsOfUseRepository;
         this.permissions = permissions;
     }
 
@@ -169,7 +173,7 @@ public class AuthenticationAPI implements Authentication.Client {
                 }
             }
         }
-        termsOfUse = authenticationRepository.getCurrentTermsOfUse();
+        termsOfUse = termsOfUseRepository.getCurrentTermsOfUse();
         return termsOfUse != null ? new TermsOfUseResult(termsOfUse, true) : null;
     }
 
@@ -189,7 +193,7 @@ public class AuthenticationAPI implements Authentication.Client {
         if (!permissions.hasGlobalPermission(this.getRoles(false), Functionality.DEFINE_TERMS_OF_USE)){
             throw new UnauthorizedException("You don't have the rights to define terms of use");
         }
-        authenticationRepository.setCurrentTermsOfUse(termsOfUse);
+        termsOfUseRepository.setCurrentTermsOfUse(termsOfUse);
     }
 
     @Override

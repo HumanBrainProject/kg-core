@@ -308,12 +308,8 @@ public class KeycloakController {
         String bareToken = token.substring("Bearer ".length());
         try {
             Map<String, Claim> claims = jwtVerifier.verify(bareToken).getClaims();
-            Map<String, Object> userInfo = keycloakClient.getRolesFromUserInfoFromCache(token, openIdConfig.getUserInfoEndpoint());
-            if(fetchRoles) {
-                List<String> userRoles = userInfoMapping.mapRoleNames(userInfo, userInfoMapping.getMappings());
-                //We attach the consumer roles of the public spaces...
-                userRoles = Streams.concat(userRoles.stream(), authenticationRepository.getPublicSpaces().stream().filter(Objects::nonNull).map(space -> String.format("%s:consumer", space))).distinct().collect(Collectors.toList());
-                return new UserOrClientProfile(claims, userRoles);
+            if(fetchRoles){
+                return new UserOrClientProfile(claims, userInfoMapping.getUserOrClientProfile(token, openIdConfig.getUserInfoEndpoint()));
             }
             return new UserOrClientProfile(claims, null);
         } catch (JWTVerificationException ex) {
