@@ -252,10 +252,11 @@ public class DataQueryBuilder {
             aql.add(trust(ensureOrder ? "(" : "UNIQUE("));
             aql.add(trust("FLATTEN("));
             aql.indent().add(trust("FOR ${aliasDoc} "));
-            if (ensureOrder) {
-                aql.add(trust(", ${aliasDoc}_e"));
-            }
-            if (traverseExists(traverse)) {
+            boolean traverseExists = traverseExists(traverse);
+            if (traverseExists) {
+                if (ensureOrder) {
+                    aql.add(trust(", ${aliasDoc}_e"));
+                }
                 aql.addLine(trust(" IN 1..1 ${direction} ${parentAliasDoc} `${edgeCollection}`"));
             } else {
                 //TODO if the collection doesn't exist, the query could be simplified a lot - so there is quite some potential for optimization.
@@ -274,7 +275,7 @@ public class DataQueryBuilder {
                     aql.setParameter("aliasDoc_typefilter_" + i, traverse.typeRestrictions.get(i).getName());
                 }
             }
-            if (ensureOrder) {
+            if (traverseExists && ensureOrder) {
                 aql.addLine(trust("SORT ${aliasDoc}_e." + ArangoVocabulary.ORDER_NUMBER + " ASC"));
             }
             aql.setTrustedParameter("alias", alias);
