@@ -38,9 +38,8 @@ import java.util.stream.Collectors;
 public enum RoleMapping {
     CONSUMER(false, true,null, Functionality.READ_RELEASED, Functionality.EXECUTE_QUERY, Functionality.CREATE_QUERY, Functionality.READ_QUERY, Functionality.DELETE_QUERY, Functionality.READ_SPACE),
     REVIEWER(true, false, CONSUMER, Functionality.READ, Functionality.SUGGEST, Functionality.INVITE_FOR_REVIEW, Functionality.MINIMAL_READ, Functionality.RELEASE_STATUS),
-    EDITOR(true, false, REVIEWER, Functionality.WRITE, Functionality.CREATE, Functionality.INVITE_FOR_SUGGESTION),
-    OWNER(true, false, EDITOR, Functionality.RELEASE, Functionality.DELETE, Functionality.UNRELEASE),
-
+    EDITOR(true, false, REVIEWER, Functionality.WRITE, Functionality.CREATE, Functionality.INVITE_FOR_SUGGESTION, Functionality.DELETE),
+    OWNER(true, false, EDITOR, Functionality.RELEASE, Functionality.UNRELEASE),
     ADMIN(true, false, null, Functionality.values()),
 
     //This is a marker role -> it is to be able to flag a user as a technical (client) user.
