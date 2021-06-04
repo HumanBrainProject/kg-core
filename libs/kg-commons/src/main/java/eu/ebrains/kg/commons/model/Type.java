@@ -30,13 +30,17 @@ import java.net.URISyntaxException;
 import java.net.URLDecoder;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
+import java.util.List;
 import java.util.Objects;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 public class Type {
 
     private String name;
     private String labelProperty;
     private transient Boolean ignoreIncomingLinks;
+    private transient Set<SpaceName> spaces;
 
     public String getLabelProperty() {
         return labelProperty;
@@ -69,6 +73,10 @@ public class Type {
         this.ignoreIncomingLinks = ignoreIncomingLinks;
     }
 
+    public Set<SpaceName> getSpaces() {
+        return spaces;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
@@ -86,6 +94,10 @@ public class Type {
         Type targetType = new Type(payload.primaryIdentifier());
         targetType.setLabelProperty(payload.getAs(EBRAINSVocabulary.META_TYPE_LABEL_PROPERTY, String.class));
         targetType.setIgnoreIncomingLinks(payload.getAs(EBRAINSVocabulary.META_IGNORE_INCOMING_LINKS, Boolean.class));
+        List<NormalizedJsonLd> spaces = payload.getAsListOf(EBRAINSVocabulary.META_SPACES, NormalizedJsonLd.class);
+        if(spaces!=null){
+            targetType.spaces = spaces.stream().map(s -> SpaceName.fromString(s.getAs(EBRAINSVocabulary.META_SPACE, String.class))).collect(Collectors.toSet());
+        }
         return targetType;
     }
 

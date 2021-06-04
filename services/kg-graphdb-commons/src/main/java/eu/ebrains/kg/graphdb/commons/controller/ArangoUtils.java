@@ -38,13 +38,10 @@ import eu.ebrains.kg.graphdb.ingestion.model.DocumentRelation;
 import eu.ebrains.kg.graphdb.instances.model.ArangoRelation;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.annotation.Cacheable;
-import org.springframework.cache.interceptor.KeyGenerator;
 import org.springframework.stereotype.Component;
-import org.springframework.util.StringUtils;
 
-import java.lang.reflect.Method;
+import javax.annotation.PostConstruct;
 import java.util.*;
 
 @Component
@@ -53,16 +50,32 @@ public class ArangoUtils {
 
     private final IdUtils idUtils;
 
+
+    @PostConstruct
+    public void configureArango(){
+        logger.debug("Setting up in progress db... ");
+        ArangoDatabase inProgressDB = arangoDatabases.inProgressDB.get();
+        inProgressDB.getCollections(new CollectionsReadOptions().excludeSystem(true)).forEach(c -> {
+            logger.debug(String.format("Ensuring configuration of collection \"%s\" in \"in progress\"", c.getName()));
+            ArangoCollection collection = inProgressDB.collection(c.getName());
+            ensureIndicesOnCollection(collection);
+        });
+
+        ArangoDatabase releasedDB = arangoDatabases.releasedDB.get();
+        releasedDB.getCollections(new CollectionsReadOptions().excludeSystem(true)).forEach(c -> {
+            logger.debug(String.format("Ensuring configuration of collection \"%s\" in \"released\"", c.getName()));
+            ArangoCollection collection = releasedDB.collection(c.getName());
+            ensureIndicesOnCollection(collection);
+        });
+    }
+
+
     public ArangoUtils(ArangoDatabases arangoDatabases, IdUtils idUtils) {
         this.arangoDatabases = arangoDatabases;
         this.idUtils = idUtils;
     }
 
     private final Logger logger = LoggerFactory.getLogger(getClass());
-
-    private static final CollectionsReadOptions collectionReadOptions = new CollectionsReadOptions().excludeSystem(true);
-
-
 
     @Cacheable(value="arangoCollection", key="{#db.name(), #c.collectionName}")
     public ArangoCollection getOrCreateArangoCollection(ArangoDatabase db, ArangoCollectionReference c) {
@@ -73,20 +86,26 @@ public class ArangoUtils {
         return collection;
     }
 
+    private void ensureIndicesOnCollection(ArangoCollection collection){
+        logger.debug(String.format("Ensuring indices properly set for collection %s", collection.name()));
+        collection.ensureHashIndex(Collections.singleton(ArangoVocabulary.COLLECTION), new HashIndexOptions());
+        collection.ensureSkiplistIndex(Collections.singletonList(JsonLdConsts.ID), new SkiplistIndexOptions());
+        if (collection.getInfo().getType() == CollectionType.EDGES) {
+            collection.ensureSkiplistIndex(Collections.singletonList(IndexedJsonLdDoc.ORIGINAL_TO), new SkiplistIndexOptions());
+        } else {
+            collection.ensureSkiplistIndex(Collections.singletonList(JsonLdConsts.TYPE + "[*]"), new SkiplistIndexOptions());
+            collection.ensureSkiplistIndex(Collections.singletonList(IndexedJsonLdDoc.IDENTIFIERS + "[*]"), new SkiplistIndexOptions());
+            collection.ensureSkiplistIndex(Collections.singletonList(IndexedJsonLdDoc.EMBEDDED), new SkiplistIndexOptions());
+        }
+    }
+
     private synchronized ArangoCollection createArangoCollection(ArangoDatabase db, ArangoCollectionReference c) {
         ArangoCollection collection = db.collection(c.getCollectionName());
         //We check again, if the collection has been created in the meantime
         if (!collection.exists()) {
             logger.debug(String.format("Creating collection %s", c.getCollectionName()));
             db.createCollection(c.getCollectionName(), new CollectionCreateOptions().waitForSync(true).type(c.isEdge() != null && c.isEdge() ? CollectionType.EDGES : CollectionType.DOCUMENT));
-            collection.ensureHashIndex(Collections.singleton(ArangoVocabulary.COLLECTION), new HashIndexOptions());
-            collection.ensureSkiplistIndex(Collections.singletonList(JsonLdConsts.ID), new SkiplistIndexOptions());
-            if (collection.getInfo().getType() == CollectionType.EDGES) {
-                collection.ensureSkiplistIndex(Collections.singletonList(IndexedJsonLdDoc.ORIGINAL_TO), new SkiplistIndexOptions());
-            } else {
-                collection.ensureSkiplistIndex(Collections.singletonList(IndexedJsonLdDoc.IDENTIFIERS + "[*]"), new SkiplistIndexOptions());
-                collection.ensureSkiplistIndex(Collections.singletonList(IndexedJsonLdDoc.EMBEDDED), new SkiplistIndexOptions());
-            }
+            ensureIndicesOnCollection(collection);
             if (c.equals(InternalSpace.DOCUMENT_RELATION_EDGE_COLLECTION)) {
                 collection.ensureSkiplistIndex(Collections.singletonList(DocumentRelation.TARGET_ORIGINAL_DOCUMENT), new SkiplistIndexOptions());
             }

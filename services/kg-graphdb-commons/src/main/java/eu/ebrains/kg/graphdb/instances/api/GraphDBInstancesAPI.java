@@ -69,30 +69,36 @@ public class GraphDBInstancesAPI implements GraphDBInstances.Client {
 
     @Override
     public NormalizedJsonLd getInstanceById(String space, UUID id, DataStage stage, boolean returnEmbedded, boolean returnAlternatives, boolean returnIncomingLinks, Long incomingLinksPageSize, boolean removeInternalProperties) {
-        return repository.getInstance(stage, new SpaceName(space), id, returnEmbedded, removeInternalProperties, returnAlternatives, returnIncomingLinks, incomingLinksPageSize );
+        return repository.getInstance(stage, new SpaceName(space), id, returnEmbedded, removeInternalProperties, returnAlternatives, returnIncomingLinks, incomingLinksPageSize);
     }
 
     @Override
     @ExposesData
-    public Paginated<NormalizedJsonLd> getInstancesByType(DataStage stage, String type, String space, String searchByLabel, boolean returnAlternatives, boolean returnEmbedded, boolean sortByLabel, PaginationParam paginationParam) {
-        List<Type> types = Collections.singletonList(new Type(type));
+    public Paginated<NormalizedJsonLd> getInstancesByType(DataStage stage, String typeName, String space, String searchByLabel, boolean returnAlternatives, boolean returnEmbedded, boolean sortByLabel, PaginationParam paginationParam) {
+        Type type = new Type(typeName);
         Map<String, List<String>> searchableProperties = null;
         if (sortByLabel || (searchByLabel != null && !searchByLabel.isBlank())) {
             //Since we're either sorting or searching by label, we need to reflect on the type -> we therefore have to resolve the type in the database first...
-            List<NormalizedJsonLd> typeInformation = typeRepository.getTypes(authContext.getUserWithRoles().getClientId(), stage, types, true, false, false);
-            types = typeInformation.stream().map(Type::fromPayload).collect(Collectors.toList());
-
-            //We're also interested in the properties which are marked as "searchable"
-            searchableProperties = typeInformation.stream().collect(Collectors.toMap(JsonLdDoc::primaryIdentifier, v -> {
-                List<NormalizedJsonLd> properties = v.getAsListOf(EBRAINSVocabulary.META_PROPERTIES, NormalizedJsonLd.class);
-                String labelProperty = Type.fromPayload(v).getLabelProperty();
-                return properties.stream().filter(p -> {
-                    Boolean searchable = p.getAs(EBRAINSVocabulary.META_PROPERTY_SEARCHABLE, Boolean.class);
-                    return searchable != null && searchable;
-                }).map(JsonLdDoc::primaryIdentifier).filter(p -> !p.equals(labelProperty)).collect(Collectors.toList());
-            }));
+            List<NormalizedJsonLd> typeInformation = typeRepository.getTypes(authContext.getUserWithRoles().getClientId(), stage, Collections.singletonList(type), true, false, false);
+            if (!typeInformation.isEmpty()) {
+                type = Type.fromPayload(typeInformation.get(0));
+                //We're also interested in the properties which are marked as "searchable"
+                searchableProperties = typeInformation.stream().collect(Collectors.toMap(JsonLdDoc::primaryIdentifier, v -> {
+                    List<NormalizedJsonLd> properties = v.getAsListOf(EBRAINSVocabulary.META_PROPERTIES, NormalizedJsonLd.class);
+                    String labelProperty = Type.fromPayload(v).getLabelProperty();
+                    return properties.stream().filter(p -> {
+                        Boolean searchable = p.getAs(EBRAINSVocabulary.META_PROPERTY_SEARCHABLE, Boolean.class);
+                        return searchable != null && searchable;
+                    }).map(JsonLdDoc::primaryIdentifier).filter(p -> !p.equals(labelProperty)).collect(Collectors.toList());
+                }));
+            }
+        } else {
+            List<NormalizedJsonLd> typeInformation = typeRepository.getTypes(authContext.getUserWithRoles().getClientId(), stage, Collections.singletonList(type), false, false, false);
+            if(!typeInformation.isEmpty()) {
+                type = Type.fromPayload(typeInformation.get(0));
+            }
         }
-        return repository.getDocumentsByTypes(stage, types, space != null && !space.isBlank() ? new SpaceName(space) : null, paginationParam, searchByLabel, returnEmbedded, returnAlternatives, sortByLabel, searchableProperties);
+        return repository.getDocumentsByTypes(stage, type, space != null && !space.isBlank() ? new SpaceName(space) : null, paginationParam, searchByLabel, returnEmbedded, returnAlternatives, sortByLabel, searchableProperties);
     }
 
     @Override
@@ -158,7 +164,8 @@ public class GraphDBInstancesAPI implements GraphDBInstances.Client {
     public SuggestionResult getSuggestedLinksForProperty(NormalizedJsonLd payload, DataStage stage, String space, UUID id, String propertyName, String type, String search, PaginationParam paginationParam) {
 
         List<Type> types = null;
-        List<UUID> existingLinks = Collections.emptyList();;
+        List<UUID> existingLinks = Collections.emptyList();
+        ;
         if (StringUtils.isNotBlank(type)) {
             types = Collections.singletonList(new Type(URLDecoder.decode(type, StandardCharsets.UTF_8)));
         } else {
@@ -171,7 +178,7 @@ public class GraphDBInstancesAPI implements GraphDBInstances.Client {
             }
         }
         SuggestionResult suggestionResult = new SuggestionResult();
-        if(types==null || types.isEmpty()){
+        if (types == null || types.isEmpty()) {
             //We don't have any clue about the type so we can't give any suggestions
             return null;
         }
