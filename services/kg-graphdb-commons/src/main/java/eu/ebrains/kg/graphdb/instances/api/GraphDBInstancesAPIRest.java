@@ -124,8 +124,8 @@ public class GraphDBInstancesAPIRest implements GraphDBInstances {
 
     @PostMapping("instances/{space}/{id}/suggestedLinksForProperty")
     @ExposesMinimalData
-    public SuggestionResult getSuggestedLinksForProperty(@RequestBody(required = false) NormalizedJsonLd payload, @PathVariable("stage") DataStage stage, @PathVariable("space") String space, @PathVariable("id") UUID id, @RequestParam(value = "property") String propertyName, @RequestParam(value = "type", required = false) String type, @RequestParam(value = "search", required = false) String search, PaginationParam paginationParam) {
-       return graphDBInstancesAPI.getSuggestedLinksForProperty(payload, stage, space, id, propertyName, type, search, paginationParam);
+    public SuggestionResult getSuggestedLinksForProperty(@RequestBody(required = false) NormalizedJsonLd payload, @PathVariable("stage") DataStage stage, @PathVariable("space") String space, @PathVariable("id") UUID id, @RequestParam(value = "property") String propertyName, @RequestParam(value = "sourceType", required = false) String sourceType, @RequestParam(value = "targetType", required = false) String targetType, @RequestParam(value = "search", required = false) String search, PaginationParam paginationParam) {
+       return graphDBInstancesAPI.getSuggestedLinksForProperty(payload, stage, space, id, propertyName, sourceType, targetType, search, paginationParam);
     }
 
 

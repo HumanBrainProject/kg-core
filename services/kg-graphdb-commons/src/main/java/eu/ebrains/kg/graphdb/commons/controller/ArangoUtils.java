@@ -46,6 +46,9 @@ import java.util.*;
 
 @Component
 public class ArangoUtils {
+
+    public static final String BROWSE_AND_SEARCH_INDEX = "browseAndSearch";
+
     private final ArangoDatabases arangoDatabases;
 
     private final IdUtils idUtils;
@@ -93,7 +96,7 @@ public class ArangoUtils {
         if (collection.getInfo().getType() == CollectionType.EDGES) {
             collection.ensureSkiplistIndex(Collections.singletonList(IndexedJsonLdDoc.ORIGINAL_TO), new SkiplistIndexOptions());
         } else {
-            collection.ensureSkiplistIndex(Collections.singletonList(JsonLdConsts.TYPE + "[*]"), new SkiplistIndexOptions());
+            collection.ensureSkiplistIndex(Arrays.asList(JsonLdConsts.TYPE + "[*]", IndexedJsonLdDoc.EMBEDDED, IndexedJsonLdDoc.LABEL, ArangoVocabulary.KEY), new SkiplistIndexOptions().name(BROWSE_AND_SEARCH_INDEX));
             collection.ensureSkiplistIndex(Collections.singletonList(IndexedJsonLdDoc.IDENTIFIERS + "[*]"), new SkiplistIndexOptions());
             collection.ensureSkiplistIndex(Collections.singletonList(IndexedJsonLdDoc.EMBEDDED), new SkiplistIndexOptions());
         }

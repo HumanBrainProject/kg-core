@@ -22,6 +22,7 @@
 
 package eu.ebrains.kg.core.api;
 
+import com.netflix.ribbon.proxy.annotation.Http;
 import eu.ebrains.kg.commons.AuthContext;
 import eu.ebrains.kg.commons.IdUtils;
 import eu.ebrains.kg.commons.Version;
@@ -30,6 +31,7 @@ import eu.ebrains.kg.commons.api.Release;
 import eu.ebrains.kg.commons.config.openApiGroups.Advanced;
 import eu.ebrains.kg.commons.config.openApiGroups.Simple;
 import eu.ebrains.kg.commons.exception.ForbiddenException;
+import eu.ebrains.kg.commons.exception.InstanceNotFoundException;
 import eu.ebrains.kg.commons.jsonld.*;
 import eu.ebrains.kg.commons.markers.*;
 import eu.ebrains.kg.commons.model.*;
@@ -210,6 +212,7 @@ public class Instances {
     public PaginatedResult<NormalizedJsonLd> getInstances(@RequestParam("stage") ExposedStage stage, @RequestParam("type") String type, @RequestParam(value = "space", required = false) @Parameter(description = "The space of the instances to be listed or \""+SpaceName.PRIVATE_SPACE+"\" for your private space") String space, @RequestParam(value = "searchByLabel", required = false) String searchByLabel, @ParameterObject ResponseConfiguration responseConfiguration, @ParameterObject PaginationParam paginationParam) {
         Date startTime = new Date();
         SpaceName spaceName = authContext.resolveSpaceName(space);
+        searchByLabel = enrichSearchTermIfItIsAUUID(searchByLabel);
         PaginatedResult<NormalizedJsonLd> result = PaginatedResult.ok(instanceController.getInstances(stage.getStage(), new Type(type), spaceName, searchByLabel, responseConfiguration, paginationParam));
         result.setExecutionDetails(startTime, new Date());
         return result;
@@ -366,32 +369,36 @@ public class Instances {
     @GetMapping("/instances/{id}/suggestedLinksForProperty")
     @ExposesMinimalData
     @Advanced
-    public Result<SuggestionResult> getSuggestedLinksForProperty(@RequestParam("stage") ExposedStage stage, @PathVariable("id") UUID id, @RequestParam(value = "property") String propertyName, @RequestParam(value = "type", required = false) String type, @RequestParam(value = "search", required = false) String search, @ParameterObject PaginationParam paginationParam) {
-        return getSuggestedLinksForProperty(null, stage, propertyName, id, type, search, paginationParam);
+    public Result<SuggestionResult> getSuggestedLinksForProperty(@RequestParam("stage") ExposedStage stage, @PathVariable("id") UUID id, @RequestParam(value = "property") String propertyName, @RequestParam(value = "sourceType", required = false) @Parameter(description = "The source type for which the given property shall be evaluated. If not provided, the API tries to figure out the type by analyzing the type of the root object of the persisted instance. Please note, that this parameter is mandatory for embedded structures.") String sourceType, @RequestParam(value = "targetType", required = false) @Parameter(description = "The target type of the suggestions. If not provided, suggestions of all possible target types will be returned.") String targetType, @RequestParam(value = "search", required = false) String search, @ParameterObject PaginationParam paginationParam) {
+        return getSuggestedLinksForProperty(null, stage, propertyName, id, sourceType, targetType, search, paginationParam);
     }
 
     @Operation(summary = "Returns suggestions for an instance to be linked by the given property (e.g. for the KG Editor) - and takes into account the passed payload (already chosen values, reflection on dependencies between properties - e.g. providing only parcellations for an already chosen brain atlas)")
     @PostMapping("/instances/{id}/suggestedLinksForProperty")
     @ExposesMinimalData
     @Advanced
-    public Result<SuggestionResult> getSuggestedLinksForProperty(@RequestBody NormalizedJsonLd payload, @RequestParam("stage") ExposedStage stage, @RequestParam(value = "property") String propertyName, @PathVariable("id") UUID id, @RequestParam(value = "type", required = false) String type, @RequestParam(value = "search", required = false) String search, @ParameterObject PaginationParam paginationParam) {
+    public Result<SuggestionResult> getSuggestedLinksForProperty(@RequestBody NormalizedJsonLd payload, @RequestParam("stage") ExposedStage stage, @RequestParam(value = "property") String propertyName, @PathVariable("id") UUID id, @Parameter(description = "The source type for which the given property shall be evaluated. If not provided, the API tries to figure out the type by analyzing the type of the root object originating from the payload. Please note, that this parameter is mandatory for embedded structures.") @RequestParam(value = "sourceType", required = false) String sourceType, @Parameter(description = "The target type of the suggestions. If not provided, suggestions of all possible target types will be returned.") @RequestParam(value = "targetType", required = false) String targetType, @RequestParam(value = "search", required = false) String search, @ParameterObject PaginationParam paginationParam) {
+        Date start = new Date();
         InstanceId instanceId = idsController.resolveId(DataStage.IN_PROGRESS, id);
+        search = enrichSearchTermIfItIsAUUID(search);
+        return Result.ok(graphDBInstances.getSuggestedLinksForProperty(payload, stage.getStage(), instanceId!=null && instanceId.getSpace()!=null ? instanceId.getSpace().getName() : null, id, propertyName, sourceType != null && !sourceType.isBlank() ? new Type(sourceType).getName() : null, targetType != null && !targetType.isBlank() ? new Type(targetType).getName() : null, search, paginationParam)).setExecutionDetails(start, new Date());
+    }
+
+    private String enrichSearchTermIfItIsAUUID(String search){
         if(search!=null) {
             try {
                 //The search string is a UUID -> let's try to resolve it - if we're successful, we can shortcut the lookup process.
                 UUID uuid = UUID.fromString(search);
                 InstanceId resolvedSearchId = idsController.resolveId(DataStage.IN_PROGRESS, uuid);
                 if(resolvedSearchId!=null){
-                    search = resolvedSearchId.serialize();
+                    return resolvedSearchId.serialize();
                 }
             }
             catch(IllegalArgumentException e){
                 //The search string is not an id -> we therefore don't treat it.
             }
         }
-
-
-        return Result.ok(graphDBInstances.getSuggestedLinksForProperty(payload, stage.getStage(), instanceId!=null && instanceId.getSpace()!=null ? instanceId.getSpace().getName() : null, id, propertyName, type != null && !type.isBlank() ? new Type(type).getName() : null, search, paginationParam));
+        return search;
     }
 
 

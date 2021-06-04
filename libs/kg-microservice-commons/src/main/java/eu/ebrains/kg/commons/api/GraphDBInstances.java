@@ -75,5 +75,5 @@ public interface GraphDBInstances {
     ReleaseStatus getReleaseStatus(String space, UUID id, ReleaseTreeScope treeScope);
 
     @ExposesMinimalData
-    SuggestionResult getSuggestedLinksForProperty(NormalizedJsonLd payload, DataStage stage, String space, UUID id, String propertyName, String type, String search, PaginationParam paginationParam);
+    SuggestionResult getSuggestedLinksForProperty(NormalizedJsonLd payload, DataStage stage, String space, UUID id, String propertyName, String sourceType, String targetType, String search, PaginationParam paginationParam);
 }
