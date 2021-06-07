@@ -32,6 +32,7 @@ import eu.ebrains.kg.authentication.controller.AuthenticationRepository;
 import eu.ebrains.kg.authentication.model.OpenIdConfig;
 import eu.ebrains.kg.authentication.model.UserOrClientProfile;
 import eu.ebrains.kg.commons.AuthTokenContext;
+import eu.ebrains.kg.commons.AuthTokens;
 import eu.ebrains.kg.commons.JsonAdapter;
 import eu.ebrains.kg.commons.exception.UnauthorizedException;
 import eu.ebrains.kg.commons.model.Client;
@@ -291,17 +292,19 @@ public class KeycloakController {
 
 
     public UserOrClientProfile getClientProfile(boolean fetchRoles) {
-        if (authTokenContext.getAuthTokens() == null || authTokenContext.getAuthTokens().getClientAuthToken() == null) {
+        AuthTokens authTokens = authTokenContext.getAuthTokens();
+        if (authTokens == null || authTokens.getClientAuthToken() == null) {
             return null;
         }
-        return getInfo(authTokenContext.getAuthTokens().getClientAuthToken().getBearerToken(), fetchRoles);
+        return getInfo(authTokens.getClientAuthToken().getBearerToken(), fetchRoles);
     }
 
     public UserOrClientProfile getUserProfile(boolean fetchRoles) {
-        if (authTokenContext.getAuthTokens() == null || authTokenContext.getAuthTokens().getUserAuthToken() == null) {
+        AuthTokens authTokens = authTokenContext.getAuthTokens();
+        if (authTokens == null || authTokens.getUserAuthToken() == null) {
             throw new UnauthorizedException("You haven't provided the required credentials! Please define an Authorization header with your bearer token!");
         }
-        return getInfo(authTokenContext.getAuthTokens().getUserAuthToken().getBearerToken(), fetchRoles);
+        return getInfo(authTokens.getUserAuthToken().getBearerToken(), fetchRoles);
     }
 
     UserOrClientProfile getInfo(String token, boolean fetchRoles) {
