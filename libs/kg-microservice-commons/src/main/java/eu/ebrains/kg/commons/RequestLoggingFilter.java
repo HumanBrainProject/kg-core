@@ -22,6 +22,7 @@
 
 package eu.ebrains.kg.commons;
 
+import eu.ebrains.kg.commons.exception.NotAcceptedTermsOfUseException;
 import eu.ebrains.kg.commons.exception.UnauthorizedException;
 import eu.ebrains.kg.commons.models.UserWithRoles;
 import net.logstash.logback.argument.StructuredArguments;
@@ -56,7 +57,7 @@ public class RequestLoggingFilter extends OncePerRequestFilter {
             UserWithRoles userWithRoles;
             try {
                 userWithRoles = authContext.getUserWithRoles();
-            } catch (UnauthorizedException ex) {
+            } catch (UnauthorizedException | NotAcceptedTermsOfUseException ex) {
                 userWithRoles = null;
             }
             logger.info("{}, {}, {}, {}, {}, {}, {}", StructuredArguments.keyValue("action", "API request"),
