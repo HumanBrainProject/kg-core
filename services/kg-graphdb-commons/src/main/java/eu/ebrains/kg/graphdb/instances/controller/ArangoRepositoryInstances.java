@@ -628,7 +628,7 @@ public class ArangoRepositoryInstances {
                 switch (mode) {
                     case SIMPLE:
                     case DYNAMIC:
-                        addSearchFilter(bindVars, aql, search, !searchableProperties.isEmpty());
+                        addSearchFilter(bindVars, aql, search, searchableProperties!=null && !searchableProperties.isEmpty());
                         if (sortByLabel) {
                             aql.addLine(AQL.trust(String.format("SORT v.%s ASC", IndexedJsonLdDoc.LABEL)));
                         }
