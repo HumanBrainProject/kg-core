@@ -101,7 +101,6 @@ public class IndexedJsonLdDoc {
     }
 
     public void setCollection(String collection){
-        document.addProperty(EBRAINSVocabulary.META_SPACE, collection);
         document.addProperty(COLLECTION, collection);
     }
 
