@@ -62,8 +62,8 @@ public class GraphDBInstancesAPIRest implements GraphDBInstances {
 
     @GetMapping("instancesByType")
     @ExposesData
-    public Paginated<NormalizedJsonLd> getInstancesByType(@PathVariable("stage") DataStage stage, @RequestParam("type") String type, @RequestParam(value = "space", required = false) String space, @RequestParam(value = "searchByLabel", required = false) String searchByLabel, @RequestParam(value = "returnAlternatives", required = false, defaultValue = "false") boolean returnAlternatives, @RequestParam(value = "returnEmbedded", required = false, defaultValue = "false") boolean returnEmbedded, @RequestParam(value = "sortByLabel", required = false, defaultValue = "false") boolean sortByLabel, PaginationParam paginationParam) {
-        return graphDBInstancesAPI.getInstancesByType(stage, type, space, searchByLabel, returnAlternatives, returnEmbedded, sortByLabel, paginationParam);
+    public Paginated<NormalizedJsonLd> getInstancesByType(@PathVariable("stage") DataStage stage, @RequestParam("type") String type, @RequestParam(value = "space", required = false) String space, @RequestParam(value = "searchByLabel", required = false) String searchByLabel, @RequestParam(value = "returnAlternatives", required = false, defaultValue = "false") boolean returnAlternatives, @RequestParam(value = "returnEmbedded", required = false, defaultValue = "false") boolean returnEmbedded, PaginationParam paginationParam) {
+        return graphDBInstancesAPI.getInstancesByType(stage, type, space, searchByLabel, returnAlternatives, returnEmbedded, paginationParam);
     }
 
     @GetMapping("queriesByType")

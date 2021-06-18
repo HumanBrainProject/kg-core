@@ -74,10 +74,10 @@ public class GraphDBInstancesAPI implements GraphDBInstances.Client {
 
     @Override
     @ExposesData
-    public Paginated<NormalizedJsonLd> getInstancesByType(DataStage stage, String typeName, String space, String searchByLabel, boolean returnAlternatives, boolean returnEmbedded, boolean sortByLabel, PaginationParam paginationParam) {
+    public Paginated<NormalizedJsonLd> getInstancesByType(DataStage stage, String typeName, String space, String searchByLabel, boolean returnAlternatives, boolean returnEmbedded, PaginationParam paginationParam) {
         Type type = new Type(typeName);
         List<String> searchableProperties = null;
-        if (sortByLabel || (searchByLabel != null && !searchByLabel.isBlank())) {
+        if ((searchByLabel != null && !searchByLabel.isBlank())) {
             //Since we're either sorting or searching by label, we need to reflect on the type -> we therefore have to resolve the type in the database first...
             List<NormalizedJsonLd> typeInformation = typeRepository.getTypes(authContext.getUserWithRoles().getClientId(), stage, Collections.singletonList(type), true, false, false);
             if (!typeInformation.isEmpty()) {
@@ -98,7 +98,7 @@ public class GraphDBInstancesAPI implements GraphDBInstances.Client {
                 type = Type.fromPayload(typeInformation.get(0));
             }
         }
-        return repository.getDocumentsByTypes(stage, type, space != null && !space.isBlank() ? new SpaceName(space) : null, paginationParam, searchByLabel, returnEmbedded, returnAlternatives, sortByLabel, searchableProperties);
+        return repository.getDocumentsByTypes(stage, type, space != null && !space.isBlank() ? new SpaceName(space) : null, paginationParam, searchByLabel, returnEmbedded, returnAlternatives, searchableProperties);
     }
 
     @Override

@@ -582,7 +582,7 @@ public class ArangoRepositoryInstances {
     }
 
     @ExposesData
-    public Paginated<NormalizedJsonLd> getDocumentsByTypes(DataStage stage, Type typeWithLabelInfo, SpaceName space, PaginationParam paginationParam, String search, boolean embedded, boolean alternatives, boolean sortByLabel, List<String> searchableProperties) {
+    public Paginated<NormalizedJsonLd> getDocumentsByTypes(DataStage stage, Type typeWithLabelInfo, SpaceName space, PaginationParam paginationParam, String search, boolean embedded, boolean alternatives, List<String> searchableProperties) {
         if (typeWithLabelInfo != null) {
             //TODO find label field for type (and client) and filter by search if set.
             ArangoDatabase database = databases.getByStage(stage);
@@ -629,9 +629,7 @@ public class ArangoRepositoryInstances {
                     case SIMPLE:
                     case DYNAMIC:
                         addSearchFilter(bindVars, aql, search, searchableProperties!=null && !searchableProperties.isEmpty());
-                        if (sortByLabel) {
-                            aql.addLine(AQL.trust(String.format("SORT v.%s ASC", IndexedJsonLdDoc.LABEL)));
-                        }
+                        aql.addLine(AQL.trust(String.format("SORT v.%s, v.%s ASC", IndexedJsonLdDoc.LABEL, ArangoVocabulary.KEY)));
                         aql.addPagination(paginationParam);
                         break;
                 }

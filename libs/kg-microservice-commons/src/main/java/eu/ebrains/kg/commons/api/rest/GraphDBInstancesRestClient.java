@@ -65,9 +65,9 @@ public class GraphDBInstancesRestClient implements GraphDBInstances.Client {
     }
 
     @Override
-    public Paginated<NormalizedJsonLd> getInstancesByType(DataStage stage, String type, String space, String searchByLabel, boolean returnAlternatives, boolean returnEmbedded, boolean sortByLabel, PaginationParam paginationParam) {
-        return serviceCall.get(String.format("%s/%s/instancesByType?type=%s&from=%d&size=%s&returnEmbedded=%b&searchByLabel=%s&space=%s&returnAlternatives=%b&sortByLabel=%b",
-                SERVICE_URL, stage.name(), new Type(type).getEncodedName(), paginationParam.getFrom(), paginationParam.getSize() != null ? String.valueOf(paginationParam.getSize()) : "", returnEmbedded, searchByLabel != null ? searchByLabel : "", space != null ? space : "", returnAlternatives, sortByLabel),
+    public Paginated<NormalizedJsonLd> getInstancesByType(DataStage stage, String type, String space, String searchByLabel, boolean returnAlternatives, boolean returnEmbedded, PaginationParam paginationParam) {
+        return serviceCall.get(String.format("%s/%s/instancesByType?type=%s&from=%d&size=%s&returnEmbedded=%b&searchByLabel=%s&space=%s&returnAlternatives=%b",
+                SERVICE_URL, stage.name(), new Type(type).getEncodedName(), paginationParam.getFrom(), paginationParam.getSize() != null ? String.valueOf(paginationParam.getSize()) : "", returnEmbedded, searchByLabel != null ? searchByLabel : "", space != null ? space : "", returnAlternatives),
                 authTokenContext.getAuthTokens(),
                 PaginatedDocuments.class);
     }
