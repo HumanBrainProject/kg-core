@@ -129,7 +129,7 @@ public class UserWithRoles {
         //Add an implicit role for the user private space.
         String privateSpaceRole = RoleMapping.OWNER.toRole(getPrivateSpace()).getName();
         List<FunctionalityInstance> userFunctionalities = reduceFunctionalities(Stream.concat(Stream.of(privateSpaceRole), userRoleNames.stream()).map(RoleMapping::fromRole).flatMap(Collection::stream).distinct().collect(Collectors.groupingBy(FunctionalityInstance::getFunctionality)));
-        List<FunctionalityInstance> result = new ArrayList<>();
+        Set<FunctionalityInstance> result = new HashSet<>();
         if(clientRoleNames != null) {
             Map<Functionality, List<FunctionalityInstance>> clientFunctionalities = clientRoleNames.stream().map(RoleMapping::fromRole).flatMap(Collection::stream).distinct().collect(Collectors.groupingBy(FunctionalityInstance::getFunctionality));
             if (!clientRoleNames.contains(CLIENT_ROLE_NAME)) {
@@ -139,12 +139,12 @@ public class UserWithRoles {
             for (FunctionalityInstance userRole : userFunctionalities) {
                 Functionality functionality = userRole.getFunctionality();
                 if (clientFunctionalities.containsKey(functionality)) {
-                    FunctionalityInstance global = null;
-                    FunctionalityInstance space = null;
-                    FunctionalityInstance instance = null;
                     for (FunctionalityInstance clientFunctionality : clientFunctionalities.get(functionality)) {
+                        FunctionalityInstance global = null;
+                        FunctionalityInstance space = null;
+                        FunctionalityInstance instance = null;
                         if (clientFunctionality.getSpace() == null && clientFunctionality.getId() == null) {
-                            //The client provides this functionality on a global permission layer, so this is ok.
+                            //The client provides this functionality on a global permission layer, so the user role can be accepted
                             global = userRole;
                         }
                         if (clientFunctionality.getSpace() != null && clientFunctionality.getId() == null) {
@@ -153,9 +153,10 @@ public class UserWithRoles {
                                 // ... the user has a global permission, so we restrict it to the client space
                                 space = clientFunctionality;
                             }
-                            if (userRole.getSpace() != null && userRole.getSpace().equals(clientFunctionality.getSpace())) {
-                                //... the user has a permission for the space so we can provide access to it.
-                                space = clientFunctionality;
+                            if (userRole.getSpace() != null  && userRole.getSpace().equals(clientFunctionality.getSpace())) {
+                                //... the client has permission for the space so we can provide access to the user role
+                                // (regardless if it is a space or instance permission since both are valid)
+                                space = userRole;
                             }
                         }
                         if (clientFunctionality.getSpace() != null && clientFunctionality.getInstanceId() != null) {
@@ -170,16 +171,16 @@ public class UserWithRoles {
                             }
                             if (userRole.getSpace() != null && userRole.getInstanceId() != null && userRole.getSpace().equals(clientFunctionality.getSpace()) && userRole.getInstanceId().equals(clientFunctionality.getInstanceId())) {
                                 //... the user has a permission for the same instance
-                                instance = clientFunctionality;
+                                instance = userRole;
                             }
                         }
-                    }
-                    if (global != null) {
-                        result.add(global);
-                    } else if (space != null) {
-                        result.add(space);
-                    } else if (instance != null) {
-                        result.add(instance);
+                        if (global != null) {
+                            result.add(global);
+                        } else if (space != null) {
+                            result.add(space);
+                        } else if (instance != null) {
+                            result.add(instance);
+                        }
                     }
                 }
             }
@@ -188,6 +189,6 @@ public class UserWithRoles {
            return userFunctionalities;
         }
         logger.trace(String.format("Available roles for user %s in client %s: %s", user != null ? user.getUserName() : "anonymous", clientId, String.join(", ", result.stream().map(Object::toString).collect(Collectors.toSet()))));
-        return result;
+        return new ArrayList<>(result);
     }
 }

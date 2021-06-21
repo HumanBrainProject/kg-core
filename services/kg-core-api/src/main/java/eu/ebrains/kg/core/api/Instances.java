@@ -22,7 +22,6 @@
 
 package eu.ebrains.kg.core.api;
 
-import com.netflix.ribbon.proxy.annotation.Http;
 import eu.ebrains.kg.commons.AuthContext;
 import eu.ebrains.kg.commons.IdUtils;
 import eu.ebrains.kg.commons.Version;
@@ -31,7 +30,6 @@ import eu.ebrains.kg.commons.api.Release;
 import eu.ebrains.kg.commons.config.openApiGroups.Advanced;
 import eu.ebrains.kg.commons.config.openApiGroups.Simple;
 import eu.ebrains.kg.commons.exception.ForbiddenException;
-import eu.ebrains.kg.commons.exception.InstanceNotFoundException;
 import eu.ebrains.kg.commons.jsonld.*;
 import eu.ebrains.kg.commons.markers.*;
 import eu.ebrains.kg.commons.model.*;
