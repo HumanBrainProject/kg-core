@@ -48,15 +48,6 @@ public class UserWithRolesTest {
         return Collections.singletonList(role.toRole(space).getName());
     }
 
-    @Test(expected = IllegalArgumentException.class)
-    public void testFailWhenNotAClient(){
-        //Given
-        UserWithRoles userWithRoles = new UserWithRoles(user, getUserRoles(RoleMapping.ADMIN, null), adminRole, "testClient");
-
-        //when
-        List<FunctionalityInstance> permissions = userWithRoles.getPermissions();
-    }
-
     @Test
     public void testEvaluatePermissionsFullUserAccess(){
         //Given
