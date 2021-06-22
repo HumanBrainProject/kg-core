@@ -40,10 +40,7 @@ public enum RoleMapping {
     REVIEWER(true, false, CONSUMER, Functionality.READ, Functionality.SUGGEST, Functionality.INVITE_FOR_REVIEW, Functionality.MINIMAL_READ, Functionality.RELEASE_STATUS),
     EDITOR(true, false, REVIEWER, Functionality.WRITE, Functionality.CREATE, Functionality.INVITE_FOR_SUGGESTION, Functionality.DELETE),
     OWNER(true, false, EDITOR, Functionality.RELEASE, Functionality.UNRELEASE),
-    ADMIN(true, false, null, Functionality.values()),
-
-    //This is a marker role -> it is to be able to flag a user as a technical (client) user.
-    IS_CLIENT(false, false, null);
+    ADMIN(true, false, null, Functionality.values());
 
     private final RoleMapping childRole;
     private final String name;
@@ -113,12 +110,8 @@ public enum RoleMapping {
         return functionalityInstances;
     }
 
-    public static List<RoleMapping> getAllSpacePermissionGroups() {
-        return Arrays.asList(values());
-    }
-
     public static RoleMapping[] getRemainingUserRoles(RoleMapping[] excludedRoles){
-        List<RoleMapping> roleMappings = Arrays.stream(RoleMapping.values()).filter(r -> r != RoleMapping.IS_CLIENT && Arrays.stream(excludedRoles).noneMatch(e -> e == r)).collect(Collectors.toList());
+        List<RoleMapping> roleMappings = Arrays.stream(RoleMapping.values()).filter(r -> Arrays.stream(excludedRoles).noneMatch(e -> e == r)).collect(Collectors.toList());
         if(Arrays.stream(excludedRoles).noneMatch(Objects::isNull)){
             roleMappings.add(null);
         }

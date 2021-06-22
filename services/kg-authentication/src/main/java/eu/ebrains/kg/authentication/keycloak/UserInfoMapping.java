@@ -20,36 +20,29 @@
  * (Human Brain Project SGA1, SGA2 and SGA3).
  */
 
-package eu.ebrains.kg.authentication.model;
+package eu.ebrains.kg.authentication.keycloak;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
+import eu.ebrains.kg.authentication.controller.AuthenticationRepository;
+import org.springframework.cache.annotation.Cacheable;
+import org.springframework.stereotype.Component;
+import java.util.*;
 
-public class OpenIdConfig {
+@Component
+public class UserInfoMapping {
 
-    @JsonProperty("issuer")
-    private String issuer;
+    private final KeycloakClient keycloakClient;
 
-    @JsonProperty("authorization_endpoint")
-    private String authorizationEndpoint;
+    private final AuthenticationRepository authenticationRepository;
 
-    @JsonProperty("token_endpoint")
-    private String tokenEndpoint;
-
-    @JsonProperty("token_introspection_endpoint")
-    private String tokenIntrospectionEndpoint;
-
-    @JsonProperty("userinfo_endpoint")
-    private String userInfoEndpoint;
-
-    public String getTokenEndpoint() {
-        return tokenEndpoint;
+    public UserInfoMapping(KeycloakClient keycloakClient, AuthenticationRepository authenticationRepository) {
+        this.keycloakClient = keycloakClient;
+        this.authenticationRepository = authenticationRepository;
     }
 
-    public String getUserInfoEndpoint() {
-        return userInfoEndpoint;
+    @Cacheable("userRoleMappings")
+    public List<String> getUserOrClientProfile(String token){
+        Map<String, Object> userInfo = keycloakClient.getUserInfo(token);
+        return authenticationRepository.getRolesFromUserInfo(userInfo);
     }
 
-    public String getIssuer() {
-        return issuer;
-    }
 }

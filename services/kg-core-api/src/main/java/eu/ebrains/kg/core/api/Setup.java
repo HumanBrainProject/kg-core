@@ -26,14 +26,13 @@ import eu.ebrains.kg.arango.commons.model.InternalSpace;
 import eu.ebrains.kg.commons.Version;
 import eu.ebrains.kg.commons.api.Authentication;
 import eu.ebrains.kg.commons.config.openApiGroups.Admin;
-import eu.ebrains.kg.commons.model.Credential;
 import eu.ebrains.kg.commons.model.Space;
 import eu.ebrains.kg.commons.model.TermsOfUse;
+import eu.ebrains.kg.commons.permission.roles.RoleMapping;
 import eu.ebrains.kg.core.controller.CoreSpaceController;
-import org.springframework.web.bind.annotation.PutMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.Map;
 
 @RestController
 @RequestMapping(Version.API+"/setup")
@@ -53,18 +52,24 @@ public class Setup {
         //Create global spec space
         Space space = new Space(InternalSpace.GLOBAL_SPEC, false, false);
         space.setInternalSpace(true);
-        spaceController.createSpaceDefinition(space, true, true);
-    }
-
-    @PutMapping("/authentication")
-    @Admin
-    public void setupAuthentication(@RequestBody Credential credential){
-        authentication.setup(credential);
+        spaceController.createSpaceDefinition(space, true);
     }
 
     @PutMapping("/termsOfUse")
     @Admin
     public void registerTermsOfUse(@RequestBody TermsOfUse termsOfUse){
         authentication.registerTermsOfUse(termsOfUse);
+    }
+
+    @PatchMapping("/permissions/{role}")
+    @Admin
+    public Map updateClaimForRole(@PathVariable("role") RoleMapping role, @RequestParam(value = "space", required = false) String space, @RequestBody Map<?, ?> claimPattern, @RequestParam("remove") boolean removeClaim) {
+        return authentication.updateClaimForRole(role, space, claimPattern, removeClaim);
+    }
+
+    @GetMapping("/permissions/{role}")
+    @Admin
+    public Map getClaimForRole(@PathVariable("role") RoleMapping role, @RequestParam(value = "space", required = false) String space) {
+        return authentication.getClaimForRole(role, space);
     }
 }

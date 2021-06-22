@@ -30,8 +30,14 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 @Configuration
-public class TermsOfUseArangoConfiguration {
+public class AuthorizationConfiguration {
 
+    @Value("${eu.ebrains.kg.authentication.disableAuthorization:false}")
+    boolean disablePermissionAuthorization;
+
+    public boolean isDisablePermissionAuthorization() {
+        return disablePermissionAuthorization;
+    }
 
     @Bean
     @Qualifier("arangoBuilderForTermsOfUse")

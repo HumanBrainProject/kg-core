@@ -42,10 +42,7 @@ public class UserWithRoles {
     private List<String> clientRoles;
     private List<String> userRoles;
     private String clientId;
-    private boolean serviceAccount;
     private transient final Logger logger = LoggerFactory.getLogger(getClass());
-
-    private final static String CLIENT_ROLE_NAME = RoleMapping.IS_CLIENT.toRole(null).getName();
 
     // For serialization
     @SuppressWarnings("unused")
@@ -57,7 +54,6 @@ public class UserWithRoles {
         this.userRoles = userRoles;
         this.clientRoles = clientRoles;
         this.clientId = clientId;
-        this.serviceAccount = userRoles.contains(CLIENT_ROLE_NAME);
     }
 
     /**
@@ -79,10 +75,6 @@ public class UserWithRoles {
      */
     public List<FunctionalityInstance> getPermissions() {
         return evaluatePermissions(userRoles, clientRoles);
-    }
-
-    public boolean isServiceAccount() {
-        return serviceAccount;
     }
 
     public SpaceName getPrivateSpace(){
@@ -126,15 +118,10 @@ public class UserWithRoles {
             //We're lacking of authentication information -> we default to "no permissions"
             return Collections.emptyList();
         }
-        //Add an implicit role for the user private space.
-        String privateSpaceRole = RoleMapping.OWNER.toRole(getPrivateSpace()).getName();
-        List<FunctionalityInstance> userFunctionalities = reduceFunctionalities(Stream.concat(Stream.of(privateSpaceRole), userRoleNames.stream()).map(RoleMapping::fromRole).flatMap(Collection::stream).distinct().collect(Collectors.groupingBy(FunctionalityInstance::getFunctionality)));
+        List<FunctionalityInstance> userFunctionalities = reduceFunctionalities(userRoleNames.stream().map(RoleMapping::fromRole).flatMap(Collection::stream).distinct().collect(Collectors.groupingBy(FunctionalityInstance::getFunctionality)));
         Set<FunctionalityInstance> result = new HashSet<>();
         if(clientRoleNames != null) {
             Map<Functionality, List<FunctionalityInstance>> clientFunctionalities = clientRoleNames.stream().map(RoleMapping::fromRole).flatMap(Collection::stream).distinct().collect(Collectors.groupingBy(FunctionalityInstance::getFunctionality));
-            if (!clientRoleNames.contains(CLIENT_ROLE_NAME)) {
-                throw new IllegalArgumentException("The client authorization credentials you've passed doesn't belong to a service account. This is not allowed!");
-            }
             //Filter the user roles by the client permissions (only those user permissions are guaranteed which are also allowed by the client)
             for (FunctionalityInstance userRole : userFunctionalities) {
                 Functionality functionality = userRole.getFunctionality();

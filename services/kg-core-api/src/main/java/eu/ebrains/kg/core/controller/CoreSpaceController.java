@@ -58,16 +58,14 @@ public class CoreSpaceController {
     private final PrimaryStoreEvents.Client primaryStoreEvents;
     private final AuthContext authContext;
     private final Permissions permissions;
-    private final Authentication.Client authentication;
 
-    public CoreSpaceController(CoreInstanceController instanceController, GraphDBTypes.Client graphDBTypes, GraphDBSpaces.Client graphDBSpaces, PrimaryStoreEvents.Client primaryStoreEvents, AuthContext authContext, Permissions permissions, Authentication.Client authentication) {
+    public CoreSpaceController(CoreInstanceController instanceController, GraphDBTypes.Client graphDBTypes, GraphDBSpaces.Client graphDBSpaces, PrimaryStoreEvents.Client primaryStoreEvents, AuthContext authContext, Permissions permissions) {
         this.instanceController = instanceController;
         this.graphDBTypes = graphDBTypes;
         this.graphDBSpaces = graphDBSpaces;
         this.primaryStoreEvents = primaryStoreEvents;
         this.authContext = authContext;
         this.permissions = permissions;
-        this.authentication = authentication;
     }
 
     public NormalizedJsonLd getSpace(ExposedStage stage, String space, boolean permissions) {
@@ -85,24 +83,18 @@ public class CoreSpaceController {
     }
 
 
-    public NormalizedJsonLd createSpaceDefinition(Space space, boolean global, boolean createRoles) {
+    public NormalizedJsonLd createSpaceDefinition(Space space, boolean global) {
         if (permissions.hasGlobalPermission(authContext.getUserWithRoles(), Functionality.CREATE_SPACE)) {
             NormalizedJsonLd spacePayload = space.toJsonLd();
             primaryStoreEvents.postEvent(Event.createUpsertEvent(global ? InternalSpace.GLOBAL_SPEC : space.getName(), UUID.nameUUIDFromBytes(spacePayload.id().getId().getBytes(StandardCharsets.UTF_8)), Event.Type.INSERT, spacePayload), false);
-            if(createRoles) {
-                authentication.createRoles(Arrays.stream(RoleMapping.values()).filter(r -> r != RoleMapping.IS_CLIENT).map(r -> r.toRole(space.getName())).collect(Collectors.toList()));
-            }
             return spacePayload;
         } else {
             throw new ForbiddenException();
         }
     }
 
-    public void removeSpaceDefinition(SpaceName space, boolean removeRoles) {
+    public void removeSpaceDefinition(SpaceName space) {
         if (permissions.hasGlobalPermission(authContext.getUserWithRoles(), Functionality.DELETE_SPACE)) {
-            if (removeRoles) {
-                authentication.removeRoles(FunctionalityInstance.getRolePatternForSpace(space));
-            }
             JsonLdId id = Space.createId(space);
             primaryStoreEvents.postEvent(Event.createDeleteEvent(InternalSpace.GLOBAL_SPEC, UUID.nameUUIDFromBytes(id.getId().getBytes(StandardCharsets.UTF_8)), id), false);
         } else {

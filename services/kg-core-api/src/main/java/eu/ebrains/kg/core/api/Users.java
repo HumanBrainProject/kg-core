@@ -29,16 +29,17 @@ import eu.ebrains.kg.commons.api.Authentication;
 import eu.ebrains.kg.commons.api.GraphDBInstances;
 import eu.ebrains.kg.commons.api.GraphDBUsers;
 import eu.ebrains.kg.commons.api.PrimaryStoreEvents;
+import eu.ebrains.kg.commons.config.openApiGroups.Admin;
 import eu.ebrains.kg.commons.config.openApiGroups.Advanced;
 import eu.ebrains.kg.commons.config.openApiGroups.Simple;
 import eu.ebrains.kg.commons.jsonld.InstanceId;
 import eu.ebrains.kg.commons.jsonld.JsonLdDoc;
 import eu.ebrains.kg.commons.jsonld.NormalizedJsonLd;
 import eu.ebrains.kg.commons.markers.ExposesConfigurationInformation;
-import eu.ebrains.kg.commons.markers.ExposesMinimalUserInfo;
 import eu.ebrains.kg.commons.markers.ExposesUserInfo;
 import eu.ebrains.kg.commons.markers.ExposesUserPicture;
 import eu.ebrains.kg.commons.model.*;
+import eu.ebrains.kg.commons.models.UserWithRoles;
 import eu.ebrains.kg.commons.semantics.vocabularies.EBRAINSVocabulary;
 import io.swagger.v3.oas.annotations.Operation;
 import org.springdoc.api.annotations.ParameterObject;
@@ -101,6 +102,15 @@ public class Users {
     public ResponseEntity<Result<User>> myUserInfo() {
         User myUserInfo = authentication.getMyUserInfo();
         return myUserInfo!=null ? ResponseEntity.ok(Result.ok(myUserInfo)) : ResponseEntity.notFound().build();
+    }
+
+    @Operation(summary = "Retrieve the roles for the current user")
+    @GetMapping("/me/roles")
+    @ExposesUserInfo
+    @Admin
+    public ResponseEntity<Result<UserWithRoles>> myRoles() {
+        final UserWithRoles roles = authentication.getRoles(false);
+        return roles!=null ? ResponseEntity.ok(Result.ok(roles)) : ResponseEntity.notFound().build();
     }
 
 
@@ -172,14 +182,14 @@ public class Users {
         return ResponseEntity.ok(Result.ok());
     }
 
-
-    @Operation(summary = "Retrieve user information based on a keycloak attribute (excluding detailed information such as e-mail address)")
-    @GetMapping("/byAttribute/{attribute}/{value}")
-    @ExposesMinimalUserInfo
-    @Advanced
-    public ResponseEntity<List<User>> getUsersByAttribute(@PathVariable("attribute") String attribute, @PathVariable("value") String value) {
-        List<User> users = authentication.getUsersByAttribute(attribute, value);
-        return users != null ? ResponseEntity.ok(users) : ResponseEntity.notFound().build();
-    }
+    //TODO check how this could be better protected in terms of access restrictions
+//    @Operation(summary = "Retrieve user information based on a keycloak attribute (excluding detailed information such as e-mail address)")
+//    @GetMapping("/byAttribute/{attribute}/{value}")
+//    @ExposesMinimalUserInfo
+//    @Advanced
+//    public ResponseEntity<List<User>> getUsersByAttribute(@PathVariable("attribute") String attribute, @PathVariable("value") String value) {
+//        List<User> users = authentication.getUsersByAttribute(attribute, value);
+//        return users != null ? ResponseEntity.ok(users) : ResponseEntity.notFound().build();
+//    }
 
 }

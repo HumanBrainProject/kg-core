@@ -22,178 +22,119 @@
 
 package eu.ebrains.kg.authentication.keycloak;
 
-import eu.ebrains.kg.commons.exception.UnauthorizedException;
-import eu.ebrains.kg.commons.permission.roles.Role;
-import eu.ebrains.kg.commons.permission.roles.RoleMapping;
-import org.keycloak.admin.client.Keycloak;
-import org.keycloak.admin.client.resource.ClientResource;
-import org.keycloak.admin.client.resource.RealmResource;
-import org.keycloak.representations.idm.ClientRepresentation;
-import org.keycloak.representations.idm.ClientScopeRepresentation;
-import org.keycloak.representations.idm.RoleRepresentation;
+import com.auth0.jwt.JWT;
+import com.auth0.jwt.JWTVerifier;
+import com.auth0.jwt.algorithms.Algorithm;
+import eu.ebrains.kg.authentication.model.IssuerInfo;
+import eu.ebrains.kg.authentication.model.OpenIdConfig;
+import eu.ebrains.kg.commons.JsonAdapter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.cache.annotation.Cacheable;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.client.WebClient;
 
-import javax.ws.rs.ForbiddenException;
-import javax.ws.rs.NotFoundException;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import javax.annotation.PostConstruct;
+import java.security.KeyFactory;
+import java.security.NoSuchAlgorithmException;
+import java.security.interfaces.RSAPublicKey;
+import java.security.spec.InvalidKeySpecException;
+import java.security.spec.X509EncodedKeySpec;
+import java.util.*;
+import java.util.function.Function;
 
 @Component
 public class KeycloakClient {
 
-    private final KeycloakConfig config;
+    private final Logger logger = LoggerFactory.getLogger(getClass());
 
-    private final Keycloak kgKeycloak;
+    private final KeycloakConfig config;
 
     private final WebClient.Builder webclient;
 
-    private final Logger logger = LoggerFactory.getLogger(getClass());
+    private final JsonAdapter jsonAdapter;
 
-    private ClientResource clientResource;
+    private OpenIdConfig openIdConfig;
 
-    private String technicalClientId;
+    private IssuerInfo issuerInfo;
 
-    public KeycloakClient(KeycloakConfig config, Keycloak kgKeycloak, @Qualifier("direct") WebClient.Builder internalWebClient) {
+    public KeycloakClient(JsonAdapter jsonAdapter, KeycloakConfig config, @Qualifier("direct") WebClient.Builder internalWebClient) {
         this.config = config;
         this.webclient = internalWebClient;
-        this.kgKeycloak = kgKeycloak;
-    }
-
-    String getClientId() {
-        return config.getKgClientId();
-    }
-
-    String getPublicKey() {
-        Map issuerInfo = this.webclient.build().get().uri(config.getIssuer()).accept(MediaType.APPLICATION_JSON).retrieve().bodyToMono(Map.class).block();
-        Object public_key = issuerInfo.get("public_key");
-        if (public_key instanceof String) {
-            return (String) public_key;
-        }
-        return null;
-    }
-
-    public ClientScopeRepresentation getKgClientScope(){
-        return getRealmResource().clientScopes().findAll().stream().filter(sc -> sc.getName().equals(config.getKgClientId())).findFirst().orElse(null);
+        this.jsonAdapter = jsonAdapter;
     }
 
 
-    private synchronized ClientRepresentation getClient() {
-        if (clientResource == null) {
-            List<ClientRepresentation> byClientId = getRealmResource().clients().findByClientId(config.getKgClientId());
-            if (byClientId != null && !byClientId.isEmpty()) {
-                ClientRepresentation clientRepresentation = byClientId.get(0);
-                technicalClientId = clientRepresentation.getId();
-                clientResource = getRealmResource().clients().get(technicalClientId);
-                return clientRepresentation;
-            }
-            return null;
-        }
-        return clientResource.toRepresentation();
+    @PostConstruct
+    public void initialize() {
+        openIdConfig = loadWithRetry(0, i-> {
+            String result = WebClient.builder().build().get().uri(config.getConfigUrl()).accept(MediaType.APPLICATION_JSON).retrieve().bodyToMono(String.class).block();
+            return jsonAdapter.fromJson(result, OpenIdConfig.class);
+        });
+        issuerInfo = loadWithRetry(0, i -> {
+            String result = WebClient.builder().build().get().uri(openIdConfig.getIssuer()).accept(MediaType.APPLICATION_JSON).retrieve().bodyToMono(String.class).block();
+            return jsonAdapter.fromJson(result, IssuerInfo.class);
+        });
+        logger.info("Successfully loaded keycloak configuration");
     }
 
-    ClientResource getClientResource() {
-        if (clientResource == null) {
-            getClient();
-        }
-        return clientResource;
+    public String getServerUrl(){
+        return openIdConfig.getIssuer().split("/realms")[0];
     }
 
-    public String getTechnicalClientId() {
-        return technicalClientId;
+    public String getRealm(){
+        return issuerInfo.getRealm();
     }
 
+    private final int maxTries = 10;
 
-    RealmResource getRealmResource() {
-        return this.kgKeycloak.realm(config.getRealm());
-    }
-
-    public void ensureDefaultClientAndGlobalRolesInKeycloak() {
-        try {
-        getRealmResource().toRepresentation();
-        try {
-                boolean initialCreation = false;
-                if (getClient() == null) {
-                    createDefaultClient();
-                    initialCreation = true;
-                }
-                configureDefaultClient(initialCreation);
-            } catch (ForbiddenException e) {
-                throw new UnauthorizedException(String.format("Your keycloak user is not allowed to read clients of realm %s", config.getRealm()));
-            }
-        } catch (ForbiddenException e) {
-            throw new UnauthorizedException("The keycloak user you've specified is not allowed to read the realms");
-        }
-    }
-
-    private void configureDefaultClient(boolean initialConfig) {
-        try {
-            ClientRepresentation clientRepresentation = new ClientRepresentation();
-            clientRepresentation.setClientId(config.getKgClientId());
-            clientRepresentation.setEnabled(true);
-            clientRepresentation.setConsentRequired(true);
-            clientRepresentation.setImplicitFlowEnabled(true);
-            clientRepresentation.setStandardFlowEnabled(true);
-            clientRepresentation.setFullScopeAllowed(false);
-            clientRepresentation.setPublicClient(true);
-            Map<String, String> attributes = new HashMap<>();
-            attributes.put("display.on.consent.screen", "true");
-            attributes.put("access.token.lifespan", "1800");
-            attributes.put("pkce.code.challenge.method", "S256");
-            attributes.put("consent.screen.text", "By using the EBRAINS Knowledge Graph, you agree to the according terms of use available at https://kg.ebrains.eu/search-terms-of-use.html");
-            clientRepresentation.setAttributes(attributes);
-            if (initialConfig) {
-                clientRepresentation.setRedirectUris(Arrays.asList(getRedirectUri(), "http://localhost*"));
-            }
-            getClientResource().update(clientRepresentation);
-            Arrays.stream(RoleMapping.values()).forEach(p -> createRoleForClient(p.toRole(null)));
-        } catch (ForbiddenException e) {
-            throw new UnauthorizedException(String.format("Your keycloak account does not allow to configure clients in realm %s", config.getRealm()));
-        }
-    }
-
-
-    private void createDefaultClient() {
-        try {
-            ClientRepresentation clientRepresentation = new ClientRepresentation();
-            clientRepresentation.setClientId(config.getKgClientId());
-            getRealmResource().clients().create(clientRepresentation);
-            getClientResource().getDefaultClientScopes().forEach(c -> getClientResource().removeDefaultClientScope(c.getId()));
-        } catch (ForbiddenException e) {
-            throw new UnauthorizedException(String.format("Your keycloak client does not allow to create clients in realm %s", config.getRealm()));
-        }
-    }
-
-
-    private String getRedirectUri() {
-        return String.format("%s%s*", config.isHttps() ? "https://" : "http://", config.getIp());
-    }
-
-
-    public void createRoleForClient(Role role) {
-        try {
-            getClientResource().roles().get(role.getName()).toRepresentation();
-        } catch (NotFoundException e) {
+    private <X> X loadWithRetry(int currentTry, Function<Integer, X> function) {
+        if (maxTries > currentTry) {
             try {
-                RoleRepresentation roleRepresentation = new RoleRepresentation();
-                roleRepresentation.setName(role.getName());
-                logger.info(String.format("Create role %s in client %s", role.getName(), getClientId()));
-                getClientResource().roles().create(roleRepresentation);
-            } catch (ForbiddenException ex) {
-                throw new UnauthorizedException(String.format("Your keycloak account does not allow to configure roles in realm %s and client %s", config.getRealm(), config.getKgClientId()));
+                return function.apply(currentTry);
+            } catch (Exception ex) {
+                try {
+                    logger.warn("Was not able to connect to keycloak - trying again in 5 secs...");
+                    Thread.sleep(5000);
+                    return loadWithRetry(currentTry + 1, function);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                    return null;
+                }
             }
+        } else {
+            final String error = String.format("Gave up to connect to Keycloak after %d attempts - maybe the authentication system is not properly set up or it is down", maxTries);
+            logger.error(error);
+            throw new RuntimeException(error);
         }
     }
 
-    public Map<String, Object> getRolesFromUserInfoFromCache(String token, String userInfoEndpoint){
-        return this.webclient.build().get().uri(userInfoEndpoint).accept(MediaType.APPLICATION_JSON).header("Authorization", token).retrieve().bodyToMono(Map.class).block();
+    JWTVerifier getJWTVerifier() {
+        return JWT.require(getAlgorithmFromKeycloakConfig(issuerInfo.getPublicKey())).withIssuer(openIdConfig.getIssuer()).build();
+    }
+
+    public String getTokenEndpoint() {
+        return openIdConfig.getTokenEndpoint();
+    }
+
+    private Algorithm getAlgorithmFromKeycloakConfig(String publicKey) {
+        try {
+            logger.debug(String.format("Validation by public RSA key (%s) of keycloak host %s", publicKey, openIdConfig.getIssuer()));
+            byte[] buffer = Base64.getDecoder().decode(publicKey);
+            KeyFactory keyFactory = KeyFactory.getInstance("RSA");
+            X509EncodedKeySpec keySpec = new X509EncodedKeySpec(buffer);
+            RSAPublicKey key = (RSAPublicKey) keyFactory.generatePublic(keySpec);
+            Algorithm algorithm = Algorithm.RSA256(key, null);
+            logger.info(String.format("Initialized validation by public RSA key of keycloak host %s", openIdConfig.getIssuer()));
+            return algorithm;
+        } catch (NoSuchAlgorithmException | InvalidKeySpecException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public Map<String, Object> getUserInfo(String token){
+        return this.webclient.build().get().uri(this.openIdConfig.getUserInfoEndpoint()).accept(MediaType.APPLICATION_JSON).header("Authorization", token).retrieve().bodyToMono(Map.class).block();
     }
 
 }

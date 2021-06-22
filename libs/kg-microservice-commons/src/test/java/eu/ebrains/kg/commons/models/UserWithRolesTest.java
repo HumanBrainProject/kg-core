@@ -38,7 +38,7 @@ import static org.junit.Assert.*;
 
 public class UserWithRolesTest {
 
-    List<String> adminClientRoles = Arrays.asList(RoleMapping.ADMIN.toRole(null).getName(), RoleMapping.IS_CLIENT.toRole(null).getName());
+    List<String> adminClientRoles = Collections.singletonList(RoleMapping.ADMIN.toRole(null).getName());
 
     List<String> adminRole = Collections.singletonList(RoleMapping.ADMIN.toRole(null).getName());
     SpaceName space = new SpaceName("test");

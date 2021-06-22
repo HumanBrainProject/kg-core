@@ -20,36 +20,22 @@
  * (Human Brain Project SGA1, SGA2 and SGA3).
  */
 
-package eu.ebrains.kg.authentication.model;
+package eu.ebrains.kg.authentication.keycloak;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
+import org.keycloak.OAuth2Constants;
+import org.keycloak.admin.client.Keycloak;
+import org.keycloak.admin.client.KeycloakBuilder;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
 
-public class OpenIdConfig {
+@Configuration
+public class KeycloakAdminConfig {
 
-    @JsonProperty("issuer")
-    private String issuer;
-
-    @JsonProperty("authorization_endpoint")
-    private String authorizationEndpoint;
-
-    @JsonProperty("token_endpoint")
-    private String tokenEndpoint;
-
-    @JsonProperty("token_introspection_endpoint")
-    private String tokenIntrospectionEndpoint;
-
-    @JsonProperty("userinfo_endpoint")
-    private String userInfoEndpoint;
-
-    public String getTokenEndpoint() {
-        return tokenEndpoint;
+    @Bean
+    public Keycloak createKeycloak(KeycloakConfig config, KeycloakClient keycloakClient) {
+        return KeycloakBuilder.builder().grantType(OAuth2Constants.CLIENT_CREDENTIALS).
+                clientSecret(config.getKgCoreClientSecret()).clientId(config.getKgCoreClientId()).
+                serverUrl(keycloakClient.getServerUrl()).realm(keycloakClient.getRealm()).build();
     }
 
-    public String getUserInfoEndpoint() {
-        return userInfoEndpoint;
-    }
-
-    public String getIssuer() {
-        return issuer;
-    }
 }

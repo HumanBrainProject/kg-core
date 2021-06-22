@@ -29,26 +29,16 @@ import eu.ebrains.kg.commons.model.User;
 import eu.ebrains.kg.commons.models.UserWithRoles;
 import eu.ebrains.kg.commons.permission.ClientAuthToken;
 import eu.ebrains.kg.commons.permission.roles.Role;
+import eu.ebrains.kg.commons.permission.roles.RoleMapping;
 
 import java.util.List;
+import java.util.Map;
 
 public interface Authentication {
 
     interface Client extends Authentication {}
 
-    eu.ebrains.kg.commons.model.Client registerClient(eu.ebrains.kg.commons.model.Client client);
-
-    void unregisterClient(String clientName);
-
     ClientAuthToken fetchToken(String clientId, String clientSecret);
-
-    List<User> getUsersInRole(String role);
-
-    void addUserToRole(String role, String nativeUserId);
-
-    void createRoles(List<Role> roles);
-
-    void removeRoles(String rolePattern);
 
     String authEndpoint();
 
@@ -56,13 +46,11 @@ public interface Authentication {
 
     User getMyUserInfo();
 
-    UserWithRoles   getRoles(boolean checkForTermsOfUse);
+    UserWithRoles getRoles(boolean checkForTermsOfUse);
 
     User getOtherUserInfo(String nativeId);
 
     List<User> getUsersByAttribute(String attribute, String value);
-
-    String setup(Credential credential);
 
     TermsOfUseResult getTermsOfUse();
 
@@ -70,10 +58,7 @@ public interface Authentication {
 
     void registerTermsOfUse(TermsOfUse version);
 
-    boolean isSpacePublic(String space);
+    Map updateClaimForRole(RoleMapping role, String space, Map<?, ?> claimPattern, boolean removeClaim);
 
-    void setSpacePublic(String space);
-
-    void setSpaceProtected(String space);
-
+    Map getClaimForRole(RoleMapping role, String space);
 }

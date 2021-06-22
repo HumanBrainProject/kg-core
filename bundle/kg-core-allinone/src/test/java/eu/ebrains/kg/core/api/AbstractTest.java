@@ -50,7 +50,7 @@ public abstract class AbstractTest {
     protected PaginationParam defaultPaginationParam = new PaginationParam().setFrom(0).setSize(20l);
 
     public final static List<String> ADMIN_ROLE = Collections.singletonList(RoleMapping.ADMIN.toRole(null).getName());
-    public final static List<String> ADMIN_CLIENT_ROLE = Arrays.asList(RoleMapping.ADMIN.toRole(null).getName(), RoleMapping.IS_CLIENT.toRole(null).getName());
+    public final static List<String> ADMIN_CLIENT_ROLE = Collections.singletonList(RoleMapping.ADMIN.toRole(null).getName());
 
     private List<Role> currentRoles;
     private final AuthenticationAPI authentication;
