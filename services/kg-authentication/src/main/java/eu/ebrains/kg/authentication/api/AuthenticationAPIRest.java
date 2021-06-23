@@ -23,6 +23,7 @@
 package eu.ebrains.kg.authentication.api;
 
 import eu.ebrains.kg.commons.api.Authentication;
+import eu.ebrains.kg.commons.jsonld.JsonLdDoc;
 import eu.ebrains.kg.commons.model.TermsOfUse;
 import eu.ebrains.kg.commons.model.TermsOfUseResult;
 import eu.ebrains.kg.commons.model.User;
@@ -127,14 +128,19 @@ public class AuthenticationAPIRest implements Authentication {
 
     @PatchMapping("/permissions/{role}")
     @Override
-    public Map updateClaimForRole(@PathVariable("role") RoleMapping role, @RequestParam(value = "space", required = false) String space, @RequestBody Map<?, ?> claimPattern, @RequestParam("remove") boolean removeClaim) {
+    public JsonLdDoc updateClaimForRole(@PathVariable("role") RoleMapping role, @RequestParam(value = "space", required = false) String space, @RequestBody Map<?, ?> claimPattern, @RequestParam("remove") boolean removeClaim) {
             return authentication.updateClaimForRole(role, space, claimPattern, removeClaim);
     }
 
     @GetMapping("/permissions/{role}")
     @Override
-    public Map getClaimForRole(@PathVariable("role") RoleMapping role, @RequestParam(value = "space", required = false) String space) {
+    public JsonLdDoc getClaimForRole(@PathVariable("role") RoleMapping role, @RequestParam(value = "space", required = false) String space) {
         return authentication.getClaimForRole(role, space);
     }
 
+    @Override
+    @GetMapping("/permissions")
+    public List<JsonLdDoc> getAllRoleDefinitions() {
+        return authentication.getAllRoleDefinitions();
+    }
 }

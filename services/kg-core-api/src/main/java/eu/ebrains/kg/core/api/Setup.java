@@ -26,12 +26,14 @@ import eu.ebrains.kg.arango.commons.model.InternalSpace;
 import eu.ebrains.kg.commons.Version;
 import eu.ebrains.kg.commons.api.Authentication;
 import eu.ebrains.kg.commons.config.openApiGroups.Admin;
+import eu.ebrains.kg.commons.jsonld.JsonLdDoc;
 import eu.ebrains.kg.commons.model.Space;
 import eu.ebrains.kg.commons.model.TermsOfUse;
 import eu.ebrains.kg.commons.permission.roles.RoleMapping;
 import eu.ebrains.kg.core.controller.CoreSpaceController;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
 import java.util.Map;
 
 @RestController
@@ -63,13 +65,19 @@ public class Setup {
 
     @PatchMapping("/permissions/{role}")
     @Admin
-    public Map updateClaimForRole(@PathVariable("role") RoleMapping role, @RequestParam(value = "space", required = false) String space, @RequestBody Map<?, ?> claimPattern, @RequestParam("remove") boolean removeClaim) {
+    public JsonLdDoc updateClaimForRole(@PathVariable("role") RoleMapping role, @RequestParam(value = "space", required = false) String space, @RequestBody Map<?, ?> claimPattern, @RequestParam("remove") boolean removeClaim) {
         return authentication.updateClaimForRole(role, space, claimPattern, removeClaim);
     }
 
     @GetMapping("/permissions/{role}")
     @Admin
-    public Map getClaimForRole(@PathVariable("role") RoleMapping role, @RequestParam(value = "space", required = false) String space) {
+    public JsonLdDoc getClaimForRole(@PathVariable("role") RoleMapping role, @RequestParam(value = "space", required = false) String space) {
         return authentication.getClaimForRole(role, space);
+    }
+
+    @GetMapping("/permissions")
+    @Admin
+    public List<JsonLdDoc> getAllRoleDefinitions() {
+        return authentication.getAllRoleDefinitions();
     }
 }

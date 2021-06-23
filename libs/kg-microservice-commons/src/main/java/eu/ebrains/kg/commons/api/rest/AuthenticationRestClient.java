@@ -25,13 +25,12 @@ package eu.ebrains.kg.commons.api.rest;
 import eu.ebrains.kg.commons.AuthTokenContext;
 import eu.ebrains.kg.commons.ServiceCall;
 import eu.ebrains.kg.commons.api.Authentication;
-import eu.ebrains.kg.commons.model.Credential;
+import eu.ebrains.kg.commons.jsonld.JsonLdDoc;
 import eu.ebrains.kg.commons.model.TermsOfUse;
 import eu.ebrains.kg.commons.model.TermsOfUseResult;
 import eu.ebrains.kg.commons.model.User;
 import eu.ebrains.kg.commons.models.UserWithRoles;
 import eu.ebrains.kg.commons.permission.ClientAuthToken;
-import eu.ebrains.kg.commons.permission.roles.Role;
 import eu.ebrains.kg.commons.permission.roles.RoleMapping;
 import org.springframework.http.MediaType;
 
@@ -104,12 +103,17 @@ public class AuthenticationRestClient implements Authentication.Client {
     }
 
     @Override
-    public Map updateClaimForRole(RoleMapping role, String space, Map<?, ?> claimPattern, boolean removeClaim) {
-        return serviceCall.patch(String.format("%s/permissions/%s?remove=%b%s", SERVICE_URL, role, removeClaim, space!=null ? "&space="+space : ""), claimPattern, authTokenContext.getAuthTokens(), Map.class);
+    public JsonLdDoc updateClaimForRole(RoleMapping role, String space, Map<?, ?> claimPattern, boolean removeClaim) {
+        return serviceCall.patch(String.format("%s/permissions/%s?remove=%b%s", SERVICE_URL, role, removeClaim, space!=null ? "&space="+space : ""), claimPattern, authTokenContext.getAuthTokens(), JsonLdDoc.class);
     }
 
     @Override
-    public Map getClaimForRole(RoleMapping role, String space) {
-        return serviceCall.get(String.format("%s/permissions/%s%s", SERVICE_URL, role, space!=null ? "&space="+space : ""), authTokenContext.getAuthTokens(), Map.class);
+    public JsonLdDoc getClaimForRole(RoleMapping role, String space) {
+        return serviceCall.get(String.format("%s/permissions/%s%s", SERVICE_URL, role, space!=null ? "&space="+space : ""), authTokenContext.getAuthTokens(), JsonLdDoc.class);
+    }
+
+    @Override
+    public List<JsonLdDoc> getAllRoleDefinitions() {
+        return Arrays.asList(serviceCall.get(String.format("%s/permissions", SERVICE_URL), authTokenContext.getAuthTokens(), JsonLdDoc[].class));
     }
 }

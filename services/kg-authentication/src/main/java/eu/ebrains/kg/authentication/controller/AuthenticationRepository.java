@@ -107,14 +107,19 @@ public class AuthenticationRepository {
         return null;
     }
 
+    public List<JsonLdDoc> getAllRoleDefinitions(){
+        AQL aql = new AQL();
+        aql.add(AQL.trust("FOR d in permissions RETURN d"));
+        return arangoDatabase.get().query(aql.build().getValue(), JsonLdDoc.class).asListRemaining();
+    }
+
+
     public List<String> getRolesFromUserInfo(Map<String, Object> userInfo) {
         if (userInfo == null || userInfo.isEmpty()) {
             return Collections.emptyList();
         }
-        AQL aql = new AQL();
-        aql.add(AQL.trust("FOR d in permissions RETURN d"));
         Object user = userInfo.get("sub");
-        final List<JsonLdDoc> results = arangoDatabase.get().query(aql.build().getValue(), JsonLdDoc.class).asListRemaining();
+        final List<JsonLdDoc> results = getAllRoleDefinitions();
         return results.stream().map(r -> {
             String role = r.get(ArangoVocabulary.KEY) != null ? (String) r.get(ArangoVocabulary.KEY) : null;
             if (role != null) {
@@ -132,14 +137,14 @@ public class AuthenticationRepository {
     }
 
 
-    public Map getClaimForRole(Role role) {
-        return getPermissionsCollection().getDocument(role.getName(), HashMap.class);
+    public JsonLdDoc getClaimForRole(Role role) {
+        return getPermissionsCollection().getDocument(role.getName(), JsonLdDoc.class);
     }
 
-    public Map addClaimToRole(Role role, Map<?, ?> claimPattern) {
-        Map document = getPermissionsCollection().getDocument(role.getName(), HashMap.class);
+    public JsonLdDoc addClaimToRole(Role role, Map<?, ?> claimPattern) {
+        JsonLdDoc document = getPermissionsCollection().getDocument(role.getName(), JsonLdDoc.class);
         if (document == null) {
-            document = new HashMap<>();
+            document = new JsonLdDoc();
             document.put(ArangoVocabulary.KEY, role.getName());
         }
         boolean empty = synchronizeMaps(role.getName(), claimPattern, document, false);
@@ -152,8 +157,9 @@ public class AuthenticationRepository {
         }
     }
 
-    public Map removeClaimFromRole(Role role, Map<?, ?> claimPattern) {
-        Map document = getPermissionsCollection().getDocument(role.getName(), HashMap.class);
+
+    public JsonLdDoc removeClaimFromRole(Role role, Map<?, ?> claimPattern) {
+        JsonLdDoc document = getPermissionsCollection().getDocument(role.getName(), JsonLdDoc.class);
         if (document == null) {
             //The document doesn't exist - nothing to remove, nothing to do...
             return null;

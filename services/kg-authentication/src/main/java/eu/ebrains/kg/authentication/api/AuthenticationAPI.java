@@ -31,6 +31,7 @@ import eu.ebrains.kg.authentication.model.UserOrClientProfile;
 import eu.ebrains.kg.commons.api.Authentication;
 import eu.ebrains.kg.commons.exception.NotAcceptedTermsOfUseException;
 import eu.ebrains.kg.commons.exception.UnauthorizedException;
+import eu.ebrains.kg.commons.jsonld.JsonLdDoc;
 import eu.ebrains.kg.commons.model.SpaceName;
 import eu.ebrains.kg.commons.model.TermsOfUse;
 import eu.ebrains.kg.commons.model.TermsOfUseResult;
@@ -180,7 +181,7 @@ public class AuthenticationAPI implements Authentication.Client {
      * PERMISSIONS
      **/
     @Override
-    public Map updateClaimForRole(RoleMapping role, String space, Map<?, ?> claimPattern, boolean removeClaim) {
+    public JsonLdDoc updateClaimForRole(RoleMapping role, String space, Map<?, ?> claimPattern, boolean removeClaim) {
         if(removeClaim){
             if(authorizationConfiguration.isDisablePermissionAuthorization() || permissions.hasGlobalPermission(this.getRoles(false), Functionality.DELETE_PERMISSION)) {
                 return authenticationRepository.removeClaimFromRole(role.toRole(SpaceName.fromString(space)), claimPattern);
@@ -200,7 +201,28 @@ public class AuthenticationAPI implements Authentication.Client {
     }
 
     @Override
-    public Map getClaimForRole(RoleMapping role, String space) {
-        return authenticationRepository.getClaimForRole(role.toRole(SpaceName.fromString(space)));
+    public JsonLdDoc getClaimForRole(RoleMapping role, String space) {
+        if(canShowPermissions()) {
+            return authenticationRepository.getClaimForRole(role.toRole(SpaceName.fromString(space)));
+        }
+        else{
+            throw new UnauthorizedException("You don't have the rights to show permissions");
+        }
+    }
+
+    private boolean canShowPermissions(){
+        final UserWithRoles roles = this.getRoles(false);
+        return authorizationConfiguration.isDisablePermissionAuthorization() || permissions.hasGlobalPermission(roles, Functionality.DELETE_PERMISSION) || permissions.hasGlobalPermission(roles, Functionality.CREATE_PERMISSION);
+    }
+
+    @Override
+    public List<JsonLdDoc> getAllRoleDefinitions() {
+        final UserWithRoles roles = this.getRoles(false);
+        if(canShowPermissions()) {
+            return authenticationRepository.getAllRoleDefinitions();
+        }
+        else{
+            throw new UnauthorizedException("You don't have the rights to show permissions");
+        }
     }
 }

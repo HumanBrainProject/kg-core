@@ -22,6 +22,7 @@
 
 package eu.ebrains.kg.commons.api;
 
+import eu.ebrains.kg.commons.jsonld.JsonLdDoc;
 import eu.ebrains.kg.commons.model.Credential;
 import eu.ebrains.kg.commons.model.TermsOfUse;
 import eu.ebrains.kg.commons.model.TermsOfUseResult;
@@ -58,7 +59,9 @@ public interface Authentication {
 
     void registerTermsOfUse(TermsOfUse version);
 
-    Map updateClaimForRole(RoleMapping role, String space, Map<?, ?> claimPattern, boolean removeClaim);
+    JsonLdDoc updateClaimForRole(RoleMapping role, String space, Map<?, ?> claimPattern, boolean removeClaim);
 
-    Map getClaimForRole(RoleMapping role, String space);
+    JsonLdDoc getClaimForRole(RoleMapping role, String space);
+
+    List<JsonLdDoc> getAllRoleDefinitions();
 }
