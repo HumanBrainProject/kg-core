@@ -116,6 +116,21 @@ public class ArangoRepositoryInstances {
     }
 
     @ExposesData
+    public NormalizedJsonLd getQuery(DataStage stage, SpaceName space, UUID id) {
+        ArangoDocument document = arangoRepositoryCommons.getDocument(stage, ArangoCollectionReference.fromSpace(space).doc(id));
+        if (document == null || !document.getDoc().types().contains(EBRAINSVocabulary.META_QUERY_TYPE)) {
+            //If it's not a query, it's not exposed...
+            return null;
+        }
+        NormalizedJsonLd doc = document.getDoc();
+        if (doc != null && !permissions.hasEitherUserOrClientPermissionFor(authContext.getUserWithRoles(), Functionality.READ, space, id)) {
+            throw new ForbiddenException(String.format("You don't have read rights for the query with the id %s", id));
+        }
+        return doc;
+    }
+
+
+    @ExposesData
     public NormalizedJsonLd getInstance(DataStage stage, SpaceName space, UUID id, boolean embedded, boolean removeInternalProperties, boolean alternatives, boolean incomingLinks, Long incomingLinksPageSize) {
         if (!permissions.hasPermission(authContext.getUserWithRoles(), Functionality.MINIMAL_READ, space, id)) {
             throw new ForbiddenException(String.format("You don't have read rights on the instance with the id %s", id));

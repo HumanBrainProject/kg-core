@@ -73,6 +73,12 @@ public class GraphDBInstancesAPI implements GraphDBInstances.Client {
     }
 
     @Override
+    @ExposesQuery
+    public NormalizedJsonLd getQueryById(String space, UUID id, DataStage stage) {
+        return repository.getQuery(stage, new SpaceName(space), id);
+    }
+
+    @Override
     @ExposesData
     public Paginated<NormalizedJsonLd> getInstancesByType(DataStage stage, String typeName, String space, String searchByLabel, boolean returnAlternatives, boolean returnEmbedded, PaginationParam paginationParam) {
         Type type = new Type(typeName);

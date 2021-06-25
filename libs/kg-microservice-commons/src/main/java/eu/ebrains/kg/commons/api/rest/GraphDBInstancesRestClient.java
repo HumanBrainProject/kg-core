@@ -57,6 +57,11 @@ public class GraphDBInstancesRestClient implements GraphDBInstances.Client {
     }
 
     @Override
+    public NormalizedJsonLd getQueryById(String space, UUID id, DataStage stage) {
+        return serviceCall.get(String.format("%s/%s/queries/%s/%s", SERVICE_URL, stage.name(), space, id), authTokenContext.getAuthTokens(), NormalizedJsonLd.class);
+    }
+
+    @Override
     public NormalizedJsonLd getInstanceById(String space, UUID id, DataStage stage, boolean returnEmbedded, boolean returnAlternatives, boolean returnIncomingLinks, Long incomingLinksPageSize, boolean removeInternalProperties) {
         return serviceCall.get(String.format("%s/%s/instances/%s/%s?returnEmbedded=%b&returnAlternatives=%b&returnIncomingLinks=%b&incomingLinksPageSize=%d",
                 SERVICE_URL, stage.name(), space, id, returnEmbedded, returnAlternatives, returnIncomingLinks, incomingLinksPageSize),

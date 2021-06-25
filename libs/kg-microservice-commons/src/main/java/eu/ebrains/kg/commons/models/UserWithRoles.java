@@ -77,6 +77,10 @@ public class UserWithRoles {
         return evaluatePermissions(userRoles, clientRoles);
     }
 
+    public List<FunctionalityInstance> getPermissionsOfEitherUserOrClient() {
+        return evaluatePermissionCombinations(userRoles, clientRoles);
+    }
+
     public SpaceName getPrivateSpace(){
         return new SpaceName("private-"+user.getNativeId());
     }
@@ -107,6 +111,29 @@ public class UserWithRoles {
         }
         return reducedList;
     }
+
+    /**
+     * For a few cases (e.g. reading a query), it is sufficient if the user OR the client has the permissions.
+     *
+     * @return the list of permissions applicable for the user using this client.
+     */
+    List<FunctionalityInstance> evaluatePermissionCombinations(List<String> userRoleNames, List<String> clientRoleNames) {
+        Stream<String> rolesStream;
+        if(userRoleNames!=null && clientRoleNames!=null){
+            rolesStream = Stream.concat(userRoleNames.stream(), clientRoleNames.stream());
+        }
+        else if(userRoleNames!=null){
+            rolesStream = userRoleNames.stream();
+        }
+        else if(clientRoleNames!=null){
+            rolesStream = clientRoleNames.stream();
+        }
+        else{
+            return Collections.emptyList();
+        }
+        return reduceFunctionalities(rolesStream.map(RoleMapping::fromRole).flatMap(Collection::stream).distinct().collect(Collectors.groupingBy(FunctionalityInstance::getFunctionality)));
+    }
+
 
     /**
      * Evaluates the roles of a user in the context of a client by combining the roles of both

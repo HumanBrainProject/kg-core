@@ -82,7 +82,15 @@ public class Permissions {
         return null;
     }
 
+    public boolean hasEitherUserOrClientPermissionFor(UserWithRoles userWithRoles, Functionality functionality, SpaceName space, UUID id){
+        return userWithRoles != null && hasPermission(userWithRoles, functionality, space, id, userWithRoles.getPermissionsOfEitherUserOrClient());
+    }
+
     public boolean hasPermission(UserWithRoles userWithRoles, Functionality functionality, SpaceName space, UUID id) {
+        return userWithRoles != null && hasPermission(userWithRoles, functionality, space, id, userWithRoles.getPermissions());
+    }
+
+    private boolean hasPermission(UserWithRoles userWithRoles, Functionality functionality, SpaceName space, UUID id, List<FunctionalityInstance> functionalityInstances) {
         if (functionality == null) {
             return false;
         }
@@ -98,7 +106,7 @@ public class Permissions {
                     break;
                 }
         }
-        return checkFunctionalities(functionality, space, id, userWithRoles.getPermissions());
+        return checkFunctionalities(functionality, space, id, functionalityInstances);
     }
 
     public boolean hasGlobalPermission(UserWithRoles userWithRoles, Functionality functionality) {

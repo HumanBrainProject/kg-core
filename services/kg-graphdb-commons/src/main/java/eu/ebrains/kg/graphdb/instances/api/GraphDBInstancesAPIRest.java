@@ -60,6 +60,12 @@ public class GraphDBInstancesAPIRest implements GraphDBInstances {
         return graphDBInstancesAPI.getInstanceById(space, id, stage, returnEmbedded, returnAlternatives, returnIncomingLinks, incomingLinksPageSize, removeInternalProperties);
     }
 
+    @GetMapping("queries/{space}/{id}")
+    @ExposesQuery
+    public NormalizedJsonLd getQueryById(String space, UUID id, DataStage stage) {
+        return graphDBInstancesAPI.getQueryById(space, id, stage);
+    }
+
     @GetMapping("instancesByType")
     @ExposesData
     public Paginated<NormalizedJsonLd> getInstancesByType(@PathVariable("stage") DataStage stage, @RequestParam("type") String type, @RequestParam(value = "space", required = false) String space, @RequestParam(value = "searchByLabel", required = false) String searchByLabel, @RequestParam(value = "returnAlternatives", required = false, defaultValue = "false") boolean returnAlternatives, @RequestParam(value = "returnEmbedded", required = false, defaultValue = "false") boolean returnEmbedded, PaginationParam paginationParam) {
