@@ -30,7 +30,6 @@ import eu.ebrains.kg.commons.jsonld.JsonLdDoc;
 import eu.ebrains.kg.commons.jsonld.NormalizedJsonLd;
 import eu.ebrains.kg.commons.model.*;
 import eu.ebrains.kg.commons.query.KgQuery;
-import eu.ebrains.kg.commons.semantics.vocabularies.EBRAINSVocabulary;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
 
@@ -74,11 +73,9 @@ public class CoreQueryController {
 
     public KgQuery fetchQueryById(InstanceId instanceId, DataStage stage){
         if(instanceId!=null) {
-            NormalizedJsonLd instance = graphDBInstances.getInstanceById(instanceId.getSpace().getName(), instanceId.getUuid(), DataStage.IN_PROGRESS, true, false, false, null, true);
-            //Only return the instance if it is actually a query
-            //FIXME handle minimal access rights (ends up in a 500ed at query time)
-            if (instance!=null && instance.types()!=null && instance.types().contains(EBRAINSVocabulary.META_QUERY_TYPE)) {
-                return new KgQuery(instance, stage);
+            final NormalizedJsonLd queryById = graphDBInstances.getQueryById(instanceId.getSpace().getName(), instanceId.getUuid(), stage);
+            if(queryById!=null){
+                return new KgQuery(queryById, stage);
             }
         }
         return null;

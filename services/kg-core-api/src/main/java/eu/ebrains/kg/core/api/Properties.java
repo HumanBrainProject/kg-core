@@ -97,7 +97,7 @@ public class Properties {
     }
 
 
-    @Operation(summary = "Deprecate a property specification either globally for the requesting client")
+    @Operation(summary = "Define a property specification either globally for the requesting client")
     @PutMapping("/propertiesForType")
     @WritesData
     public ResponseEntity<Result<Void>> definePropertyForType(@RequestBody NormalizedJsonLd payload, @Parameter(description = "By default, the specification is only valid for the current client. If this flag is set to true (and the client/user combination has the permission), the specification is applied for all clients (unless they have defined something by themselves)")  @RequestParam(value = "global", required = false) boolean global, @RequestParam("property") String property, @RequestParam("type") String type) {
