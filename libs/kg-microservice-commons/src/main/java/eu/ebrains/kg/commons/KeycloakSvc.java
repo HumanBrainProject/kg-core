@@ -22,6 +22,7 @@
 
 package eu.ebrains.kg.commons;
 
+import eu.ebrains.kg.commons.api.Authentication;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
@@ -37,16 +38,16 @@ public class KeycloakSvc {
 
     private String endpoint;
     private final WebClient.Builder internalWebClient;
-    private final WebClient.Builder loadBalancedWebClient;
+    private final Authentication.Client authentication;
 
-    public KeycloakSvc(@Qualifier("loadbalanced") WebClient.Builder loadBalancedWebClient, @Qualifier("direct") WebClient.Builder internalWebClient) {
+    public KeycloakSvc(Authentication.Client authentication, @Qualifier("direct") WebClient.Builder internalWebClient) {
         this.internalWebClient = internalWebClient;
-        this.loadBalancedWebClient = loadBalancedWebClient;
+        this.authentication = authentication;
     }
 
     private String getEndpoint() {
         if (endpoint == null) {
-            endpoint = this.loadBalancedWebClient.build().get().uri("http://kg-authentication/internal/authentication/users/authorization/tokenEndpoint").retrieve().bodyToMono(String.class).block();
+            endpoint = this.authentication.tokenEndpoint();
         }
         return endpoint;
     }
