@@ -24,6 +24,7 @@ package eu.ebrains.kg.commons;
 
 import eu.ebrains.kg.commons.api.Authentication;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
 import org.springframework.util.LinkedMultiValueMap;
@@ -38,18 +39,11 @@ public class KeycloakSvc {
 
     private String endpoint;
     private final WebClient.Builder internalWebClient;
-    private final Authentication.Client authentication;
+    private final String tokenEndpoint;
 
-    public KeycloakSvc(Authentication.Client authentication, @Qualifier("direct") WebClient.Builder internalWebClient) {
+    public KeycloakSvc(@Value("${eu.ebrains.kg.login.tokenEndpoint}") String tokenEndpoint, @Qualifier("direct") WebClient.Builder internalWebClient) {
         this.internalWebClient = internalWebClient;
-        this.authentication = authentication;
-    }
-
-    private String getEndpoint() {
-        if (endpoint == null) {
-            endpoint = this.authentication.tokenEndpoint();
-        }
-        return endpoint;
+        this.tokenEndpoint = tokenEndpoint;
     }
 
     public String getToken(String clientId, String clientSecret) {
@@ -59,7 +53,7 @@ public class KeycloakSvc {
         formData.add("client_secret", clientSecret);
         Map<?,?> result = internalWebClient.build()
                 .post()
-                .uri(getEndpoint())
+                .uri(this.tokenEndpoint)
                 .contentType(MediaType.APPLICATION_FORM_URLENCODED)
                 .accept(MediaType.APPLICATION_JSON)
                 .body(BodyInserters.fromFormData(formData))
