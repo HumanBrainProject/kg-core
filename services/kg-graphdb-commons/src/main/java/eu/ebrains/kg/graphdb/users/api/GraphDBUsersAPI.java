@@ -45,4 +45,10 @@ public class GraphDBUsersAPI implements GraphDBUsers.Client {
         return usersRepository.getUsers(paginationParam);
     }
 
+    @Override
+    @ExposesUserInfo
+    public Paginated<NormalizedJsonLd> getUsersWithLimitedInfo(PaginationParam paginationParam, String id){
+        return usersRepository.getUsersWithLimitedInfo(paginationParam, id);
+    }
+
 }

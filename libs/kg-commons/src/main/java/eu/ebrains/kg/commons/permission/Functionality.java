@@ -59,6 +59,7 @@ public enum Functionality {
 
     //Users
     LIST_USERS(Permission.Level.GLOBAL_ONLY, FunctionalityGroup.USERS, DataStage.NATIVE, null, null),
+    LIST_USERS_LIMITED(Permission.Level.GLOBAL_ONLY, FunctionalityGroup.USERS, DataStage.NATIVE, null, null),
 
     //Types
     DEFINE_TYPES(Permission.Level.GLOBAL_ONLY, FunctionalityGroup.TYPES, null, null, null),

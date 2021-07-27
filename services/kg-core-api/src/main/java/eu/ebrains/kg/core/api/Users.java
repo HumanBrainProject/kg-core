@@ -124,6 +124,17 @@ public class Users {
         return ResponseEntity.ok(PaginatedResult.ok(users));
     }
 
+    @Operation(summary = "Retrieve a list of users without sensitive information")
+    @GetMapping("/limited")
+    @ExposesUserInfo
+    @Advanced
+    public ResponseEntity<PaginatedResult<NormalizedJsonLd>> getUserListLimited(@ParameterObject PaginationParam paginationParam, @RequestParam(value = "id", required = false) String id) {
+        Paginated<NormalizedJsonLd> users = graphDBUsers.getUsersWithLimitedInfo(paginationParam, id);
+        users.getData().forEach(NormalizedJsonLd::removeAllInternalProperties);
+        return ResponseEntity.ok(PaginatedResult.ok(users));
+    }
+
+
     @Operation(summary = "Get the current terms of use")
     @GetMapping(value = "/termsOfUse")
     @Simple

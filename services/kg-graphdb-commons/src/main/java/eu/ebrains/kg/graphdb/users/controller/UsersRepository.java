@@ -35,8 +35,11 @@ import eu.ebrains.kg.commons.model.Paginated;
 import eu.ebrains.kg.commons.model.PaginationParam;
 import eu.ebrains.kg.commons.permission.Functionality;
 import eu.ebrains.kg.commons.permissions.controller.Permissions;
+import eu.ebrains.kg.commons.semantics.vocabularies.HBPVocabulary;
+import eu.ebrains.kg.commons.semantics.vocabularies.SchemaOrgVocabulary;
 import eu.ebrains.kg.graphdb.commons.controller.ArangoDatabases;
 import eu.ebrains.kg.graphdb.commons.controller.ArangoRepositoryCommons;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Component;
 
 import java.util.Collections;
@@ -59,13 +62,26 @@ public class UsersRepository {
     }
 
     public Paginated<NormalizedJsonLd> getUsers(PaginationParam pagination) {
-        if(!permissions.hasPermission(authContext.getUserWithRoles(), Functionality.LIST_USERS, null)){
+        if (!permissions.hasPermission(authContext.getUserWithRoles(), Functionality.LIST_USERS, null)) {
             throw new ForbiddenException("No right to list users");
         }
         ArangoDatabase db = databases.getByStage(DataStage.NATIVE);
         ArangoCollectionReference userCollection = ArangoCollectionReference.fromSpace(InternalSpace.USERS_SPACE);
         if (db.collection(userCollection.getCollectionName()).exists()) {
-            AQLQuery userQuery = createUserQuery(pagination,  db);
+            AQLQuery userQuery = createUserQuery(pagination, db);
+            return arangoRepositoryCommons.queryDocuments(db, userQuery);
+        }
+        return new Paginated<>(Collections.emptyList(), 0, 0, 0);
+    }
+
+    public Paginated<NormalizedJsonLd> getUsersWithLimitedInfo(PaginationParam pagination, String id) {
+        if (!permissions.hasPermission(authContext.getUserWithRoles(), Functionality.LIST_USERS_LIMITED, null)) {
+            throw new ForbiddenException("No right to list users");
+        }
+        ArangoDatabase db = databases.getByStage(DataStage.NATIVE);
+        ArangoCollectionReference userCollection = ArangoCollectionReference.fromSpace(InternalSpace.USERS_SPACE);
+        if (db.collection(userCollection.getCollectionName()).exists()) {
+            AQLQuery userQuery = createUserLimitedQuery(pagination, id, db);
             return arangoRepositoryCommons.queryDocuments(db, userQuery);
         }
         return new Paginated<>(Collections.emptyList(), 0, 0, 0);
@@ -78,6 +94,21 @@ public class UsersRepository {
         bindVars.put("@userCollection", ArangoCollectionReference.fromSpace(InternalSpace.USERS_SPACE).getCollectionName());
         aql.addPagination(paginationParam);
         aql.addLine(AQL.trust("RETURN user"));
+        return new AQLQuery(aql, bindVars);
+    }
+
+    private AQLQuery createUserLimitedQuery(PaginationParam paginationParam, String id, ArangoDatabase db) {
+        AQL aql = new AQL();
+        Map<String, Object> bindVars = new HashMap<>();
+        aql.addLine(AQL.trust("FOR user IN @@userCollection"));
+        bindVars.put("@userCollection", ArangoCollectionReference.fromSpace(InternalSpace.USERS_SPACE).getCollectionName());
+        aql.addPagination(paginationParam);
+        if (StringUtils.isNotBlank(id)) {
+            aql.addLine(AQL.trust("FILTER user.`" + HBPVocabulary.NAMESPACE + "users/nativeId" + "` == @id"));
+            bindVars.put("id", id);
+        }
+        aql.addLine(AQL.trust("RETURN UNSET(user, "));
+        aql.addLine(AQL.trust("\"" + SchemaOrgVocabulary.EMAIL + "\")"));
         return new AQLQuery(aql, bindVars);
     }
 }

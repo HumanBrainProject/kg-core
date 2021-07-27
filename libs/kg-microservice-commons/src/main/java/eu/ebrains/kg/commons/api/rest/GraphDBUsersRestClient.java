@@ -49,4 +49,12 @@ public class GraphDBUsersRestClient implements GraphDBUsers.Client {
                 authTokenContext.getAuthTokens(),
                 PaginatedDocuments.class);
     }
+
+    @Override
+    public Paginated<NormalizedJsonLd> getUsersWithLimitedInfo(PaginationParam paginationParam, String id) {
+        return serviceCall.get(String.format("%s?from=%d&size=%s&id=%s",
+                String.format("%s/limited", SERVICE_URL), paginationParam.getFrom(), paginationParam.getSize() != null ? String.valueOf(paginationParam.getSize()) : "", id),
+                authTokenContext.getAuthTokens(),
+                PaginatedDocuments.class);
+    }
 }
