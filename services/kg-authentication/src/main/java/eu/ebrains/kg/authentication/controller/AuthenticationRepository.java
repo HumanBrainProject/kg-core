@@ -29,6 +29,7 @@ import eu.ebrains.kg.arango.commons.aqlBuilder.AQL;
 import eu.ebrains.kg.arango.commons.aqlBuilder.ArangoVocabulary;
 import eu.ebrains.kg.arango.commons.model.ArangoDatabaseProxy;
 import eu.ebrains.kg.authentication.model.AcceptedTermsOfUse;
+import eu.ebrains.kg.authentication.model.Invitation;
 import eu.ebrains.kg.authentication.model.TermsOfUseAcceptance;
 import eu.ebrains.kg.commons.JsonAdapter;
 import eu.ebrains.kg.commons.jsonld.JsonLdDoc;
@@ -56,6 +57,7 @@ public class AuthenticationRepository {
         arangoDatabase.createIfItDoesntExist();
         arangoDatabase.createCollectionIfItDoesntExist("users");
         arangoDatabase.createCollectionIfItDoesntExist("permissions");
+        arangoDatabase.createCollectionIfItDoesntExist("invitations");
     }
 
     public AuthenticationRepository(@Qualifier("termsOfUseDB") ArangoDatabaseProxy arangoDatabase, JsonAdapter jsonAdapter, TermsOfUseRepository termsOfUseRepository) {
@@ -72,6 +74,11 @@ public class AuthenticationRepository {
     private ArangoCollection getUsersCollection() {
         ArangoDatabase database = arangoDatabase.get();
         return database.collection("users");
+    }
+
+    private ArangoCollection getInvitationsCollection() {
+        ArangoDatabase database = arangoDatabase.get();
+        return database.collection("invitations");
     }
 
     private Collection<?> ensureCollection(Object o){
@@ -106,6 +113,26 @@ public class AuthenticationRepository {
         }
         return null;
     }
+
+    public List<Invitation> getAllInvitationsByInstanceId(String instanceId){
+        AQL aql = new AQL();
+        Map<String, Object> bindVars = new HashMap<>();
+        aql.add(AQL.trust("FOR i in invitations"));
+        aql.addLine(AQL.trust("FILTER i.`instanceId` == @instanceId"));
+        bindVars.put("instanceId", instanceId);
+        aql.addLine(AQL.trust("RETURN i"));
+        return arangoDatabase.get().query(aql.build().getValue(), bindVars, Invitation.class).asListRemaining();
+    }
+
+    public void createInvitation(Invitation invitation){
+        getInvitationsCollection().insertDocument(jsonAdapter.toJson(invitation), new DocumentCreateOptions().overwrite(true).silent(true));
+    }
+
+
+    public void deleteInvitation(Invitation invitation){
+        getInvitationsCollection().deleteDocument(invitation.getKey());
+    }
+
 
     public List<JsonLdDoc> getAllRoleDefinitions(){
         AQL aql = new AQL();

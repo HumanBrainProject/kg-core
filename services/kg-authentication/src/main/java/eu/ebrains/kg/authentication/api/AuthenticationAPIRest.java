@@ -40,6 +40,7 @@ import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
 @RequestMapping("/internal/authentication")
 @RestController
@@ -153,4 +154,21 @@ public class AuthenticationAPIRest implements Authentication {
     }
 
 
+    @Override
+    @PutMapping("invitations/{instanceId}/{userId}")
+    public void inviteUserForInstance(@PathVariable("instanceId") UUID id, @PathVariable("userId") UUID userId) {
+        authentication.inviteUserForInstance(id, userId);
+    }
+
+    @Override
+    @DeleteMapping("invitations/{instanceId}/{userId}")
+    public void revokeUserInvitation(@PathVariable("instanceId")UUID id,  @PathVariable("userId") UUID userId) {
+        authentication.revokeUserInvitation(id, userId);
+    }
+
+    @Override
+    @GetMapping("invitations/{instanceId}")
+    public List<ReducedUserInformation> listInvitations(@PathVariable("instanceId")UUID id) {
+        return authentication.listInvitations(id);
+    }
 }

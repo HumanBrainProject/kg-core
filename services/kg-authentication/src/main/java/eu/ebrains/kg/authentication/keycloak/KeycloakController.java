@@ -79,6 +79,9 @@ public class KeycloakController {
         return keycloakUsers.getOtherUserInfo(id);
     }
 
+    public ReducedUserInformation getUserById(String userId){
+        return keycloakUsers.getUserById(userId);
+    }
 
     public List<ReducedUserInformation> findUsers(String search){
         return keycloakUsers.findUser(search);

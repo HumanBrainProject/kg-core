@@ -410,7 +410,7 @@ public class Instances {
     @DeleteMapping("/instances/{id}/invitedUsers/{userId}")
     @Advanced
     public void revokeUserInvitation(@PathVariable("id") UUID id, @PathVariable("userId") UUID userId) {
-        instanceController.createInvitation(id, userId);
+        instanceController.revokeInvitation(id, userId);
     }
 
     @Operation(summary = "List invitations for review for the given instance")

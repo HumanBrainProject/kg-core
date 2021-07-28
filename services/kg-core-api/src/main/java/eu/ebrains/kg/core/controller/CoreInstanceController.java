@@ -24,16 +24,15 @@ package eu.ebrains.kg.core.controller;
 
 import eu.ebrains.kg.commons.AuthContext;
 import eu.ebrains.kg.commons.IdUtils;
-import eu.ebrains.kg.commons.api.GraphDBInstances;
-import eu.ebrains.kg.commons.api.GraphDBScopes;
-import eu.ebrains.kg.commons.api.JsonLd;
-import eu.ebrains.kg.commons.api.PrimaryStoreEvents;
+import eu.ebrains.kg.commons.api.*;
+import eu.ebrains.kg.commons.exception.UnauthorizedException;
 import eu.ebrains.kg.commons.jsonld.*;
 import eu.ebrains.kg.commons.model.*;
 import eu.ebrains.kg.commons.models.ExternalEventInformation;
 import eu.ebrains.kg.commons.models.UserWithRoles;
 import eu.ebrains.kg.commons.permission.Functionality;
 import eu.ebrains.kg.commons.permission.FunctionalityInstance;
+import eu.ebrains.kg.commons.permissions.controller.Permissions;
 import eu.ebrains.kg.commons.semantics.vocabularies.EBRAINSVocabulary;
 import eu.ebrains.kg.commons.semantics.vocabularies.SchemaOrgVocabulary;
 import org.slf4j.Logger;
@@ -59,11 +58,13 @@ public class CoreInstanceController {
     private final IdUtils idUtils;
     private final JsonLd.Client jsonLd;
     private final PrimaryStoreEvents.Client primaryStoreEvents;
+    private final Authentication.Client authentication;
+    private final Permissions permissions;
 
 
     private final Logger logger = LoggerFactory.getLogger(getClass());
 
-    public CoreInstanceController(GraphDBInstances.Client graphDBInstances, GraphDBScopes.Client graphDBScopes, IdsController ids, AuthContext authContext, IdUtils idUtils, JsonLd.Client jsonLd, PrimaryStoreEvents.Client primaryStoreEvents) {
+    public CoreInstanceController(GraphDBInstances.Client graphDBInstances, GraphDBScopes.Client graphDBScopes, IdsController ids, AuthContext authContext, IdUtils idUtils, JsonLd.Client jsonLd, PrimaryStoreEvents.Client primaryStoreEvents, Authentication.Client authentication, Permissions permissions) {
         this.graphDBInstances = graphDBInstances;
         this.graphDBScopes = graphDBScopes;
         this.ids = ids;
@@ -71,19 +72,35 @@ public class CoreInstanceController {
         this.idUtils = idUtils;
         this.jsonLd = jsonLd;
         this.primaryStoreEvents = primaryStoreEvents;
+        this.authentication = authentication;
+        this.permissions = permissions;
     }
 
     public void createInvitation(UUID instanceId, UUID userId){
-        //TODO implement me
+        //TODO move permission check to authentication module
+        final InstanceId resolvedInstanceId = ids.resolveId(DataStage.IN_PROGRESS, instanceId);
+        if(!permissions.hasPermission(authContext.getUserWithRoles(), Functionality.INVITE_FOR_REVIEW, resolvedInstanceId.getSpace(), instanceId)){
+            throw new UnauthorizedException("You don't have the right to invite somebody to this instance.");
+        }
+        this.authentication.inviteUserForInstance(instanceId, userId);
     }
 
     public void revokeInvitation(UUID instanceId, UUID userId){
-        //TODO implement me
+        //TODO move permission check to authentication module
+        final InstanceId resolvedInstanceId = ids.resolveId(DataStage.IN_PROGRESS, instanceId);
+        if(!permissions.hasPermission(authContext.getUserWithRoles(), Functionality.INVITE_FOR_REVIEW, resolvedInstanceId.getSpace(), instanceId)){
+            throw new UnauthorizedException("You don't have the right to invite somebody to this instance.");
+        }
+        this.authentication.revokeUserInvitation(instanceId, userId);
     }
 
     public List<ReducedUserInformation> listInvitations(UUID instanceId){
-        //TODO implement me
-        return Collections.emptyList();
+        //TODO move permission check to authentication module
+        final InstanceId resolvedInstanceId = ids.resolveId(DataStage.IN_PROGRESS, instanceId);
+        if(!permissions.hasPermission(authContext.getUserWithRoles(), Functionality.INVITE_FOR_REVIEW, resolvedInstanceId.getSpace(), instanceId)){
+            throw new UnauthorizedException("You don't have the right to list the invitations for this instance");
+        }
+        return this.authentication.listInvitations(instanceId);
     }
 
 
