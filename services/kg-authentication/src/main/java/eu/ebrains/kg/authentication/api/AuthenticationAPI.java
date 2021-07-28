@@ -140,6 +140,9 @@ public class AuthenticationAPI implements Authentication.Client {
 
     @Override
     public List<ReducedUserInformation> findUsers(String search) {
+        if(!permissions.hasGlobalPermission(this.getRoles(false), Functionality.LIST_USERS_LIMITED)){
+            throw new UnauthorizedException("You don't have the rights to list users");
+        }
         return keycloakController.findUsers(search);
     }
 
