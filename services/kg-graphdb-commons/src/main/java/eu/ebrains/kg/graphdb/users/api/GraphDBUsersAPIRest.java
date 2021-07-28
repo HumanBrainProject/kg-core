@@ -47,4 +47,10 @@ public class GraphDBUsersAPIRest implements GraphDBUsers {
         return graphDBUsersAPI.getUsers(paginationParam);
     }
 
+    @GetMapping("/users/limited")
+    @ExposesUserInfo
+    public Paginated<NormalizedJsonLd> getUsersWithLimitedInfo(PaginationParam paginationParam, String id){
+        return graphDBUsersAPI.getUsersWithLimitedInfo(paginationParam, id);
+    }
+
 }

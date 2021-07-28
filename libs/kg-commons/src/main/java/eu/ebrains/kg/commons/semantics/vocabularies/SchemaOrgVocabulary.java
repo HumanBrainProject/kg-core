@@ -35,5 +35,6 @@ public class SchemaOrgVocabulary {
     public static final String IDENTIFIER = NAMESPACE + "identifier";
     public static final String DESCRIPTION = NAMESPACE + "description";
     public static final String ALTERNATE_NAME = NAMESPACE + "alternateName";
+    public static final String EMAIL = NAMESPACE + "email";
 
 }

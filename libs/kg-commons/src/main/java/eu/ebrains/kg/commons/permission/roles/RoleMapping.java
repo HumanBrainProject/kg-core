@@ -37,7 +37,7 @@ import java.util.stream.Collectors;
  */
 public enum RoleMapping {
     CONSUMER(false, true,null, Functionality.READ_RELEASED, Functionality.EXECUTE_QUERY, Functionality.CREATE_QUERY, Functionality.READ_QUERY, Functionality.DELETE_QUERY, Functionality.READ_SPACE),
-    REVIEWER(true, false, CONSUMER, Functionality.READ, Functionality.SUGGEST, Functionality.INVITE_FOR_REVIEW, Functionality.MINIMAL_READ, Functionality.RELEASE_STATUS),
+    REVIEWER(true, false, CONSUMER, Functionality.READ, Functionality.SUGGEST, Functionality.INVITE_FOR_REVIEW, Functionality.MINIMAL_READ, Functionality.RELEASE_STATUS, Functionality.LIST_USERS_LIMITED),
     EDITOR(true, false, REVIEWER, Functionality.WRITE, Functionality.CREATE, Functionality.INVITE_FOR_SUGGESTION, Functionality.DELETE),
     OWNER(true, false, EDITOR, Functionality.RELEASE, Functionality.UNRELEASE),
     ADMIN(true, false, null, Functionality.values());

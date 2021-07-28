@@ -32,4 +32,7 @@ public interface GraphDBUsers {
 
     @ExposesUserInfo
     Paginated<NormalizedJsonLd> getUsers(PaginationParam paginationParam);
+
+    @ExposesUserInfo
+    Paginated<NormalizedJsonLd> getUsersWithLimitedInfo(PaginationParam paginationParam, String id);
 }
