@@ -84,7 +84,6 @@ public class CoreInstanceController {
         List<InstanceId> instanceIdsInSameSpace = ids.resolveIds(DataStage.IN_PROGRESS, new IdWithAlternatives(id, s, normalizedJsonLd.allIdentifiersIncludingId()), false).stream().filter(i -> s.equals(i.getSpace())).collect(Collectors.toList());
         logger.debug(String.format("Resolved %d instances for ids in %d ms", instanceIdsInSameSpace.size(), new Date().getTime()-startIdResolution));
 
-
         //Were only interested in those instance ids in the same space. Since merging is not done cross-space, we want to allow instances being created with the same identifiers across spaces.
         if (!instanceIdsInSameSpace.isEmpty()) {
             if (instanceIdsInSameSpace.size() == 1) {
@@ -203,7 +202,7 @@ public class CoreInstanceController {
     }
 
     public Paginated<NormalizedJsonLd> getInstances(DataStage stage, Type type, SpaceName space, String searchByLabel, ResponseConfiguration responseConfiguration, PaginationParam paginationParam) {
-        Paginated<NormalizedJsonLd> instancesByType = graphDBInstances.getInstancesByType(stage, type != null ? type.getName() : null, space != null ? space.getName() : null, searchByLabel, responseConfiguration.isReturnAlternatives(), responseConfiguration.isReturnEmbedded(), responseConfiguration.isSortByLabel(), paginationParam);
+        Paginated<NormalizedJsonLd> instancesByType = graphDBInstances.getInstancesByType(stage, type != null ? type.getName() : null, space != null ? space.getName() : null, searchByLabel, responseConfiguration.isReturnAlternatives(), responseConfiguration.isReturnEmbedded(), paginationParam);
         if (responseConfiguration.isReturnAlternatives()) {
             resolveAlternatives(stage, instancesByType.getData());
         }

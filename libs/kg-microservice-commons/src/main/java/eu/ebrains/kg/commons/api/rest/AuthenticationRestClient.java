@@ -25,19 +25,20 @@ package eu.ebrains.kg.commons.api.rest;
 import eu.ebrains.kg.commons.AuthTokenContext;
 import eu.ebrains.kg.commons.ServiceCall;
 import eu.ebrains.kg.commons.api.Authentication;
-import eu.ebrains.kg.commons.model.Credential;
+import eu.ebrains.kg.commons.jsonld.JsonLdDoc;
 import eu.ebrains.kg.commons.model.TermsOfUse;
 import eu.ebrains.kg.commons.model.TermsOfUseResult;
 import eu.ebrains.kg.commons.model.User;
 import eu.ebrains.kg.commons.models.UserWithRoles;
 import eu.ebrains.kg.commons.permission.ClientAuthToken;
-import eu.ebrains.kg.commons.permission.roles.Role;
+import eu.ebrains.kg.commons.permission.roles.RoleMapping;
 import org.springframework.http.MediaType;
 
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 
 @RestClient
 public class AuthenticationRestClient implements Authentication.Client {
@@ -52,38 +53,8 @@ public class AuthenticationRestClient implements Authentication.Client {
     }
 
     @Override
-    public eu.ebrains.kg.commons.model.Client registerClient(eu.ebrains.kg.commons.model.Client client) {
-        return serviceCall.put(String.format("%s/clients", SERVICE_URL), client, authTokenContext.getAuthTokens(), eu.ebrains.kg.commons.model.Client.class);
-    }
-
-    @Override
-    public void unregisterClient(String clientName) {
-        serviceCall.delete(String.format("%s/clients/%s", SERVICE_URL, clientName), authTokenContext.getAuthTokens(), eu.ebrains.kg.commons.model.Client.class);
-    }
-
-    @Override
     public ClientAuthToken fetchToken(String clientId, String clientSecret) {
         return serviceCall.post(String.format("%s/clients/%s/token", SERVICE_URL, clientId), clientSecret, authTokenContext.getAuthTokens(), ClientAuthToken.class);
-    }
-
-    @Override
-    public List<User> getUsersInRole(String role) {
-        return Arrays.asList(serviceCall.get(String.format("%s/roles/%s/users", SERVICE_URL, URLEncoder.encode(role, StandardCharsets.UTF_8)), authTokenContext.getAuthTokens(), User[].class));
-    }
-
-    @Override
-    public void addUserToRole(String role, String nativeUserId) {
-        serviceCall.put(String.format("%s/roles/%s/users/%s", SERVICE_URL, URLEncoder.encode(role, StandardCharsets.UTF_8), nativeUserId), null, authTokenContext.getAuthTokens(), Void.class);
-    }
-
-    @Override
-    public void createRoles(List<Role> roles) {
-        serviceCall.post(String.format("%s/roles", SERVICE_URL), roles, authTokenContext.getAuthTokens(), Void.class);
-    }
-
-    @Override
-    public void removeRoles(String rolePattern) {
-        serviceCall.delete(String.format("%s/roles/%s", SERVICE_URL, URLEncoder.encode(rolePattern, StandardCharsets.UTF_8)), authTokenContext.getAuthTokens(), Void.class);
     }
 
     @Override
@@ -117,11 +88,6 @@ public class AuthenticationRestClient implements Authentication.Client {
     }
 
     @Override
-    public String setup(Credential credential) {
-        return serviceCall.put(String.format("%s/setup", SERVICE_URL), credential, null, String.class);
-    }
-
-    @Override
     public TermsOfUseResult getTermsOfUse() {
         return serviceCall.get(String.format("%s/termsOfUse", SERVICE_URL),  authTokenContext.getAuthTokens(), TermsOfUseResult.class);
     }
@@ -137,18 +103,17 @@ public class AuthenticationRestClient implements Authentication.Client {
     }
 
     @Override
-    public boolean isSpacePublic(String space) {
-        Boolean publicSpace = serviceCall.get(String.format("%s/publicSpaces/%s", SERVICE_URL, space), authTokenContext.getAuthTokens(), Boolean.class);
-        return publicSpace != null && publicSpace;
+    public JsonLdDoc updateClaimForRole(RoleMapping role, String space, Map<?, ?> claimPattern, boolean removeClaim) {
+        return serviceCall.patch(String.format("%s/permissions/%s?remove=%b%s", SERVICE_URL, role, removeClaim, space!=null ? "&space="+space : ""), claimPattern, authTokenContext.getAuthTokens(), JsonLdDoc.class);
     }
 
     @Override
-    public void setSpacePublic(String space) {
-        serviceCall.put(String.format("%s/publicSpaces/%s", SERVICE_URL, space), null, authTokenContext.getAuthTokens(), Void.class);
+    public JsonLdDoc getClaimForRole(RoleMapping role, String space) {
+        return serviceCall.get(String.format("%s/permissions/%s%s", SERVICE_URL, role, space!=null ? "&space="+space : ""), authTokenContext.getAuthTokens(), JsonLdDoc.class);
     }
 
     @Override
-    public void setSpaceProtected(String space) {
-        serviceCall.delete(String.format("%s/publicSpaces/%s", SERVICE_URL, space), authTokenContext.getAuthTokens(), Void.class);
+    public List<JsonLdDoc> getAllRoleDefinitions() {
+        return Arrays.asList(serviceCall.get(String.format("%s/permissions", SERVICE_URL), authTokenContext.getAuthTokens(), JsonLdDoc[].class));
     }
 }

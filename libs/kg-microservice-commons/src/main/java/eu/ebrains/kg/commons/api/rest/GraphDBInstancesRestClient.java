@@ -70,9 +70,9 @@ public class GraphDBInstancesRestClient implements GraphDBInstances.Client {
     }
 
     @Override
-    public Paginated<NormalizedJsonLd> getInstancesByType(DataStage stage, String type, String space, String searchByLabel, boolean returnAlternatives, boolean returnEmbedded, boolean sortByLabel, PaginationParam paginationParam) {
-        return serviceCall.get(String.format("%s/%s/instancesByType?type=%s&from=%d&size=%s&returnEmbedded=%b&searchByLabel=%s&space=%s&returnAlternatives=%b&sortByLabel=%b",
-                SERVICE_URL, stage.name(), new Type(type).getEncodedName(), paginationParam.getFrom(), paginationParam.getSize() != null ? String.valueOf(paginationParam.getSize()) : "", returnEmbedded, searchByLabel != null ? searchByLabel : "", space != null ? space : "", returnAlternatives, sortByLabel),
+    public Paginated<NormalizedJsonLd> getInstancesByType(DataStage stage, String type, String space, String searchByLabel, boolean returnAlternatives, boolean returnEmbedded, PaginationParam paginationParam) {
+        return serviceCall.get(String.format("%s/%s/instancesByType?type=%s&from=%d&size=%s&returnEmbedded=%b&searchByLabel=%s&space=%s&returnAlternatives=%b",
+                SERVICE_URL, stage.name(), new Type(type).getEncodedName(), paginationParam.getFrom(), paginationParam.getSize() != null ? String.valueOf(paginationParam.getSize()) : "", returnEmbedded, searchByLabel != null ? searchByLabel : "", space != null ? space : "", returnAlternatives),
                 authTokenContext.getAuthTokens(),
                 PaginatedDocuments.class);
     }
@@ -121,7 +121,7 @@ public class GraphDBInstancesRestClient implements GraphDBInstances.Client {
     @Override
     public List<NormalizedJsonLd> getDocumentWithIncomingRelatedInstances(String space, UUID id, DataStage stage, String relation, boolean useOriginalTo, boolean returnEmbedded, boolean returnAlternatives) {
         return Arrays.asList(serviceCall.get(String.format("%s/%s/instances/%s/%s/relatedByIncomingRelation?useOriginalTo=%s&relation=%s",
-                SERVICE_URL,  stage.name(), space, id, useOriginalTo, URLEncoder.encode(relation, StandardCharsets.UTF_8)),
+                SERVICE_URL, stage.name(), space, id, useOriginalTo, URLEncoder.encode(relation, StandardCharsets.UTF_8)),
                 authTokenContext.getAuthTokens(), NormalizedJsonLd[].class));
     }
 //
@@ -148,9 +148,9 @@ public class GraphDBInstancesRestClient implements GraphDBInstances.Client {
     }
 
     @Override
-    public SuggestionResult getSuggestedLinksForProperty(NormalizedJsonLd payload, DataStage stage, String space, UUID id, String propertyName, String type, String search, PaginationParam paginationParam) {
-        return serviceCall.post(String.format("%s/%s/instances/%s/%s/suggestedLinksForProperty?property=%s&type=%s&search=%s&from=%d&size=%s",
-                SERVICE_URL, stage.name(), space != null ? space : "unknown", id, propertyName, type != null ? URLEncoder.encode(type, StandardCharsets.UTF_8) : "", search != null ? search : "", paginationParam.getFrom(), paginationParam.getSize() != null ? String.valueOf(paginationParam.getSize()) : ""),
+    public SuggestionResult getSuggestedLinksForProperty(NormalizedJsonLd payload, DataStage stage, String space, UUID id, String propertyName, String sourceType, String targetType, String search, PaginationParam paginationParam) {
+        return serviceCall.post(String.format("%s/%s/instances/%s/%s/suggestedLinksForProperty?property=%s&sourceType=%s&targetType=%s&search=%s&from=%d&size=%s",
+                SERVICE_URL, stage.name(), space != null ? space : "unknown", id, propertyName, sourceType != null ? URLEncoder.encode(sourceType, StandardCharsets.UTF_8) : "", targetType != null ? URLEncoder.encode(targetType, StandardCharsets.UTF_8) : "", search != null ? search : "", paginationParam.getFrom(), paginationParam.getSize() != null ? String.valueOf(paginationParam.getSize()) : ""),
                 payload,
                 authTokenContext.getAuthTokens(),
                 SuggestionResult.class);

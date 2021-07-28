@@ -48,7 +48,7 @@ public interface GraphDBInstances {
     NormalizedJsonLd getQueryById(String space, UUID id,  DataStage stage);
 
     @ExposesData
-    Paginated<NormalizedJsonLd> getInstancesByType(DataStage stage, String type, String space, String searchByLabel, boolean returnAlternatives, boolean returnEmbedded, boolean sortByLabel, PaginationParam paginationParam);
+    Paginated<NormalizedJsonLd> getInstancesByType(DataStage stage, String type, String space, String searchByLabel, boolean returnAlternatives, boolean returnEmbedded, PaginationParam paginationParam);
 
     @ExposesQuery
     Paginated<NormalizedJsonLd> getQueriesByType(DataStage stage, String searchByLabel, boolean returnAlternatives, boolean returnEmbedded, PaginationParam paginationParam, String rootType);
@@ -78,5 +78,5 @@ public interface GraphDBInstances {
     ReleaseStatus getReleaseStatus(String space, UUID id, ReleaseTreeScope treeScope);
 
     @ExposesMinimalData
-    SuggestionResult getSuggestedLinksForProperty(NormalizedJsonLd payload, DataStage stage, String space, UUID id, String propertyName, String type, String search, PaginationParam paginationParam);
+    SuggestionResult getSuggestedLinksForProperty(NormalizedJsonLd payload, DataStage stage, String space, UUID id, String propertyName, String sourceType, String targetType, String search, PaginationParam paginationParam);
 }

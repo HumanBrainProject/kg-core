@@ -22,33 +22,39 @@
 
 package eu.ebrains.kg.authentication.api;
 
+import eu.ebrains.kg.authentication.config.AuthorizationConfiguration;
 import eu.ebrains.kg.authentication.controller.AuthenticationRepository;
 import eu.ebrains.kg.authentication.controller.TermsOfUseRepository;
+import eu.ebrains.kg.authentication.keycloak.KeycloakClient;
 import eu.ebrains.kg.authentication.keycloak.KeycloakController;
-import eu.ebrains.kg.authentication.keycloak.KeycloakInitialSetup;
 import eu.ebrains.kg.authentication.model.UserOrClientProfile;
 import eu.ebrains.kg.commons.api.Authentication;
 import eu.ebrains.kg.commons.exception.NotAcceptedTermsOfUseException;
 import eu.ebrains.kg.commons.exception.UnauthorizedException;
-import eu.ebrains.kg.commons.model.Credential;
+import eu.ebrains.kg.commons.jsonld.JsonLdDoc;
+import eu.ebrains.kg.commons.model.SpaceName;
 import eu.ebrains.kg.commons.model.TermsOfUse;
 import eu.ebrains.kg.commons.model.TermsOfUseResult;
 import eu.ebrains.kg.commons.model.User;
 import eu.ebrains.kg.commons.models.UserWithRoles;
 import eu.ebrains.kg.commons.permission.ClientAuthToken;
 import eu.ebrains.kg.commons.permission.Functionality;
-import eu.ebrains.kg.commons.permission.roles.Role;
+import eu.ebrains.kg.commons.permission.roles.RoleMapping;
 import eu.ebrains.kg.commons.permissions.controller.Permissions;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
-
 import java.util.List;
+import java.util.Map;
 
 @Component
 public class AuthenticationAPI implements Authentication.Client {
 
-    private final KeycloakController keycloakController;
+    private final Logger logger = LoggerFactory.getLogger(getClass());
 
-    private final KeycloakInitialSetup initialSetup;
+    private final KeycloakClient keycloakClient;
+
+    private final KeycloakController keycloakController;
 
     private final AuthenticationRepository authenticationRepository;
 
@@ -56,68 +62,41 @@ public class AuthenticationAPI implements Authentication.Client {
 
     private final Permissions permissions;
 
+    private final AuthorizationConfiguration authorizationConfiguration;
 
-    public AuthenticationAPI(KeycloakController keycloakController, KeycloakInitialSetup initialSetup, AuthenticationRepository authenticationRepository, TermsOfUseRepository termsOfUseRepository, Permissions permissions) {
+
+    public AuthenticationAPI(KeycloakClient keycloakClient, KeycloakController keycloakController, AuthenticationRepository authenticationRepository, TermsOfUseRepository termsOfUseRepository, Permissions permissions, AuthorizationConfiguration authorizationConfiguration) {
         this.keycloakController = keycloakController;
-        this.initialSetup = initialSetup;
+        this.keycloakClient = keycloakClient;
         this.authenticationRepository = authenticationRepository;
         this.termsOfUseRepository = termsOfUseRepository;
         this.permissions = permissions;
+        this.authorizationConfiguration = authorizationConfiguration;
+        if(authorizationConfiguration.isDisablePermissionAuthorization()){
+            logger.warn("ATTENTION: You have disabled the authorization requirement for defining permissions! This is meant to be active only for the first execution! Please define a mapping for your administrator and set this property to false!");
+        }
     }
+
 
     /**
      * CLIENTS
      **/
-    @Override
-    public eu.ebrains.kg.commons.model.Client registerClient(eu.ebrains.kg.commons.model.Client client) {
-        return keycloakController.registerClient(client);
-    }
-
-    @Override
-    public void unregisterClient(String clientName) {
-        keycloakController.unregisterClient(new eu.ebrains.kg.commons.model.Client(clientName).getIdentifier());
-    }
-
     @Override
     public ClientAuthToken fetchToken(String clientId, String clientSecret) {
         return new ClientAuthToken(keycloakController.authenticate(clientId, clientSecret));
     }
 
     /**
-     * ROLES
-     **/
-    @Override
-    public List<User> getUsersInRole(String role) {
-        return keycloakController.getUsersInRole(role);
-    }
-
-    @Override
-    public void addUserToRole(String role, String nativeUserId) {
-        keycloakController.addUserToRole(nativeUserId, role);
-    }
-
-    @Override
-    public void createRoles(List<Role> roles) {
-        keycloakController.createRoles(roles);
-    }
-
-    @Override
-    public void removeRoles(String rolePattern) {
-        keycloakController.removeRolesFromClient(rolePattern);
-    }
-
-
-    /**
      * USERS
      **/
     @Override
     public String authEndpoint() {
-        return keycloakController.getServerUrl();
+        return keycloakClient.getServerUrl();
     }
 
     @Override
     public String tokenEndpoint() {
-        return keycloakController.getTokenEndpoint();
+        return keycloakClient.getTokenEndpoint();
     }
 
     @Override
@@ -133,8 +112,11 @@ public class AuthenticationAPI implements Authentication.Client {
         if (userProfile != null) {
             User user = keycloakController.buildUserInfoFromKeycloak(userProfile.getClaims());
             UserOrClientProfile clientProfile = keycloakController.getClientProfile(true);
+            if(clientProfile!=null && !keycloakController.isServiceAccount(clientProfile.getClaims())){
+                throw new UnauthorizedException("The client authorization credentials you've passed doesn't belong to a service account. This is not allowed!");
+            }
             // We only do the terms of use check for direct access calls (the clients are required to ensure that the user
-            // agrees to the terms of use.
+            // agrees to the terms of use.)
             UserWithRoles userWithRoles = new UserWithRoles(user, userProfile.getRoleNames(), clientProfile != null ? clientProfile.getRoleNames() : null,
                     keycloakController.getClientInfoFromKeycloak(clientProfile != null ? clientProfile.getClaims() : null));
             if(checkForTermsOfUse && clientProfile==null) {
@@ -143,7 +125,6 @@ public class AuthenticationAPI implements Authentication.Client {
                     throw new NotAcceptedTermsOfUseException(termsOfUseToAccept);
                 }
             }
-            //fetch the public spaces and assign the consumer role for them
             return userWithRoles;
         } else {
             return null;
@@ -196,34 +177,52 @@ public class AuthenticationAPI implements Authentication.Client {
         termsOfUseRepository.setCurrentTermsOfUse(termsOfUse);
     }
 
-    @Override
-    public boolean isSpacePublic(String space) {
-        return authenticationRepository.isSpacePublic(space);
-    }
-
-    @Override
-    public void setSpacePublic(String space){
-        setSpacePublic(space, true);
-    }
-
-    @Override
-    public void setSpaceProtected(String space){
-        setSpacePublic(space, false);
-    }
-
-    private void setSpacePublic(String space, boolean publicSpace) {
-        if(!permissions.hasGlobalPermission(this.getRoles(true), Functionality.DEFINE_PUBLIC_SPACE)){
-            throw new UnauthorizedException("You don't have the rights do define a space to be public or not.");
-        }
-        authenticationRepository.setSpacePublic(space, publicSpace);
-    }
-
     /**
-     * SETUP
+     * PERMISSIONS
      **/
     @Override
-    public String setup(Credential credential) {
-        return initialSetup.initialSetup(credential.getUser(), credential.getPassword());
+    public JsonLdDoc updateClaimForRole(RoleMapping role, String space, Map<?, ?> claimPattern, boolean removeClaim) {
+        if(removeClaim){
+            if(authorizationConfiguration.isDisablePermissionAuthorization() || permissions.hasGlobalPermission(this.getRoles(false), Functionality.DELETE_PERMISSION)) {
+                return authenticationRepository.removeClaimFromRole(role.toRole(SpaceName.fromString(space)), claimPattern);
+            }
+            else{
+                throw new UnauthorizedException("You don't have the rights to remove permissions");
+            }
+        }
+        else{
+            if(authorizationConfiguration.isDisablePermissionAuthorization() || permissions.hasGlobalPermission(this.getRoles(false), Functionality.CREATE_PERMISSION)) {
+                return authenticationRepository.addClaimToRole(role.toRole(SpaceName.fromString(space)), claimPattern);
+            }
+            else{
+                throw new UnauthorizedException("You don't have the rights to add permissions");
+            }
+        }
     }
 
+    @Override
+    public JsonLdDoc getClaimForRole(RoleMapping role, String space) {
+        if(canShowPermissions()) {
+            return authenticationRepository.getClaimForRole(role.toRole(SpaceName.fromString(space)));
+        }
+        else{
+            throw new UnauthorizedException("You don't have the rights to show permissions");
+        }
+    }
+
+    private boolean canShowPermissions(){
+        final UserWithRoles roles = this.getRoles(false);
+        return authorizationConfiguration.isDisablePermissionAuthorization() || permissions.hasGlobalPermission(roles, Functionality.DELETE_PERMISSION) || permissions.hasGlobalPermission(roles, Functionality.CREATE_PERMISSION);
+    }
+
+    @Override
+    public List<JsonLdDoc> getAllRoleDefinitions() {
+        final UserWithRoles roles = this.getRoles(false);
+        if(canShowPermissions()) {
+            return authenticationRepository.getAllRoleDefinitions();
+        }
+        else{
+            throw new UnauthorizedException("You don't have the rights to show permissions");
+        }
+    }
 }

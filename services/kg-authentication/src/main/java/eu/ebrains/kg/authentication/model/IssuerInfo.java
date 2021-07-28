@@ -24,32 +24,19 @@ package eu.ebrains.kg.authentication.model;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 
-public class OpenIdConfig {
+public class IssuerInfo {
 
-    @JsonProperty("issuer")
-    private String issuer;
+    @JsonProperty("realm")
+    private String realm;
 
-    @JsonProperty("authorization_endpoint")
-    private String authorizationEndpoint;
+    @JsonProperty("public_key")
+    private String publicKey;
 
-    @JsonProperty("token_endpoint")
-    private String tokenEndpoint;
-
-    @JsonProperty("token_introspection_endpoint")
-    private String tokenIntrospectionEndpoint;
-
-    @JsonProperty("userinfo_endpoint")
-    private String userInfoEndpoint;
-
-    public String getTokenEndpoint() {
-        return tokenEndpoint;
+    public String getRealm() {
+        return realm;
     }
 
-    public String getUserInfoEndpoint() {
-        return userInfoEndpoint;
-    }
-
-    public String getIssuer() {
-        return issuer;
+    public String getPublicKey() {
+        return publicKey;
     }
 }

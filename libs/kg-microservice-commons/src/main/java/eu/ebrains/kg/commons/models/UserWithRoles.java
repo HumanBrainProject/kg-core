@@ -42,10 +42,7 @@ public class UserWithRoles {
     private List<String> clientRoles;
     private List<String> userRoles;
     private String clientId;
-    private boolean serviceAccount;
     private transient final Logger logger = LoggerFactory.getLogger(getClass());
-
-    private final static String CLIENT_ROLE_NAME = RoleMapping.IS_CLIENT.toRole(null).getName();
 
     // For serialization
     @SuppressWarnings("unused")
@@ -57,7 +54,6 @@ public class UserWithRoles {
         this.userRoles = userRoles;
         this.clientRoles = clientRoles;
         this.clientId = clientId;
-        this.serviceAccount = userRoles.contains(CLIENT_ROLE_NAME);
     }
 
     /**
@@ -83,11 +79,6 @@ public class UserWithRoles {
 
     public List<FunctionalityInstance> getPermissionsOfEitherUserOrClient() {
         return evaluatePermissionCombinations(userRoles, clientRoles);
-    }
-
-
-    public boolean isServiceAccount() {
-        return serviceAccount;
     }
 
     public SpaceName getPrivateSpace(){
@@ -154,25 +145,20 @@ public class UserWithRoles {
             //We're lacking of authentication information -> we default to "no permissions"
             return Collections.emptyList();
         }
-        //Add an implicit role for the user private space.
-        String privateSpaceRole = RoleMapping.OWNER.toRole(getPrivateSpace()).getName();
-        List<FunctionalityInstance> userFunctionalities = reduceFunctionalities(Stream.concat(Stream.of(privateSpaceRole), userRoleNames.stream()).map(RoleMapping::fromRole).flatMap(Collection::stream).distinct().collect(Collectors.groupingBy(FunctionalityInstance::getFunctionality)));
-        List<FunctionalityInstance> result = new ArrayList<>();
+        List<FunctionalityInstance> userFunctionalities = reduceFunctionalities(userRoleNames.stream().map(RoleMapping::fromRole).flatMap(Collection::stream).distinct().collect(Collectors.groupingBy(FunctionalityInstance::getFunctionality)));
+        Set<FunctionalityInstance> result = new HashSet<>();
         if(clientRoleNames != null) {
             Map<Functionality, List<FunctionalityInstance>> clientFunctionalities = clientRoleNames.stream().map(RoleMapping::fromRole).flatMap(Collection::stream).distinct().collect(Collectors.groupingBy(FunctionalityInstance::getFunctionality));
-            if (!clientRoleNames.contains(CLIENT_ROLE_NAME)) {
-                throw new IllegalArgumentException("The client authorization credentials you've passed doesn't belong to a service account. This is not allowed!");
-            }
             //Filter the user roles by the client permissions (only those user permissions are guaranteed which are also allowed by the client)
             for (FunctionalityInstance userRole : userFunctionalities) {
                 Functionality functionality = userRole.getFunctionality();
                 if (clientFunctionalities.containsKey(functionality)) {
-                    FunctionalityInstance global = null;
-                    FunctionalityInstance space = null;
-                    FunctionalityInstance instance = null;
                     for (FunctionalityInstance clientFunctionality : clientFunctionalities.get(functionality)) {
+                        FunctionalityInstance global = null;
+                        FunctionalityInstance space = null;
+                        FunctionalityInstance instance = null;
                         if (clientFunctionality.getSpace() == null && clientFunctionality.getId() == null) {
-                            //The client provides this functionality on a global permission layer, so this is ok.
+                            //The client provides this functionality on a global permission layer, so the user role can be accepted
                             global = userRole;
                         }
                         if (clientFunctionality.getSpace() != null && clientFunctionality.getId() == null) {
@@ -181,9 +167,10 @@ public class UserWithRoles {
                                 // ... the user has a global permission, so we restrict it to the client space
                                 space = clientFunctionality;
                             }
-                            if (userRole.getSpace() != null && userRole.getSpace().equals(clientFunctionality.getSpace())) {
-                                //... the user has a permission for the space so we can provide access to it.
-                                space = clientFunctionality;
+                            if (userRole.getSpace() != null  && userRole.getSpace().equals(clientFunctionality.getSpace())) {
+                                //... the client has permission for the space so we can provide access to the user role
+                                // (regardless if it is a space or instance permission since both are valid)
+                                space = userRole;
                             }
                         }
                         if (clientFunctionality.getSpace() != null && clientFunctionality.getInstanceId() != null) {
@@ -198,7 +185,7 @@ public class UserWithRoles {
                             }
                             if (userRole.getSpace() != null && userRole.getInstanceId() != null && userRole.getSpace().equals(clientFunctionality.getSpace()) && userRole.getInstanceId().equals(clientFunctionality.getInstanceId())) {
                                 //... the user has a permission for the same instance
-                                instance = clientFunctionality;
+                                instance = userRole;
                             }
                         }
                         if (global != null) {
@@ -216,6 +203,6 @@ public class UserWithRoles {
            return userFunctionalities;
         }
         logger.trace(String.format("Available roles for user %s in client %s: %s", user != null ? user.getUserName() : "anonymous", clientId, String.join(", ", result.stream().map(Object::toString).collect(Collectors.toSet()))));
-        return result;
+        return new ArrayList<>(result);
     }
 }

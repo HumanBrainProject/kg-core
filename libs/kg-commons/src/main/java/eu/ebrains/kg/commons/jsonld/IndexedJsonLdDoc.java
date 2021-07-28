@@ -46,6 +46,7 @@ public class IndexedJsonLdDoc {
     public static final String DOC_TYPES = "_docTypes";
     public static final String ORIGINAL_TO = "_originalTo";
     public static final String IDENTIFIERS = "_identifiers";
+    public static final String LABEL = "_label";
 
     public static List<String> INTERNAL_FIELDS = Arrays.asList(COLLECTION, USER_ID, TIMESTAMP, INDEX_TIMESTAMP, REV, EMBEDDED, DOCUMENT_ID, ORIGINAL_DOCUMENT);
 
@@ -100,7 +101,6 @@ public class IndexedJsonLdDoc {
     }
 
     public void setCollection(String collection){
-        document.addProperty(EBRAINSVocabulary.META_SPACE, collection);
         document.addProperty(COLLECTION, collection);
     }
 

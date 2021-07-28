@@ -24,6 +24,7 @@ package eu.ebrains.kg.inference.controller;
 
 import eu.ebrains.kg.commons.IdUtils;
 import eu.ebrains.kg.commons.api.GraphDBInstances;
+import eu.ebrains.kg.commons.api.GraphDBTypes;
 import eu.ebrains.kg.commons.jsonld.IndexedJsonLdDoc;
 import eu.ebrains.kg.commons.jsonld.InferredJsonLdDoc;
 import eu.ebrains.kg.commons.jsonld.NormalizedJsonLd;
@@ -47,7 +48,7 @@ public class ReconcileTest {
     @Before
     public void setup(){
         idUtils = new IdUtils("http://foobar/");
-        reconcile = new Reconcile(Mockito.mock(GraphDBInstances.Client.class), idUtils);
+        reconcile = new Reconcile(Mockito.mock(GraphDBInstances.Client.class), Mockito.mock(GraphDBTypes.Client.class), idUtils);
     }
 
     private IndexedJsonLdDoc createDoc(String... identifiers){

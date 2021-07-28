@@ -80,23 +80,23 @@ public class GraphDBInstancesAPI implements GraphDBInstances.Client {
 
     @Override
     @ExposesData
-    public Paginated<NormalizedJsonLd> getInstancesByType(DataStage stage, String typeName, String space, String searchByLabel, boolean returnAlternatives, boolean returnEmbedded, boolean sortByLabel, PaginationParam paginationParam) {
+    public Paginated<NormalizedJsonLd> getInstancesByType(DataStage stage, String typeName, String space, String searchByLabel, boolean returnAlternatives, boolean returnEmbedded, PaginationParam paginationParam) {
         Type type = new Type(typeName);
-        Map<String, List<String>> searchableProperties = null;
-        if (sortByLabel || (searchByLabel != null && !searchByLabel.isBlank())) {
+        List<String> searchableProperties = null;
+        if ((searchByLabel != null && !searchByLabel.isBlank())) {
             //Since we're either sorting or searching by label, we need to reflect on the type -> we therefore have to resolve the type in the database first...
             List<NormalizedJsonLd> typeInformation = typeRepository.getTypes(authContext.getUserWithRoles().getClientId(), stage, Collections.singletonList(type), true, false, false);
             if (!typeInformation.isEmpty()) {
-                type = Type.fromPayload(typeInformation.get(0));
+                NormalizedJsonLd typeInformationPayload = typeInformation.get(0);
+                Type typeFromPayload = Type.fromPayload(typeInformationPayload);
+                type = typeFromPayload;
                 //We're also interested in the properties which are marked as "searchable"
-                searchableProperties = typeInformation.stream().collect(Collectors.toMap(JsonLdDoc::primaryIdentifier, v -> {
-                    List<NormalizedJsonLd> properties = v.getAsListOf(EBRAINSVocabulary.META_PROPERTIES, NormalizedJsonLd.class);
-                    String labelProperty = Type.fromPayload(v).getLabelProperty();
-                    return properties.stream().filter(p -> {
-                        Boolean searchable = p.getAs(EBRAINSVocabulary.META_PROPERTY_SEARCHABLE, Boolean.class);
-                        return searchable != null && searchable;
-                    }).map(JsonLdDoc::primaryIdentifier).filter(p -> !p.equals(labelProperty)).collect(Collectors.toList());
-                }));
+                searchableProperties = typeInformationPayload.getAsListOf(EBRAINSVocabulary.META_PROPERTIES, NormalizedJsonLd.class).stream()
+                        .filter(p -> {
+                            Boolean searchable = p.getAs(EBRAINSVocabulary.META_PROPERTY_SEARCHABLE, Boolean.class);
+                            return searchable != null && searchable;
+                        }).map(JsonLdDoc::primaryIdentifier).filter(Objects::nonNull)
+                        .filter(p -> !p.equals(typeFromPayload.getLabelProperty())).collect(Collectors.toList());
             }
         } else {
             List<NormalizedJsonLd> typeInformation = typeRepository.getTypes(authContext.getUserWithRoles().getClientId(), stage, Collections.singletonList(type), false, false, false);
@@ -104,7 +104,7 @@ public class GraphDBInstancesAPI implements GraphDBInstances.Client {
                 type = Type.fromPayload(typeInformation.get(0));
             }
         }
-        return repository.getDocumentsByTypes(stage, type, space != null && !space.isBlank() ? new SpaceName(space) : null, paginationParam, searchByLabel, returnEmbedded, returnAlternatives, sortByLabel, searchableProperties);
+        return repository.getDocumentsByTypes(stage, type, space != null && !space.isBlank() ? new SpaceName(space) : null, paginationParam, searchByLabel, returnEmbedded, returnAlternatives, searchableProperties);
     }
 
     @Override
@@ -167,29 +167,29 @@ public class GraphDBInstancesAPI implements GraphDBInstances.Client {
 
     @Override
     @ExposesMinimalData
-    public SuggestionResult getSuggestedLinksForProperty(NormalizedJsonLd payload, DataStage stage, String space, UUID id, String propertyName, String type, String search, PaginationParam paginationParam) {
+    public SuggestionResult getSuggestedLinksForProperty(NormalizedJsonLd payload, DataStage stage, String space, UUID id, String propertyName, String sourceType, String targetType, String search, PaginationParam paginationParam) {
 
-        List<Type> types = null;
+        List<Type> sourceTypes = null;
         List<UUID> existingLinks = Collections.emptyList();
         ;
-        if (StringUtils.isNotBlank(type)) {
-            types = Collections.singletonList(new Type(URLDecoder.decode(type, StandardCharsets.UTF_8)));
+        if (StringUtils.isNotBlank(sourceType)) {
+            sourceTypes = Collections.singletonList(new Type(URLDecoder.decode(sourceType, StandardCharsets.UTF_8)));
         } else {
             if (payload == null) {
                 payload = repository.getInstance(stage, new SpaceName(space), id, true, true, false, false, null);
             }
             if (payload != null) {
-                types = payload.types().stream().map(Type::new).collect(Collectors.toList());
+                sourceTypes = payload.types().stream().map(Type::new).collect(Collectors.toList());
                 existingLinks = payload.getAsListOf(propertyName, JsonLdId.class, true).stream().map(idUtils::getUUID).filter(Objects::nonNull).collect(Collectors.toList());
             }
         }
         SuggestionResult suggestionResult = new SuggestionResult();
-        if (types == null || types.isEmpty()) {
+        if (sourceTypes == null || sourceTypes.isEmpty()) {
             //We don't have any clue about the type so we can't give any suggestions
             return null;
         }
-        List<NormalizedJsonLd> targetTypesForProperty = typeRepository.getTargetTypesForProperty(authContext.getUserWithRoles().getClientId(), stage, types, propertyName);
-        List<Type> typesWithLabelInfo = ArangoRepositoryTypes.extractExtendedTypeInformationFromPayload(targetTypesForProperty);
+        List<NormalizedJsonLd> targetTypesForProperty = typeRepository.getTargetTypesForProperty(authContext.getUserWithRoles().getClientId(), stage, sourceTypes, targetType, propertyName);
+        List<Type> typesWithLabelInfo = targetTypesForProperty.stream().map(Type::fromPayload).collect(Collectors.toList());
         suggestionResult.setTypes(targetTypesForProperty.stream().collect(Collectors.toMap(JsonLdDoc::primaryIdentifier, t -> t)));
         Paginated<SuggestedLink> documentsByTypes = repository.getSuggestionsByTypes(stage, typesWithLabelInfo, paginationParam, search, existingLinks);
         suggestionResult.setSuggestions(documentsByTypes);

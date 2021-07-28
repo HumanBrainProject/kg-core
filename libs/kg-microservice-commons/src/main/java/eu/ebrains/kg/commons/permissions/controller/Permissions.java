@@ -55,7 +55,7 @@ public class Permissions {
     }
 
     private boolean isServiceAccountForClientSpace(UserWithRoles userWithRoles, SpaceName space) {
-        return userWithRoles != null && space != null && userWithRoles.getClientId() != null && userWithRoles.getClientId().equals(space.getName()) && userWithRoles.getUser() != null && userWithRoles.getUser().isServiceAccountForClient(userWithRoles.getClientId()) && userWithRoles.isServiceAccount();
+        return userWithRoles != null && space != null && userWithRoles.getClientId() != null && userWithRoles.getClientId().equals(space.getName()) && userWithRoles.getUser() != null && userWithRoles.getUser().isServiceAccountForClient(userWithRoles.getClientId());
     }
 
     public boolean hasPermission(UserWithRoles userWithRoles, Functionality functionality, SpaceName space) {

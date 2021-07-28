@@ -27,14 +27,13 @@ import com.arangodb.ArangoDatabase;
 import com.arangodb.model.DocumentCreateOptions;
 import eu.ebrains.kg.arango.commons.aqlBuilder.AQL;
 import eu.ebrains.kg.arango.commons.aqlBuilder.ArangoVocabulary;
-import eu.ebrains.kg.arango.commons.model.ArangoCollectionReference;
 import eu.ebrains.kg.arango.commons.model.ArangoDatabaseProxy;
 import eu.ebrains.kg.authentication.model.AcceptedTermsOfUse;
-import eu.ebrains.kg.authentication.model.ArangoTermsOfUse;
 import eu.ebrains.kg.authentication.model.TermsOfUseAcceptance;
 import eu.ebrains.kg.commons.JsonAdapter;
-import eu.ebrains.kg.commons.model.SpaceName;
+import eu.ebrains.kg.commons.jsonld.JsonLdDoc;
 import eu.ebrains.kg.commons.model.TermsOfUse;
+import eu.ebrains.kg.commons.permission.roles.Role;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
@@ -42,9 +41,12 @@ import org.springframework.stereotype.Component;
 
 import javax.annotation.PostConstruct;
 import java.util.*;
+import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 @Component
 public class AuthenticationRepository {
+
     private final ArangoDatabaseProxy arangoDatabase;
     private final TermsOfUseRepository termsOfUseRepository;
     private final JsonAdapter jsonAdapter;
@@ -53,7 +55,7 @@ public class AuthenticationRepository {
     public void setup() {
         arangoDatabase.createIfItDoesntExist();
         arangoDatabase.createCollectionIfItDoesntExist("users");
-        arangoDatabase.createCollectionIfItDoesntExist("publicSpaces");
+        arangoDatabase.createCollectionIfItDoesntExist("permissions");
     }
 
     public AuthenticationRepository(@Qualifier("termsOfUseDB") ArangoDatabaseProxy arangoDatabase, JsonAdapter jsonAdapter, TermsOfUseRepository termsOfUseRepository) {
@@ -62,9 +64,9 @@ public class AuthenticationRepository {
         this.jsonAdapter = jsonAdapter;
     }
 
-    private ArangoCollection getPublicSpacesCollection() {
+    private ArangoCollection getPermissionsCollection() {
         ArangoDatabase database = arangoDatabase.get();
-        return database.collection("publicSpaces");
+        return database.collection("permissions");
     }
 
     private ArangoCollection getUsersCollection() {
@@ -72,18 +74,167 @@ public class AuthenticationRepository {
         return database.collection("users");
     }
 
+    private Collection<?> ensureCollection(Object o){
+        if(o == null){
+            return Collections.emptySet();
+        }
+        else if(o instanceof Collection){
+            return (Collection<?>) o;
+        }
+        else {
+            return Collections.singleton(o);
+        }
+    }
+
+    private Set<String> translateUserInfoToRole(String roleLabel, String key, Map role, Map userInfo) {
+        if (!userInfo.containsKey(key)) {
+            return null;
+        }
+        Object r = role.get(key);
+        Object u = userInfo.get(key);
+        if (r instanceof Map && u instanceof Map) {
+            return ((Map<?, ?>) r).keySet().stream()
+                    .map(k -> translateUserInfoToRole(roleLabel, (String) k, (Map) r, (Map) u)).filter(Objects::nonNull)
+                    .flatMap(Collection::stream).collect(Collectors.toSet());
+        }
+        if(r!=null && u!=null){
+            return ensureCollection(u).stream().filter(userClaim -> userClaim instanceof String).map(userClaim ->
+                    ensureCollection(r).stream()
+                            .filter(roleClaim -> ((String) userClaim).matches((String) roleClaim))
+                            .map(roleClaim -> ((String)userClaim).replaceAll((String) roleClaim, roleLabel))
+                            .collect(Collectors.toSet())).flatMap(Collection::stream).collect(Collectors.toSet());
+        }
+        return null;
+    }
+
+    public List<JsonLdDoc> getAllRoleDefinitions(){
+        AQL aql = new AQL();
+        aql.add(AQL.trust("FOR d in permissions RETURN d"));
+        return arangoDatabase.get().query(aql.build().getValue(), JsonLdDoc.class).asListRemaining();
+    }
+
+
+    public List<String> getRolesFromUserInfo(Map<String, Object> userInfo) {
+        if (userInfo == null || userInfo.isEmpty()) {
+            return Collections.emptyList();
+        }
+        Object user = userInfo.get("sub");
+        final List<JsonLdDoc> results = getAllRoleDefinitions();
+        return results.stream().map(r -> {
+            String role = r.get(ArangoVocabulary.KEY) != null ? (String) r.get(ArangoVocabulary.KEY) : null;
+            if (role != null) {
+                if (r.containsKey("authenticated") && (boolean) r.get("authenticated") && user != null) {
+                    //If the role is specified to be applied whenever somebody is authenticated, we can just return it.
+                    //Please note, that it is not possible to apply regex pattern for these kind of assignments.
+                    return Collections.singletonList(role);
+                }
+                return r.keySet().stream().filter(k -> !k.startsWith("_"))
+                        .map(k -> translateUserInfoToRole(role, k, r, userInfo)).filter(Objects::nonNull)
+                        .flatMap(Collection::stream).collect(Collectors.toSet());
+            }
+            return null;
+        }).filter(Objects::nonNull).flatMap(Collection::stream).distinct().collect(Collectors.toList());
+    }
+
+
+    public JsonLdDoc getClaimForRole(Role role) {
+        return getPermissionsCollection().getDocument(role.getName(), JsonLdDoc.class);
+    }
+
+    public JsonLdDoc addClaimToRole(Role role, Map<?, ?> claimPattern) {
+        JsonLdDoc document = getPermissionsCollection().getDocument(role.getName(), JsonLdDoc.class);
+        if (document == null) {
+            document = new JsonLdDoc();
+            document.put(ArangoVocabulary.KEY, role.getName());
+        }
+        boolean empty = synchronizeMaps(role.getName(), claimPattern, document, false);
+        if (empty) {
+            getPermissionsCollection().deleteDocument(role.getName());
+            return null;
+        } else {
+            getPermissionsCollection().insertDocument(document, new DocumentCreateOptions().overwrite(true));
+            return document;
+        }
+    }
+
+
+    public JsonLdDoc removeClaimFromRole(Role role, Map<?, ?> claimPattern) {
+        JsonLdDoc document = getPermissionsCollection().getDocument(role.getName(), JsonLdDoc.class);
+        if (document == null) {
+            //The document doesn't exist - nothing to remove, nothing to do...
+            return null;
+        }
+        boolean empty = synchronizeMaps(role.getName(), claimPattern, document, true);
+        if (empty) {
+            getPermissionsCollection().deleteDocument(role.getName());
+            return null;
+        } else {
+            getPermissionsCollection().insertDocument(document, new DocumentCreateOptions().overwrite(true));
+            return document;
+        }
+    }
+
+
+    private boolean synchronizeMaps(String role, Map source, Map target, boolean remove) {
+        Set<Object> toBeRemoved = new HashSet<>();
+        for (Object key : source.keySet()) {
+            final Object value = source.get(key);
+            if (!target.containsKey(key)) {
+                if (remove) {
+                    //We want to remove, but it doesn't exist - so we're good.
+                } else {
+                    //It doesn't exist yet, so we can just attach it
+                    target.put(key, value);
+                }
+            } else {
+                final Object existingValue = target.get(key);
+                if (value instanceof Map) {
+                    if (existingValue instanceof Map) {
+                        boolean empty = synchronizeMaps(role, (Map) value, (Map) existingValue, remove);
+                        if (empty) {
+                            target.remove(key);
+                        }
+                    } else {
+                        throw new RuntimeException(String.format(
+                                "There is a problem with the structure of the permission map for the role %s. It seems like there are incompatible levels.", role));
+                    }
+                } else if (value instanceof List) {
+                    if (existingValue instanceof List) {
+                        List existingValueList = (List) existingValue;
+                        for (Object e : ((List) value)) {
+                            if (remove && existingValueList.contains(e)) {
+                                existingValueList.remove(e);
+                            } else if (!remove && !existingValueList.contains(e)) {
+                                existingValueList.add(e);
+                            }
+                        }
+                        if (existingValueList.isEmpty()) {
+                            toBeRemoved.add(key);
+                        }
+                    } else {
+                        throw new RuntimeException(String.format(
+                                "There is a problem with the structure of the permission map for the role %s. It seems like there are incompatible levels.", role));
+                    }
+                } else if (existingValue != null && existingValue.equals(value)){
+                    toBeRemoved.add(key);
+                }
+            }
+        }
+        toBeRemoved.forEach(target::remove);
+        return target.isEmpty();
+    }
+
     @Cacheable("termsOfUseByUser")
-    public TermsOfUse findTermsOfUseToAccept(String userId){
+    public TermsOfUse findTermsOfUseToAccept(String userId) {
         String userDoc = getUsersCollection().getDocument(userId, String.class);
         TermsOfUseAcceptance termsOfUse;
-        if(userDoc!=null) {
+        if (userDoc != null) {
             termsOfUse = jsonAdapter.fromJson(userDoc, TermsOfUseAcceptance.class);
-        }
-        else{
+        } else {
             termsOfUse = null;
         }
         TermsOfUse currentTermsOfUse = termsOfUseRepository.getCurrentTermsOfUse();
-        if(currentTermsOfUse!=null) {
+        if (currentTermsOfUse != null) {
             String currentVersion = currentTermsOfUse.getVersion();
             if (termsOfUse != null && termsOfUse.getAcceptedTermsOfUse().stream().anyMatch(t -> t.getVersion().equals(currentVersion))) {
                 return null;
@@ -92,46 +243,14 @@ public class AuthenticationRepository {
         return currentTermsOfUse;
     }
 
-    @CacheEvict(value="termsOfUseByUser", key = "#userId")
-    public void acceptTermsOfUse(String version, String userId){
+    @CacheEvict(value = "termsOfUseByUser", key = "#userId")
+    public void acceptTermsOfUse(String version, String userId) {
         TermsOfUseAcceptance userAcceptance = getUsersCollection().getDocument(userId, TermsOfUseAcceptance.class);
-        if(userAcceptance == null){
+        if (userAcceptance == null) {
             userAcceptance = new TermsOfUseAcceptance(userId, userId, new ArrayList<>());
         }
         userAcceptance.getAcceptedTermsOfUse().add(new AcceptedTermsOfUse(version, new Date()));
         getUsersCollection().insertDocument(jsonAdapter.toJson(userAcceptance), new DocumentCreateOptions().overwrite(true).silent(true));
-    }
-
-    public boolean isSpacePublic(String space){
-        if(space!=null) {
-            return getPublicSpacesCollection().documentExists(ArangoCollectionReference.fromSpace(new SpaceName(space)).getCollectionName());
-        }
-        return false;
-    }
-
-    @Cacheable("publicSpaces")
-    public List<String> getPublicSpaces(){
-        AQL aql = new AQL();
-        Map<String, Object> bindVars = new HashMap<>();
-        ArangoCollection publicSpacesCollection = getPublicSpacesCollection();
-        aql.addLine(AQL.trust("FOR s IN @@spaceCollection FILTER s.`name` != NULL RETURN s.`name`"));
-        bindVars.put("@spaceCollection", publicSpacesCollection.name());
-        return arangoDatabase.getOrCreate().query(aql.build().getValue(), bindVars, String.class).asListRemaining();
-    }
-
-
-    @CacheEvict(value = "publicSpaces", allEntries = true)
-    public void setSpacePublic(String space, boolean publicSpace) {
-        String key = ArangoCollectionReference.fromSpace(new SpaceName(space)).getCollectionName();
-        if(publicSpace){
-            Map<String, Object> instance = new HashMap<>();
-            instance.put(ArangoVocabulary.KEY, key);
-            instance.put("name", space);
-            getPublicSpacesCollection().insertDocument(instance, new DocumentCreateOptions().overwrite(true).silent(true));
-        }
-        else{
-            getPublicSpacesCollection().deleteDocument(key);
-        }
     }
 
 }

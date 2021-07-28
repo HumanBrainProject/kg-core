@@ -22,32 +22,35 @@
 
 package eu.ebrains.kg.commons;
 
-import org.springframework.core.task.TaskDecorator;
-import org.springframework.web.context.request.RequestContextHolder;
-import org.springframework.web.context.request.ServletRequestAttributes;
+import org.springframework.core.NamedInheritableThreadLocal;
+import org.springframework.lang.Nullable;
 
+import javax.servlet.http.HttpServletRequest;
+import java.util.Collections;
 import java.util.Map;
+import java.util.stream.Collectors;
 
-public class AuthAwareTaskDecorator implements TaskDecorator {
+public class RequestHeadersHolder {
 
-    @Override
-    public Runnable decorate(Runnable runnable) {
-        Map<String, String> headers;
-        try {
-            ServletRequestAttributes context = (ServletRequestAttributes) RequestContextHolder.currentRequestAttributes();
-            headers = RequestHeadersHolder.createHeadersMap(context.getRequest());
-        }
-        catch(IllegalStateException e){
-            headers = RequestHeadersHolder.get();
-        }
-        final Map<String, String> resolvedHeaders = headers;
-        return () -> {
-            try {
-                RequestHeadersHolder.setAuthTokens(resolvedHeaders);
-                runnable.run();
-            } finally {
-                RequestHeadersHolder.reset();
-            }
-        };
+    private static final ThreadLocal<Map<String, String>> inheritableAuthTokensHolder = new NamedInheritableThreadLocal<>("Request headers");
+
+    public static void reset() {
+        inheritableAuthTokensHolder.remove();
     }
+
+    public static Map<String, String> createHeadersMap(HttpServletRequest request){
+        return Collections.list(request.getHeaderNames())
+                .stream()
+                .collect(Collectors.toMap(h -> h != null ? h.toLowerCase() : null, request::getHeader));
+    }
+
+    public static Map<String, String> get(){
+        return inheritableAuthTokensHolder.get();
+    }
+
+    public static void setAuthTokens(@Nullable Map<String, String> headers) {
+        inheritableAuthTokensHolder.set(headers);
+    }
+
+
 }

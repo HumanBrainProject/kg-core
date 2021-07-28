@@ -68,8 +68,8 @@ public class GraphDBInstancesAPIRest implements GraphDBInstances {
 
     @GetMapping("instancesByType")
     @ExposesData
-    public Paginated<NormalizedJsonLd> getInstancesByType(@PathVariable("stage") DataStage stage, @RequestParam("type") String type, @RequestParam(value = "space", required = false) String space, @RequestParam(value = "searchByLabel", required = false) String searchByLabel, @RequestParam(value = "returnAlternatives", required = false, defaultValue = "false") boolean returnAlternatives, @RequestParam(value = "returnEmbedded", required = false, defaultValue = "false") boolean returnEmbedded, @RequestParam(value = "sortByLabel", required = false, defaultValue = "false") boolean sortByLabel, PaginationParam paginationParam) {
-        return graphDBInstancesAPI.getInstancesByType(stage, type, space, searchByLabel, returnAlternatives, returnEmbedded, sortByLabel, paginationParam);
+    public Paginated<NormalizedJsonLd> getInstancesByType(@PathVariable("stage") DataStage stage, @RequestParam("type") String type, @RequestParam(value = "space", required = false) String space, @RequestParam(value = "searchByLabel", required = false) String searchByLabel, @RequestParam(value = "returnAlternatives", required = false, defaultValue = "false") boolean returnAlternatives, @RequestParam(value = "returnEmbedded", required = false, defaultValue = "false") boolean returnEmbedded, PaginationParam paginationParam) {
+        return graphDBInstancesAPI.getInstancesByType(stage, type, space, searchByLabel, returnAlternatives, returnEmbedded, paginationParam);
     }
 
     @GetMapping("queriesByType")
@@ -130,8 +130,8 @@ public class GraphDBInstancesAPIRest implements GraphDBInstances {
 
     @PostMapping("instances/{space}/{id}/suggestedLinksForProperty")
     @ExposesMinimalData
-    public SuggestionResult getSuggestedLinksForProperty(@RequestBody(required = false) NormalizedJsonLd payload, @PathVariable("stage") DataStage stage, @PathVariable("space") String space, @PathVariable("id") UUID id, @RequestParam(value = "property") String propertyName, @RequestParam(value = "type", required = false) String type, @RequestParam(value = "search", required = false) String search, PaginationParam paginationParam) {
-       return graphDBInstancesAPI.getSuggestedLinksForProperty(payload, stage, space, id, propertyName, type, search, paginationParam);
+    public SuggestionResult getSuggestedLinksForProperty(@RequestBody(required = false) NormalizedJsonLd payload, @PathVariable("stage") DataStage stage, @PathVariable("space") String space, @PathVariable("id") UUID id, @RequestParam(value = "property") String propertyName, @RequestParam(value = "sourceType", required = false) String sourceType, @RequestParam(value = "targetType", required = false) String targetType, @RequestParam(value = "search", required = false) String search, PaginationParam paginationParam) {
+       return graphDBInstancesAPI.getSuggestedLinksForProperty(payload, stage, space, id, propertyName, sourceType, targetType, search, paginationParam);
     }
 
 

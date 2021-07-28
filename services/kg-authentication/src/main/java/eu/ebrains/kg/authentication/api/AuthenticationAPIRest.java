@@ -23,14 +23,13 @@
 package eu.ebrains.kg.authentication.api;
 
 import eu.ebrains.kg.commons.api.Authentication;
-import eu.ebrains.kg.commons.exception.InstanceNotFoundException;
-import eu.ebrains.kg.commons.model.Credential;
+import eu.ebrains.kg.commons.jsonld.JsonLdDoc;
 import eu.ebrains.kg.commons.model.TermsOfUse;
 import eu.ebrains.kg.commons.model.TermsOfUseResult;
 import eu.ebrains.kg.commons.model.User;
 import eu.ebrains.kg.commons.models.UserWithRoles;
 import eu.ebrains.kg.commons.permission.ClientAuthToken;
-import eu.ebrains.kg.commons.permission.roles.Role;
+import eu.ebrains.kg.commons.permission.roles.RoleMapping;
 import io.swagger.v3.oas.annotations.Parameter;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.http.HttpStatus;
@@ -38,9 +37,8 @@ import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
 
-import java.net.URLDecoder;
-import java.nio.charset.StandardCharsets;
 import java.util.List;
+import java.util.Map;
 
 @RequestMapping("/internal/authentication")
 @RestController
@@ -57,45 +55,10 @@ public class AuthenticationAPIRest implements Authentication {
      * CLIENTS
      **/
 
-    @PutMapping("/clients")
-    public eu.ebrains.kg.commons.model.Client registerClient(@RequestBody eu.ebrains.kg.commons.model.Client client) {
-        return authentication.registerClient(client);
-    }
-
-    @DeleteMapping("/clients/{client}")
-    public void unregisterClient(@PathVariable("client") String clientName) {
-        authentication.unregisterClient(clientName);
-    }
-
     @PostMapping(value = "/clients/{client}/token")
     public ClientAuthToken fetchToken(@PathVariable("client") String clientId, @RequestBody String clientSecret) {
         return authentication.fetchToken(clientId, clientSecret);
     }
-
-    /**
-     * ROLES
-     **/
-
-    @GetMapping("/roles/{role}/users")
-    public List<User> getUsersInRole(@PathVariable("role") String role) {
-        return authentication.getUsersInRole(URLDecoder.decode(role, StandardCharsets.UTF_8));
-    }
-
-    @PutMapping("/roles/{role}/users/{nativeUserId}")
-    public void addUserToRole(@PathVariable("role") String role, @PathVariable("nativeUserId") String nativeUserId) {
-        authentication.addUserToRole(URLDecoder.decode(role, StandardCharsets.UTF_8), nativeUserId);
-    }
-
-    @PostMapping("/roles")
-    public void createRoles(@RequestBody List<Role> roles) {
-        authentication.createRoles(roles);
-    }
-
-    @DeleteMapping("/roles/{rolePattern}")
-    public void removeRoles(@PathVariable("rolePattern") String rolePattern) {
-        authentication.removeRoles(URLDecoder.decode(rolePattern, StandardCharsets.UTF_8));
-    }
-
 
     /**
      * USERS
@@ -162,36 +125,22 @@ public class AuthenticationAPIRest implements Authentication {
         return usersByAttribute;
     }
 
+
+    @PatchMapping("/permissions/{role}")
     @Override
-    @GetMapping("/publicSpaces/{space}")
-    public boolean isSpacePublic(@PathVariable("space") String space) {
-        boolean spacePublic = authentication.isSpacePublic(space);
-        if(!spacePublic){
-            throw new InstanceNotFoundException(String.format("Space %s is not public", space));
-        }
-        return true;
+    public JsonLdDoc updateClaimForRole(@PathVariable("role") RoleMapping role, @RequestParam(value = "space", required = false) String space, @RequestBody Map<?, ?> claimPattern, @RequestParam("remove") boolean removeClaim) {
+            return authentication.updateClaimForRole(role, space, claimPattern, removeClaim);
     }
 
+    @GetMapping("/permissions/{role}")
     @Override
-    @PutMapping("/publicSpaces/{space}")
-    public void setSpacePublic(@PathVariable("space") String space) {
-        authentication.setSpacePublic(space);
+    public JsonLdDoc getClaimForRole(@PathVariable("role") RoleMapping role, @RequestParam(value = "space", required = false) String space) {
+        return authentication.getClaimForRole(role, space);
     }
 
     @Override
-    @DeleteMapping("/publicSpaces/{space}")
-    public void setSpaceProtected(@PathVariable("space") String space) {
-        authentication.setSpaceProtected(space);
+    @GetMapping("/permissions")
+    public List<JsonLdDoc> getAllRoleDefinitions() {
+        return authentication.getAllRoleDefinitions();
     }
-
-    /**
-     * SETUP
-     **/
-
-    @PutMapping("/setup")
-    public String setup(@RequestBody Credential credential) {
-        return authentication.setup(credential);
-    }
-
-
 }

@@ -28,15 +28,7 @@ public class ResponseConfiguration {
     private boolean returnPermissions = false;
     private boolean returnAlternatives = false;
     private boolean returnEmbedded = true;
-    private boolean sortByLabel = true;
 
-    public boolean isSortByLabel() {
-        return sortByLabel;
-    }
-
-    public void setSortByLabel(boolean sortByLabel) {
-        this.sortByLabel = sortByLabel;
-    }
 
     public boolean isReturnPayload() {
         return returnPayload;

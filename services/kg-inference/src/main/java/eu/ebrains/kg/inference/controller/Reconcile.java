@@ -24,12 +24,17 @@ package eu.ebrains.kg.inference.controller;
 
 import eu.ebrains.kg.commons.IdUtils;
 import eu.ebrains.kg.commons.api.GraphDBInstances;
+import eu.ebrains.kg.commons.api.GraphDBTypes;
 import eu.ebrains.kg.commons.jsonld.*;
 import eu.ebrains.kg.commons.model.DataStage;
 import eu.ebrains.kg.commons.model.Event;
+import eu.ebrains.kg.commons.model.Result;
 import eu.ebrains.kg.commons.model.SpaceName;
 import eu.ebrains.kg.commons.semantics.vocabularies.EBRAINSVocabulary;
 import eu.ebrains.kg.commons.semantics.vocabularies.SchemaOrgVocabulary;
+import org.apache.commons.lang3.StringUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
 import java.time.ZonedDateTime;
@@ -89,11 +94,15 @@ import java.util.stream.Collectors;
 public class Reconcile {
 
     private final GraphDBInstances.Client graphDBInstances;
+    private final GraphDBTypes.Client graphDBTypes;
 
     private final IdUtils idUtils;
 
-    public Reconcile(GraphDBInstances.Client graphDBInstances, IdUtils idUtils) {
+    private final Logger logger = LoggerFactory.getLogger(getClass());
+
+    public Reconcile(GraphDBInstances.Client graphDBInstances, GraphDBTypes.Client graphDBTypes, IdUtils idUtils) {
         this.graphDBInstances = graphDBInstances;
+        this.graphDBTypes  = graphDBTypes;
         this.idUtils = idUtils;
     }
 
@@ -183,7 +192,9 @@ public class Reconcile {
 
     InferenceResult compareInferredInstances(Set<IndexedJsonLdDoc> existingInstances, Set<InferredJsonLdDoc> newInstances) {
         Map<InferredJsonLdDoc, Set<IndexedJsonLdDoc>> newToExistingMapping = new HashMap<>();
+        Set<String> newTypes = new HashSet<>();
         for (InferredJsonLdDoc newInstance : newInstances) {
+            newTypes.addAll(newInstance.asIndexed().getDoc().types());
             newToExistingMapping.computeIfAbsent(newInstance, f -> new HashSet<>());
             IndexedJsonLdDoc newInstanceDoc = newInstance.asIndexed();
             Set<String> allIdentifiersIncludingId = newInstanceDoc.getDoc().allIdentifiersIncludingId();
@@ -205,7 +216,9 @@ public class Reconcile {
         inferenceResult.toBeRemoved.addAll(existingInstances);
         inferenceResult.toBeRemoved.removeAll(newToExistingMapping.values().stream().flatMap(Collection::stream).collect(Collectors.toSet()));
 
+        Map<String, Result<NormalizedJsonLd>> typesInformation = graphDBTypes.getTypesByName(new ArrayList<>(newTypes), DataStage.IN_PROGRESS, null);
         for (InferredJsonLdDoc nextNew : newToExistingMapping.keySet()) {
+            finalizeInferredDocument(nextNew, typesInformation);
             Set<IndexedJsonLdDoc> existing = newToExistingMapping.get(nextNew);
             if (existing.isEmpty()) {
                 //Insert
@@ -219,6 +232,21 @@ public class Reconcile {
             }
         }
         return inferenceResult;
+    }
+
+    void finalizeInferredDocument(InferredJsonLdDoc inferredJsonLdDoc, Map<String, Result<NormalizedJsonLd>> typesInformation){
+        List<String> types = inferredJsonLdDoc.asIndexed().getDoc().types();
+        List<String> distinctLabelProperties = types.stream().map(typesInformation::get).filter(Objects::nonNull).
+                map(Result::getData).filter(Objects::nonNull).
+                map(t -> t.getAs(EBRAINSVocabulary.META_TYPE_LABEL_PROPERTY, String.class)).filter(Objects::nonNull)
+                .distinct().collect(Collectors.toList());
+        if(!distinctLabelProperties.isEmpty()){
+            Object labelValue = inferredJsonLdDoc.asIndexed().getDoc().get(distinctLabelProperties.get(0));
+            if(labelValue!=null) {
+                inferredJsonLdDoc.asIndexed().getDoc().put(IndexedJsonLdDoc.LABEL, labelValue);
+            }
+        }
+        logger.debug(String.format("Finalize inferred document with types %s", StringUtils.join(", ", types)));
     }
 
     List<Event> translateInferenceResultToEvents(SpaceName space, InferenceResult inferenceResult) {

@@ -111,6 +111,9 @@ public class TodoListProcessor {
                 }
                 todoItem.getPayload().put(EBRAINSVocabulary.META_USER, idUtils.buildAbsoluteUrl(userId.getUuid()));
             }
+            if(todoItem.getPayload()!=null && todoItem.getSpace()!=null){
+                todoItem.getPayload().put(EBRAINSVocabulary.META_SPACE, todoItem.getSpace());
+            }
             switch (todoItem.getType()) {
                 case UPDATE:
                 case INSERT:

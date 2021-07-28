@@ -62,24 +62,23 @@ public class ArangoRepositoryTypes {
     }
 
 
-    public static List<Type> extractExtendedTypeInformationFromPayload(Collection<NormalizedJsonLd> payload) {
-        return payload.stream().map(t -> {
-            //TODO this can probably be solved in a more optimized way - we don't need all properties but only the labels...
-            Type targetType = new Type(t.primaryIdentifier());
-            targetType.setLabelProperty(t.getAs(EBRAINSVocabulary.META_TYPE_LABEL_PROPERTY, String.class));
-            return targetType;
-        }).collect(Collectors.toList());
-    }
-
-
-    public List<NormalizedJsonLd> getTargetTypesForProperty(String client, DataStage stage, List<Type> types, String propertyName) {
+    public List<NormalizedJsonLd> getTargetTypesForProperty(String client, DataStage stage, List<Type> types, String targetType, String propertyName) {
         ArangoDatabase db = databases.getMetaByStage(stage);
         AQLQuery typeStructureQuery = createTypeStructureQuery(db, client, types, propertyName, null, true, false, true, null);
         Paginated<NormalizedJsonLd> documents = arangoRepositoryCommons.queryDocuments(db, typeStructureQuery);
-        List<Type> targetTypes = documents.getData().stream().map(t -> t.getAsListOf(EBRAINSVocabulary.META_PROPERTIES, NormalizedJsonLd.class)).flatMap(Collection::stream).map(p -> p.getAsListOf(EBRAINSVocabulary.META_PROPERTY_TARGET_TYPES, NormalizedJsonLd.class)).flatMap(Collection::stream).map(targetType -> targetType.getAs(EBRAINSVocabulary.META_TYPE, String.class)).filter(Objects::nonNull).distinct().map(Type::new).collect(Collectors.toList());
+        List<Type> targetTypes = documents.getData().stream().map(t -> t.getAsListOf(EBRAINSVocabulary.META_PROPERTIES, NormalizedJsonLd.class)).flatMap(Collection::stream).map(p -> p.getAsListOf(EBRAINSVocabulary.META_PROPERTY_TARGET_TYPES, NormalizedJsonLd.class)).flatMap(Collection::stream).map(t -> t.getAs(EBRAINSVocabulary.META_TYPE, String.class)).filter(Objects::nonNull).distinct().map(Type::new).collect(Collectors.toList());
         if (targetTypes.isEmpty()) {
             //This is important since an empty target type list would result in an non-existing filter and would return all types in the next step
             return Collections.emptyList();
+        }
+        if(targetType!=null){
+            Type targetT = new Type(targetType);
+            if(targetTypes.contains(targetT)){
+                targetTypes = Collections.singletonList(targetT);
+            }
+            else{
+                targetTypes = Collections.emptyList();
+            }
         }
         return getTypes(client, stage, targetTypes, false, false, false);
     }

@@ -39,15 +39,13 @@ public class CoreClientController {
 
     public Client addClient(String id) {
         Client client = new Client(id);
-        spaceController.createSpaceDefinition(client.getSpace(), false, true);
-        authentication.registerClient(client);
+        spaceController.createSpaceDefinition(client.getSpace(), false);
         return client;
     }
 
     public Client deleteClient(String id) {
         Client client = new Client(id);
-        spaceController.removeSpaceDefinition(client.getSpace().getName(), false);
-        authentication.unregisterClient(client.getName());
+        spaceController.removeSpaceDefinition(client.getSpace().getName());
         return client;
     }
 

@@ -75,8 +75,8 @@ public class ArangoRepositoryInstancesTest {
         todoListProcessor.upsertDocument(simpsons.doc(UUID.randomUUID()), TestObjectFactory.createJsonLd( "simpsons/maggie.json"), stage, null);
 
         //When
-        Paginated<NormalizedJsonLd> kids = arangoRepository.getDocumentsByTypes(stage, new Type("http://schema.org/Kid"), null, null, null, false, false, false, null);
-        Paginated<NormalizedJsonLd> familyMembers = arangoRepository.getDocumentsByTypes(stage, new Type("https://thesimpsons.com/FamilyMember"), null, null, null, false, false, false, null);
+        Paginated<NormalizedJsonLd> kids = arangoRepository.getDocumentsByTypes(stage, new Type("http://schema.org/Kid"), null, null, null, false, false,  null);
+        Paginated<NormalizedJsonLd> familyMembers = arangoRepository.getDocumentsByTypes(stage, new Type("https://thesimpsons.com/FamilyMember"), null, null, null, false, false, null);
 
 
         //Then
@@ -102,7 +102,7 @@ public class ArangoRepositoryInstancesTest {
         pagination.setFrom(1L);
 
         //When
-        Paginated<NormalizedJsonLd> familyMembers = arangoRepository.getDocumentsByTypes(stage, new Type("https://thesimpsons.com/FamilyMember"), null, pagination, null,false, false, false, null);
+        Paginated<NormalizedJsonLd> familyMembers = arangoRepository.getDocumentsByTypes(stage, new Type("https://thesimpsons.com/FamilyMember"), null, pagination, null,false, false,  null);
 
         //Then
         assertEquals(1, familyMembers.getSize());

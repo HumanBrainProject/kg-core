@@ -29,6 +29,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
 import javax.servlet.http.HttpServletRequest;
+import java.util.Map;
 import java.util.UUID;
 
 
@@ -43,6 +44,11 @@ public class AuthTokenContext {
     private final KeycloakSvc keycloakSvc;
     private final static Logger logger = LoggerFactory.getLogger(AuthTokenContext.class);
 
+    public static final String CLIENT_AUTHORIZATION_HEADER = "Client-Authorization";
+    public static final String AUTHORIZATION_HEADER = "Authorization";
+
+
+
     // IntelliJ reports the injection of HttpServletRequest to be an error -> but it actually is not...
     public AuthTokenContext(KeycloakSvc keycloakSvc, HttpServletRequest request) {
         this.request = request;
@@ -50,12 +56,16 @@ public class AuthTokenContext {
     }
 
     public AuthTokens getAuthTokens() {
-        String clientAuthorization = request.getHeader("Client-Authorization");
-        String userAuthorization = request.getHeader("Authorization");
+        Map<String, String> headers = RequestHeadersHolder.get();
+        if(headers==null){
+            headers = RequestHeadersHolder.createHeadersMap(request);
+        }
+        String clientAuthorization = headers.get(CLIENT_AUTHORIZATION_HEADER.toLowerCase());
+        String userAuthorization = headers.get(AUTHORIZATION_HEADER.toLowerCase());
         if(clientAuthorization==null) {
-            String clientId = request.getHeader("Client-Id");
-            String clientSecret = request.getHeader("Client-Secret");
-            String clientSaSecret = request.getHeader("Client-SA-Secret");
+            String clientId = headers.get("Client-Id".toLowerCase());
+            String clientSecret = headers.get("Client-Secret".toLowerCase());
+            String clientSaSecret = headers.get("Client-SA-Secret".toLowerCase());
             if (clientId != null) {
                 //TODO token caching!?
                 if (clientSecret != null) {
@@ -68,7 +78,7 @@ public class AuthTokenContext {
                 }
             }
         }
-        String transactionId = request.getHeader("Transaction-Id");
+        String transactionId = headers.get("Transaction-Id".toLowerCase());
         AuthTokens authTokens = new AuthTokens(
                 userAuthorization != null ? new UserAuthToken(userAuthorization) : null,
                 clientAuthorization != null ? new ClientAuthToken(clientAuthorization) : null

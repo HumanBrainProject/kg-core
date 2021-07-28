@@ -38,7 +38,7 @@ import static org.junit.Assert.*;
 
 public class UserWithRolesTest {
 
-    List<String> adminClientRoles = Arrays.asList(RoleMapping.ADMIN.toRole(null).getName(), RoleMapping.IS_CLIENT.toRole(null).getName());
+    List<String> adminClientRoles = Collections.singletonList(RoleMapping.ADMIN.toRole(null).getName());
 
     List<String> adminRole = Collections.singletonList(RoleMapping.ADMIN.toRole(null).getName());
     SpaceName space = new SpaceName("test");
@@ -46,15 +46,6 @@ public class UserWithRolesTest {
 
     private List<String> getUserRoles(RoleMapping role, SpaceName space){
         return Collections.singletonList(role.toRole(space).getName());
-    }
-
-    @Test(expected = IllegalArgumentException.class)
-    public void testFailWhenNotAClient(){
-        //Given
-        UserWithRoles userWithRoles = new UserWithRoles(user, getUserRoles(RoleMapping.ADMIN, null), adminRole, "testClient");
-
-        //when
-        List<FunctionalityInstance> permissions = userWithRoles.getPermissions();
     }
 
     @Test

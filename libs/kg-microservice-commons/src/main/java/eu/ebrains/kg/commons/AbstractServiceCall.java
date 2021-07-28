@@ -72,7 +72,7 @@ public abstract class AbstractServiceCall {
 
 
     public <T> T patch(String uri, Object payload, AuthTokens authTokens, Class<T> returnType) {
-        logger.trace("Sending a put");
+        logger.trace("Sending a patch");
         return executeRequest(loadBalancedWebClient.build().patch().uri(uri).contentType(MediaType.APPLICATION_JSON).body(payload == null ? BodyInserters.empty() : BodyInserters.fromValue(payload)), MediaType.APPLICATION_JSON, authTokens, returnType);
     }
 
