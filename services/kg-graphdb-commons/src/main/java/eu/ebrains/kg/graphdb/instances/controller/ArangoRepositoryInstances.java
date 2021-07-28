@@ -580,6 +580,7 @@ public class ArangoRepositoryInstances {
             //We filter out those spaces to which the user doesn't have read access to.
             spaces = permissionsController.removeSpacesWithoutReadAccess(spaces, userWithRoles, stage);
         }
+        spaces = spaces.stream().filter(s -> databases.getByStage(stage).collection(ArangoCollectionReference.fromSpace(s).getCollectionName()).exists()).collect(Collectors.toSet());
         if (permissionsController.getInstancesWithExplicitPermission(userWithRoles, stage).isEmpty()) {
             //We can only make use of a simple mode if the user doesn't have explicit instance permissions
             //If so, we fall back to the slightly slower dynamic resolution since this is rather an edge case.
