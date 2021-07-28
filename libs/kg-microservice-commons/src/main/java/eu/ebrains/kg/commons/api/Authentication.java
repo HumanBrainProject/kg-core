@@ -23,10 +23,7 @@
 package eu.ebrains.kg.commons.api;
 
 import eu.ebrains.kg.commons.jsonld.JsonLdDoc;
-import eu.ebrains.kg.commons.model.Credential;
-import eu.ebrains.kg.commons.model.TermsOfUse;
-import eu.ebrains.kg.commons.model.TermsOfUseResult;
-import eu.ebrains.kg.commons.model.User;
+import eu.ebrains.kg.commons.model.*;
 import eu.ebrains.kg.commons.models.UserWithRoles;
 import eu.ebrains.kg.commons.permission.ClientAuthToken;
 import eu.ebrains.kg.commons.permission.roles.Role;
@@ -48,6 +45,8 @@ public interface Authentication {
     User getMyUserInfo();
 
     UserWithRoles getRoles(boolean checkForTermsOfUse);
+
+    List<ReducedUserInformation> findUsers(String name);
 
     User getOtherUserInfo(String nativeId);
 

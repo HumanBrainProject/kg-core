@@ -22,6 +22,7 @@
 
 package eu.ebrains.kg.authentication.keycloak;
 
+import eu.ebrains.kg.commons.model.ReducedUserInformation;
 import eu.ebrains.kg.commons.model.User;
 import org.keycloak.admin.client.Keycloak;
 import org.keycloak.admin.client.resource.UsersResource;
@@ -34,8 +35,10 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 @Component
 public class KeycloakUsers {
@@ -48,6 +51,27 @@ public class KeycloakUsers {
         this.keycloakClient = keycloakClient;
         this.keycloakAdmin = keycloakAdmin;
     }
+
+
+    private boolean matchesFirstOrLastName(String firstName, String lastName, String[] words){
+        for(String w : words){
+            if(!firstName.toLowerCase().contains(w.toLowerCase()) && !lastName.toLowerCase().contains(w.toLowerCase())){
+                return false;
+            }
+        }
+        return true;
+    }
+
+    public List<ReducedUserInformation> findUser(String search){
+        final List<UserRepresentation> result = getUsers().search(search, 0, 20);
+        final String[] words = search.split(" ");
+        // We remove all elements where there are no matches in first or last name to prevent brute-force extraction of e-mail addresses.
+        // In theory, we could end up with a problem of pagination (due to the post-removal) but this should not occur for real values - we therefore take the risk
+        return result.stream().filter(r -> matchesFirstOrLastName(r.getFirstName(), r.getLastName(), words)).
+                map(r -> new ReducedUserInformation(String.format("%s %s", r.getFirstName(), r.getLastName()), r.getUsername(), null, r.getId())).
+                collect(Collectors.toList());
+    }
+
 
 
     @Cacheable(value = "userInfo")

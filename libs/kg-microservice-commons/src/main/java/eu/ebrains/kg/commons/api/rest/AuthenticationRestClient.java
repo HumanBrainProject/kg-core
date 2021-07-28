@@ -26,6 +26,7 @@ import eu.ebrains.kg.commons.AuthTokenContext;
 import eu.ebrains.kg.commons.ServiceCall;
 import eu.ebrains.kg.commons.api.Authentication;
 import eu.ebrains.kg.commons.jsonld.JsonLdDoc;
+import eu.ebrains.kg.commons.model.ReducedUserInformation;
 import eu.ebrains.kg.commons.model.TermsOfUse;
 import eu.ebrains.kg.commons.model.TermsOfUseResult;
 import eu.ebrains.kg.commons.model.User;
@@ -115,5 +116,11 @@ public class AuthenticationRestClient implements Authentication.Client {
     @Override
     public List<JsonLdDoc> getAllRoleDefinitions() {
         return Arrays.asList(serviceCall.get(String.format("%s/permissions", SERVICE_URL), authTokenContext.getAuthTokens(), JsonLdDoc[].class));
+    }
+
+
+    @Override
+    public List<ReducedUserInformation> findUsers(String name) {
+        return Arrays.asList(serviceCall.get(String.format("%s/usersFromIAM", SERVICE_URL), authTokenContext.getAuthTokens(), ReducedUserInformation[].class));
     }
 }

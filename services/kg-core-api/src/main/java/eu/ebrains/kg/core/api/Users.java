@@ -124,6 +124,15 @@ public class Users {
         return ResponseEntity.ok(PaginatedResult.ok(users));
     }
 
+    @Operation(summary = "Retrieve a list of users from IAM")
+    @GetMapping("/fromIAM")
+    @ExposesUserInfo
+    @Advanced
+    public List<ReducedUserInformation> findUsers(@RequestParam("search") String search) {
+        return authentication.findUsers(search);
+    }
+
+
     @Operation(summary = "Retrieve a list of users without sensitive information")
     @GetMapping("/limited")
     @ExposesUserInfo

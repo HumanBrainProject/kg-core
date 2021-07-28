@@ -29,6 +29,7 @@ import eu.ebrains.kg.authentication.model.UserOrClientProfile;
 import eu.ebrains.kg.commons.AuthTokenContext;
 import eu.ebrains.kg.commons.AuthTokens;
 import eu.ebrains.kg.commons.exception.UnauthorizedException;
+import eu.ebrains.kg.commons.model.ReducedUserInformation;
 import eu.ebrains.kg.commons.model.User;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.cache.annotation.Cacheable;
@@ -76,6 +77,11 @@ public class KeycloakController {
 
     public User getOtherUserInfo(String id){
         return keycloakUsers.getOtherUserInfo(id);
+    }
+
+
+    public List<ReducedUserInformation> findUsers(String search){
+        return keycloakUsers.findUser(search);
     }
 
     @Cacheable(value = "usersByAttribute")

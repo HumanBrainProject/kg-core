@@ -32,10 +32,7 @@ import eu.ebrains.kg.commons.api.Authentication;
 import eu.ebrains.kg.commons.exception.NotAcceptedTermsOfUseException;
 import eu.ebrains.kg.commons.exception.UnauthorizedException;
 import eu.ebrains.kg.commons.jsonld.JsonLdDoc;
-import eu.ebrains.kg.commons.model.SpaceName;
-import eu.ebrains.kg.commons.model.TermsOfUse;
-import eu.ebrains.kg.commons.model.TermsOfUseResult;
-import eu.ebrains.kg.commons.model.User;
+import eu.ebrains.kg.commons.model.*;
 import eu.ebrains.kg.commons.models.UserWithRoles;
 import eu.ebrains.kg.commons.permission.ClientAuthToken;
 import eu.ebrains.kg.commons.permission.Functionality;
@@ -139,6 +136,11 @@ public class AuthenticationAPI implements Authentication.Client {
     @Override
     public List<User> getUsersByAttribute(String attribute, String value) {
         return keycloakController.getUsersByAttribute(attribute, value);
+    }
+
+    @Override
+    public List<ReducedUserInformation> findUsers(String search) {
+        return keycloakController.findUsers(search);
     }
 
     @Override

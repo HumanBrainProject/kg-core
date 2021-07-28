@@ -399,5 +399,26 @@ public class Instances {
         return search;
     }
 
+    @Operation(summary = "Create or update an invitation for the given user to review the given instance")
+    @PutMapping("/instances/{id}/invitedUsers/{userId}")
+    @Advanced
+    public void inviteUserForInstance(@PathVariable("id") UUID id, @PathVariable("userId") UUID userId) {
+        instanceController.createInvitation(id, userId);
+    }
+
+    @Operation(summary = "Revoke an invitation for the given user to review the given instance")
+    @DeleteMapping("/instances/{id}/invitedUsers/{userId}")
+    @Advanced
+    public void revokeUserInvitation(@PathVariable("id") UUID id, @PathVariable("userId") UUID userId) {
+        instanceController.createInvitation(id, userId);
+    }
+
+    @Operation(summary = "List invitations for review for the given instance")
+    @GetMapping("/instances/{id}/invitedUsers")
+    @Advanced
+    public Result<List<ReducedUserInformation>> listInvitations(@PathVariable("id") UUID id) {
+        return Result.ok(instanceController.listInvitations(id));
+    }
+
 
 }

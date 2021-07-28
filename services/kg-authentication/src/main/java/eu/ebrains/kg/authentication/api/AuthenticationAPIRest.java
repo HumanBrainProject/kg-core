@@ -24,6 +24,7 @@ package eu.ebrains.kg.authentication.api;
 
 import eu.ebrains.kg.commons.api.Authentication;
 import eu.ebrains.kg.commons.jsonld.JsonLdDoc;
+import eu.ebrains.kg.commons.model.ReducedUserInformation;
 import eu.ebrains.kg.commons.model.TermsOfUse;
 import eu.ebrains.kg.commons.model.TermsOfUseResult;
 import eu.ebrains.kg.commons.model.User;
@@ -49,6 +50,13 @@ public class AuthenticationAPIRest implements Authentication {
 
     public AuthenticationAPIRest(eu.ebrains.kg.authentication.api.AuthenticationAPI authentication) {
         this.authentication = authentication;
+    }
+
+
+    @Override
+    @GetMapping(value = "/usersFromIAM")
+    public List<ReducedUserInformation> findUsers(String name) {
+        return authentication.findUsers(name);
     }
 
     /**
@@ -143,4 +151,6 @@ public class AuthenticationAPIRest implements Authentication {
     public List<JsonLdDoc> getAllRoleDefinitions() {
         return authentication.getAllRoleDefinitions();
     }
+
+
 }

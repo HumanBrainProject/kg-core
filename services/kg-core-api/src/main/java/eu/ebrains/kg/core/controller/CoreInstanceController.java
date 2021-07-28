@@ -73,6 +73,20 @@ public class CoreInstanceController {
         this.primaryStoreEvents = primaryStoreEvents;
     }
 
+    public void createInvitation(UUID instanceId, UUID userId){
+        //TODO implement me
+    }
+
+    public void revokeInvitation(UUID instanceId, UUID userId){
+        //TODO implement me
+    }
+
+    public List<ReducedUserInformation> listInvitations(UUID instanceId){
+        //TODO implement me
+        return Collections.emptyList();
+    }
+
+
     public ResponseEntity<Result<NormalizedJsonLd>> createNewInstance(JsonLdDoc jsonLdDoc, UUID id, SpaceName s, ResponseConfiguration responseConfiguration, IngestConfiguration ingestConfiguration, ExternalEventInformation externalEventInformation) {
         NormalizedJsonLd normalizedJsonLd;
         if (ingestConfiguration.isNormalizePayload()) {

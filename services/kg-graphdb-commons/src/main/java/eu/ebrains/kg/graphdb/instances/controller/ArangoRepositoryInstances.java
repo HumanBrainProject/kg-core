@@ -307,13 +307,8 @@ public class ArangoRepositoryInstances {
                                         userResult = usersById.get(uuid);
                                     }
                                     NormalizedJsonLd user = userResult != null && userResult.getData() != null ? userResult.getData() : null;
-                                    NormalizedJsonLd reducedUser = new NormalizedJsonLd();
                                     //We only expose the necessary subset of user information.
-                                    reducedUser.put(SchemaOrgVocabulary.NAME, user != null ? user.get(SchemaOrgVocabulary.NAME) : "Unknown");
-                                    reducedUser.put(SchemaOrgVocabulary.ALTERNATE_NAME, user != null ? user.get(SchemaOrgVocabulary.ALTERNATE_NAME) : "unknown");
-                                    reducedUser.put(SchemaOrgVocabulary.IDENTIFIER, user != null ? user.get(SchemaOrgVocabulary.IDENTIFIER) : Collections.emptyList());
-                                    reducedUser.put(JsonLdConsts.ID, id);
-                                    return reducedUser;
+                                    return new ReducedUserInformation(user != null ? user.getAs(SchemaOrgVocabulary.NAME, String.class) : null, user!=null ? user.getAs(SchemaOrgVocabulary.ALTERNATE_NAME, String.class) : null, user != null ? user.getAsListOf(SchemaOrgVocabulary.IDENTIFIER, String.class) : null, id);
                                 }).collect(Collectors.toList());
                                 alternative.put(EBRAINSVocabulary.META_USER, users);
                                 //A special case: if the value has alternatives but the last value is null, we need to set the value explicitly, since it won't be properly stored in the alternatives payload.
