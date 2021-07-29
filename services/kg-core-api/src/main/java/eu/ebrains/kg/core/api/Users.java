@@ -128,8 +128,9 @@ public class Users {
     @GetMapping("/fromIAM")
     @ExposesUserInfo
     @Advanced
-    public List<ReducedUserInformation> findUsers(@RequestParam("search") String search) {
-        return authentication.findUsers(search);
+    public ResponseEntity<Result<List<ReducedUserInformation>>>findUsers(@RequestParam("search") String search) {
+        List<ReducedUserInformation> users = authentication.findUsers(search);
+        return users!=null ? ResponseEntity.ok(Result.ok(users)) : ResponseEntity.notFound().build();
     }
 
 
