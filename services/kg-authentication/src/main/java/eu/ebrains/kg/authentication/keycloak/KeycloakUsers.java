@@ -53,34 +53,35 @@ public class KeycloakUsers {
     }
 
 
-    private boolean matchesFirstOrLastName(String firstName, String lastName, String[] words){
-        for(String w : words){
-            if(!firstName.toLowerCase().contains(w.toLowerCase()) && !lastName.toLowerCase().contains(w.toLowerCase())){
+    private boolean matchesFirstOrLastName(String firstName, String lastName, String[] words) {
+        for (String w : words) {
+            if ((firstName == null || !firstName.toLowerCase().contains(w.toLowerCase())) && (lastName == null || !lastName.toLowerCase().contains(w.toLowerCase()))) {
                 return false;
             }
         }
         return true;
     }
 
-    public List<ReducedUserInformation> findUser(String search){
+    public List<ReducedUserInformation> findUser(String search) {
         final List<UserRepresentation> result = getUsers().search(search, 0, 20);
         final String[] words = search.split(" ");
         // We remove all elements where there are no matches in first or last name to prevent brute-force extraction of e-mail addresses.
         // In theory, we could end up with a problem of pagination (due to the post-removal) but this should not occur for real values - we therefore take the risk
-        return result.stream().filter(r -> matchesFirstOrLastName(r.getFirstName(), r.getLastName(), words)).
-                map(r -> fromUserRepresentation(r)).
-                collect(Collectors.toList());
+        return result.stream()
+                .filter(r -> matchesFirstOrLastName(r.getFirstName(), r.getLastName(), words))
+                .map(this::fromUserRepresentation)
+                .collect(Collectors.toList());
     }
 
 
-    private ReducedUserInformation fromUserRepresentation(UserRepresentation r){
+    private ReducedUserInformation fromUserRepresentation(UserRepresentation r) {
         return new ReducedUserInformation(String.format("%s %s", r.getFirstName(), r.getLastName()), r.getUsername(), null, r.getId());
     }
 
 
-    public ReducedUserInformation getUserById(String userId){
+    public ReducedUserInformation getUserById(String userId) {
         final UserResource userResource = getUsers().get(userId);
-        if(userResource!=null){
+        if (userResource != null) {
             return fromUserRepresentation(userResource.toRepresentation());
         }
         return null;
@@ -95,7 +96,7 @@ public class KeycloakUsers {
             userRepresentation = getUsers().get(id).toRepresentation();
         } catch (IllegalArgumentException e) {
             logger.trace("Resolving by user name");
-            List<UserRepresentation> users =  getUsers().search(id);
+            List<UserRepresentation> users = getUsers().search(id);
             //Exact fit of username...
             userRepresentation = users.stream().filter(u -> u.getUsername().equals(id)).findFirst().orElse(null);
         }
@@ -108,12 +109,12 @@ public class KeycloakUsers {
         return null;
     }
 
-    private UsersResource getUsers(){
+    private UsersResource getUsers() {
         return keycloakAdmin.realm(keycloakClient.getRealm()).users();
     }
 
     @Cacheable(value = "allUsers")
-    public List<UserRepresentation>  getAllUsers(){
+    public List<UserRepresentation> getAllUsers() {
         UsersResource users = getUsers();
         Integer numberOfUsers = users.count();
         int pages = numberOfUsers / 100 + 1;
@@ -128,7 +129,7 @@ public class KeycloakUsers {
 
     @CacheEvict(allEntries = true, cacheNames = "allUsers")
     @Scheduled(fixedDelay = 24 * 60 * 60 * 1000)
-    public void clearUsersCache(){
+    public void clearUsersCache() {
 
     }
 }
