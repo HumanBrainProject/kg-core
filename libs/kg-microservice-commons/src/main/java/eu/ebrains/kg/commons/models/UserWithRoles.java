@@ -217,4 +217,8 @@ public class UserWithRoles {
         logger.trace(String.format("Available roles for user %s in client %s: %s", user != null ? user.getUserName() : "anonymous", clientId, String.join(", ", result.stream().map(Object::toString).collect(Collectors.toSet()))));
         return new ArrayList<>(result);
     }
+
+    public boolean hasInvitations(){
+        return this.invitations!=null && !this.invitations.isEmpty();
+    }
 }

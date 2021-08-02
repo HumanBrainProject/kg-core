@@ -51,10 +51,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.UUID;
+import java.util.*;
 import java.util.stream.Collectors;
 
 /**
@@ -80,6 +77,14 @@ public class Spaces {
     @ExposesSpace
     @Advanced
     public Result<NormalizedJsonLd> getSpace(@RequestParam("stage") ExposedStage stage, @PathVariable("space") @Parameter(description = "The space to be read or \"" + SpaceName.PRIVATE_SPACE + "\" for your private space") String space, @RequestParam(value = "permissions", defaultValue = "false") boolean permissions) {
+        if(space!=null){
+            switch(space){
+                case "myspace":
+                    return Result.ok(MYSPACE);
+                case "invitations":
+                    return Result.ok(INVITATIONS);
+            }
+        }
         NormalizedJsonLd s = spaceController.getSpace(stage, space, permissions);
         if (s != null) {
             s.removeAllInternalProperties();
@@ -87,20 +92,56 @@ public class Spaces {
         return Result.ok(s);
     }
 
+    private static NormalizedJsonLd createSpaceRepresentation(String name, Functionality... functionalities){
+        NormalizedJsonLd space = new NormalizedJsonLd();
+        space.put(SchemaOrgVocabulary.IDENTIFIER, name);
+        space.put(SchemaOrgVocabulary.NAME, name);
+        space.put(EBRAINSVocabulary.META_PERMISSIONS, Arrays.asList(functionalities));
+        return space;
+    }
+
+    private final static NormalizedJsonLd MYSPACE =  createSpaceRepresentation("myspace", Functionality.READ, Functionality.WRITE, Functionality.CREATE, Functionality.DELETE);
+    private final static NormalizedJsonLd INVITATIONS = createSpaceRepresentation("invitations", Functionality.READ);
+
+
     @GetMapping
     @ExposesSpace
     @Advanced
     public PaginatedResult<NormalizedJsonLd> getSpaces(@RequestParam("stage") ExposedStage stage, @ParameterObject PaginationParam paginationParam, @RequestParam(value = "permissions", defaultValue = "false") boolean permissions) {
+        ArrayList<NormalizedJsonLd> extraSpaces = new ArrayList<>();
+        extraSpaces.add(MYSPACE);
+        if(authContext.getUserWithRoles().hasInvitations()){
+            extraSpaces.add(INVITATIONS);
+        }
+        final int numberOfExtraSpaces = extraSpaces.size();
+        List<NormalizedJsonLd> extraSpacesToBeAdded = new ArrayList<>();
+        final long originalFrom = paginationParam.getFrom();
+        if(originalFrom < numberOfExtraSpaces){
+            //We need to add some extra spaces to the result
+            extraSpacesToBeAdded = extraSpaces.subList((int) originalFrom, numberOfExtraSpaces);
+            paginationParam.setFrom(0);
+            if(paginationParam.getSize()!=null){
+                paginationParam.setSize(paginationParam.getSize()-extraSpacesToBeAdded.size());
+            }
+        }
+        else{
+            paginationParam.setFrom(originalFrom-numberOfExtraSpaces);
+        }
         Paginated<NormalizedJsonLd> spaces = graphDBSpaces.getSpaces(stage.getStage(), paginationParam);
+        final int numberOfExtraSpacesToBeAdded = extraSpacesToBeAdded.size();
+        extraSpacesToBeAdded.addAll(spaces.getData());
+        Paginated<NormalizedJsonLd> result = new Paginated<>(extraSpacesToBeAdded, spaces.getTotalResults()+numberOfExtraSpaces, extraSpacesToBeAdded.size(), originalFrom);
         if (permissions) {
             UserWithRoles userWithRoles = authContext.getUserWithRoles();
-            spaces.getData().forEach(space -> {
-                List<Functionality> applyingFunctionalities = userWithRoles.getPermissions().stream().filter(f -> (f.getFunctionality().getStage() == null || f.getFunctionality().getStage() == stage.getStage()) && f.getFunctionality().getFunctionalityGroup() == Functionality.FunctionalityGroup.INSTANCE && f.appliesTo(Space.fromJsonLd(space).getName(), null)).map(FunctionalityInstance::getFunctionality).collect(Collectors.toList());
-                space.put(EBRAINSVocabulary.META_PERMISSIONS, applyingFunctionalities);
+            result.getData().forEach(space -> {
+                if(!space.containsKey(EBRAINSVocabulary.META_PERMISSIONS)) {
+                    List<Functionality> applyingFunctionalities = userWithRoles.getPermissions().stream().filter(f -> (f.getFunctionality().getStage() == null || f.getFunctionality().getStage() == stage.getStage()) && f.getFunctionality().getFunctionalityGroup() == Functionality.FunctionalityGroup.INSTANCE && f.appliesTo(Space.fromJsonLd(space).getName(), null)).map(FunctionalityInstance::getFunctionality).collect(Collectors.toList());
+                    space.put(EBRAINSVocabulary.META_PERMISSIONS, applyingFunctionalities);
+                }
             });
         }
-        spaces.getData().forEach(NormalizedJsonLd::removeAllInternalProperties);
-        return PaginatedResult.ok(spaces);
+        result.getData().forEach(NormalizedJsonLd::removeAllInternalProperties);
+        return PaginatedResult.ok(result);
     }
 
 
