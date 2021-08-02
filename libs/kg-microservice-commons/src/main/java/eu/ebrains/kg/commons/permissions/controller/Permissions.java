@@ -48,8 +48,8 @@ public class Permissions {
         if (space != null && functionality.getAllowedPermissionLevels().contains(Permission.Level.SPACE)) {
             instances.add(new FunctionalityInstance(functionality, space, null));
         }
-        if (space != null && id != null && functionality.getAllowedPermissionLevels().contains(Permission.Level.INSTANCE)) {
-            instances.add(new FunctionalityInstance(functionality, space, id));
+        if (id != null && functionality.getAllowedPermissionLevels().contains(Permission.Level.INSTANCE)) {
+            instances.add(new FunctionalityInstance(functionality, null, id));
         }
         return instances;
     }
@@ -124,8 +124,8 @@ public class Permissions {
         return permissions.stream().filter(f -> f.getFunctionality().equals(functionality)).map(FunctionalityInstance::getSpace).filter(Objects::nonNull).collect(Collectors.toSet());
     }
 
-    public Set<InstanceId> getInstancesWithExplicitPermission(List<FunctionalityInstance> permissions, Functionality functionality) {
-        return permissions.stream().filter(f -> f.getFunctionality().equals(functionality)).map(FunctionalityInstance::getInstanceId).filter(Objects::nonNull).collect(Collectors.toSet());
+    public Set<UUID> getInstancesWithExplicitPermission(List<FunctionalityInstance> permissions, Functionality functionality) {
+        return permissions.stream().filter(f -> f.getFunctionality().equals(functionality)).map(FunctionalityInstance::getId).filter(Objects::nonNull).collect(Collectors.toSet());
     }
 
 

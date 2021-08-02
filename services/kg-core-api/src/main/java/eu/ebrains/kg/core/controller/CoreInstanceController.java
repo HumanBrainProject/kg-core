@@ -58,13 +58,13 @@ public class CoreInstanceController {
     private final IdUtils idUtils;
     private final JsonLd.Client jsonLd;
     private final PrimaryStoreEvents.Client primaryStoreEvents;
-    private final Authentication.Client authentication;
+    private final Invitation.Client invitation;
     private final Permissions permissions;
 
 
     private final Logger logger = LoggerFactory.getLogger(getClass());
 
-    public CoreInstanceController(GraphDBInstances.Client graphDBInstances, GraphDBScopes.Client graphDBScopes, IdsController ids, AuthContext authContext, IdUtils idUtils, JsonLd.Client jsonLd, PrimaryStoreEvents.Client primaryStoreEvents, Authentication.Client authentication, Permissions permissions) {
+    public CoreInstanceController(GraphDBInstances.Client graphDBInstances, GraphDBScopes.Client graphDBScopes, IdsController ids, AuthContext authContext, IdUtils idUtils, JsonLd.Client jsonLd, PrimaryStoreEvents.Client primaryStoreEvents, Invitation.Client invitation, Permissions permissions) {
         this.graphDBInstances = graphDBInstances;
         this.graphDBScopes = graphDBScopes;
         this.ids = ids;
@@ -72,7 +72,7 @@ public class CoreInstanceController {
         this.idUtils = idUtils;
         this.jsonLd = jsonLd;
         this.primaryStoreEvents = primaryStoreEvents;
-        this.authentication = authentication;
+        this.invitation = invitation;
         this.permissions = permissions;
     }
 
@@ -82,7 +82,7 @@ public class CoreInstanceController {
         if(!permissions.hasPermission(authContext.getUserWithRoles(), Functionality.INVITE_FOR_REVIEW, resolvedInstanceId.getSpace(), instanceId)){
             throw new UnauthorizedException("You don't have the right to invite somebody to this instance.");
         }
-        this.authentication.inviteUserForInstance(instanceId, userId);
+        this.invitation.inviteUserForInstance(instanceId, userId);
     }
 
     public void revokeInvitation(UUID instanceId, UUID userId){
@@ -91,7 +91,7 @@ public class CoreInstanceController {
         if(!permissions.hasPermission(authContext.getUserWithRoles(), Functionality.INVITE_FOR_REVIEW, resolvedInstanceId.getSpace(), instanceId)){
             throw new UnauthorizedException("You don't have the right to invite somebody to this instance.");
         }
-        this.authentication.revokeUserInvitation(instanceId, userId);
+        this.invitation.revokeUserInvitation(instanceId, userId);
     }
 
     public List<ReducedUserInformation> listInvitations(UUID instanceId){
@@ -100,9 +100,12 @@ public class CoreInstanceController {
         if(!permissions.hasPermission(authContext.getUserWithRoles(), Functionality.INVITE_FOR_REVIEW, resolvedInstanceId.getSpace(), instanceId)){
             throw new UnauthorizedException("You don't have the right to list the invitations for this instance");
         }
-        return this.authentication.listInvitations(instanceId);
+        return this.invitation.listInvitations(instanceId);
     }
 
+    public void calculateInstanceInvitationScope(UUID instanceId){
+        this.invitation.calculateInstanceScope(instanceId);
+    }
 
     public ResponseEntity<Result<NormalizedJsonLd>> createNewInstance(JsonLdDoc jsonLdDoc, UUID id, SpaceName s, ResponseConfiguration responseConfiguration, IngestConfiguration ingestConfiguration, ExternalEventInformation externalEventInformation) {
         NormalizedJsonLd normalizedJsonLd;

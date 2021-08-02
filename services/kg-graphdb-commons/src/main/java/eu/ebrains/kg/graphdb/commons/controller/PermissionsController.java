@@ -69,7 +69,7 @@ public class PermissionsController {
         return spaces;
     }
 
-    public Set<InstanceId> getInstancesWithExplicitPermission(UserWithRoles userWithRoles, DataStage stage){
+    public Set<UUID> getInstancesWithExplicitPermission(UserWithRoles userWithRoles, DataStage stage){
         Functionality readFunctionality = getReadFunctionality(stage);
         return permissions.getInstancesWithExplicitPermission(userWithRoles.getPermissions(), readFunctionality);
     }
@@ -81,23 +81,9 @@ public class PermissionsController {
             //We only need to filter if there is no "global" read available...
             Map<String, Object> bindVars = new HashMap<>();
             Set<SpaceName> spacesWithReadPermission = permissions.getSpacesForPermission(userWithRoles, readFunctionality);
-            Set<InstanceId> instancesWithReadPermissions = getInstancesWithExplicitPermission(userWithRoles, stage);
+            Set<UUID> instancesWithReadPermissions = getInstancesWithExplicitPermission(userWithRoles, stage);
             bindVars.put(AQL.READ_ACCESS_BY_SPACE, spacesWithReadPermission != null ? spacesWithReadPermission.stream().map(s -> ArangoCollectionReference.fromSpace(s).getCollectionName()).collect(Collectors.toList()) : Collections.emptyList());
-            bindVars.put(AQL.READ_ACCESS_BY_INVITATION, instancesWithReadPermissions != null ? instancesWithReadPermissions.stream().map(i -> idUtils.buildAbsoluteUrl(i.getUuid()).getId()).collect(Collectors.toList()): Collections.emptyList());
-            return bindVars;
-        }
-        return null;
-    }
-
-    public Map<String, Object> whitelistFilterForMinimalReadInstances(UserWithRoles userWithRoles, DataStage stage) {
-        Functionality readFunctionality = getReadFunctionality(stage);
-        if (!permissions.hasGlobalPermission(userWithRoles, readFunctionality)){
-            //We only need to filter if there is no "global" read available...
-            Map<String, Object> bindVars = new HashMap<>();
-            Set<SpaceName> spacesWithReadPermission = permissions.getSpacesForPermission(userWithRoles, readFunctionality);
-            Set<InstanceId> instancesWithReadPermissions = permissions.getInstancesWithExplicitPermission(userWithRoles.getPermissions(), readFunctionality);
-            bindVars.put(AQL.READ_ACCESS_BY_SPACE, spacesWithReadPermission != null ? spacesWithReadPermission.stream().map(s -> ArangoCollectionReference.fromSpace(s).getCollectionName()).collect(Collectors.toList()) : Collections.emptyList());
-            bindVars.put(AQL.READ_ACCESS_BY_INVITATION, instancesWithReadPermissions != null ? instancesWithReadPermissions.stream().map(i -> idUtils.buildAbsoluteUrl(i.getUuid()).getId()).collect(Collectors.toList()): Collections.emptyList());
+            bindVars.put(AQL.READ_ACCESS_BY_INVITATION, instancesWithReadPermissions != null ? instancesWithReadPermissions.stream().map(i -> idUtils.buildAbsoluteUrl(i).getId()).collect(Collectors.toList()): Collections.emptyList());
             return bindVars;
         }
         return null;

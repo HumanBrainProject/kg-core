@@ -45,7 +45,7 @@ public class FunctionalityInstance {
         else if(this.space!=null && this.id == null && this.space.equals(space)){
             return true;
         }
-        else if(this.space!=null && this.id != null && this.space.equals(space) && this.id.equals(id)){
+        else if(this.id != null && this.id.equals(id)){
             return true;
         }
         return false;
@@ -89,7 +89,7 @@ public class FunctionalityInstance {
     }
 
     public InstanceId getInstanceId() {
-        if (space != null && id != null) {
+        if (id != null) {
             return new InstanceId(id, space);
         }
         return null;

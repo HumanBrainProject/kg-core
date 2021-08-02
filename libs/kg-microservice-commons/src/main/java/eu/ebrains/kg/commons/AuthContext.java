@@ -38,6 +38,7 @@ public class AuthContext {
     private final AuthTokenContext authTokenContext;
     private final Authentication.Client authentication;
 
+
     public AuthContext(AuthTokenContext authTokenContext, Authentication.Client authentication) {
         this.authTokenContext = authTokenContext;
         this.authentication = authentication;

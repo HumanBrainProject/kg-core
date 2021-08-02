@@ -22,53 +22,28 @@
 
 package eu.ebrains.kg.commons.api;
 
-import eu.ebrains.kg.commons.config.openApiGroups.Advanced;
 import eu.ebrains.kg.commons.jsonld.JsonLdDoc;
-import eu.ebrains.kg.commons.model.*;
+import eu.ebrains.kg.commons.model.ReducedUserInformation;
+import eu.ebrains.kg.commons.model.TermsOfUse;
+import eu.ebrains.kg.commons.model.TermsOfUseResult;
+import eu.ebrains.kg.commons.model.User;
 import eu.ebrains.kg.commons.models.UserWithRoles;
 import eu.ebrains.kg.commons.permission.ClientAuthToken;
-import eu.ebrains.kg.commons.permission.roles.Role;
 import eu.ebrains.kg.commons.permission.roles.RoleMapping;
-import io.swagger.v3.oas.annotations.Operation;
-import org.springframework.web.bind.annotation.DeleteMapping;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PutMapping;
 
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
-public interface Authentication {
+public interface Invitation {
 
-    interface Client extends Authentication {}
+    interface Client extends Invitation {}
 
-    ClientAuthToken fetchToken(String clientId, String clientSecret);
+    void inviteUserForInstance(UUID id, UUID userId);
 
-    String authEndpoint();
+    void revokeUserInvitation(UUID id, UUID userId);
 
-    String tokenEndpoint();
+    List<ReducedUserInformation> listInvitations(UUID id);
 
-    User getMyUserInfo();
-
-    UserWithRoles getRoles(boolean checkForTermsOfUse);
-
-    List<ReducedUserInformation> findUsers(String name);
-
-    User getOtherUserInfo(String nativeId);
-
-    List<User> getUsersByAttribute(String attribute, String value);
-
-    TermsOfUseResult getTermsOfUse();
-
-    void acceptTermsOfUse(String version);
-
-    void registerTermsOfUse(TermsOfUse version);
-
-    JsonLdDoc updateClaimForRole(RoleMapping role, String space, Map<?, ?> claimPattern, boolean removeClaim);
-
-    JsonLdDoc getClaimForRole(RoleMapping role, String space);
-
-    List<JsonLdDoc> getAllRoleDefinitions();
-
+    void calculateInstanceScope(UUID id);
 }

@@ -24,10 +24,10 @@ package eu.ebrains.kg.authentication.api;
 
 import eu.ebrains.kg.authentication.config.AuthorizationConfiguration;
 import eu.ebrains.kg.authentication.controller.AuthenticationRepository;
+import eu.ebrains.kg.authentication.controller.InvitationController;
 import eu.ebrains.kg.authentication.controller.TermsOfUseRepository;
 import eu.ebrains.kg.authentication.keycloak.KeycloakClient;
 import eu.ebrains.kg.authentication.keycloak.KeycloakController;
-import eu.ebrains.kg.authentication.model.Invitation;
 import eu.ebrains.kg.authentication.model.UserOrClientProfile;
 import eu.ebrains.kg.commons.api.Authentication;
 import eu.ebrains.kg.commons.exception.NotAcceptedTermsOfUseException;
@@ -42,11 +42,10 @@ import eu.ebrains.kg.commons.permissions.controller.Permissions;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
+
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.UUID;
-import java.util.stream.Collectors;
 
 @Component
 public class AuthenticationAPI implements Authentication.Client {
@@ -64,7 +63,6 @@ public class AuthenticationAPI implements Authentication.Client {
     private final Permissions permissions;
 
     private final AuthorizationConfiguration authorizationConfiguration;
-
 
     public AuthenticationAPI(KeycloakClient keycloakClient, KeycloakController keycloakController, AuthenticationRepository authenticationRepository, TermsOfUseRepository termsOfUseRepository, Permissions permissions, AuthorizationConfiguration authorizationConfiguration) {
         this.keycloakController = keycloakController;
@@ -118,7 +116,8 @@ public class AuthenticationAPI implements Authentication.Client {
             }
             // We only do the terms of use check for direct access calls (the clients are required to ensure that the user
             // agrees to the terms of use.)
-            UserWithRoles userWithRoles = new UserWithRoles(user, userProfile.getRoleNames(), clientProfile != null ? clientProfile.getRoleNames() : null,
+            List<UUID> invitationRoles = authenticationRepository.getInvitationRoles(user.getNativeId());
+            UserWithRoles userWithRoles = new UserWithRoles(user, userProfile.getRoleNames(), clientProfile != null ? clientProfile.getRoleNames() : null, invitationRoles,
                     keycloakController.getClientInfoFromKeycloak(clientProfile != null ? clientProfile.getClaims() : null));
             if(checkForTermsOfUse && clientProfile==null) {
                 TermsOfUse termsOfUseToAccept = authenticationRepository.findTermsOfUseToAccept(user.getNativeId());
@@ -233,24 +232,5 @@ public class AuthenticationAPI implements Authentication.Client {
         else{
             throw new UnauthorizedException("You don't have the rights to show permissions");
         }
-    }
-
-    @Override
-    public void inviteUserForInstance(UUID id, UUID userId) {
-        authenticationRepository.createInvitation(new Invitation(id.toString(), userId.toString()));
-    }
-
-    @Override
-    public void revokeUserInvitation(UUID id, UUID userId) {
-        authenticationRepository.deleteInvitation(new Invitation(id.toString(), userId.toString()));
-    }
-
-    @Override
-    public List<ReducedUserInformation> listInvitations(UUID id) {
-        if(id!=null){
-            final List<Invitation> allInvitationsByInstanceId = authenticationRepository.getAllInvitationsByInstanceId(id.toString());
-            return allInvitationsByInstanceId.stream().map(i -> keycloakController.getUserById(i.getUserId())).filter(Objects::nonNull).collect(Collectors.toList());
-        }
-        return null;
     }
 }

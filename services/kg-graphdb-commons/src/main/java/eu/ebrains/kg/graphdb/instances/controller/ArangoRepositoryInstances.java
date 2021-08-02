@@ -122,11 +122,8 @@ public class ArangoRepositoryInstances {
             //If it's not a query, it's not exposed...
             return null;
         }
-        NormalizedJsonLd doc = document.getDoc();
-        if (doc != null && !permissions.hasEitherUserOrClientPermissionFor(authContext.getUserWithRoles(), Functionality.READ, space, id)) {
-            throw new ForbiddenException(String.format("You don't have read rights for the query with the id %s", id));
-        }
-        return doc;
+        //We explicitly do not check for permissions because queries can be read by everyone
+        return document.getDoc();
     }
 
 
@@ -605,6 +602,16 @@ public class ArangoRepositoryInstances {
                 if (search != null && InstanceId.deserialize(search) != null) {
                     mode = DocumentsByTypeMode.BY_ID;
                 }
+                Map<String, Object> whitelistFilter = null;
+                switch(mode){
+                    case BY_ID:
+                    case DYNAMIC:
+                        whitelistFilter =  permissionsController.whitelistFilterForReadInstances(authContext.getUserWithRoles(), stage);
+                        if (whitelistFilter != null) {
+                            aql.specifyWhitelist();
+                            bindVars.putAll(whitelistFilter);
+                        }
+                }
                 switch (mode) {
                     case BY_ID:
                         aql.indent().addLine(AQL.trust("LET v = DOCUMENT(@documentById)"));
@@ -626,7 +633,6 @@ public class ArangoRepositoryInstances {
                 switch (mode) {
                     case BY_ID:
                     case DYNAMIC:
-                        Map<String, Object> whitelistFilter = permissionsController.whitelistFilterForReadInstances(authContext.getUserWithRoles(), stage);
                         if (whitelistFilter != null) {
                             aql.addDocumentFilterWithWhitelistFilter(AQL.trust("v"));
                         }

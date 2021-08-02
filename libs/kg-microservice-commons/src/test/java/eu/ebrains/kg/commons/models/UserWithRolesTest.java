@@ -51,7 +51,7 @@ public class UserWithRolesTest {
     @Test
     public void testEvaluatePermissionsFullUserAccess(){
         //Given
-        UserWithRoles userWithRoles = new UserWithRoles(user, getUserRoles(RoleMapping.ADMIN, null), adminClientRoles, "testClient");
+        UserWithRoles userWithRoles = new UserWithRoles(user, getUserRoles(RoleMapping.ADMIN, null), adminClientRoles,  "testClient");
 
         //when
         List<FunctionalityInstance> permissions = userWithRoles.getPermissions();
@@ -82,7 +82,7 @@ public class UserWithRolesTest {
     @Test
     public void testEvaluatePermissionsSpaceUserAccess(){
         //Given
-        UserWithRoles userWithRoles = new UserWithRoles(user, getUserRoles(RoleMapping.ADMIN, space), adminClientRoles, "testClient");
+        UserWithRoles userWithRoles = new UserWithRoles(user, getUserRoles(RoleMapping.ADMIN, space), adminClientRoles,  "testClient");
 
         //when
         List<FunctionalityInstance> permissions = userWithRoles.getPermissions();

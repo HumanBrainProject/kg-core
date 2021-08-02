@@ -41,6 +41,7 @@ public class UserWithRoles {
     private User user;
     private List<String> clientRoles;
     private List<String> userRoles;
+    private List<UUID> invitations;
     private String clientId;
     private transient final Logger logger = LoggerFactory.getLogger(getClass());
 
@@ -49,11 +50,16 @@ public class UserWithRoles {
     private UserWithRoles() {
     }
 
-    public UserWithRoles(User user, List<String> userRoles, List<String> clientRoles, String clientId) {
+    public UserWithRoles(User user, List<String> userRoles, List<String> clientRoles, String clientId){
+        this(user, userRoles, clientRoles, Collections.emptyList(), null);
+    }
+
+    public UserWithRoles(User user, List<String> userRoles, List<String> clientRoles, List<UUID> invitations, String clientId) {
         this.user = user;
         this.userRoles = userRoles;
         this.clientRoles = clientRoles;
         this.clientId = clientId;
+        this.invitations = invitations;
     }
 
     /**
@@ -74,11 +80,18 @@ public class UserWithRoles {
      * @return the list of functionalities, the user is allowed to execute
      */
     public List<FunctionalityInstance> getPermissions() {
-        return evaluatePermissions(userRoles, clientRoles);
+        //Invitation permissions are added after permission evaluation (of global and space)
+        return Stream.concat(evaluatePermissions(userRoles, clientRoles).stream(),
+                invitations.stream().map(i -> new FunctionalityInstance(Functionality.READ, null, i)))
+                .distinct().collect(Collectors.toList());
     }
 
+
     public List<FunctionalityInstance> getPermissionsOfEitherUserOrClient() {
-        return evaluatePermissionCombinations(userRoles, clientRoles);
+        //Invitation permissions are added after permission evaluation (of global and space)
+        return Stream.concat(evaluatePermissionCombinations(userRoles, clientRoles).stream(),
+                invitations.stream().map(i -> new FunctionalityInstance(Functionality.READ, null, i)))
+                .distinct().collect(Collectors.toList());
     }
 
     public SpaceName getPrivateSpace(){

@@ -27,6 +27,7 @@ import eu.ebrains.kg.commons.IdUtils;
 import eu.ebrains.kg.commons.Version;
 import eu.ebrains.kg.commons.api.GraphDBInstances;
 import eu.ebrains.kg.commons.api.Release;
+import eu.ebrains.kg.commons.config.openApiGroups.Admin;
 import eu.ebrains.kg.commons.config.openApiGroups.Advanced;
 import eu.ebrains.kg.commons.config.openApiGroups.Simple;
 import eu.ebrains.kg.commons.exception.ForbiddenException;
@@ -418,6 +419,13 @@ public class Instances {
     @Advanced
     public Result<List<ReducedUserInformation>> listInvitations(@PathVariable("id") UUID id) {
         return Result.ok(instanceController.listInvitations(id));
+    }
+
+    @Operation(summary = "Update invitation scope for this instance")
+    @GetMapping("/instances/{id}/invitationScope")
+    @Admin
+    public void calculateInstanceInvitationScope(@PathVariable("id") UUID id) {
+        instanceController.calculateInstanceInvitationScope(id);
     }
 
 

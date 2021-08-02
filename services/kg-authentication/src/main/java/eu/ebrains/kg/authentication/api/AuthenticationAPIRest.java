@@ -153,22 +153,4 @@ public class AuthenticationAPIRest implements Authentication {
         return authentication.getAllRoleDefinitions();
     }
 
-
-    @Override
-    @PutMapping("invitations/{instanceId}/{userId}")
-    public void inviteUserForInstance(@PathVariable("instanceId") UUID id, @PathVariable("userId") UUID userId) {
-        authentication.inviteUserForInstance(id, userId);
-    }
-
-    @Override
-    @DeleteMapping("invitations/{instanceId}/{userId}")
-    public void revokeUserInvitation(@PathVariable("instanceId")UUID id,  @PathVariable("userId") UUID userId) {
-        authentication.revokeUserInvitation(id, userId);
-    }
-
-    @Override
-    @GetMapping("invitations/{instanceId}")
-    public List<ReducedUserInformation> listInvitations(@PathVariable("instanceId")UUID id) {
-        return authentication.listInvitations(id);
-    }
 }

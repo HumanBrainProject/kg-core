@@ -125,18 +125,4 @@ public class AuthenticationRestClient implements Authentication.Client {
         return Arrays.asList(serviceCall.get(String.format("%s/usersFromIAM", SERVICE_URL), authTokenContext.getAuthTokens(), ReducedUserInformation[].class));
     }
 
-    @Override
-    public void inviteUserForInstance(UUID id, UUID userId) {
-        serviceCall.put(String.format("%s/invitations/%s/%s", SERVICE_URL, id, userId), null, authTokenContext.getAuthTokens(),  Void.class);
-    }
-
-    @Override
-    public void revokeUserInvitation(UUID id, UUID userId) {
-        serviceCall.delete(String.format("%s/invitations/%s/%s", SERVICE_URL, id, userId), authTokenContext.getAuthTokens(), Void.class);
-    }
-
-    @Override
-    public List<ReducedUserInformation> listInvitations(UUID id) {
-        return Arrays.asList(serviceCall.get(String.format("%s/invitations/%s", SERVICE_URL, id), authTokenContext.getAuthTokens(), ReducedUserInformation[].class));
-    }
 }
