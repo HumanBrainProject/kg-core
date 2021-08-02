@@ -1123,14 +1123,17 @@ public class ArangoRepositoryInstances {
         return null;
     }
 
+
     private ScopeElement translateResultToScope(List<NormalizedJsonLd> data, DataStage stage, boolean fetchLabels, NormalizedJsonLd instance) {
         final Map<String, Set<ScopeElement>> typeToUUID = new HashMap<>();
-        ScopeElement element;
+        List<ScopeElement> elements;
         if (data == null || data.isEmpty()) {
-            element = new ScopeElement(idUtils.getUUID(instance.id()), instance.types(), null, instance.getAs(ArangoVocabulary.ID, String.class), instance.getAs(EBRAINSVocabulary.META_SPACE, String.class));
-            instance.types().forEach(t -> typeToUUID.computeIfAbsent(t, x -> new HashSet<>()).add(element));
+            elements = Collections.singletonList(new ScopeElement(idUtils.getUUID(instance.id()), instance.types(), null, instance.getAs(ArangoVocabulary.ID, String.class), instance.getAs(EBRAINSVocabulary.META_SPACE, String.class)));
         } else {
-            element = data.stream().map(d -> handleSubElement(d, typeToUUID)).findFirst().orElse(null);
+            elements = data.stream().map(d -> handleSubElement(d, typeToUUID)).collect(Collectors.toList());
+        }
+        for(ScopeElement el : elements) {
+            instance.types().forEach(t -> typeToUUID.computeIfAbsent(t, x -> new HashSet<>()).add(el));
         }
         if (fetchLabels) {
             List<Type> affectedTypes = typesRepo.getTypeInformation(authContext.getUserWithRoles().getClientId(), stage, typeToUUID.keySet().stream().map(Type::new).collect(Collectors.toList()));
@@ -1145,7 +1148,7 @@ public class ArangoRepositoryInstances {
                 }
             });
         }
-        return mergeInstancesOnSameLevel(Collections.singletonList(element)).get(0);
+        return mergeInstancesOnSameLevel(elements).get(0);
     }
 
 }
