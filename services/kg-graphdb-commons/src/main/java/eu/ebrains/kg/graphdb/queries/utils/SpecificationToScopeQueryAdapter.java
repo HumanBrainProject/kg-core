@@ -45,8 +45,8 @@ public class SpecificationToScopeQueryAdapter {
     private List<SpecProperty> handleProperty(SpecProperty property){
         //Handle path to property
         List<SpecProperty> subProperties = new ArrayList<>();
+        List<SpecProperty> traversalSubProperties = subProperties;
         if(property.needsTraversal()) {
-            List<SpecProperty> traversalSubProperties = subProperties;
             for (SpecTraverse specTraverse : property.path) {
                 if(specTraverse!=property.getLeafPath()) {
                     SpecProperty traversalProperty = new SpecProperty(String.format("dependency_%d", propertyCounter++), new ArrayList<>(), Collections.singletonList(specTraverse), null, false, false, false, false, false, null, null);
@@ -62,7 +62,7 @@ public class SpecificationToScopeQueryAdapter {
         //Handle sub properties
         if(property.hasSubProperties()){
             for (SpecProperty subProperty : property.property) {
-                subProperties.addAll(handleProperty(subProperty));
+                traversalSubProperties.addAll(handleProperty(subProperty));
             }
         }
         return subProperties;
