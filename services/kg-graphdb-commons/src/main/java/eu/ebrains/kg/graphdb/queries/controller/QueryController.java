@@ -78,10 +78,16 @@ public class QueryController {
     public QueryResult query(UserWithRoles userWithRoles, KgQuery query, PaginationParam paginationParam, Map<String, String> filterValues, boolean scopeMode) {
         ArangoDatabase database = arangoDatabases.getByStage(query.getStage());
         Specification specification = specificationInterpreter.readSpecification(query.getPayload(), null);
+        Map<String, Object> whitelistFilter;
         if(scopeMode){
             specification = new SpecificationToScopeQueryAdapter(specification).translate();
+            // In scope mode, we don't apply the whitelist filter since we're only exposing ids and it is important
+            // that we have the full scope of an instance
+            whitelistFilter = null;
         }
-        Map<String, Object> whitelistFilter = permissionsController.whitelistFilterForReadInstances(userWithRoles, query.getStage());
+        else {
+            whitelistFilter = permissionsController.whitelistFilterForReadInstances(userWithRoles, query.getStage());
+        }
         arangoUtils.getOrCreateArangoCollection(database, ArangoCollectionReference.fromSpace(InternalSpace.TYPE_SPACE));
         arangoUtils.getOrCreateArangoCollection(database, InternalSpace.TYPE_EDGE_COLLECTION);
         AQLQuery aql = new DataQueryBuilder(specification, paginationParam, whitelistFilter, filterValues, database.getCollections().stream().map(c -> new ArangoCollectionReference(c.getName(), c.getType() == CollectionType.EDGES)).collect(Collectors.toList())).build();

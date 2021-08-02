@@ -86,7 +86,6 @@ public class UserWithRoles {
                 .distinct().collect(Collectors.toList());
     }
 
-
     public List<FunctionalityInstance> getPermissionsOfEitherUserOrClient() {
         //Invitation permissions are added after permission evaluation (of global and space)
         return Stream.concat(evaluatePermissionCombinations(userRoles, clientRoles).stream(),

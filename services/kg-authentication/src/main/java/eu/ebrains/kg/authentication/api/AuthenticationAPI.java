@@ -24,7 +24,6 @@ package eu.ebrains.kg.authentication.api;
 
 import eu.ebrains.kg.authentication.config.AuthorizationConfiguration;
 import eu.ebrains.kg.authentication.controller.AuthenticationRepository;
-import eu.ebrains.kg.authentication.controller.InvitationController;
 import eu.ebrains.kg.authentication.controller.TermsOfUseRepository;
 import eu.ebrains.kg.authentication.keycloak.KeycloakClient;
 import eu.ebrains.kg.authentication.keycloak.KeycloakController;

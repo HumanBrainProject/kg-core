@@ -42,7 +42,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
-@RequestMapping("/internal/invitation")
+@RequestMapping("/internal/invitations")
 @RestController
 @ConditionalOnProperty(value = "eu.ebrains.kg.test", havingValue = "false", matchIfMissing = true)
 public class InvitationAPIRest implements Invitation {
