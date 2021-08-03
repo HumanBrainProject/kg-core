@@ -50,6 +50,7 @@ import org.springframework.web.bind.annotation.*;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * The types API allows to get information about the available types of instances including statistical values
@@ -77,14 +78,20 @@ public class Types {
     public PaginatedResult<NormalizedJsonLd> getTypes(@RequestParam("stage") ExposedStage stage, @RequestParam(value = "space", required = false) @Parameter(description = "The space by which the types should be filtered or \"" + SpaceName.PRIVATE_SPACE + "\" for your private space.") String space, @RequestParam(value = "withProperties", defaultValue = "false") boolean withProperties, @RequestParam(value = "withIncomingLinks", defaultValue = "false") boolean withIncomingLinks, @RequestParam(value = "withCounts", defaultValue = "false") @Parameter(description = "Only applies if withProperties is set to true") boolean withCounts, @ParameterObject PaginationParam paginationParam) {
         if(virtualSpaceController.isVirtualSpace(space)){
             List<String> typesByInvitation = virtualSpaceController.getTypesByInvitation(stage.getStage());
-            int total = typesByInvitation.size();
+            final Result<Map<String, Result<NormalizedJsonLd>>> typesByName = getTypesByName(typesByInvitation, stage, true, false, null);
+            List<NormalizedJsonLd> result = typesByName.getData().values().stream().map(Result::getData).collect(Collectors.toList());
+            final Stream<String> targetTypesStream =
+                    result.stream().map(r -> r.getAsListOf(EBRAINSVocabulary.META_PROPERTIES, NormalizedJsonLd.class))
+                    .flatMap(Collection::stream).map(r -> r.getAsListOf(EBRAINSVocabulary.META_PROPERTY_TARGET_TYPES, NormalizedJsonLd.class))
+                    .flatMap(Collection::stream).map(t -> t.getAs(EBRAINSVocabulary.META_TYPE, String.class));
+            List<String> allTypes = Stream.concat(typesByInvitation.stream(), targetTypesStream).distinct().sorted().collect(Collectors.toList());
             if(paginationParam.getFrom()!=0 || paginationParam.getSize()!=null){
-                int lastIndex = paginationParam.getSize() == null ? typesByInvitation.size() : Math.min(typesByInvitation.size(), (int)(paginationParam.getFrom()+paginationParam.getSize()));
-                typesByInvitation = typesByInvitation.subList((int)paginationParam.getFrom(), lastIndex);
+                int lastIndex = paginationParam.getSize() == null ? allTypes.size() : Math.min(allTypes.size(), (int)(paginationParam.getFrom()+paginationParam.getSize()));
+                typesByInvitation = allTypes.subList((int)paginationParam.getFrom(), lastIndex);
             }
-            final Result<Map<String, Result<NormalizedJsonLd>>> typesByName = getTypesByName(typesByInvitation, stage, withProperties, withCounts, null);
-            final List<NormalizedJsonLd> result = typesByName.getData().values().stream().map(Result::getData).collect(Collectors.toList());
-            return PaginatedResult.ok(new Paginated<>(result, total, result.size(), paginationParam.getFrom()));
+            final Result<Map<String, Result<NormalizedJsonLd>>> allTypesByName = getTypesByName(allTypes, stage, withProperties, withCounts, null);
+            result = allTypesByName.getData().values().stream().map(Result::getData).collect(Collectors.toList());
+            return PaginatedResult.ok(new Paginated<>(result, allTypes.size(), result.size(), paginationParam.getFrom()));
         }
         if(withProperties){
             return PaginatedResult.ok(graphDBTypes.getTypesWithProperties(stage.getStage(), getResolvedSpaceName(space), withCounts, withIncomingLinks, paginationParam));
@@ -93,6 +100,7 @@ public class Types {
             return PaginatedResult.ok(graphDBTypes.getTypes(stage.getStage(), getResolvedSpaceName(space), withIncomingLinks, paginationParam));
         }
     }
+
 
     private String getResolvedSpaceName(String space){
         SpaceName spaceName = authContext.resolveSpaceName(space);

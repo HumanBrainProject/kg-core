@@ -56,7 +56,7 @@ public class VirtualSpaceController {
     }
 
     public List<String> getTypesByInvitation( DataStage stage){
-        final Stream<NormalizedJsonLd> stream = handleInvitations(new ResponseConfiguration().setReturnEmbedded(false), stage);
+        final Stream<NormalizedJsonLd> stream = handleInvitations(new ResponseConfiguration(), stage);
         return stream.map(JsonLdDoc::types).flatMap(Collection::stream).distinct().collect(Collectors.toList());
     }
 
