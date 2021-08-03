@@ -218,6 +218,10 @@ public class UserWithRoles {
         return new ArrayList<>(result);
     }
 
+    public List<UUID> getInvitations(){
+        return invitations;
+    }
+
     public boolean hasInvitations(){
         return this.invitations!=null && !this.invitations.isEmpty();
     }

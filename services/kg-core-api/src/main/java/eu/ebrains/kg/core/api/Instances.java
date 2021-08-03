@@ -38,6 +38,7 @@ import eu.ebrains.kg.commons.models.ExternalEventInformation;
 import eu.ebrains.kg.commons.params.ReleaseTreeScope;
 import eu.ebrains.kg.core.controller.CoreInstanceController;
 import eu.ebrains.kg.core.controller.IdsController;
+import eu.ebrains.kg.core.controller.VirtualSpaceController;
 import eu.ebrains.kg.core.model.ExposedStage;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -67,16 +68,18 @@ public class Instances {
     private final AuthContext authContext;
     private final GraphDBInstances.Client graphDBInstances;
     private final IdsController idsController;
+    private final VirtualSpaceController virtualSpaceController;
 
     private final Logger logger = LoggerFactory.getLogger(getClass());
 
-    public Instances(CoreInstanceController instanceController, Release.Client release, IdUtils idUtils, AuthContext authContext, GraphDBInstances.Client graphDBInstances, IdsController idsController) {
+    public Instances(CoreInstanceController instanceController, Release.Client release, IdUtils idUtils, AuthContext authContext, GraphDBInstances.Client graphDBInstances, IdsController idsController, VirtualSpaceController virtualSpaceController) {
         this.instanceController = instanceController;
         this.release = release;
         this.idUtils = idUtils;
         this.authContext = authContext;
         this.graphDBInstances = graphDBInstances;
         this.idsController = idsController;
+        this.virtualSpaceController = virtualSpaceController;
     }
 
     @Operation(summary = "Create new instance with a system generated id")
@@ -209,10 +212,22 @@ public class Instances {
     @ExposesData
     @Simple
     public PaginatedResult<NormalizedJsonLd> getInstances(@RequestParam("stage") ExposedStage stage, @RequestParam("type") String type, @RequestParam(value = "space", required = false) @Parameter(description = "The space of the instances to be listed or \""+SpaceName.PRIVATE_SPACE+"\" for your private space") String space, @RequestParam(value = "searchByLabel", required = false) String searchByLabel, @ParameterObject ResponseConfiguration responseConfiguration, @ParameterObject PaginationParam paginationParam) {
+        PaginatedResult<NormalizedJsonLd> result = null;
         Date startTime = new Date();
-        SpaceName spaceName = authContext.resolveSpaceName(space);
-        searchByLabel = enrichSearchTermIfItIsAUUID(searchByLabel);
-        PaginatedResult<NormalizedJsonLd> result = PaginatedResult.ok(instanceController.getInstances(stage.getStage(), new Type(type), spaceName, searchByLabel, responseConfiguration, paginationParam));
+        if(virtualSpaceController.isVirtualSpace(space)){
+            List<NormalizedJsonLd> instancesByInvitation = virtualSpaceController.getInstancesByInvitation(responseConfiguration, stage.getStage(), type);
+            int total = instancesByInvitation.size();
+            if(paginationParam.getFrom()!=0 || paginationParam.getSize()!=null){
+                int lastIndex = paginationParam.getSize() == null ? instancesByInvitation.size() : Math.min(instancesByInvitation.size(), (int)(paginationParam.getFrom()+paginationParam.getSize()));
+                instancesByInvitation = instancesByInvitation.subList((int)paginationParam.getFrom(), lastIndex);
+            }
+            return PaginatedResult.ok(new Paginated<>(instancesByInvitation, instancesByInvitation.size(), total, paginationParam.getFrom()));
+        }
+        else{
+            SpaceName spaceName = authContext.resolveSpaceName(space);
+            searchByLabel = enrichSearchTermIfItIsAUUID(searchByLabel);
+            result = PaginatedResult.ok(instanceController.getInstances(stage.getStage(), new Type(type), spaceName, searchByLabel, responseConfiguration, paginationParam));
+        }
         result.setExecutionDetails(startTime, new Date());
         return result;
     }

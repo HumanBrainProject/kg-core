@@ -42,6 +42,7 @@ import eu.ebrains.kg.commons.permission.FunctionalityInstance;
 import eu.ebrains.kg.commons.semantics.vocabularies.EBRAINSVocabulary;
 import eu.ebrains.kg.commons.semantics.vocabularies.SchemaOrgVocabulary;
 import eu.ebrains.kg.core.controller.CoreSpaceController;
+import eu.ebrains.kg.core.controller.VirtualSpaceController;
 import eu.ebrains.kg.core.model.ExposedStage;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -79,9 +80,9 @@ public class Spaces {
     public Result<NormalizedJsonLd> getSpace(@RequestParam("stage") ExposedStage stage, @PathVariable("space") @Parameter(description = "The space to be read or \"" + SpaceName.PRIVATE_SPACE + "\" for your private space") String space, @RequestParam(value = "permissions", defaultValue = "false") boolean permissions) {
         if(space!=null){
             switch(space){
-                case "myspace":
+                case SpaceName.PRIVATE_SPACE:
                     return Result.ok(MYSPACE);
-                case "invitations":
+                case VirtualSpaceController.INVITATION_SPACE:
                     return Result.ok(INVITATIONS);
             }
         }
@@ -100,8 +101,8 @@ public class Spaces {
         return space;
     }
 
-    private final static NormalizedJsonLd MYSPACE =  createSpaceRepresentation("myspace", Functionality.READ, Functionality.WRITE, Functionality.CREATE, Functionality.DELETE);
-    private final static NormalizedJsonLd INVITATIONS = createSpaceRepresentation("invitations", Functionality.READ);
+    private final static NormalizedJsonLd MYSPACE =  createSpaceRepresentation(SpaceName.PRIVATE_SPACE, Functionality.READ, Functionality.WRITE, Functionality.CREATE, Functionality.DELETE);
+    private final static NormalizedJsonLd INVITATIONS = createSpaceRepresentation(VirtualSpaceController.INVITATION_SPACE, Functionality.READ);
 
 
     @GetMapping

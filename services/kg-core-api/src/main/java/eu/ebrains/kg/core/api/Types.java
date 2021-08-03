@@ -38,6 +38,7 @@ import eu.ebrains.kg.commons.markers.WritesData;
 import eu.ebrains.kg.commons.model.*;
 import eu.ebrains.kg.commons.semantics.vocabularies.EBRAINSVocabulary;
 import eu.ebrains.kg.commons.semantics.vocabularies.SchemaOrgVocabulary;
+import eu.ebrains.kg.core.controller.VirtualSpaceController;
 import eu.ebrains.kg.core.model.ExposedStage;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
@@ -60,11 +61,13 @@ public class Types {
     private final GraphDBTypes.Client graphDBTypes;
     private final PrimaryStoreEvents.Client primaryStoreEvents;
     private final AuthContext authContext;
+    private final VirtualSpaceController virtualSpaceController;
 
-    public Types(GraphDBTypes.Client graphDBTypes, PrimaryStoreEvents.Client primaryStoreEvents, AuthContext authContext) {
+    public Types(GraphDBTypes.Client graphDBTypes, PrimaryStoreEvents.Client primaryStoreEvents, AuthContext authContext, VirtualSpaceController virtualSpaceController) {
         this.graphDBTypes = graphDBTypes;
         this.primaryStoreEvents = primaryStoreEvents;
         this.authContext = authContext;
+        this.virtualSpaceController = virtualSpaceController;
     }
 
     @Operation(summary = "Returns the types available - either with property information or without")
@@ -72,6 +75,17 @@ public class Types {
     @ExposesType
     @Simple
     public PaginatedResult<NormalizedJsonLd> getTypes(@RequestParam("stage") ExposedStage stage, @RequestParam(value = "space", required = false) @Parameter(description = "The space by which the types should be filtered or \"" + SpaceName.PRIVATE_SPACE + "\" for your private space.") String space, @RequestParam(value = "withProperties", defaultValue = "false") boolean withProperties, @RequestParam(value = "withIncomingLinks", defaultValue = "false") boolean withIncomingLinks, @RequestParam(value = "withCounts", defaultValue = "false") @Parameter(description = "Only applies if withProperties is set to true") boolean withCounts, @ParameterObject PaginationParam paginationParam) {
+        if(virtualSpaceController.isVirtualSpace(space)){
+            List<String> typesByInvitation = virtualSpaceController.getTypesByInvitation(stage.getStage());
+            int total = typesByInvitation.size();
+            if(paginationParam.getFrom()!=0 || paginationParam.getSize()!=null){
+                int lastIndex = paginationParam.getSize() == null ? typesByInvitation.size() : Math.min(typesByInvitation.size(), (int)(paginationParam.getFrom()+paginationParam.getSize()));
+                typesByInvitation = typesByInvitation.subList((int)paginationParam.getFrom(), lastIndex);
+            }
+            final Result<Map<String, Result<NormalizedJsonLd>>> typesByName = getTypesByName(typesByInvitation, stage, withProperties, withCounts, null);
+            final List<NormalizedJsonLd> result = typesByName.getData().values().stream().map(Result::getData).collect(Collectors.toList());
+            return PaginatedResult.ok(new Paginated<>(result, total, result.size(), paginationParam.getFrom()));
+        }
         if(withProperties){
             return PaginatedResult.ok(graphDBTypes.getTypesWithProperties(stage.getStage(), getResolvedSpaceName(space), withCounts, withIncomingLinks, paginationParam));
         }
@@ -90,7 +104,6 @@ public class Types {
     @ExposesType
     @Advanced
     public Result<Map<String, Result<NormalizedJsonLd>>> getTypesByName(@RequestBody List<String> listOfTypeNames, @RequestParam("stage") ExposedStage stage, @RequestParam(value = "withProperties", defaultValue = "false") boolean withProperties, @RequestParam(value = "withCounts", defaultValue = "false") @Parameter(description = "Only applies if withProperties is set to true") boolean withCounts, @RequestParam(value = "space", required = false) @Parameter(description = "The space by which the types should be filtered or \"" + SpaceName.PRIVATE_SPACE + "\" for your private space.") String space) {
-        SpaceName spaceName = authContext.resolveSpaceName(space);
         if(withProperties){
             //TODO check for withIncomingLinks
             return Result.ok(graphDBTypes.getTypesWithPropertiesByName(listOfTypeNames, stage.getStage(), withCounts, true, getResolvedSpaceName(space)));
