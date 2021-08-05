@@ -37,15 +37,4 @@ public class KgGraphDBSyncApplication {
 	public static void main(String[] args) {
 		SpringApplication.run(KgGraphDBSyncApplication.class, args);
 	}
-
-//	@Bean
-//	@ConditionalOnProperty(value = "opentracing.jaeger.enabled", havingValue = "false", matchIfMissing = false)
-//	public io.opentracing.Tracer jaegerTracer() {
-//		final Reporter reporter = new InMemoryReporter();
-//		final Sampler sampler = new ConstSampler(false);
-//		return new JaegerTracer.Builder("graph-db-sync-service")
-//				.withReporter(reporter)
-//				.withSampler(sampler)
-//				.build();
-//	}
 }

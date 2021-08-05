@@ -22,7 +22,6 @@
 
 package eu.ebrains.kg.graphdb.ingestion.controller;
 
-import com.netflix.discovery.EurekaClient;
 import eu.ebrains.kg.arango.commons.model.ArangoCollectionReference;
 import eu.ebrains.kg.arango.commons.model.ArangoDocumentReference;
 import eu.ebrains.kg.commons.IdUtils;
@@ -31,13 +30,11 @@ import eu.ebrains.kg.commons.jsonld.NormalizedJsonLd;
 import eu.ebrains.kg.commons.model.DataStage;
 import eu.ebrains.kg.commons.model.IdWithAlternatives;
 import eu.ebrains.kg.commons.model.SpaceName;
-import eu.ebrains.kg.docker.SpringDockerComposeRunner;
 import eu.ebrains.kg.graphdb.commons.controller.ArangoDatabases;
 import eu.ebrains.kg.graphdb.commons.controller.ArangoRepositoryCommons;
 import eu.ebrains.kg.graphdb.commons.model.ArangoDocument;
 import eu.ebrains.kg.test.TestObjectFactory;
 import org.junit.Assert;
-import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -58,9 +55,6 @@ public class TodoListProcessorTest {
     TodoListProcessor todoListProcessor;
 
     @Autowired
-    EurekaClient discoveryClient;
-
-    @Autowired
     ArangoRepositoryCommons repository;
 
     @Autowired
@@ -71,12 +65,6 @@ public class TodoListProcessorTest {
 
     @Autowired
     Ids.Client ids;
-
-
-    @Before
-    public void setup() {
-        new SpringDockerComposeRunner(discoveryClient, Collections.singletonList("arango"), "kg-ids").start();
-    }
 
     private final SpaceName space = TestObjectFactory.SIMPSONS;
     private final ArangoCollectionReference simpsons = ArangoCollectionReference.fromSpace(TestObjectFactory.SIMPSONS);

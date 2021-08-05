@@ -37,7 +37,6 @@ import java.util.UUID;
 @Component
 public class GraphDBScopesAPI implements GraphDBScopes.Client {
 
-    private final Logger logger = LoggerFactory.getLogger(getClass());
     private final ArangoRepositoryInstances repository;
 
     public GraphDBScopesAPI(ArangoRepositoryInstances repository) {

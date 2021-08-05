@@ -23,9 +23,6 @@
 package eu.ebrains.kg.authentication.controller;
 
 import eu.ebrains.kg.authentication.model.InstanceScope;
-import eu.ebrains.kg.authentication.model.Invitation;
-import eu.ebrains.kg.authentication.model.UserOrClientProfile;
-import eu.ebrains.kg.commons.IdUtils;
 import eu.ebrains.kg.commons.api.GraphDBScopes;
 import eu.ebrains.kg.commons.api.Ids;
 import eu.ebrains.kg.commons.jsonld.InstanceId;

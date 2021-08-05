@@ -22,7 +22,6 @@
 
 package eu.ebrains.kg.core.api;
 
-import com.netflix.discovery.EurekaClient;
 import eu.ebrains.kg.commons.IdUtils;
 import eu.ebrains.kg.commons.jsonld.IndexedJsonLdDoc;
 import eu.ebrains.kg.commons.jsonld.JsonLdDoc;
@@ -34,9 +33,7 @@ import eu.ebrains.kg.commons.model.ResponseConfiguration;
 import eu.ebrains.kg.commons.model.Result;
 import eu.ebrains.kg.commons.semantics.vocabularies.SchemaOrgVocabulary;
 import eu.ebrains.kg.core.model.ExposedStage;
-import eu.ebrains.kg.docker.SpringDockerComposeRunner;
 import org.junit.Assert;
-import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -46,7 +43,6 @@ import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.test.context.web.WebAppConfiguration;
 
-import java.util.Arrays;
 import java.util.List;
 
 @RunWith(SpringRunner.class)
@@ -54,8 +50,7 @@ import java.util.List;
 @TestPropertySource(properties = {"eu.ebrains.kg.arango.pwd=changeMe", "eu.ebrains.kg.arango.port=9111"})
 @WebAppConfiguration
 public class ConsistencyCheckTest {
-    @Autowired
-    EurekaClient discoveryClient;
+
 
     @Autowired
     Instances instances;
@@ -65,11 +60,6 @@ public class ConsistencyCheckTest {
 
     @Autowired
     Types types;
-
-    @Before
-    public void setup() {
-        new SpringDockerComposeRunner(discoveryClient, Arrays.asList("arango"), "kg-ids", "kg-jsonld", "kg-primarystore", "kg-authentication", "kg-indexing", "kg-graphdb-sync").start();
-    }
 
     PaginationParam EMPTY_PAGINATION = new PaginationParam();
     ResponseConfiguration DEFAULT_RESPONSE_CONFIG = new ResponseConfiguration();

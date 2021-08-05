@@ -22,13 +22,10 @@
 
 package eu.ebrains.kg.primaryStore.api;
 
-import com.netflix.discovery.EurekaClient;
 import eu.ebrains.kg.commons.jsonld.NormalizedJsonLd;
 import eu.ebrains.kg.commons.model.Event;
 import eu.ebrains.kg.commons.model.SpaceName;
-import eu.ebrains.kg.docker.SpringDockerComposeRunner;
 import eu.ebrains.kg.test.TestObjectFactory;
-import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -36,8 +33,6 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.junit4.SpringRunner;
 
-import java.io.IOException;
-import java.util.Arrays;
 import java.util.Date;
 import java.util.UUID;
 
@@ -45,14 +40,6 @@ import java.util.UUID;
 @SpringBootTest
 @TestPropertySource(properties = {"eu.ebrains.kg.arango.pwd = changeMe"})
 public class PSTest {
-
-    @Autowired
-    EurekaClient discoveryClient;
-
-    @Before
-    public void setup() throws IOException {
-        new SpringDockerComposeRunner(discoveryClient, Arrays.asList("arango"), "kg-inference", "kg-graphdb-sync", "kg-indexing", "kg-jsonld", "kg-permissions", "kg-primarystore", "kg-ids").start();
-    }
 
     @Autowired
     PrimaryStoreEventsAPI primaryStore;

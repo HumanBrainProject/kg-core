@@ -22,16 +22,13 @@
 
 package eu.ebrains.kg.graphdb.types.controller;
 
-import com.netflix.discovery.EurekaClient;
 import eu.ebrains.kg.arango.commons.model.ArangoCollectionReference;
 import eu.ebrains.kg.commons.jsonld.NormalizedJsonLd;
 import eu.ebrains.kg.commons.model.DataStage;
 import eu.ebrains.kg.commons.model.Paginated;
 import eu.ebrains.kg.commons.model.SpaceName;
-import eu.ebrains.kg.docker.SpringDockerComposeRunner;
 import eu.ebrains.kg.graphdb.ingestion.controller.TodoListProcessor;
 import eu.ebrains.kg.test.TestObjectFactory;
-import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -39,7 +36,6 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.junit4.SpringRunner;
 
-import java.util.Arrays;
 import java.util.UUID;
 
 import static org.junit.Assert.*;
@@ -49,8 +45,6 @@ import static org.junit.Assert.*;
 @TestPropertySource(properties = {"eu.ebrains.kg.arango.pwd=changeMe", "eu.ebrains.kg.arango.port=9111"})
 public class ArangoRepositoryTypesTest {
 
-    @Autowired
-    EurekaClient discoveryClient;
 
     @Autowired
     ArangoRepositoryTypes arangoRepositoryTypes;
@@ -62,10 +56,6 @@ public class ArangoRepositoryTypesTest {
     private static final DataStage STAGE = DataStage.IN_PROGRESS;
     private static final String CLIENT = "kgeditor";
 
-    @Before
-    public void setup() {
-        new SpringDockerComposeRunner(discoveryClient, Arrays.asList("arango"), "kg-ids").start();
-    }
 
     private final ArangoCollectionReference simpsons = ArangoCollectionReference.fromSpace(TestObjectFactory.SIMPSONS);
 

@@ -35,16 +35,5 @@ public class KgIdsApplication {
 	public static void main(String[] args) {
 		SpringApplication.run(KgIdsApplication.class, args);
 	}
-//
-//	@Bean
-//	@ConditionalOnProperty(value = "opentracing.jaeger.enabled", havingValue = "false", matchIfMissing = false)
-//	public io.opentracing.Tracer jaegerTracer() {
-//		final Reporter reporter = new InMemoryReporter();
-//		final Sampler sampler = new ConstSampler(false);
-//		return new JaegerTracer.Builder("ids-service")
-//				.withReporter(reporter)
-//				.withSampler(sampler)
-//				.build();
-//	}
 
 }

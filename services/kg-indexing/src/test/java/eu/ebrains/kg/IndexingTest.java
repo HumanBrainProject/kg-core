@@ -22,36 +22,23 @@
 
 package eu.ebrains.kg;
 
-import com.netflix.discovery.EurekaClient;
 import eu.ebrains.kg.commons.IdUtils;
 import eu.ebrains.kg.commons.jsonld.NormalizedJsonLd;
 import eu.ebrains.kg.commons.model.*;
-import eu.ebrains.kg.docker.SpringDockerComposeRunner;
 import eu.ebrains.kg.indexing.api.IndexingAPI;
 import eu.ebrains.kg.test.TestObjectFactory;
-import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.junit4.SpringRunner;
 
-import java.io.IOException;
-import java.util.Collections;
 import java.util.Date;
 import java.util.UUID;
 
 @RunWith(SpringRunner.class)
 @SpringBootTest
 public class IndexingTest {
-
-    @Autowired
-    EurekaClient discoveryClient;
-
-    @Before
-    public void setup() throws IOException {
-        new SpringDockerComposeRunner(discoveryClient, true, false, Collections.emptyList(),"kg-inference", "kg-graphdb-sync", "kg-primarystore", "kg-jsonld").start();
-    }
 
     @Autowired
     IndexingAPI indexing;

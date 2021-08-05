@@ -46,7 +46,6 @@ public class InferenceProcessor {
 
     private final Indexing.Client indexing;
 
-    private final SSEProducer sseProducer;
 
     private final EventRepository eventRepository;
 
@@ -58,9 +57,8 @@ public class InferenceProcessor {
 
     private final Logger logger = LoggerFactory.getLogger(getClass());
 
-    public InferenceProcessor(Indexing.Client indexing, SSEProducer sseProducer, EventRepository eventRepository, EventController eventController, Inference.Client inference) {
+    public InferenceProcessor(Indexing.Client indexing, EventRepository eventRepository, EventController eventController, Inference.Client inference) {
         this.indexing = indexing;
-        this.sseProducer = sseProducer;
         this.eventRepository = eventRepository;
         this.eventController = eventController;
         this.inference = inference;
@@ -103,7 +101,6 @@ public class InferenceProcessor {
                 eventRepository.recordFailedEvent(new FailedEvent(evt, e, ZonedDateTime.now()));
                 throw e;
             }
-            sseProducer.emit(evt);
         });
         return events;
     }

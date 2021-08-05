@@ -48,7 +48,6 @@
         <module>services/kg-jsonld</module>
         <module>services/kg-primarystore</module>
         <module>services/kg-releasing</module>
-        <module>services/kg-service-discovery</module>
         <module>tests/kg-system-test</module>
         <module>bundle/kg-core-allinone</module>
     </modules>

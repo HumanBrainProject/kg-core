@@ -22,7 +22,6 @@
 
 package eu.ebrains.kg.commons.permission.roles;
 
-import eu.ebrains.kg.commons.exception.ForbiddenException;
 import eu.ebrains.kg.commons.model.SpaceName;
 import eu.ebrains.kg.commons.permission.Functionality;
 import eu.ebrains.kg.commons.permission.FunctionalityInstance;

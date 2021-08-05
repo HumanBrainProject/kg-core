@@ -30,7 +30,6 @@ import eu.ebrains.kg.authentication.model.OpenIdConfig;
 import eu.ebrains.kg.commons.JsonAdapter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.client.WebClient;
@@ -41,7 +40,8 @@ import java.security.NoSuchAlgorithmException;
 import java.security.interfaces.RSAPublicKey;
 import java.security.spec.InvalidKeySpecException;
 import java.security.spec.X509EncodedKeySpec;
-import java.util.*;
+import java.util.Base64;
+import java.util.Map;
 import java.util.function.Function;
 
 @Component
@@ -59,7 +59,7 @@ public class KeycloakClient {
 
     private IssuerInfo issuerInfo;
 
-    public KeycloakClient(JsonAdapter jsonAdapter, KeycloakConfig config, @Qualifier("direct") WebClient.Builder internalWebClient) {
+    public KeycloakClient(JsonAdapter jsonAdapter, KeycloakConfig config, WebClient.Builder internalWebClient) {
         this.config = config;
         this.webclient = internalWebClient;
         this.jsonAdapter = jsonAdapter;

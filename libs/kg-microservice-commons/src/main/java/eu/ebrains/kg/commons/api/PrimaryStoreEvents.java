@@ -23,25 +23,14 @@
 package eu.ebrains.kg.commons.api;
 
 import eu.ebrains.kg.commons.jsonld.InstanceId;
-import eu.ebrains.kg.commons.model.DataStage;
 import eu.ebrains.kg.commons.model.Event;
-import eu.ebrains.kg.commons.model.PersistedEvent;
-import org.springframework.http.codec.ServerSentEvent;
-import reactor.core.publisher.Flux;
 
-import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 
 public interface PrimaryStoreEvents {
 
     interface Client extends PrimaryStoreEvents {}
-
-    Flux<ServerSentEvent<PersistedEvent>> streamEvents(DataStage stage, String lastEventId, String lastEventIdFromQuery);
-
-    Long getNumberOfRegisteredEvents(DataStage stage);
-
-    List<PersistedEvent> getEventsSince(DataStage stage, String lastEventId);
 
     Set<InstanceId> postEvent(Event event, boolean deferInference);
 

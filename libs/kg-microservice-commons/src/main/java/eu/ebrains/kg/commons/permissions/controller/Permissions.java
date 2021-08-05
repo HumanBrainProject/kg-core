@@ -22,7 +22,6 @@
 
 package eu.ebrains.kg.commons.permissions.controller;
 
-import eu.ebrains.kg.commons.jsonld.InstanceId;
 import eu.ebrains.kg.commons.model.DataStage;
 import eu.ebrains.kg.commons.model.SpaceName;
 import eu.ebrains.kg.commons.models.UserWithRoles;

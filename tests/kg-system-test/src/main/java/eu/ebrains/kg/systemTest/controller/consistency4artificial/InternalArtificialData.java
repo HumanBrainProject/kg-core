@@ -27,7 +27,7 @@ import eu.ebrains.kg.commons.jsonld.NormalizedJsonLd;
 import eu.ebrains.kg.commons.model.Result;
 import eu.ebrains.kg.commons.model.SpaceName;
 import eu.ebrains.kg.systemTest.serviceCall.SystemTestToCore;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;

@@ -22,18 +22,14 @@
 
 package eu.ebrains.kg.metrics;
 
-import eu.ebrains.kg.commons.AuthContext;
 import org.aspectj.lang.ProceedingJoinPoint;
 import org.aspectj.lang.annotation.Around;
 import org.aspectj.lang.annotation.Aspect;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
 
-import java.time.Instant;
-import java.util.ArrayList;
 import java.util.Date;
 
 @Aspect

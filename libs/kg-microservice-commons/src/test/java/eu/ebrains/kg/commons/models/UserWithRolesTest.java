@@ -29,7 +29,6 @@ import eu.ebrains.kg.commons.permission.FunctionalityInstance;
 import eu.ebrains.kg.commons.permission.roles.RoleMapping;
 import org.junit.Test;
 
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 

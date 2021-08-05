@@ -24,7 +24,6 @@ package eu.ebrains.kg.core.controller;
 
 import eu.ebrains.kg.arango.commons.model.InternalSpace;
 import eu.ebrains.kg.commons.AuthContext;
-import eu.ebrains.kg.commons.api.Authentication;
 import eu.ebrains.kg.commons.api.GraphDBSpaces;
 import eu.ebrains.kg.commons.api.GraphDBTypes;
 import eu.ebrains.kg.commons.api.PrimaryStoreEvents;
@@ -35,7 +34,6 @@ import eu.ebrains.kg.commons.model.*;
 import eu.ebrains.kg.commons.models.UserWithRoles;
 import eu.ebrains.kg.commons.permission.Functionality;
 import eu.ebrains.kg.commons.permission.FunctionalityInstance;
-import eu.ebrains.kg.commons.permission.roles.RoleMapping;
 import eu.ebrains.kg.commons.permissions.controller.Permissions;
 import eu.ebrains.kg.commons.semantics.vocabularies.EBRAINSVocabulary;
 import eu.ebrains.kg.commons.semantics.vocabularies.SchemaOrgVocabulary;
@@ -43,7 +41,6 @@ import eu.ebrains.kg.core.model.ExposedStage;
 import org.springframework.stereotype.Component;
 
 import java.nio.charset.StandardCharsets;
-import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
 import java.util.UUID;

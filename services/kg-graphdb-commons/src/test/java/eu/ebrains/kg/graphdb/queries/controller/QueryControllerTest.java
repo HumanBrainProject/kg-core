@@ -22,7 +22,6 @@
 
 package eu.ebrains.kg.graphdb.queries.controller;
 
-import com.netflix.discovery.EurekaClient;
 import eu.ebrains.kg.arango.commons.model.ArangoCollectionReference;
 import eu.ebrains.kg.arango.commons.model.ArangoDocumentReference;
 import eu.ebrains.kg.commons.IdUtils;
@@ -31,11 +30,9 @@ import eu.ebrains.kg.commons.jsonld.NormalizedJsonLd;
 import eu.ebrains.kg.commons.model.*;
 import eu.ebrains.kg.commons.models.UserWithRoles;
 import eu.ebrains.kg.commons.query.KgQuery;
-import eu.ebrains.kg.docker.SpringDockerComposeRunner;
 import eu.ebrains.kg.graphdb.ingestion.controller.TodoListProcessor;
 import eu.ebrains.kg.test.TestObjectFactory;
 import org.junit.Assert;
-import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mockito;
@@ -44,7 +41,10 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.junit4.SpringRunner;
 
-import java.util.*;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
 
 @RunWith(SpringRunner.class)
 @SpringBootTest
@@ -54,8 +54,6 @@ public class QueryControllerTest {
     @Autowired
     QueryController queryController;
 
-    @Autowired
-    EurekaClient discoveryClient;
 
     @Autowired
     TodoListProcessor todoListProcessor;
@@ -70,11 +68,6 @@ public class QueryControllerTest {
     private final DataStage stage = DataStage.IN_PROGRESS;
     private final ArangoCollectionReference simpsons = ArangoCollectionReference.fromSpace(TestObjectFactory.SIMPSONS);
     private final UserWithRoles userWithRoles = Mockito.mock(UserWithRoles.class);
-
-    @Before
-    public void setup() {
-        new SpringDockerComposeRunner(discoveryClient, Arrays.asList("arango"), "kg-ids").start();
-    }
 
     @Test
     public void querySimple() {

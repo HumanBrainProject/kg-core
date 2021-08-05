@@ -23,9 +23,6 @@
 package eu.ebrains.kg.commons.config;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.cloud.client.loadbalancer.LoadBalanced;
-import org.springframework.cloud.netflix.eureka.EnableEurekaClient;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.MediaType;
@@ -35,10 +32,6 @@ import org.springframework.http.codec.json.Jackson2JsonEncoder;
 import org.springframework.web.reactive.function.client.ExchangeStrategies;
 import org.springframework.web.reactive.function.client.WebClient;
 
-/**
- * The two different webclient beans: once with eureka loadbalancing (internal service calls) and once without it - for external/stable endpoints
- */
-@EnableEurekaClient
 @Configuration
 public class WebClientConf {
 
@@ -53,15 +46,7 @@ public class WebClientConf {
     }
 
     @Bean
-    @Qualifier("loadbalanced")
-    @LoadBalanced
     WebClient.Builder webClient(ObjectMapper objectMapper) {
-        return WebClient.builder().exchangeStrategies(createExchangeStrategy(objectMapper));
-    }
-
-    @Bean
-    @Qualifier("direct")
-    WebClient.Builder webClientExternal(ObjectMapper objectMapper) {
         return WebClient.builder().exchangeStrategies(createExchangeStrategy(objectMapper));
     }
 

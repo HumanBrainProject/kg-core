@@ -22,24 +22,18 @@
 
 package eu.ebrains.kg.authentication.api;
 
-import eu.ebrains.kg.authentication.config.AuthorizationConfiguration;
 import eu.ebrains.kg.authentication.controller.AuthenticationRepository;
 import eu.ebrains.kg.authentication.controller.InvitationController;
-import eu.ebrains.kg.authentication.controller.TermsOfUseRepository;
-import eu.ebrains.kg.authentication.keycloak.KeycloakClient;
 import eu.ebrains.kg.authentication.keycloak.KeycloakController;
-import eu.ebrains.kg.authentication.model.InstanceScope;
 import eu.ebrains.kg.authentication.model.Invitation;
-import eu.ebrains.kg.commons.api.GraphDBScopes;
-import eu.ebrains.kg.commons.api.Ids;
-import eu.ebrains.kg.commons.jsonld.InstanceId;
-import eu.ebrains.kg.commons.jsonld.JsonLdIdMapping;
-import eu.ebrains.kg.commons.model.*;
+import eu.ebrains.kg.commons.model.ReducedUserInformation;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
-import java.util.*;
+import java.util.List;
+import java.util.Objects;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 @Component

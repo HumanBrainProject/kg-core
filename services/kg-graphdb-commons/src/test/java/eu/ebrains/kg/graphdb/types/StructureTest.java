@@ -33,8 +33,6 @@ import org.springframework.test.context.junit4.SpringRunner;
 @TestPropertySource(properties = {"eu.ebrains.kg.arango.pwd=changeMe", "eu.ebrains.kg.arango.port=9111"})
 public class StructureTest {
 
-//    @Autowired
-//    EurekaClient discoveryClient;
 //
 //    @Autowired
 //    GraphDBSyncSvcForTest graphDBSyncSvcForTest;
@@ -48,10 +46,6 @@ public class StructureTest {
 //    @Autowired
 //    ClientController clientController;
 //
-//    @Before
-//    public void setup() {
-//        new SpringDockerComposeRunner(discoveryClient, Arrays.asList("arango"), "kg-inference", "kg-indexing", "kg-graphdb-sync", "kg-primarystore", "kg-jsonld", "kg-ids", "kg-permissions").start();
-//    }
 //
 //    @Test
 //    public void getTypesOnEmptyDBTest() {

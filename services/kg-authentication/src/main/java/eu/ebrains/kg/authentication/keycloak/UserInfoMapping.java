@@ -25,7 +25,9 @@ package eu.ebrains.kg.authentication.keycloak;
 import eu.ebrains.kg.authentication.controller.AuthenticationRepository;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Component;
-import java.util.*;
+
+import java.util.List;
+import java.util.Map;
 
 @Component
 public class UserInfoMapping {

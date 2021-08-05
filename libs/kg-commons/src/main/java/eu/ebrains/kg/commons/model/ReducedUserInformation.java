@@ -26,7 +26,6 @@ import eu.ebrains.kg.commons.jsonld.JsonLdConsts;
 import eu.ebrains.kg.commons.jsonld.NormalizedJsonLd;
 import eu.ebrains.kg.commons.semantics.vocabularies.SchemaOrgVocabulary;
 
-import java.util.Collections;
 import java.util.List;
 
 public class ReducedUserInformation extends NormalizedJsonLd {

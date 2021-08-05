@@ -37,26 +37,16 @@
         </license>
     </licenses>
 
+
+    <!-- Ensure this is in sync with kg-microservice -->
     <properties>
         <java.version>11</java.version>
         <jackson.version>2.9.9</jackson.version>
-        <spring-cloud.version>Hoxton.SR8</spring-cloud.version>
-        <spring-webflux.version>2.3.4.RELEASE</spring-webflux.version>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
+        <docker.image.prefix>registry.humanbrainproject.org/humanbrainproject/kg-core</docker.image.prefix>
+        <spring.version>2.3.4.RELEASE</spring.version>
     </properties>
-
-    <dependencyManagement>
-        <dependencies>
-            <dependency>
-                <groupId>org.springframework.cloud</groupId>
-                <artifactId>spring-cloud-dependencies</artifactId>
-                <version>${spring-cloud.version}</version>
-                <type>pom</type>
-                <scope>import</scope>
-            </dependency>
-        </dependencies>
-    </dependencyManagement>
 
     <dependencies>
         <dependency>

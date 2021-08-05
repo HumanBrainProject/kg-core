@@ -24,13 +24,11 @@ package eu.ebrains.kg;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
-import org.springframework.cloud.netflix.eureka.EnableEurekaClient;
 import org.springframework.context.annotation.Configuration;
 
 /**
  * This is the main application for the KG core API service
  */
-@EnableEurekaClient
 @SpringBootApplication
 @Configuration
 public class KgCoreApplication {

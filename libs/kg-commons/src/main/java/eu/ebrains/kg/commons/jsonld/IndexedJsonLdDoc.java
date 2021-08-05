@@ -22,8 +22,6 @@
 
 package eu.ebrains.kg.commons.jsonld;
 
-import eu.ebrains.kg.commons.semantics.vocabularies.EBRAINSVocabulary;
-
 import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;

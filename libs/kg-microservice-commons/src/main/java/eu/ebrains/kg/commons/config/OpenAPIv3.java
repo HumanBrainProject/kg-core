@@ -50,7 +50,6 @@ import java.util.List;
 @Configuration
 public class OpenAPIv3 {
 
-
     private static String[] getPathsByAnnotation(RequestMappingHandlerMapping requestHandlerMapping, String restrictToPackage, Class<? extends Annotation>... groupAnnotations){
         List<String> paths = new ArrayList<>();
         String[] pathsArr = {};
@@ -110,12 +109,8 @@ public class OpenAPIv3 {
 
 
     @Bean
-    public OpenAPI customOpenAPI(@Value("${spring.application.name}") String applicationName, @Value("${eu.ebrains.kg.login.endpoint}") String loginEndpoint, @Value("${eu.ebrains.kg.api.basePath}") String basePath, @Value("${eu.ebrains.kg.api.versioned}") boolean versioned, @Value("${eu.ebrains.kg.server}") String server,  @Value("${eu.ebrains.kg.commit}") String commit) {
-        SecurityScheme clientId = new SecurityScheme().type(SecurityScheme.Type.APIKEY).in(SecurityScheme.In.HEADER).name("Client-Id").description("The client-id for the proxied client-authentication. To be provided with \"Client-SA-Secret\" or the combination of \"Client-Secret\" and \"Authorization\"");
-        SecurityScheme clientSecret = new SecurityScheme().type(SecurityScheme.Type.APIKEY).in(SecurityScheme.In.HEADER).name("Client-Secret").description("The client-secret for the proxied client-authentication. To be provided with \"Client-Id\" and \"Authorization\"");
-        SecurityScheme serviceAccountSecret = new SecurityScheme().type(SecurityScheme.Type.APIKEY).in(SecurityScheme.In.HEADER).name("Client-SA-Secret").description("Provide the client-secret in this header to authenticate as the service account. To be provided with \"Client-Id\"");
-
-        SecurityScheme clientToken = new SecurityScheme().type(SecurityScheme.Type.APIKEY).in(SecurityScheme.In.HEADER).name("Client-Authorization").description("The bearer token for the service account to contextualize the authentication to this client. Although convenience mechanisms for authenticating clients directly with client-id and client-secret exist (see technical documentation), this is the recommended way of integration since you don't expose any credentials but the short-lived access-tokens to the KG core.");
+    public OpenAPI customOpenAPI(@Value("${eu.ebrains.kg.login.endpoint}") String loginEndpoint,  @Value("${eu.ebrains.kg.commit}") String commit) {
+        SecurityScheme clientToken = new SecurityScheme().type(SecurityScheme.Type.APIKEY).in(SecurityScheme.In.HEADER).name("Client-Authorization").description("The bearer token for the service account to contextualize the authentication to this client.");
 
         OAuthFlow oAuthFlow = new OAuthFlow();
         oAuthFlow.authorizationUrl(loginEndpoint);

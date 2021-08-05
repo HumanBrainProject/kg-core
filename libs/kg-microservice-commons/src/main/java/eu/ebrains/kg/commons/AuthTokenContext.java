@@ -32,27 +32,22 @@ import javax.servlet.http.HttpServletRequest;
 import java.util.Map;
 import java.util.UUID;
 
-
-@Component
 /**
  * This is the access point for getting the token of the current user and the client.
  * Usually, this bean is used indirectly from ({@link AuthContext}) but in some cases, this can cause a circular bean
  * reference. In these cases, this bean can be used directly.
  */
+@Component
 public class AuthTokenContext {
     private final HttpServletRequest request;
-    private final KeycloakSvc keycloakSvc;
     private final static Logger logger = LoggerFactory.getLogger(AuthTokenContext.class);
 
     public static final String CLIENT_AUTHORIZATION_HEADER = "Client-Authorization";
     public static final String AUTHORIZATION_HEADER = "Authorization";
 
-
-
     // IntelliJ reports the injection of HttpServletRequest to be an error -> but it actually is not...
-    public AuthTokenContext(KeycloakSvc keycloakSvc, HttpServletRequest request) {
+    public AuthTokenContext(HttpServletRequest request) {
         this.request = request;
-        this.keycloakSvc = keycloakSvc;
     }
 
     public AuthTokens getAuthTokens() {
@@ -62,22 +57,6 @@ public class AuthTokenContext {
         }
         String clientAuthorization = headers.get(CLIENT_AUTHORIZATION_HEADER.toLowerCase());
         String userAuthorization = headers.get(AUTHORIZATION_HEADER.toLowerCase());
-        if(clientAuthorization==null) {
-            String clientId = headers.get("Client-Id".toLowerCase());
-            String clientSecret = headers.get("Client-Secret".toLowerCase());
-            String clientSaSecret = headers.get("Client-SA-Secret".toLowerCase());
-            if (clientId != null) {
-                //TODO token caching!?
-                if (clientSecret != null) {
-                    clientAuthorization = keycloakSvc.getToken(clientId, clientSecret);
-                } else if (clientSaSecret != null) {
-                    clientAuthorization = keycloakSvc.getToken(clientId, clientSaSecret);
-                    if(userAuthorization==null) {
-                        userAuthorization = clientAuthorization;
-                    }
-                }
-            }
-        }
         String transactionId = headers.get("Transaction-Id".toLowerCase());
         AuthTokens authTokens = new AuthTokens(
                 userAuthorization != null ? new UserAuthToken(userAuthorization) : null,

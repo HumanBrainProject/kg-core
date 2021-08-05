@@ -25,15 +25,9 @@ package eu.ebrains.kg.authentication.controller;
 import com.arangodb.ArangoCollection;
 import com.arangodb.ArangoDatabase;
 import com.arangodb.model.DocumentCreateOptions;
-import eu.ebrains.kg.arango.commons.aqlBuilder.AQL;
-import eu.ebrains.kg.arango.commons.aqlBuilder.ArangoVocabulary;
-import eu.ebrains.kg.arango.commons.model.ArangoCollectionReference;
 import eu.ebrains.kg.arango.commons.model.ArangoDatabaseProxy;
-import eu.ebrains.kg.authentication.model.AcceptedTermsOfUse;
 import eu.ebrains.kg.authentication.model.ArangoTermsOfUse;
-import eu.ebrains.kg.authentication.model.TermsOfUseAcceptance;
 import eu.ebrains.kg.commons.JsonAdapter;
-import eu.ebrains.kg.commons.model.SpaceName;
 import eu.ebrains.kg.commons.model.TermsOfUse;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.cache.annotation.CacheEvict;
@@ -41,7 +35,7 @@ import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Component;
 
 import javax.annotation.PostConstruct;
-import java.util.*;
+import java.util.Arrays;
 
 @Component
 public class TermsOfUseRepository {

@@ -24,21 +24,14 @@ package eu.ebrains.kg.primaryStore.api;
 
 import eu.ebrains.kg.commons.api.PrimaryStoreEvents;
 import eu.ebrains.kg.commons.jsonld.InstanceId;
-import eu.ebrains.kg.commons.model.DataStage;
 import eu.ebrains.kg.commons.model.Event;
-import eu.ebrains.kg.commons.model.PersistedEvent;
 import eu.ebrains.kg.commons.model.SpaceName;
 import eu.ebrains.kg.primaryStore.controller.EventProcessor;
-import eu.ebrains.kg.primaryStore.controller.EventRepository;
 import eu.ebrains.kg.primaryStore.controller.InferenceProcessor;
-import eu.ebrains.kg.primaryStore.controller.SSEProducer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.http.codec.ServerSentEvent;
 import org.springframework.stereotype.Component;
-import reactor.core.publisher.Flux;
 
-import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 
@@ -49,32 +42,11 @@ public class PrimaryStoreEventsAPI implements PrimaryStoreEvents.Client {
 
     private final InferenceProcessor inferenceProcessor;
 
-    private final SSEProducer sseProducer;
-
-    private final EventRepository eventRepository;
-
     private final Logger logger = LoggerFactory.getLogger(getClass());
 
-    public PrimaryStoreEventsAPI(EventProcessor eventProcessor, SSEProducer sseProducer, EventRepository eventRepository, InferenceProcessor inferenceProcessor) {
+    public PrimaryStoreEventsAPI(EventProcessor eventProcessor, InferenceProcessor inferenceProcessor) {
         this.eventProcessor = eventProcessor;
-        this.sseProducer = sseProducer;
-        this.eventRepository = eventRepository;
         this.inferenceProcessor = inferenceProcessor;
-    }
-
-    @Override
-    public Flux<ServerSentEvent<PersistedEvent>> streamEvents(DataStage stage, String lastEventId, String lastEventIdFromQuery) {
-        return sseProducer.initiateNewFlux(stage, lastEventId != null ? lastEventId : lastEventIdFromQuery);
-    }
-
-    @Override
-    public Long getNumberOfRegisteredEvents(DataStage stage) {
-        return eventRepository.count(stage);
-    }
-
-    @Override
-    public List<PersistedEvent> getEventsSince(DataStage stage, String lastEventId) {
-        return eventRepository.eventsByLastEventId(stage, lastEventId);
     }
 
     @Override

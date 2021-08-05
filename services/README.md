@@ -86,10 +86,6 @@ The Knowledge Graph is following the microservices approach. Here are the differ
 
 ## Infrastructure
 
-### kg-service-discovery
-**Description**: A simple wrapper for Eureka to provide the service discovery functionality.   
-**Dependencies**: - 
-
 ```puml
 @startuml
 skinparam componentStyle uml2

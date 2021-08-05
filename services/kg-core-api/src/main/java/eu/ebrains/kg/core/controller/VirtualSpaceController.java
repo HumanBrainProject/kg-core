@@ -25,10 +25,16 @@ package eu.ebrains.kg.core.controller;
 import eu.ebrains.kg.commons.AuthContext;
 import eu.ebrains.kg.commons.jsonld.JsonLdDoc;
 import eu.ebrains.kg.commons.jsonld.NormalizedJsonLd;
-import eu.ebrains.kg.commons.model.*;
+import eu.ebrains.kg.commons.model.DataStage;
+import eu.ebrains.kg.commons.model.ExtendedResponseConfiguration;
+import eu.ebrains.kg.commons.model.ResponseConfiguration;
+import eu.ebrains.kg.commons.model.Result;
 import org.springframework.stereotype.Component;
 
-import java.util.*;
+import java.util.Collection;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 

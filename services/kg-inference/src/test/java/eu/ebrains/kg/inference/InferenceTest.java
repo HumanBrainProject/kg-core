@@ -22,18 +22,14 @@
 
 package eu.ebrains.kg.inference;
 
-import com.netflix.discovery.EurekaClient;
 import eu.ebrains.kg.commons.IdUtils;
 import eu.ebrains.kg.commons.jsonld.NormalizedJsonLd;
-import eu.ebrains.kg.commons.model.DataStage;
 import eu.ebrains.kg.commons.model.Event;
 import eu.ebrains.kg.commons.model.SpaceName;
-import eu.ebrains.kg.docker.SpringDockerComposeRunner;
 import eu.ebrains.kg.inference.api.InferenceAPI;
-import eu.ebrains.kg.test.GraphDB4Test;
 import eu.ebrains.kg.test.TestObjectFactory;
 import org.junit.Assert;
-import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -42,24 +38,16 @@ import org.springframework.test.context.junit4.SpringRunner;
 
 import java.io.IOException;
 import java.net.URISyntaxException;
-import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
 
+//FIXME - We need to transfer this to a system test (in the bundle)
+
 @RunWith(SpringRunner.class)
 @SpringBootTest
+@Ignore
 public class InferenceTest {
 
-    @Autowired
-    EurekaClient discoveryClient;
-
-    @Before
-    public void setup() throws IOException {
-        new SpringDockerComposeRunner(discoveryClient, true, false, Arrays.asList("arango"), "kg-graphdb-sync", "kg-primarystore", "kg-jsonld").start();
-    }
-
-    @Autowired
-    GraphDB4Test graphDBSvc;
 
     @Autowired
     InferenceAPI inference;
@@ -74,7 +62,7 @@ public class InferenceTest {
         //Given
         UUID homerId = UUID.randomUUID();
         NormalizedJsonLd homer = TestObjectFactory.createJsonLd( "simpsons/homer.json", idUtils.buildAbsoluteUrl(homerId));
-        graphDBSvc.upsert(homer, DataStage.NATIVE, homerId, space);
+//        graphDBSvc.upsert(homer, DataStage.NATIVE, homerId, space);
 
         //When
         List<Event> events = inference.infer(space.getName(), homerId);
@@ -91,15 +79,15 @@ public class InferenceTest {
         //Given
         UUID bartId = UUID.randomUUID();
         NormalizedJsonLd bart = TestObjectFactory.createJsonLd( "simpsons/bart.json", idUtils.buildAbsoluteUrl(bartId));
-        graphDBSvc.upsert(bart, DataStage.NATIVE, bartId, space);
+//        graphDBSvc.upsert(bart, DataStage.NATIVE, bartId, space);
 
 
         UUID bartId2 = UUID.randomUUID();
         NormalizedJsonLd bart2 =TestObjectFactory.createJsonLd( "simpsons/bart2.json", idUtils.buildAbsoluteUrl(bartId2));
-        graphDBSvc.upsert(bart2, DataStage.NATIVE, bartId2, space);
+//        graphDBSvc.upsert(bart2, DataStage.NATIVE, bartId2, space);
 
         NormalizedJsonLd bartUpdate = TestObjectFactory.createJsonLd( "simpsons/bartUpdate.json", idUtils.buildAbsoluteUrl(bartId));
-        graphDBSvc.upsert(bartUpdate, DataStage.NATIVE, bartId, space);
+//        graphDBSvc.upsert(bartUpdate, DataStage.NATIVE, bartId, space);
 
 
         //When

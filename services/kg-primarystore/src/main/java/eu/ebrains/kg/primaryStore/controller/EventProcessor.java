@@ -49,8 +49,6 @@ import java.util.stream.Collectors;
 public class EventProcessor {
     private final Indexing.Client indexing;
 
-    private final SSEProducer sseProducer;
-
     private final EventRepository eventRepository;
 
     private final EventController eventController;
@@ -65,9 +63,8 @@ public class EventProcessor {
 
     private final Logger logger = LoggerFactory.getLogger(getClass());
 
-    public EventProcessor(Indexing.Client indexing, SSEProducer sseProducer, EventRepository eventRepository, EventController eventController, Inference.Client inference, UserResolver userResolver, InferenceProcessor inferenceProcessor) {
+    public EventProcessor(Indexing.Client indexing, EventRepository eventRepository, EventController eventController, Inference.Client inference, UserResolver userResolver, InferenceProcessor inferenceProcessor) {
         this.indexing = indexing;
-        this.sseProducer = sseProducer;
         this.eventRepository = eventRepository;
         this.eventController = eventController;
         this.inference = inference;
@@ -88,7 +85,6 @@ public class EventProcessor {
             eventRepository.recordFailedEvent(new FailedEvent(persistedEvent, e, ZonedDateTime.now()));
             throw e;
         }
-        sseProducer.emit(persistedEvent);
         if (persistedEvent.getDataStage() == DataStage.NATIVE) {
             if (deferInference) {
                 DeferredInference deferredInference = new DeferredInference();

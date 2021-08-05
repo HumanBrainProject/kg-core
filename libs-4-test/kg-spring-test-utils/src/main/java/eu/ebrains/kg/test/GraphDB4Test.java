@@ -30,12 +30,10 @@ import eu.ebrains.kg.commons.model.DataStage;
 import eu.ebrains.kg.commons.model.Event;
 import eu.ebrains.kg.commons.model.SpaceName;
 import eu.ebrains.kg.commons.model.TodoItem;
-import org.springframework.stereotype.Component;
 
 import java.util.Collections;
 import java.util.UUID;
 
-@Component
 public class GraphDB4Test {
 
     private final GraphDBTodoLists.Client graphDBTodoLists;

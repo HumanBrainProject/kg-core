@@ -49,7 +49,8 @@
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-actuator</artifactId>
-            <version>${spring-webflux.version}</version>
+            <version>${spring.version}</version>
+            <scope>provided</scope>
         </dependency>
         <dependency>
             <groupId>io.micrometer</groupId>
@@ -59,16 +60,7 @@
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-webflux</artifactId>
-            <version>${spring-webflux.version}</version>
-            <scope>provided</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.springframework.cloud</groupId>
-            <artifactId>spring-cloud-starter-loadbalancer</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.springframework.cloud</groupId>
-            <artifactId>spring-cloud-starter-netflix-eureka-client</artifactId>
+            <version>${spring.version}</version>
             <scope>provided</scope>
         </dependency>
         <dependency>
@@ -79,7 +71,7 @@
         <dependency>
             <groupId>org.springdoc</groupId>
             <artifactId>springdoc-openapi-ui</artifactId>
-            <version>1.4.6</version>
+            <version>1.5.8</version>
         </dependency>
         <dependency>
             <groupId>eu.ebrains.kg</groupId>

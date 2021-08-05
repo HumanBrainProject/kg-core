@@ -22,14 +22,11 @@
 
 package eu.ebrains.kg.ids.api;
 
-import com.netflix.discovery.EurekaClient;
 import eu.ebrains.kg.commons.IdUtils;
 import eu.ebrains.kg.commons.jsonld.JsonLdIdMapping;
 import eu.ebrains.kg.commons.model.DataStage;
 import eu.ebrains.kg.commons.model.IdWithAlternatives;
 import eu.ebrains.kg.commons.model.SpaceName;
-import eu.ebrains.kg.docker.SpringDockerComposeRunner;
-import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -37,7 +34,6 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.junit4.SpringRunner;
 
-import java.io.IOException;
 import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
@@ -50,21 +46,13 @@ import static org.junit.Assert.*;
 @TestPropertySource(properties = {"eu.ebrains.kg.arango.pwd = changeMe"})
 public class IdsTest {
 
-    @Autowired
-    EurekaClient discoveryClient;
-
 
     @Autowired
-    IdsAPIRest ids;
+    IdsAPI ids;
 
     @Autowired
     IdUtils idUtils;
 
-
-    @Before
-    public void setup() throws IOException {
-        new SpringDockerComposeRunner(discoveryClient, true, false, Collections.singletonList("arango")).start();
-    }
 
     @Test
     public void resolveId() {

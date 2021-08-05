@@ -42,7 +42,7 @@ import eu.ebrains.kg.graphdb.commons.model.ArangoDocument;
 import eu.ebrains.kg.graphdb.commons.model.ArangoEdge;
 import eu.ebrains.kg.graphdb.commons.model.ArangoInstance;
 import eu.ebrains.kg.graphdb.ingestion.model.*;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;

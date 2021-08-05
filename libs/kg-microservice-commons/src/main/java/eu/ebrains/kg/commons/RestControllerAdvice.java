@@ -69,29 +69,6 @@ public class RestControllerAdvice {
         return paginationParam;
     }
 
-    /**
-     * Validates that there is a valid authorization header combination handed in
-     */
-    @ModelAttribute
-    public void validateAuthorizationTokenCombinations(@RequestHeader(value = "Authorization", required = false) String userAuthorizationToken, @RequestHeader(value = "Client-Authorization", required = false) String clientAuthorizationToken, @RequestHeader(value = "Client-Id", required = false) String clientId, @RequestHeader(value = "Client-Secret", required = false) String clientSecret, @RequestHeader(value = "Client-SA-Secret", required = false) String clientServiceAccountSecret) {
-        if (clientAuthorizationToken != null) {
-            if(clientId !=null || clientSecret != null || clientServiceAccountSecret!=null) {
-                throw new InvalidRequestException("You've provided a Client-Authorization header, so you shouldn't define any of Client-Id, Client-Secret or Client-SA-Secret.");
-            }
-        }
-        if (clientId != null) {
-            if(clientSecret == null && clientServiceAccountSecret == null){
-                throw new InvalidRequestException("You should provide either the Client-Secret or Client-SA-Secret header with Client-Id.");
-            }
-            else if (clientSecret != null && clientServiceAccountSecret != null){
-                throw new InvalidRequestException("You should provide either a Client-Secret or a Client-SA-Secret header, but not both.");
-            }
-            if (clientServiceAccountSecret != null && userAuthorizationToken!=null) {
-               throw new InvalidRequestException("You should not provide a Client-SA-Secret header when you've already provided an Authorization header.");
-            }
-        }
-    }
-
     @ExceptionHandler({InstanceNotFoundException.class})
     protected ResponseEntity<?> handleInstanceNotFound(RuntimeException ex, WebRequest request) {
         return ResponseEntity.notFound().build();
