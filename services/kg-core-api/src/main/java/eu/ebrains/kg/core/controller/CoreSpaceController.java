@@ -137,7 +137,7 @@ public class CoreSpaceController {
     }
 
     public boolean isTypeInSpaceEmpty(SpaceName space, Type type) {
-        return instanceController.getInstances(DataStage.IN_PROGRESS, type, space, null, new ResponseConfiguration().setReturnPayload(false), new PaginationParam().setFrom(0).setSize(0L)).getTotalResults() == 0;
+        return instanceController.getInstances(DataStage.IN_PROGRESS, type, space, null, null, null, new ResponseConfiguration().setReturnPayload(false), new PaginationParam().setFrom(0).setSize(0L)).getTotalResults() == 0;
 
     }
 

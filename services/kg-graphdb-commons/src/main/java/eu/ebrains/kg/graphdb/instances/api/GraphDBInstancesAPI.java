@@ -80,7 +80,7 @@ public class GraphDBInstancesAPI implements GraphDBInstances.Client {
 
     @Override
     @ExposesData
-    public Paginated<NormalizedJsonLd> getInstancesByType(DataStage stage, String typeName, String space, String searchByLabel, boolean returnAlternatives, boolean returnEmbedded, PaginationParam paginationParam) {
+    public Paginated<NormalizedJsonLd> getInstancesByType(DataStage stage, String typeName, String space, String searchByLabel, String filterProperty, String filterValue, boolean returnAlternatives, boolean returnEmbedded, PaginationParam paginationParam) {
         Type type = new Type(typeName);
         List<String> searchableProperties = null;
         if ((searchByLabel != null && !searchByLabel.isBlank())) {
@@ -104,7 +104,7 @@ public class GraphDBInstancesAPI implements GraphDBInstances.Client {
                 type = Type.fromPayload(typeInformation.get(0));
             }
         }
-        return repository.getDocumentsByTypes(stage, type, space != null && !space.isBlank() ? new SpaceName(space) : null, paginationParam, searchByLabel, returnEmbedded, returnAlternatives, searchableProperties);
+        return repository.getDocumentsByTypes(stage, type, space != null && !space.isBlank() ? new SpaceName(space) : null, filterProperty, filterValue, paginationParam, searchByLabel, returnEmbedded, returnAlternatives, searchableProperties);
     }
 
     @Override

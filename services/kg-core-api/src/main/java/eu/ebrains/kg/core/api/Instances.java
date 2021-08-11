@@ -211,7 +211,7 @@ public class Instances {
     @GetMapping("/instances")
     @ExposesData
     @Simple
-    public PaginatedResult<NormalizedJsonLd> getInstances(@RequestParam("stage") ExposedStage stage, @RequestParam("type") String type, @RequestParam(value = "space", required = false) @Parameter(description = "The space of the instances to be listed or \""+SpaceName.PRIVATE_SPACE+"\" for your private space") String space, @RequestParam(value = "searchByLabel", required = false) String searchByLabel, @ParameterObject ResponseConfiguration responseConfiguration, @ParameterObject PaginationParam paginationParam) {
+    public PaginatedResult<NormalizedJsonLd> getInstances(@RequestParam("stage") ExposedStage stage, @RequestParam("type") String type, @RequestParam(value = "space", required = false) @Parameter(description = "The space of the instances to be listed or \""+SpaceName.PRIVATE_SPACE+"\" for your private space") String space, @RequestParam(value = "searchByLabel", required = false) String searchByLabel, @RequestParam(value = "filterProperty", required = false) String filterProperty,  @RequestParam(value = "filterValue", required = false) String filterValue, @ParameterObject ResponseConfiguration responseConfiguration, @ParameterObject PaginationParam paginationParam) {
         PaginatedResult<NormalizedJsonLd> result = null;
         Date startTime = new Date();
         if(virtualSpaceController.isVirtualSpace(space)){
@@ -226,7 +226,7 @@ public class Instances {
         else{
             SpaceName spaceName = authContext.resolveSpaceName(space);
             searchByLabel = enrichSearchTermIfItIsAUUID(searchByLabel);
-            result = PaginatedResult.ok(instanceController.getInstances(stage.getStage(), new Type(type), spaceName, searchByLabel, responseConfiguration, paginationParam));
+            result = PaginatedResult.ok(instanceController.getInstances(stage.getStage(), new Type(type), spaceName, searchByLabel, filterProperty, filterValue, responseConfiguration, paginationParam));
         }
         result.setExecutionDetails(startTime, new Date());
         return result;

@@ -48,7 +48,7 @@ public interface GraphDBInstances {
     NormalizedJsonLd getQueryById(String space, UUID id,  DataStage stage);
 
     @ExposesData
-    Paginated<NormalizedJsonLd> getInstancesByType(DataStage stage, String type, String space, String searchByLabel, boolean returnAlternatives, boolean returnEmbedded, PaginationParam paginationParam);
+    Paginated<NormalizedJsonLd> getInstancesByType(DataStage stage, String type, String space, String searchByLabel, String filterLabel, String filterValue, boolean returnAlternatives, boolean returnEmbedded, PaginationParam paginationParam);
 
     @ExposesQuery
     Paginated<NormalizedJsonLd> getQueriesByType(DataStage stage, String searchByLabel, boolean returnAlternatives, boolean returnEmbedded, PaginationParam paginationParam, String rootType);

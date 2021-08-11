@@ -36,6 +36,7 @@ import eu.ebrains.kg.arango.commons.model.ArangoDocumentReference;
 import eu.ebrains.kg.arango.commons.model.InternalSpace;
 import eu.ebrains.kg.commons.AuthContext;
 import eu.ebrains.kg.commons.IdUtils;
+import eu.ebrains.kg.commons.JsonAdapter;
 import eu.ebrains.kg.commons.Tuple;
 import eu.ebrains.kg.commons.exception.AmbiguousException;
 import eu.ebrains.kg.commons.exception.ForbiddenException;
@@ -78,10 +79,11 @@ public class ArangoRepositoryInstances {
     private final ArangoRepositoryTypes typesRepo;
     private final ArangoDatabases databases;
     private final IdUtils idUtils;
+    private final JsonAdapter jsonAdapter;
 
     public final static int DEFAULT_INCOMING_PAGESIZE = 10;
 
-    public ArangoRepositoryInstances(ArangoRepositoryCommons arangoRepositoryCommons, PermissionsController permissionsController, Permissions permissions, AuthContext authContext, ArangoUtils arangoUtils, QueryController queryController, ArangoRepositoryTypes typesRepo, ArangoDatabases databases, IdUtils idUtils) {
+    public ArangoRepositoryInstances(ArangoRepositoryCommons arangoRepositoryCommons, PermissionsController permissionsController, Permissions permissions, AuthContext authContext, ArangoUtils arangoUtils, QueryController queryController, ArangoRepositoryTypes typesRepo, ArangoDatabases databases, IdUtils idUtils, JsonAdapter jsonAdapter) {
         this.arangoRepositoryCommons = arangoRepositoryCommons;
         this.permissionsController = permissionsController;
         this.permissions = permissions;
@@ -91,6 +93,7 @@ public class ArangoRepositoryInstances {
         this.typesRepo = typesRepo;
         this.databases = databases;
         this.idUtils = idUtils;
+        this.jsonAdapter = jsonAdapter;
     }
 
     @ExposesMinimalData
@@ -589,8 +592,22 @@ public class ArangoRepositoryInstances {
         EMPTY, BY_ID, SIMPLE, DYNAMIC
     }
 
+    private Object getParsedFilterValue(String filterValue){
+
+        try{
+            return jsonAdapter.fromJson(filterValue, Map.class);
+        } catch(RuntimeException runtimeException1){
+            try {
+                return jsonAdapter.fromJson(filterValue, List.class);
+            }
+            catch(RuntimeException runtimeException2){
+                return filterValue;
+            }
+        }
+    }
+
     @ExposesData
-    public Paginated<NormalizedJsonLd> getDocumentsByTypes(DataStage stage, Type typeWithLabelInfo, SpaceName space, PaginationParam paginationParam, String search, boolean embedded, boolean alternatives, List<String> searchableProperties) {
+    public Paginated<NormalizedJsonLd> getDocumentsByTypes(DataStage stage, Type typeWithLabelInfo, SpaceName space, String filterProperty, String filterValue, PaginationParam paginationParam, String search, boolean embedded, boolean alternatives, List<String> searchableProperties) {
         if (typeWithLabelInfo != null) {
             //TODO find label field for type (and client) and filter by search if set.
             ArangoDatabase database = databases.getByStage(stage);
@@ -622,6 +639,11 @@ public class ArangoRepositoryInstances {
                         aql.addLine(AQL.trust(String.format("FILTER @typeFilter IN v.`%s` AND v.`%s` == null", JsonLdConsts.TYPE, IndexedJsonLdDoc.EMBEDDED)));
                         bindVars.put("typeFilter", typeWithLabelInfo.getName());
                         bindVars.put("@singleSpace", ArangoCollectionReference.fromSpace(restrictToSpaces.getB().iterator().next()).getCollectionName());
+                        if(filterProperty != null && filterValue!=null){
+                            aql.addLine(AQL.trust("AND v.@property == @value"));
+                            bindVars.put("property", filterProperty);
+                            bindVars.put("value", getParsedFilterValue(filterValue));
+                        }
                         break;
                     case DYNAMIC:
                         arangoUtils.getOrCreateArangoCollection(database, InternalSpace.TYPE_EDGE_COLLECTION);
@@ -640,13 +662,21 @@ public class ArangoRepositoryInstances {
                             aql.addLine(AQL.trust("FILTER v." + ArangoVocabulary.COLLECTION + " == @spaceFilter"));
                             bindVars.put("spaceFilter", ArangoCollectionReference.fromSpace(space).getCollectionName());
                         }
+                        if(filterProperty != null && filterValue!=null){
+                            aql.addLine(AQL.trust("FILTER v.@property == @value"));
+                            bindVars.put("property", filterProperty);
+                            bindVars.put("value", getParsedFilterValue(filterValue));
+                        }
                         break;
                 }
                 switch (mode) {
                     case SIMPLE:
                     case DYNAMIC:
                         addSearchFilter(bindVars, aql, search, searchableProperties!=null && !searchableProperties.isEmpty());
-                        aql.addLine(AQL.trust(String.format("SORT v.%s, v.%s ASC", IndexedJsonLdDoc.LABEL, ArangoVocabulary.KEY)));
+                        if(paginationParam.getSize()!=null) {
+                            //We only sort if there is pagination involved.
+                            aql.addLine(AQL.trust(String.format("SORT v.%s, v.%s ASC", IndexedJsonLdDoc.LABEL, ArangoVocabulary.KEY)));
+                        }
                         aql.addPagination(paginationParam);
                         break;
                 }
