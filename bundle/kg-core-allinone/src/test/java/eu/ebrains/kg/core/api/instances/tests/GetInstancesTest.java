@@ -51,6 +51,6 @@ public class GetInstancesTest extends AbstractInstanceTest {
 
     @Override
     protected void run() {
-        response = this.instances.getInstances(ExposedStage.IN_PROGRESS, originalInstanceA.types().get(0), null, null, defaultResponseConfiguration, defaultPaginationParam);
+        response = this.instances.getInstances(ExposedStage.IN_PROGRESS, originalInstanceA.types().get(0), null, null, null, null, defaultResponseConfiguration, defaultPaginationParam);
     }
 }

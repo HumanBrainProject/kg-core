@@ -87,7 +87,7 @@ public class AbstractInstancesLoadTest extends AbstractLoadTest {
     }
 
     protected List<NormalizedJsonLd> getAllInstancesFromInProgress(ExposedStage stage) {
-        return this.instances.getInstances(stage, type, null, null, DEFAULT_RESPONSE_CONFIG, EMPTY_PAGINATION).getData();
+        return this.instances.getInstances(stage, type, null, null, null, null, DEFAULT_RESPONSE_CONFIG, EMPTY_PAGINATION).getData();
     }
 
     protected void triggerDeferredInference() {
