@@ -25,7 +25,9 @@ package eu.ebrains.kg.primaryStore.controller;
 import com.arangodb.ArangoCollection;
 import com.arangodb.model.*;
 import eu.ebrains.kg.arango.commons.aqlBuilder.AQL;
+import eu.ebrains.kg.arango.commons.model.ArangoCollectionReference;
 import eu.ebrains.kg.arango.commons.model.ArangoDatabaseProxy;
+import eu.ebrains.kg.graphdb.commons.controller.ArangoUtils;
 import eu.ebrains.kg.commons.JsonAdapter;
 import eu.ebrains.kg.commons.model.DataStage;
 import eu.ebrains.kg.commons.model.PersistedEvent;
@@ -44,13 +46,16 @@ import java.util.stream.Collectors;
 public class EventRepository {
     private final ArangoDatabaseProxy arangoDatabase;
 
+    private final ArangoUtils arangoUtils;
+
     private final JsonAdapter jsonAdapter;
 
     private final Logger logger = LoggerFactory.getLogger(getClass());
 
-    public EventRepository(@Qualifier("primaryStoreDB") ArangoDatabaseProxy arangoDatabase, JsonAdapter jsonAdapter) {
+    public EventRepository(@Qualifier("primaryStoreDB") ArangoDatabaseProxy arangoDatabase, JsonAdapter jsonAdapter, ArangoUtils arangoUtils) {
         this.arangoDatabase = arangoDatabase;
         this.jsonAdapter = jsonAdapter;
+        this.arangoUtils = arangoUtils;
     }
 
     void recordFailedEvent(FailedEvent e) {
@@ -92,22 +97,19 @@ public class EventRepository {
     }
 
     private ArangoCollection getOrCreateCollection(DataStage stage) {
-        return getOrCreateCollection(getCollectionName(stage), stage);
+        return getOrCreateCollection(new ArangoCollectionReference(getCollectionName(stage), false));
     }
 
     private ArangoCollection getOrCreateFailuresCollection(DataStage stage) {
-        return getOrCreateCollection(getCollectionName(stage) + "_failures", stage);
+        return getOrCreateCollection(new ArangoCollectionReference(getCollectionName(stage) + "_failures", false));
     }
 
     private ArangoCollection getOrCreateDeferredInferenceCollection(DataStage stage) {
-        return getOrCreateCollection(getCollectionName(stage) + "_deferred", stage);
+        return getOrCreateCollection(new ArangoCollectionReference(getCollectionName(stage) + "_deferred", false));
     }
 
-    private ArangoCollection getOrCreateCollection(String collectionName, DataStage stage) {
-        ArangoCollection events = arangoDatabase.getOrCreate().collection(collectionName);
-        if (!events.exists()) {
-            events.create();
-        }
+    private ArangoCollection getOrCreateCollection(ArangoCollectionReference collectionReference) {
+        ArangoCollection events = arangoUtils.getOrCreateArangoCollection(arangoDatabase.getOrCreate(), collectionReference);
         events.ensurePersistentIndex(Arrays.asList("indexedTimestamp", "eventId"), new PersistentIndexOptions());
         events.ensureHashIndex(Collections.singleton("eventId"), new HashIndexOptions());
         events.ensureSkiplistIndex(Arrays.asList("resourceId", "indexedTimestamp"), new SkiplistIndexOptions());

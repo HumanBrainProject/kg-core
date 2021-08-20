@@ -28,6 +28,7 @@ import eu.ebrains.kg.commons.IdUtils;
 import eu.ebrains.kg.commons.jsonld.JsonLdId;
 import eu.ebrains.kg.commons.model.DataStage;
 import eu.ebrains.kg.commons.model.SpaceName;
+import eu.ebrains.kg.graphdb.commons.controller.ArangoUtils;
 import eu.ebrains.kg.ids.model.PersistedId;
 import eu.ebrains.kg.test.JsonAdapter4Test;
 import org.junit.Assert;
@@ -50,7 +51,7 @@ public class IdRepositoryTest {
         SpaceName foo = new SpaceName("foo");
         IdUtils idUtils = new IdUtils(namespace);
 
-        IdRepository idRepository = Mockito.spy(new IdRepository(Mockito.mock(ArangoDatabaseProxy.class), new JsonAdapter4Test(), idUtils));
+        IdRepository idRepository = Mockito.spy(new IdRepository(Mockito.mock(ArangoDatabaseProxy.class), new JsonAdapter4Test(), idUtils, Mockito.mock(ArangoUtils.class)));
         ArangoCollection collection = Mockito.mock(ArangoCollection.class);
         Mockito.doReturn(collection).when(idRepository).getOrCreateCollection(Mockito.any());
 

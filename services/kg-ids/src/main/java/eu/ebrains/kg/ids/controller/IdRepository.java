@@ -27,7 +27,9 @@ import com.arangodb.ArangoDatabase;
 import com.arangodb.model.AqlQueryOptions;
 import com.arangodb.model.DocumentCreateOptions;
 import com.arangodb.model.SkiplistIndexOptions;
+import eu.ebrains.kg.arango.commons.model.ArangoCollectionReference;
 import eu.ebrains.kg.arango.commons.model.ArangoDatabaseProxy;
+import eu.ebrains.kg.graphdb.commons.controller.ArangoUtils;
 import eu.ebrains.kg.commons.IdUtils;
 import eu.ebrains.kg.commons.JsonAdapter;
 import eu.ebrains.kg.commons.Tuple;
@@ -48,24 +50,27 @@ import java.util.stream.Collectors;
 public class IdRepository {
     private final ArangoDatabaseProxy arangoDatabase;
 
+    private final ArangoUtils arangoUtils;
+
     private final JsonAdapter jsonAdapter;
 
     private final IdUtils idUtils;
 
-    public PersistedId getId(UUID uuid, DataStage stage){
+    public PersistedId getId(UUID uuid, DataStage stage) {
         ArangoDatabase database = arangoDatabase.getOrCreate();
         ArangoCollection collection = database.collection(getCollectionName(stage));
-        if(collection.exists()){
+        if (collection.exists()) {
             String document = collection.getDocument(uuid.toString(), String.class);
             return jsonAdapter.fromJson(document, PersistedId.class);
         }
         return null;
     }
 
-    public IdRepository(@Qualifier("idsDB") ArangoDatabaseProxy arangoDatabase, JsonAdapter jsonAdapter, IdUtils idUtils) {
+    public IdRepository(@Qualifier("idsDB") ArangoDatabaseProxy arangoDatabase, JsonAdapter jsonAdapter, IdUtils idUtils, ArangoUtils arangoUtils) {
         this.arangoDatabase = arangoDatabase;
         this.jsonAdapter = jsonAdapter;
         this.idUtils = idUtils;
+        this.arangoUtils = arangoUtils;
     }
 
     /**
@@ -100,8 +105,8 @@ public class IdRepository {
     }
 
     public List<JsonLdIdMapping> resolveIds(DataStage stage, List<IdWithAlternatives> ids) {
-        Set<Tuple<String, SpaceName>> idsWithAlternatives = ids.stream().filter(Objects::nonNull).filter(id -> id.getAlternatives()!=null).map(id -> id.getAlternatives().stream().map(alternative -> new Tuple<String, SpaceName>().setA(alternative).setB(id.getSpace()!=null ? new SpaceName(id.getSpace()) : null)).collect(Collectors.toSet())).flatMap(Collection::stream).filter(Objects::nonNull).collect(Collectors.toSet());
-        idsWithAlternatives.addAll(ids.stream().map(id -> id!=null ? new Tuple<String, SpaceName>().setA(idUtils.buildAbsoluteUrl(id.getId()).getId()).setB(id.getSpace()!=null ? new SpaceName(id.getSpace()) : null) : null).filter(Objects::nonNull).collect(Collectors.toSet()));
+        Set<Tuple<String, SpaceName>> idsWithAlternatives = ids.stream().filter(Objects::nonNull).filter(id -> id.getAlternatives() != null).map(id -> id.getAlternatives().stream().map(alternative -> new Tuple<String, SpaceName>().setA(alternative).setB(id.getSpace() != null ? new SpaceName(id.getSpace()) : null)).collect(Collectors.toSet())).flatMap(Collection::stream).filter(Objects::nonNull).collect(Collectors.toSet());
+        idsWithAlternatives.addAll(ids.stream().map(id -> id != null ? new Tuple<String, SpaceName>().setA(idUtils.buildAbsoluteUrl(id.getId()).getId()).setB(id.getSpace() != null ? new SpaceName(id.getSpace()) : null) : null).filter(Objects::nonNull).collect(Collectors.toSet()));
         String collectionName = getCollectionName(stage);
         ArangoDatabase database = arangoDatabase.getOrCreate();
         if (!database.collection(collectionName).exists() || idsWithAlternatives.isEmpty()) {
@@ -115,14 +120,14 @@ public class IdRepository {
             if (counter > 0) {
                 sb.append(" OR ");
             }
-            if(searchKey.getB()!=null){
+            if (searchKey.getB() != null) {
                 sb.append("(");
             }
             sb.append("@identifier" + counter + " IN doc.alternativeIds");
             bindVars.put("identifier" + counter, searchKey.getA());
-            if(searchKey.getB()!=null){
-                sb.append(" AND doc._space==@space"+counter+")");
-                bindVars.put("space"+counter, searchKey.getB().getName());
+            if (searchKey.getB() != null) {
+                sb.append(" AND doc._space==@space" + counter + ")");
+                bindVars.put("space" + counter, searchKey.getB().getName());
             }
             counter++;
         }
@@ -164,16 +169,12 @@ public class IdRepository {
         return mappings;
     }
 
-
     private String getCollectionName(DataStage stage) {
         return stage.name().toLowerCase() + "_ids";
     }
 
     ArangoCollection getOrCreateCollection(DataStage stage) {
-        ArangoCollection ids = arangoDatabase.getOrCreate().collection(getCollectionName(stage));
-        if (!ids.exists()) {
-            ids.create();
-        }
+        ArangoCollection ids = arangoUtils.getOrCreateArangoCollection(arangoDatabase.getOrCreate(), new ArangoCollectionReference(getCollectionName(stage), false));
         ids.ensureSkiplistIndex(Arrays.asList("alternativeIds[*]", JsonLdConsts.ID), new SkiplistIndexOptions());
         ids.ensureSkiplistIndex(Collections.singletonList(JsonLdConsts.ID), new SkiplistIndexOptions());
         return ids;
