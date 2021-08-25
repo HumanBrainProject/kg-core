@@ -24,22 +24,21 @@ package eu.ebrains.kg.core.api.spaces.test;
 
 import com.arangodb.ArangoDB;
 import eu.ebrains.kg.authentication.api.AuthenticationAPI;
-import eu.ebrains.kg.commons.jsonld.NormalizedJsonLd;
 import eu.ebrains.kg.commons.model.IngestConfiguration;
 import eu.ebrains.kg.commons.model.ResponseConfiguration;
 import eu.ebrains.kg.commons.model.Result;
+import eu.ebrains.kg.commons.model.external.spaces.SpaceInformation;
 import eu.ebrains.kg.commons.permission.roles.RoleMapping;
 import eu.ebrains.kg.core.api.AbstractTest;
 import eu.ebrains.kg.core.api.Instances;
 import eu.ebrains.kg.core.api.Spaces;
-import eu.ebrains.kg.core.model.ExposedStage;
 import eu.ebrains.kg.testutils.TestDataFactory;
 
 public class GetSpaceWithPermissionsTest extends AbstractTest {
 
     private final Instances instances;
     private final Spaces spaces;
-    public Result<NormalizedJsonLd> space;
+    public Result<SpaceInformation> space;
 
     public GetSpaceWithPermissionsTest(ArangoDB.Builder database, AuthenticationAPI authenticationAPI,  RoleMapping[] roles, Instances instances, Spaces spaces) {
         super(database, authenticationAPI,  roles);
@@ -50,11 +49,11 @@ public class GetSpaceWithPermissionsTest extends AbstractTest {
     @Override
     protected void setup() {
         // We create a new instance so the space is implicitly created.
-        instances.createNewInstance(TestDataFactory.createTestData(smallPayload, 0, true), "functionalityTest", new ResponseConfiguration(), new IngestConfiguration(), null);
+        instances.createNewInstance(TestDataFactory.createTestData(smallPayload, 0, true), "functionalityTest", new ResponseConfiguration(), new IngestConfiguration());
     }
 
     @Override
     protected void run() {
-        space = spaces.getSpace(ExposedStage.IN_PROGRESS, "functionalityTest", true);
+        space = spaces.getSpace("functionalityTest", true);
     }
 }

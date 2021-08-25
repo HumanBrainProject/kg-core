@@ -32,37 +32,21 @@ public class InternalSpace extends SpaceName {
 
 
     public static final SpaceName GLOBAL_SPEC = new SpaceName("global_spec");
-
     public static final InternalSpace INFERENCE_OF_SPACE = new InternalSpace(InferredJsonLdDoc.INFERENCE_OF);
     public static final InternalSpace UNRESOLVED_SPACE = new InternalSpace("unresolved");
-    public static final ArangoCollectionReference PROPERTY_TO_PROPERTY_VALUE_TYPE_EDGE_COLLECTION = new ArangoCollectionReference("property2propertyValueType", true);
-    public static final SpaceName PROPERTIES_SPACE = new SpaceName("properties");
-    public static final ArangoCollectionReference SPACE_TO_TYPE_EDGE_COLLECTION = new ArangoCollectionReference("space2type", true);
-    public static final SpaceName SPACES_SPACE = new SpaceName("spaces");
-    public static final SpaceName PROPERTY_VALUE_TYPE_SPACE = new SpaceName("propertyValueTypes");
-    public static final ArangoCollectionReference DOCUMENT_RELATION_EDGE_COLLECTION = new ArangoCollectionReference("documentRelation", true);
-    public static final SpaceName DOCUMENT_SPACE = new SpaceName("documents");
-    public static final ArangoCollectionReference CLIENT_TYPE_PROPERTY_EDGE_COLLECTION = new ArangoCollectionReference("clientTypeProperty", true);
-    public static final ArangoCollectionReference CLIENT_TYPE_EDGE_COLLECTION = new ArangoCollectionReference("clientType", true);
-    public static final SpaceName CLIENT_SPACE = new SpaceName("clients");
     public static final ArangoCollectionReference DOCUMENT_ID_EDGE_COLLECTION = new ArangoCollectionReference("documentId", true);
     public static final InternalSpace DOCUMENT_ID_SPACE = new InternalSpace("documentIds");
     public static final ArangoCollectionReference RELEASE_STATUS_EDGE_COLLECTION = new ArangoCollectionReference("internalrelease", true);
     public static final InternalSpace RELEASE_STATUS_SPACE = new InternalSpace("releaseStatus");
-
-    public static final ArangoCollectionReference GLOBAL_TYPE_TO_PROPERTY_EDGE_COLLECTION = new ArangoCollectionReference("globaltype2property", true);
-    public static final ArangoCollectionReference TYPE_TO_PROPERTY_EDGE_COLLECTION = new ArangoCollectionReference("type2property", true);
-    public static final ArangoCollectionReference PROPERTY_TO_TYPE_EDGE_COLLECTION = new ArangoCollectionReference("property2type", true);
-    public static final SpaceName TYPES_SPACE = new SpaceName("types");
     public static final SpaceName USERS_SPACE = new SpaceName("users");
     public static final SpaceName USERS_PICTURE_SPACE = new SpaceName("userpictures");
-
-    public static final SpaceName ALTERNATIVES_SPACE = new SpaceName("alternatives");
     public static final ArangoCollectionReference TYPE_EDGE_COLLECTION = new ArangoCollectionReference("internaltype", true);
     public static final InternalSpace TYPE_SPACE = new InternalSpace("types");
 
     public InternalSpace() {
     }
+
+    public static final Collection<String> INTERNAL_SPACENAMES = Arrays.asList(ArangoCollectionReference.fromSpace(GLOBAL_SPEC).getCollectionName(),  ArangoCollectionReference.fromSpace(DOCUMENT_ID_SPACE).getCollectionName(), ArangoCollectionReference.fromSpace(RELEASE_STATUS_SPACE).getCollectionName(), ArangoCollectionReference.fromSpace(TYPE_SPACE).getCollectionName(), ArangoCollectionReference.fromSpace(USERS_PICTURE_SPACE).getCollectionName());
 
     public static final Collection<ArangoCollectionReference> INTERNAL_NON_META_EDGES = Arrays.asList(DOCUMENT_ID_EDGE_COLLECTION, ArangoCollectionReference.fromSpace(INFERENCE_OF_SPACE), RELEASE_STATUS_EDGE_COLLECTION, TYPE_EDGE_COLLECTION, ArangoCollectionReference.fromSpace(UNRESOLVED_SPACE));
 

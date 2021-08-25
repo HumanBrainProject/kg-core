@@ -45,7 +45,6 @@ public class DefineTypeTest extends AbstractTest {
 
     NormalizedJsonLd createTypeDefinition() {
         NormalizedJsonLd payload = new NormalizedJsonLd();
-        payload.addProperty(EBRAINSVocabulary.META_TYPE, new JsonLdId(typeName));
         payload.addProperty("http://foo", "bar");
         return payload;
     }
@@ -57,6 +56,6 @@ public class DefineTypeTest extends AbstractTest {
 
     @Override
     protected void run() {
-        types.defineType(typeDefinition, true);
+        types.createTypeDefinition(typeDefinition, true, typeName);
     }
 }

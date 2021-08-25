@@ -47,6 +47,6 @@ public class CreateInstanceWithNewSpaceTest extends AbstractInstanceTest {
 
     @Override
     protected void run(){
-        response = instances.createNewInstance(testData, "functionalityTest", defaultResponseConfiguration, defaultIngestConfiguration, null);
+        response = instances.createNewInstance(testData, "functionalityTest", defaultResponseConfiguration, defaultIngestConfiguration);
     }
 }

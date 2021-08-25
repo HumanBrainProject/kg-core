@@ -136,7 +136,7 @@ public class KeycloakController {
             Claim preferred_username = authClientInfo.get("preferred_username");
             return preferred_username != null ? preferred_username.asString().substring("service-account-".length()) : null;
         } else {
-            return "direct access";
+            return null;
         }
     }
 

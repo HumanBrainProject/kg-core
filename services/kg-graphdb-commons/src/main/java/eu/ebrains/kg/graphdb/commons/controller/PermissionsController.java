@@ -56,6 +56,14 @@ public class PermissionsController {
         return null;
     }
 
+    public boolean canManageTypesAndProperties(UserWithRoles userWithRoles){
+        return permissions.hasGlobalPermission(userWithRoles, Functionality.DEFINE_TYPES_AND_PROPERTIES);
+    }
+
+    public boolean canManageSpaces(UserWithRoles userWithRoles){
+        return permissions.hasGlobalPermission(userWithRoles, Functionality.MANAGE_SPACE);
+    }
+
     public boolean hasGlobalReadPermissions(UserWithRoles userWithRoles, DataStage stage){
         Functionality readFunctionality = getReadFunctionality(stage);
         return permissions.hasGlobalPermission(userWithRoles, readFunctionality);

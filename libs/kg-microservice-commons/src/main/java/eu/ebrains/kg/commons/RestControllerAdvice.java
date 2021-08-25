@@ -74,7 +74,7 @@ public class RestControllerAdvice {
         return ResponseEntity.notFound().build();
     }
 
-    @ExceptionHandler({InvalidRequestException.class, AmbiguousException.class})
+    @ExceptionHandler({InvalidRequestException.class, AmbiguousException.class, IllegalArgumentException.class})
     protected ResponseEntity<?> handleInvalidRequest(RuntimeException ex, WebRequest request) {
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ex.getMessage());
     }

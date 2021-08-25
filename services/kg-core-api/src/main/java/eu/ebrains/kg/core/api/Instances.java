@@ -34,7 +34,6 @@ import eu.ebrains.kg.commons.exception.ForbiddenException;
 import eu.ebrains.kg.commons.jsonld.*;
 import eu.ebrains.kg.commons.markers.*;
 import eu.ebrains.kg.commons.model.*;
-import eu.ebrains.kg.commons.models.ExternalEventInformation;
 import eu.ebrains.kg.commons.params.ReleaseTreeScope;
 import eu.ebrains.kg.core.controller.CoreInstanceController;
 import eu.ebrains.kg.core.controller.IdsController;
@@ -87,12 +86,12 @@ public class Instances {
     @WritesData
     @ExposesData
     @Simple
-    public ResponseEntity<Result<NormalizedJsonLd>> createNewInstance(@RequestBody JsonLdDoc jsonLdDoc, @RequestParam(value = "space") @Parameter(description = "The space name the instance shall be stored in or \""+SpaceName.PRIVATE_SPACE+"\" if you want to store it to your private space") String space, @ParameterObject ResponseConfiguration responseConfiguration, @ParameterObject  IngestConfiguration ingestConfiguration, @ParameterObject ExternalEventInformation externalEventInformation) {
+    public ResponseEntity<Result<NormalizedJsonLd>> createNewInstance(@RequestBody JsonLdDoc jsonLdDoc, @RequestParam(value = "space") @Parameter(description = "The space name the instance shall be stored in or \""+SpaceName.PRIVATE_SPACE+"\" if you want to store it to your private space") String space, @ParameterObject ResponseConfiguration responseConfiguration, @ParameterObject  IngestConfiguration ingestConfiguration) {
         Date startTime = new Date();
         UUID id = UUID.randomUUID();
         logger.debug(String.format("Creating new instance with id %s", id));
         SpaceName spaceName = authContext.resolveSpaceName(space);
-        ResponseEntity<Result<NormalizedJsonLd>> newInstance = instanceController.createNewInstance(jsonLdDoc, id, spaceName, responseConfiguration, ingestConfiguration, externalEventInformation);
+        ResponseEntity<Result<NormalizedJsonLd>> newInstance = instanceController.createNewInstance(jsonLdDoc, id, spaceName, responseConfiguration, ingestConfiguration);
         logger.debug(String.format("Done creating new instance with id %s", id));
         if (ingestConfiguration.isDeferInference()) {
             NormalizedJsonLd idPayload = new NormalizedJsonLd();
@@ -110,7 +109,7 @@ public class Instances {
     @ExposesData
     @WritesData
     @Simple
-    public ResponseEntity<Result<NormalizedJsonLd>> createNewInstance(@RequestBody JsonLdDoc jsonLdDoc, @PathVariable("id") UUID id, @RequestParam(value = "space") @Parameter(description = "The space name the instance shall be stored in or \""+SpaceName.PRIVATE_SPACE+"\" if you want to store it to your private space") String space,  @ParameterObject ResponseConfiguration responseConfiguration, @ParameterObject  IngestConfiguration ingestConfiguration,  @ParameterObject ExternalEventInformation externalEventInformation) {
+    public ResponseEntity<Result<NormalizedJsonLd>> createNewInstance(@RequestBody JsonLdDoc jsonLdDoc, @PathVariable("id") UUID id, @RequestParam(value = "space") @Parameter(description = "The space name the instance shall be stored in or \""+SpaceName.PRIVATE_SPACE+"\" if you want to store it to your private space") String space,  @ParameterObject ResponseConfiguration responseConfiguration, @ParameterObject  IngestConfiguration ingestConfiguration) {
         Date startTime = new Date();
         //We want to prevent the UUID to be used twice...
         InstanceId instanceId = idsController.resolveId(DataStage.IN_PROGRESS, id);
@@ -119,7 +118,7 @@ public class Instances {
         }
         SpaceName spaceName = authContext.resolveSpaceName(space);
         logger.debug(String.format("Creating new instance with id %s", id));
-        ResponseEntity<Result<NormalizedJsonLd>> newInstance = instanceController.createNewInstance(jsonLdDoc, id, spaceName, responseConfiguration, ingestConfiguration, externalEventInformation);
+        ResponseEntity<Result<NormalizedJsonLd>> newInstance = instanceController.createNewInstance(jsonLdDoc, id, spaceName, responseConfiguration, ingestConfiguration);
         logger.debug(String.format("Done creating new instance with id %s", id));
         if(newInstance.getBody()!=null){
             newInstance.getBody().setExecutionDetails(startTime, new Date());
@@ -127,7 +126,7 @@ public class Instances {
         return newInstance;
     }
 
-    private ResponseEntity<Result<NormalizedJsonLd>> contributeToInstance(@RequestBody JsonLdDoc jsonLdDoc, UUID id, boolean undeprecate, @ParameterObject ResponseConfiguration responseConfiguration,  @ParameterObject IngestConfiguration ingestConfiguration,  @ParameterObject ExternalEventInformation externalEventInformation, boolean removeNonDeclaredFields) {
+    private ResponseEntity<Result<NormalizedJsonLd>> contributeToInstance(@RequestBody JsonLdDoc jsonLdDoc, UUID id, boolean undeprecate, @ParameterObject ResponseConfiguration responseConfiguration,  @ParameterObject IngestConfiguration ingestConfiguration, boolean removeNonDeclaredFields) {
         Date startTime = new Date();
         logger.debug(String.format("Contributing to instance with id %s", id));
         InstanceId instanceId = idsController.resolveId(DataStage.IN_PROGRESS, id);
@@ -140,7 +139,7 @@ public class Instances {
                 return ResponseEntity.status(HttpStatus.GONE).body(Result.nok(HttpStatus.GONE.value(), "The instance you're trying to contribute to has been deprecated."));
             }
         }
-        ResponseEntity<Result<NormalizedJsonLd>> resultResponseEntity = instanceController.contributeToInstance(jsonLdDoc, instanceId, removeNonDeclaredFields, responseConfiguration, ingestConfiguration, externalEventInformation);
+        ResponseEntity<Result<NormalizedJsonLd>> resultResponseEntity = instanceController.contributeToInstance(jsonLdDoc, instanceId, removeNonDeclaredFields, responseConfiguration, ingestConfiguration);
         logger.debug(String.format("Done contributing to instance with id %s", id));
         Result<NormalizedJsonLd> body = resultResponseEntity.getBody();
         if(body!=null){
@@ -154,8 +153,8 @@ public class Instances {
     @ExposesData
     @WritesData
     @Simple
-    public ResponseEntity<Result<NormalizedJsonLd>> contributeToInstanceFullReplacement(@RequestBody JsonLdDoc jsonLdDoc, @PathVariable("id") UUID id, @RequestParam(value = "undeprecate", required = false, defaultValue = "false") boolean undeprecate,  @ParameterObject ResponseConfiguration responseConfiguration,  @ParameterObject IngestConfiguration ingestConfiguration,  @ParameterObject ExternalEventInformation externalEventInformation) {
-        return contributeToInstance(jsonLdDoc, id, undeprecate, responseConfiguration, ingestConfiguration, externalEventInformation, true);
+    public ResponseEntity<Result<NormalizedJsonLd>> contributeToInstanceFullReplacement(@RequestBody JsonLdDoc jsonLdDoc, @PathVariable("id") UUID id, @RequestParam(value = "undeprecate", required = false, defaultValue = "false") boolean undeprecate,  @ParameterObject ResponseConfiguration responseConfiguration,  @ParameterObject IngestConfiguration ingestConfiguration) {
+        return contributeToInstance(jsonLdDoc, id, undeprecate, responseConfiguration, ingestConfiguration, true);
     }
 
     @Operation(summary = "Partially update contribution to an existing instance")
@@ -163,8 +162,8 @@ public class Instances {
     @ExposesData
     @WritesData
     @Simple
-    public ResponseEntity<Result<NormalizedJsonLd>> contributeToInstancePartialReplacement(@RequestBody JsonLdDoc jsonLdDoc, @PathVariable("id") UUID id, @RequestParam(value = "undeprecate", required = false, defaultValue = "false") boolean undeprecate,  @ParameterObject ResponseConfiguration responseConfiguration,  @ParameterObject IngestConfiguration ingestConfiguration,  @ParameterObject ExternalEventInformation externalEventInformation) {
-        return contributeToInstance(jsonLdDoc, id, undeprecate, responseConfiguration, ingestConfiguration, externalEventInformation, false);
+    public ResponseEntity<Result<NormalizedJsonLd>> contributeToInstancePartialReplacement(@RequestBody JsonLdDoc jsonLdDoc, @PathVariable("id") UUID id, @RequestParam(value = "undeprecate", required = false, defaultValue = "false") boolean undeprecate,  @ParameterObject ResponseConfiguration responseConfiguration,  @ParameterObject IngestConfiguration ingestConfiguration) {
+        return contributeToInstance(jsonLdDoc, id, undeprecate, responseConfiguration, ingestConfiguration, false);
     }
 
     @Operation(summary = "Get the instance")
@@ -278,7 +277,7 @@ public class Instances {
     //It only indirectly exposes the ids due to its status codes (you can tell if an id exists based on the return code this method provides)
     @ExposesIds
     @Simple
-    public ResponseEntity<Result<Void>> deleteInstance(@PathVariable("id") UUID id, @ParameterObject ExternalEventInformation externalEventInformation) {
+    public ResponseEntity<Result<Void>> deleteInstance(@PathVariable("id") UUID id) {
         Date startTime = new Date();
         InstanceId instanceId = idsController.resolveId(DataStage.IN_PROGRESS, id);
         if (instanceId == null) {
@@ -288,7 +287,7 @@ public class Instances {
             if (releaseStatus != null && releaseStatus != ReleaseStatus.UNRELEASED) {
                 return ResponseEntity.status(HttpStatus.CONFLICT).body(Result.nok(HttpStatus.CONFLICT.value(), "Was not able to remove instance because it is released still"));
             }
-            instanceController.deleteInstance(instanceId, externalEventInformation);
+            instanceController.deleteInstance(instanceId);
             return ResponseEntity.ok(Result.<Void>ok().setExecutionDetails(startTime, new Date()));
         }
     }

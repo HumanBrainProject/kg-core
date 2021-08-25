@@ -30,7 +30,6 @@ import eu.ebrains.kg.commons.jsonld.InstanceId;
 import eu.ebrains.kg.commons.jsonld.JsonLdId;
 import eu.ebrains.kg.commons.jsonld.NormalizedJsonLd;
 import eu.ebrains.kg.commons.model.DataStage;
-import eu.ebrains.kg.commons.model.SpaceName;
 import eu.ebrains.kg.commons.model.TodoItem;
 import eu.ebrains.kg.commons.model.User;
 import eu.ebrains.kg.commons.semantics.vocabularies.EBRAINSVocabulary;
@@ -42,7 +41,6 @@ import eu.ebrains.kg.graphdb.ingestion.model.DeleteInstanceOperation;
 import eu.ebrains.kg.graphdb.ingestion.model.EdgeResolutionOperation;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import java.nio.charset.StandardCharsets;
@@ -64,21 +62,16 @@ public class TodoListProcessor {
 
     private final Logger logger = LoggerFactory.getLogger(getClass());
 
-    private final MetaDataController metaDataController;
-
     private final ReleasingController releasingController;
 
-    private final boolean synchronousMetadataProcessing;
 
-    public TodoListProcessor(ArangoRepositoryCommons repository, StructureSplitter splitter, MainEventTracker eventTracker, IdUtils idUtils, DataController dataController, MetaDataController metaDataController, ReleasingController releasingController, @Value("${eu.ebrains.kg.core.metadata.synchronous:false}") boolean synchronousMetadataProcessing) {
+    public TodoListProcessor(ArangoRepositoryCommons repository, StructureSplitter splitter, MainEventTracker eventTracker, IdUtils idUtils, DataController dataController, ReleasingController releasingController) {
         this.repository = repository;
         this.splitter = splitter;
         this.eventTracker = eventTracker;
         this.idUtils = idUtils;
         this.dataController = dataController;
-        this.metaDataController = metaDataController;
         this.releasingController = releasingController;
-        this.synchronousMetadataProcessing = synchronousMetadataProcessing;
     }
 
     private InstanceId getUserInstanceId(User user) {
@@ -133,9 +126,6 @@ public class TodoListProcessor {
                     logger.info("Releasing a document");
                     releaseDocument(rootDocumentReference, todoItem.getPayload());
                     break;
-                case META_DEPRECATION:
-                    deprecateMetaStructure(todoItem.getSpace(), todoItem.getPayload());
-                    logger.info("Handle meta deprecation");
 
             }
             logger.debug("Updating last seen event id");
@@ -161,13 +151,6 @@ public class TodoListProcessor {
         repository.executeTransactional(DataStage.IN_PROGRESS, Collections.singletonList(new DeleteInstanceOperation(releasingController.getReleaseStatusEdgeId(rootDocumentReference))));
     }
 
-
-    private void deprecateMetaStructure(SpaceName space, NormalizedJsonLd payload) {
-        repository.executeTransactionalOnMeta(DataStage.IN_PROGRESS, metaDataController.createMetaStructureDeprecationOperations(space, payload));
-        //TODO What about RELEASED stage? In theory, released should be cleaned up automatically (in released, there is no reason for having schemas not in use)
-    }
-
-
     private void releaseDocument(ArangoDocumentReference rootDocumentReference, NormalizedJsonLd payload) {
         // Releasing a specific revision
         upsertDocument(rootDocumentReference, payload, DataStage.RELEASED, null);
@@ -192,11 +175,6 @@ public class TodoListProcessor {
             //We don't need to resolve links in NATIVE and neither do META structures... it is sufficient if we do this in IN_PROGRESS and RELEASED
             lazyIdResolutionOperations = dataController.createResolutionsForPreviouslyUnresolved(stage, rootDocumentRef, payload.allIdentifiersIncludingId());
             repository.executeTransactional(stage, lazyIdResolutionOperations);
-            if (this.synchronousMetadataProcessing) {
-                metaDataController.handleMetaDataSync(stage, rootDocumentRef, payload, arangoInstances, lazyIdResolutionOperations, mergeIds);
-            } else {
-                metaDataController.handleMetaDataAsync(stage, rootDocumentRef, payload, arangoInstances, lazyIdResolutionOperations, mergeIds);
-            }
         }
         return rootDocumentRef;
     }
@@ -205,16 +183,8 @@ public class TodoListProcessor {
     public void deleteDocument(DataStage stage, ArangoDocumentReference documentReference) {
         if (repository.doesDocumentExist(stage, documentReference)) {
             repository.executeTransactional(stage, dataController.createDeleteOperations(stage, documentReference));
-            removeDocumentFromMetaDatabase(stage, documentReference);
         } else {
             logger.warn(String.format("Tried to remove non-existent document with id %s in stage %s", documentReference.getId(), stage.name()));
         }
     }
-
-    public void removeDocumentFromMetaDatabase(DataStage stage, ArangoDocumentReference documentReference){
-        if (stage != DataStage.NATIVE) {
-            repository.executeTransactionalOnMeta(stage, metaDataController.createDeleteOperations(stage, documentReference));
-        }
-    }
-
 }

@@ -25,6 +25,7 @@ package eu.ebrains.kg.commons.model;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import eu.ebrains.kg.commons.jsonld.JsonLdId;
+import eu.ebrains.kg.commons.model.internal.spaces.Space;
 
 import java.util.Date;
 import java.util.List;

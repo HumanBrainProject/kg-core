@@ -34,11 +34,14 @@ import eu.ebrains.kg.commons.markers.ExposesMinimalData;
 import eu.ebrains.kg.commons.markers.ExposesQuery;
 import eu.ebrains.kg.commons.markers.ExposesReleaseStatus;
 import eu.ebrains.kg.commons.model.*;
+import eu.ebrains.kg.commons.model.external.types.Property;
+import eu.ebrains.kg.commons.model.external.types.TargetType;
+import eu.ebrains.kg.commons.model.external.types.TypeInformation;
 import eu.ebrains.kg.commons.params.ReleaseTreeScope;
 import eu.ebrains.kg.commons.semantics.vocabularies.EBRAINSVocabulary;
 import eu.ebrains.kg.graphdb.instances.controller.ArangoRepositoryInstances;
 import eu.ebrains.kg.graphdb.instances.model.ArangoRelation;
-import eu.ebrains.kg.graphdb.types.controller.ArangoRepositoryTypes;
+import eu.ebrains.kg.graphdb.structure.api.GraphDBTypesAPI;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Component;
 
@@ -51,15 +54,15 @@ import java.util.stream.Collectors;
 public class GraphDBInstancesAPI implements GraphDBInstances.Client {
 
     private final ArangoRepositoryInstances repository;
-    private final ArangoRepositoryTypes typeRepository;
     private final AuthContext authContext;
     private final IdUtils idUtils;
+    private final GraphDBTypesAPI types;
 
-    public GraphDBInstancesAPI(AuthContext authContext, ArangoRepositoryInstances repository, ArangoRepositoryTypes typeRepository, IdUtils idUtils) {
+    public GraphDBInstancesAPI(ArangoRepositoryInstances repository, AuthContext authContext, IdUtils idUtils, GraphDBTypesAPI types) {
         this.repository = repository;
-        this.typeRepository = typeRepository;
         this.authContext = authContext;
         this.idUtils = idUtils;
+        this.types = types;
     }
 
     @Override
@@ -85,23 +88,22 @@ public class GraphDBInstancesAPI implements GraphDBInstances.Client {
         List<String> searchableProperties = null;
         if ((searchByLabel != null && !searchByLabel.isBlank())) {
             //Since we're either sorting or searching by label, we need to reflect on the type -> we therefore have to resolve the type in the database first...
-            List<NormalizedJsonLd> typeInformation = typeRepository.getTypes(authContext.getUserWithRoles().getClientId(), stage, Collections.singletonList(type), true, false, false);
-            if (!typeInformation.isEmpty()) {
-                NormalizedJsonLd typeInformationPayload = typeInformation.get(0);
-                Type typeFromPayload = Type.fromPayload(typeInformationPayload);
+            final Result<TypeInformation> typeInformation = types.getTypesByName(Collections.singletonList(typeName), stage, space, false, false).get(typeName);
+            if(typeInformation!=null && typeInformation.getData()!=null){
+                Type typeFromPayload = Type.fromPayload(typeInformation.getData());
                 type = typeFromPayload;
                 //We're also interested in the properties which are marked as "searchable"
-                searchableProperties = typeInformationPayload.getAsListOf(EBRAINSVocabulary.META_PROPERTIES, NormalizedJsonLd.class).stream()
+                searchableProperties = typeInformation.getData().getProperties().stream()
                         .filter(p -> {
                             Boolean searchable = p.getAs(EBRAINSVocabulary.META_PROPERTY_SEARCHABLE, Boolean.class);
                             return searchable != null && searchable;
-                        }).map(JsonLdDoc::primaryIdentifier).filter(Objects::nonNull)
+                        }).map(Property::getIdentifier).filter(Objects::nonNull)
                         .filter(p -> !p.equals(typeFromPayload.getLabelProperty())).collect(Collectors.toList());
             }
         } else {
-            List<NormalizedJsonLd> typeInformation = typeRepository.getTypes(authContext.getUserWithRoles().getClientId(), stage, Collections.singletonList(type), false, false, false);
-            if(!typeInformation.isEmpty()) {
-                type = Type.fromPayload(typeInformation.get(0));
+            final Result<TypeInformation> typeInformation = types.getTypesByName(Collections.singletonList(typeName), stage, space, false, false).get(typeName);
+            if(typeInformation!=null && typeInformation.getData()!=null) {
+                type = Type.fromPayload(typeInformation.getData());
             }
         }
         return repository.getDocumentsByTypes(stage, type, space != null && !space.isBlank() ? new SpaceName(space) : null, filterProperty, filterValue, paginationParam, searchByLabel, returnEmbedded, returnAlternatives, searchableProperties);
@@ -124,9 +126,7 @@ public class GraphDBInstancesAPI implements GraphDBInstances.Client {
     @ExposesMinimalData
     public Map<UUID, String> getLabels(List<String> ids, DataStage stage) {
         Set<InstanceId> instanceIds = ids.stream().map(InstanceId::deserialize).filter(Objects::nonNull).collect(Collectors.toSet());
-        Set<Type> types = getInstancesByIds(ids, stage, false, false, false, null).values().stream().map(Result::getData).map(JsonLdDoc::types).flatMap(Collection::stream).distinct().map(Type::new).collect(Collectors.toSet());
-        List<Type> extendedTypes = typeRepository.getTypeInformation(authContext.getUserWithRoles().getClientId(), stage, types);
-        return repository.getLabelsForInstances(stage, instanceIds, extendedTypes);
+        return repository.getLabelsForInstances(stage, instanceIds);
     }
 
     @Override
@@ -168,7 +168,6 @@ public class GraphDBInstancesAPI implements GraphDBInstances.Client {
     @Override
     @ExposesMinimalData
     public SuggestionResult getSuggestedLinksForProperty(NormalizedJsonLd payload, DataStage stage, String space, UUID id, String propertyName, String sourceType, String targetType, String search, PaginationParam paginationParam) {
-
         List<Type> sourceTypes = null;
         List<UUID> existingLinks = Collections.emptyList();
         ;
@@ -188,10 +187,13 @@ public class GraphDBInstancesAPI implements GraphDBInstances.Client {
             //We don't have any clue about the type so we can't give any suggestions
             return null;
         }
-        List<NormalizedJsonLd> targetTypesForProperty = typeRepository.getTargetTypesForProperty(authContext.getUserWithRoles().getClientId(), stage, sourceTypes, targetType, propertyName);
-        List<Type> typesWithLabelInfo = targetTypesForProperty.stream().map(Type::fromPayload).collect(Collectors.toList());
-        suggestionResult.setTypes(targetTypesForProperty.stream().collect(Collectors.toMap(JsonLdDoc::primaryIdentifier, t -> t)));
-        Paginated<SuggestedLink> documentsByTypes = repository.getSuggestionsByTypes(stage, typesWithLabelInfo, paginationParam, search, existingLinks);
+
+        final Map<String, Result<TypeInformation>> sourceTypeInformation = types.getTypesByName(sourceTypes.stream().map(Type::getName).collect(Collectors.toList()), stage, space, true, false);
+        final List<String> targetTypesOfProperty = sourceTypeInformation.values().stream().map(s -> s.getData().getProperties()).flatMap(Collection::stream).filter(p -> propertyName.equals(p.getIdentifier()))
+                .map(Property::getTargetTypes).flatMap(Collection::stream).map(TargetType::getType).distinct().collect(Collectors.toList());
+        final Map<String, Result<TypeInformation>> targetTypeInformation = types.getTypesByName(targetTypesOfProperty, stage, null, false, false);
+        suggestionResult.setTypes(targetTypeInformation.values().stream().collect(Collectors.toMap(k -> k.getData().getIdentifier(), Result::getData)));
+        Paginated<SuggestedLink> documentsByTypes = repository.getSuggestionsByTypes(stage, paginationParam, suggestionResult.getTypes().values().stream().map(Type::fromPayload).collect(Collectors.toList()), search, existingLinks);
         suggestionResult.setSuggestions(documentsByTypes);
         return suggestionResult;
     }

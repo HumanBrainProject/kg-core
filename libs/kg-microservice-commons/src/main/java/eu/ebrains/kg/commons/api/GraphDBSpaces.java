@@ -23,16 +23,25 @@
 package eu.ebrains.kg.commons.api;
 
 import eu.ebrains.kg.commons.jsonld.NormalizedJsonLd;
-import eu.ebrains.kg.commons.model.DataStage;
-import eu.ebrains.kg.commons.model.Paginated;
-import eu.ebrains.kg.commons.model.PaginationParam;
+import eu.ebrains.kg.commons.model.*;
+import eu.ebrains.kg.commons.model.external.spaces.SpaceInformation;
+import eu.ebrains.kg.commons.model.external.spaces.SpaceSpecification;
+import eu.ebrains.kg.commons.model.internal.spaces.Space;
 
 public interface GraphDBSpaces {
 
     interface Client extends GraphDBSpaces {}
 
-    NormalizedJsonLd getSpace(DataStage stage, String space);
+    Space getSpace(SpaceName space);
 
-    Paginated<NormalizedJsonLd> getSpaces(DataStage stage, PaginationParam paginationParam);
+    Paginated<Space> getSpaces(PaginationParam paginationParam);
+
+    void specifySpace(SpaceSpecification spaceSpecification);
+
+    void removeSpaceSpecification(SpaceName spaceName);
+
+    void addTypeToSpace(SpaceName spaceName, String typeName);
+
+    void removeTypeFromSpace(SpaceName spaceName, String typeName);
 
 }

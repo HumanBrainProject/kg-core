@@ -25,6 +25,7 @@ package eu.ebrains.kg;
 import eu.ebrains.kg.commons.IdUtils;
 import eu.ebrains.kg.commons.jsonld.NormalizedJsonLd;
 import eu.ebrains.kg.commons.model.*;
+import eu.ebrains.kg.commons.model.internal.spaces.Space;
 import eu.ebrains.kg.indexing.api.IndexingAPI;
 import eu.ebrains.kg.test.TestObjectFactory;
 import org.junit.Test;

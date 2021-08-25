@@ -25,6 +25,7 @@ package eu.ebrains.kg.core.api.properties;
 import eu.ebrains.kg.commons.exception.ForbiddenException;
 import eu.ebrains.kg.commons.jsonld.NormalizedJsonLd;
 import eu.ebrains.kg.commons.model.Result;
+import eu.ebrains.kg.commons.model.external.types.TypeInformation;
 import eu.ebrains.kg.commons.permission.roles.RoleMapping;
 import eu.ebrains.kg.commons.semantics.vocabularies.EBRAINSVocabulary;
 import eu.ebrains.kg.commons.semantics.vocabularies.SchemaOrgVocabulary;
@@ -66,8 +67,8 @@ public class PropertiesTest extends AbstractFunctionalityTest {
         //When
         test.execute(() -> {
             //Then
-            Map<String, Result<NormalizedJsonLd>> result = test.assureValidPayload(this.types.getTypesByName(Collections.singletonList(test.type), ExposedStage.IN_PROGRESS, true, true, null));
-            NormalizedJsonLd typeDefinition = test.assureValidPayload(result.get(test.type));
+            Map<String, Result<TypeInformation>> result = test.assureValidPayload(this.types.getTypesByName(Collections.singletonList(test.type), ExposedStage.IN_PROGRESS, true, true, null));
+            TypeInformation typeDefinition = test.assureValidPayload(result.get(test.type));
             List<NormalizedJsonLd> properties = typeDefinition.getAsListOf(EBRAINSVocabulary.META_PROPERTIES, NormalizedJsonLd.class);
             NormalizedJsonLd propertydef = properties.stream().filter(p -> p.getAs(SchemaOrgVocabulary.IDENTIFIER, String.class).equals(test.property)).findFirst().orElse(null);
             assertEquals("bar", propertydef.getAs("http://foo", String.class));

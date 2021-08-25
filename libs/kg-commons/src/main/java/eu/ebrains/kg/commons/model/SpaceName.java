@@ -34,6 +34,7 @@ import java.util.Objects;
 public class SpaceName {
 
     public transient static final String PRIVATE_SPACE = "myspace";
+    public transient static final String REVIEW_SPACE = "review";
 
     private String name;
 

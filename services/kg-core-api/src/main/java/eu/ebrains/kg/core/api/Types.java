@@ -36,8 +36,10 @@ import eu.ebrains.kg.commons.jsonld.NormalizedJsonLd;
 import eu.ebrains.kg.commons.markers.ExposesType;
 import eu.ebrains.kg.commons.markers.WritesData;
 import eu.ebrains.kg.commons.model.*;
+import eu.ebrains.kg.commons.model.external.types.TypeInformation;
 import eu.ebrains.kg.commons.semantics.vocabularies.EBRAINSVocabulary;
 import eu.ebrains.kg.commons.semantics.vocabularies.SchemaOrgVocabulary;
+import eu.ebrains.kg.core.controller.CoreUtils;
 import eu.ebrains.kg.core.controller.VirtualSpaceController;
 import eu.ebrains.kg.core.model.ExposedStage;
 import io.swagger.v3.oas.annotations.Operation;
@@ -47,6 +49,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -60,47 +63,21 @@ import java.util.stream.Stream;
 public class Types {
 
     private final GraphDBTypes.Client graphDBTypes;
-    private final PrimaryStoreEvents.Client primaryStoreEvents;
     private final AuthContext authContext;
-    private final VirtualSpaceController virtualSpaceController;
 
-    public Types(GraphDBTypes.Client graphDBTypes, PrimaryStoreEvents.Client primaryStoreEvents, AuthContext authContext, VirtualSpaceController virtualSpaceController) {
+
+    public Types(GraphDBTypes.Client graphDBTypes, AuthContext authContext) {
         this.graphDBTypes = graphDBTypes;
-        this.primaryStoreEvents = primaryStoreEvents;
         this.authContext = authContext;
-        this.virtualSpaceController = virtualSpaceController;
     }
 
     @Operation(summary = "Returns the types available - either with property information or without")
     @GetMapping("/types")
     @ExposesType
     @Simple
-    public PaginatedResult<NormalizedJsonLd> getTypes(@RequestParam("stage") ExposedStage stage, @RequestParam(value = "space", required = false) @Parameter(description = "The space by which the types should be filtered or \"" + SpaceName.PRIVATE_SPACE + "\" for your private space.") String space, @RequestParam(value = "withProperties", defaultValue = "false") boolean withProperties, @RequestParam(value = "withIncomingLinks", defaultValue = "false") boolean withIncomingLinks, @RequestParam(value = "withCounts", defaultValue = "false") @Parameter(description = "Only applies if withProperties is set to true") boolean withCounts, @ParameterObject PaginationParam paginationParam) {
-        if(virtualSpaceController.isVirtualSpace(space)){
-            List<String> typesByInvitation = virtualSpaceController.getTypesByInvitation(stage.getStage());
-            final Result<Map<String, Result<NormalizedJsonLd>>> typesByName = getTypesByName(typesByInvitation, stage, true, false, null);
-            List<NormalizedJsonLd> result = typesByName.getData().values().stream().map(Result::getData).collect(Collectors.toList());
-            final Stream<String> targetTypesStream =
-                    result.stream().map(r -> r.getAsListOf(EBRAINSVocabulary.META_PROPERTIES, NormalizedJsonLd.class))
-                    .flatMap(Collection::stream).map(r -> r.getAsListOf(EBRAINSVocabulary.META_PROPERTY_TARGET_TYPES, NormalizedJsonLd.class))
-                    .flatMap(Collection::stream).map(t -> t.getAs(EBRAINSVocabulary.META_TYPE, String.class));
-            List<String> allTypes = Stream.concat(typesByInvitation.stream(), targetTypesStream).distinct().sorted().collect(Collectors.toList());
-            if(paginationParam.getFrom()!=0 || paginationParam.getSize()!=null){
-                int lastIndex = paginationParam.getSize() == null ? allTypes.size() : Math.min(allTypes.size(), (int)(paginationParam.getFrom()+paginationParam.getSize()));
-                typesByInvitation = allTypes.subList((int)paginationParam.getFrom(), lastIndex);
-            }
-            final Result<Map<String, Result<NormalizedJsonLd>>> allTypesByName = getTypesByName(allTypes, stage, withProperties, withCounts, null);
-            result = allTypesByName.getData().values().stream().map(Result::getData).collect(Collectors.toList());
-            return PaginatedResult.ok(new Paginated<>(result, allTypes.size(), result.size(), paginationParam.getFrom()));
-        }
-        if(withProperties){
-            return PaginatedResult.ok(graphDBTypes.getTypesWithProperties(stage.getStage(), getResolvedSpaceName(space), withCounts, withIncomingLinks, paginationParam));
-        }
-        else {
-            return PaginatedResult.ok(graphDBTypes.getTypes(stage.getStage(), getResolvedSpaceName(space), withIncomingLinks, paginationParam));
-        }
+    public PaginatedResult<TypeInformation> getTypes(@RequestParam("stage") ExposedStage stage, @RequestParam(value = "space", required = false) @Parameter(description = "The space by which the types should be filtered or \"" + SpaceName.PRIVATE_SPACE + "\" for your private space.") String space, @RequestParam(value = "withProperties", defaultValue = "false") boolean withProperties, @RequestParam(value = "withIncomingLinks", defaultValue = "false") boolean withIncomingLinks, @ParameterObject PaginationParam paginationParam) {
+        return PaginatedResult.ok(graphDBTypes.getTypes(stage.getStage(), space, withProperties, withIncomingLinks, paginationParam));
     }
-
 
     private String getResolvedSpaceName(String space){
         SpaceName spaceName = authContext.resolveSpaceName(space);
@@ -111,14 +88,8 @@ public class Types {
     @PostMapping("/typesByName")
     @ExposesType
     @Advanced
-    public Result<Map<String, Result<NormalizedJsonLd>>> getTypesByName(@RequestBody List<String> listOfTypeNames, @RequestParam("stage") ExposedStage stage, @RequestParam(value = "withProperties", defaultValue = "false") boolean withProperties, @RequestParam(value = "withCounts", defaultValue = "false") @Parameter(description = "Only applies if withProperties is set to true") boolean withCounts, @RequestParam(value = "space", required = false) @Parameter(description = "The space by which the types should be filtered or \"" + SpaceName.PRIVATE_SPACE + "\" for your private space.") String space) {
-        if(withProperties){
-            //TODO check for withIncomingLinks
-            return Result.ok(graphDBTypes.getTypesWithPropertiesByName(listOfTypeNames, stage.getStage(), withCounts, true, getResolvedSpaceName(space)));
-        }
-        else{
-            return Result.ok(graphDBTypes.getTypesByName(listOfTypeNames, stage.getStage(), getResolvedSpaceName(space)));
-        }
+    public Result<Map<String, Result<TypeInformation>>> getTypesByName(@RequestBody List<String> typeNames, @RequestParam("stage") ExposedStage stage, @RequestParam(value = "withProperties", defaultValue = "false") boolean withProperties, @RequestParam(value = "withIncomingLinks", defaultValue = "false") boolean withIncomingLinks, @RequestParam(value = "space", required = false) @Parameter(description = "The space by which the types should be filtered or \"" + SpaceName.PRIVATE_SPACE + "\" for your private space.") String space) {
+        return Result.ok(graphDBTypes.getTypesByName(typeNames, stage.getStage(), space, withProperties, withIncomingLinks));
     }
 
     @Operation(summary = "Specify a type")
@@ -126,70 +97,22 @@ public class Types {
     @PutMapping("/types/specification")
     @WritesData
     @Admin
-    public ResponseEntity<Result<Void>> defineType(@RequestBody NormalizedJsonLd payload, @Parameter(description = "By default, the specification is only valid for the current client. If this flag is set to true (and the client/user combination has the permission), the specification is applied for all clients (unless they have defined something by themselves)") @RequestParam(value = "global", required = false) boolean global) {
-        SpaceName targetSpace = global ? InternalSpace.GLOBAL_SPEC : authContext.getClientSpace().getName();
-        JsonLdId type = payload.getAs(EBRAINSVocabulary.META_TYPE, JsonLdId.class);
-        if (type == null) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Result.nok(HttpStatus.BAD_REQUEST.value(), String.format("Property \"%s\" should be specified.", EBRAINSVocabulary.META_TYPE)));
+    public void createTypeDefinition(@RequestBody NormalizedJsonLd payload, @Parameter(description = "By default, the specification is only valid for the current client. If this flag is set to true (and the client/user combination has the permission), the specification is applied for all clients (unless they have defined something by themselves)") @RequestParam(value = "global", required = false) boolean global, @RequestParam("type") String type) {
+        JsonLdId typeFromPayload = payload.getAs(EBRAINSVocabulary.META_TYPE, JsonLdId.class);
+        String decodedType = URLDecoder.decode(type, StandardCharsets.UTF_8);
+        if(typeFromPayload!=null){
+            throw new IllegalArgumentException("You are not supposed to provide a @type in the payload of the type specifications to avoid ambiguity");
         }
-        payload.setId(EBRAINSVocabulary.createIdForStructureDefinition("clients", targetSpace.getName(), "types", type.getId()));
-        payload.put(JsonLdConsts.TYPE, EBRAINSVocabulary.META_TYPEDEFINITION_TYPE);
-        primaryStoreEvents.postEvent(Event.createUpsertEvent(targetSpace, UUID.nameUUIDFromBytes(payload.id().getId().getBytes(StandardCharsets.UTF_8)), Event.Type.INSERT, payload), false);
-        return ResponseEntity.ok(Result.ok());
+        graphDBTypes.specifyType(new JsonLdId(decodedType), payload, global);
     }
 
 
-    @Operation(summary = "List candidate types for deprecation", description = "Returns a list of types which potentially could be deprecated because they are not in use yet")
-    @GetMapping("/types/candidates/forDeprecation")
-    @ExposesType
-    @Admin
-    public Result<List<NormalizedJsonLd>> candidatesForDeprecation() {
-        Paginated<NormalizedJsonLd> types = graphDBTypes.getTypesWithProperties(DataStage.IN_PROGRESS, null, true, false, new PaginationParam());
-        return Result.ok(types.getData().stream().filter(type -> type.getAs(EBRAINSVocabulary.META_OCCURRENCES, Double.class).intValue() == 0).collect(Collectors.toList()));
-    }
-
-
-    @Operation(summary = "Deprecate a type", description = "Allows to deprecate a specified type but only if there is no data existing (the data would have to be removed first)")
+    @Operation(summary = "Remove a type definition", description = "Allows to deprecate a type specification")
     @DeleteMapping("/types/specification")
     @WritesData
     @Admin
-    public ResponseEntity<Result<Void>> deprecateType(@RequestParam(value = "type", required = false) String type) {
-        Result<NormalizedJsonLd> typeStats = graphDBTypes.getTypesWithPropertiesByName(Collections.singletonList(type), DataStage.IN_PROGRESS, true, false, null).get(type);
-        if (typeStats == null || typeStats.getData() == null) {
-            return ResponseEntity.notFound().build();
-        } else if (typeStats.getData().getAs(EBRAINSVocabulary.META_OCCURRENCES, Double.class).intValue() == 0) {
-            SpaceName spaceName = InternalSpace.GLOBAL_SPEC;
-            UUID typeId = UUID.nameUUIDFromBytes(EBRAINSVocabulary.createIdForStructureDefinition("clients", spaceName.getName(), "types", type).getId().getBytes(StandardCharsets.UTF_8));
-            NormalizedJsonLd payload = new NormalizedJsonLd();
-            payload.addTypes(EBRAINSVocabulary.META_TYPEDEFINITION_TYPE);
-            payload.put(EBRAINSVocabulary.META_TYPE, type);
-            Event deprecateType = new Event(spaceName, typeId, payload, Event.Type.META_DEPRECATION, new Date());
-            primaryStoreEvents.postEvent(deprecateType, false);
-            return ResponseEntity.ok(Result.ok());
-        } else {
-            return ResponseEntity.status(HttpStatus.CONFLICT).body(Result.nok(HttpStatus.CONFLICT.value(), "Was not able to deprecate type %s because it occurs %d times in the database"));
-        }
-    }
-
-    @Operation(summary = "Deprecate candidates", description = "Deprecate all candidates (instances without occurrences) in one go")
-    @DeleteMapping("/types/candidates/forDeprecation")
-    @WritesData
-    @Admin
-    public ResponseEntity<List<Result<String>>> deprecateAllCandidates() {
-        Result<List<NormalizedJsonLd>> listResult = candidatesForDeprecation();
-        if (listResult != null && listResult.getData() != null) {
-            List<Result<String>> result = new ArrayList<>();
-            listResult.getData().forEach(d -> {
-                String identifier = d.getAs(SchemaOrgVocabulary.IDENTIFIER, String.class);
-                try {
-                    deprecateType(identifier);
-                    result.add(Result.ok(identifier));
-                } catch (Exception e) {
-                    result.add(Result.nok(HttpStatus.CONFLICT.value(), String.format("%s - %s", identifier, e.getMessage())));
-                }
-            });
-            return ResponseEntity.ok(result);
-        }
-        return ResponseEntity.notFound().build();
+    public void removeTypeDefinition(@RequestParam(value = "type", required = false) String type,  @RequestParam(value = "global", required = false) boolean global) {
+        String decodedType = URLDecoder.decode(type, StandardCharsets.UTF_8);
+        graphDBTypes.removeTypeSpecification(new JsonLdId(decodedType), global);
     }
 }

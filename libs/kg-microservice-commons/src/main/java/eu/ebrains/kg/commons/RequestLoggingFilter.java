@@ -66,7 +66,7 @@ public class RequestLoggingFilter extends OncePerRequestFilter {
                     StructuredArguments.keyValue("path", request.getRequestURI()),
                     StructuredArguments.keyValue("query", request.getQueryString()),
                     StructuredArguments.keyValue("authenticatedUser", userWithRoles != null && userWithRoles.getUser() != null ? userWithRoles.getUser().getNativeId() : "anonymous"),
-                    StructuredArguments.keyValue("authenticatedClient", userWithRoles != null ? userWithRoles.getClientId() : "unknown"));
+                    StructuredArguments.keyValue("authenticatedClient", userWithRoles != null && userWithRoles.getClientId()!=null ? userWithRoles.getClientId() : "direct access"));
             Date start = new Date();
             filterChain.doFilter(request, response);
             Date end = new Date();
@@ -78,7 +78,7 @@ public class RequestLoggingFilter extends OncePerRequestFilter {
                     StructuredArguments.keyValue("statusCode", response.getStatus()),
                     StructuredArguments.keyValue("executionDuration", String.format("%d ms", end.getTime()-start.getTime())),
                     StructuredArguments.keyValue("authenticatedUser", userWithRoles != null && userWithRoles.getUser() != null ? userWithRoles.getUser().getNativeId() : "anonymous"),
-                    StructuredArguments.keyValue("authenticatedClient", userWithRoles != null ? userWithRoles.getClientId() : "unknown"));
+                    StructuredArguments.keyValue("authenticatedClient", userWithRoles != null && userWithRoles.getClientId()!=null ? userWithRoles.getClientId() : "direct access"));
         } else {
             filterChain.doFilter(request, response);
         }

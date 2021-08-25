@@ -430,7 +430,9 @@ public class InstancesTest extends AbstractFunctionalityTest {
             //Then
             ResponseEntity<Result<NormalizedJsonLd>> instanceById = test.fetchInstance();
             NormalizedJsonLd releasedInstance = test.assureValidPayloadIncludingId(instanceById);
-            assertEquals(releasedInstance.removeAllFieldsFromNamespace(EBRAINSVocabulary.META), test.originalInstance.removeAllFieldsFromNamespace(EBRAINSVocabulary.META));
+            releasedInstance.removeAllFieldsFromNamespace(EBRAINSVocabulary.META);
+            test.originalInstance.removeAllFieldsFromNamespace(EBRAINSVocabulary.META);
+            assertEquals(releasedInstance, test.originalInstance);
         });
     }
 

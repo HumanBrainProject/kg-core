@@ -29,19 +29,24 @@ import com.arangodb.entity.CollectionType;
 import com.arangodb.entity.StreamTransactionEntity;
 import com.arangodb.model.*;
 import eu.ebrains.kg.arango.commons.aqlBuilder.AQL;
+import eu.ebrains.kg.arango.commons.aqlBuilder.ArangoVocabulary;
 import eu.ebrains.kg.arango.commons.model.AQLQuery;
 import eu.ebrains.kg.arango.commons.model.ArangoCollectionReference;
 import eu.ebrains.kg.arango.commons.model.ArangoDocumentReference;
 import eu.ebrains.kg.arango.commons.model.InternalSpace;
 import eu.ebrains.kg.commons.JsonAdapter;
+import eu.ebrains.kg.commons.jsonld.DynamicJson;
 import eu.ebrains.kg.commons.jsonld.IndexedJsonLdDoc;
+import eu.ebrains.kg.commons.jsonld.JsonLdConsts;
 import eu.ebrains.kg.commons.jsonld.NormalizedJsonLd;
 import eu.ebrains.kg.commons.model.DataStage;
 import eu.ebrains.kg.commons.model.Paginated;
+import eu.ebrains.kg.commons.semantics.vocabularies.EBRAINSVocabulary;
 import eu.ebrains.kg.graphdb.commons.model.ArangoDocument;
 import eu.ebrains.kg.graphdb.commons.model.ArangoEdge;
 import eu.ebrains.kg.graphdb.commons.model.ArangoInstance;
 import eu.ebrains.kg.graphdb.ingestion.model.*;
+import eu.ebrains.kg.graphdb.structure.controller.CacheController;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -50,6 +55,7 @@ import org.springframework.stereotype.Component;
 import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 @Component
 public class ArangoRepositoryCommons {
@@ -62,15 +68,17 @@ public class ArangoRepositoryCommons {
 
     private final EntryHookDocuments entryHookDocuments;
 
+    private final CacheController cacheController;
+
     private final Logger logger = LoggerFactory.getLogger(getClass());
 
-    public ArangoRepositoryCommons(ArangoDatabases databases, JsonAdapter jsonAdapter, ArangoUtils utils, EntryHookDocuments entryHookDocuments) {
+    public ArangoRepositoryCommons(ArangoDatabases databases, JsonAdapter jsonAdapter, ArangoUtils utils, EntryHookDocuments entryHookDocuments, CacheController cacheController) {
         this.databases = databases;
         this.jsonAdapter = jsonAdapter;
         this.utils = utils;
         this.entryHookDocuments = entryHookDocuments;
+        this.cacheController = cacheController;
     }
-
 
     private List<ArangoCollectionReference> getAllEdgeCollections(ArangoDatabase db) {
         Collection<CollectionEntity> collections = db.getCollections(new CollectionsReadOptions().excludeSystem(true));
@@ -162,16 +170,6 @@ public class ArangoRepositoryCommons {
         return databases.getByStage(stage).collection(reference.getArangoCollectionReference().getCollectionName()).documentExists(reference.getDocumentId().toString());
     }
 
-    public Set<ArangoInstance> checkExistenceOfInstances(DataStage stage, Collection<ArangoInstance> instances, boolean returnExisting) {
-        AQL aql = new AQL();
-        String documentList = instances.stream().map(i -> "DOCUMENT(\"" + AQL.preventAqlInjection(i.getId().getId()).getValue() + "\")").collect(Collectors.joining(","));
-        aql.addLine(AQL.trust(String.format(String.format("FOR d IN [%s]", documentList))));
-        aql.addLine(AQL.trust("FILTER d != null"));
-        aql.addLine(AQL.trust("RETURN d._id"));
-        List<String> ids = databases.getByStage(stage).query(aql.build().getValue(), new HashMap<>(), new AqlQueryOptions(), String.class).asListRemaining();
-        return instances.stream().filter(i -> returnExisting == ids.contains(i.getId().getId())).collect(Collectors.toSet());
-    }
-
 
     private Set<ArangoDocumentReference> findArangoReferencesForDocumentId(ArangoDatabase db, UUID documentId) {
         ArangoCollectionReference documentIdSpace = ArangoCollectionReference.fromSpace(InternalSpace.DOCUMENT_ID_SPACE);
@@ -198,37 +196,26 @@ public class ArangoRepositoryCommons {
         return Collections.emptySet();
     }
 
-    public List<ArangoDocumentReference> getEdgesFrom(DataStage stage, ArangoCollectionReference edgeCollection, ArangoDocumentReference from) {
-        ArangoDatabase db = databases.getByStage(stage);
-        if (db.collection(edgeCollection.getCollectionName()).exists()) {
-            AQL aql = new AQL();
-            aql.addLine(AQL.trust("FOR doc IN @@edgeCollection"));
-            aql.addLine(AQL.trust("FILTER doc._from == @from"));
-            aql.addLine(AQL.trust("RETURN doc._id"));
-            Map<String, Object> bindVars = new HashMap<>();
-            bindVars.put("@edgeCollection", edgeCollection.getCollectionName());
-            bindVars.put("from", from.getDocumentId());
-            if(logger.isTraceEnabled()){
-                logger.trace(aql.buildSimpleDebugQuery(bindVars));
-            }
-            long start=new Date().getTime();
-            List<String> documentIds = db.query(aql.build().getValue(), bindVars, new AqlQueryOptions(), String.class).asListRemaining();
-            logger.debug(String.format("Found %d edges ffrom document id %s in %dms", documentIds.size(), from.getDocumentId(), new Date().getTime()-start));
-            return documentIds.stream().map(id -> ArangoDocumentReference.fromArangoId(id, true)).collect(Collectors.toList());
-        }
-        return Collections.emptyList();
-    }
-
-    public void executeTransactionalOnMeta(DataStage stage, List<DBOperation> operations) {
-        logger.info(String.format("Executing transaction for metadata on stage %s", stage.name()));
-        executeTransactional(stage, databases.getMetaByStage(stage), operations);
-    }
 
     public void executeTransactional(DataStage stage, List<? extends DBOperation> operations) {
         UUID transactionId = UUID.randomUUID();
         logger.debug(String.format("Executing transaction %s on stage %s ", transactionId.toString(), stage.name()));
         executeTransactional(stage, databases.getByStage(stage), operations);
         logger.debug(String.format("Finished transaction %s on stage %s", transactionId.toString(), stage.name()));
+    }
+
+
+    private List<CacheEvictionPlan> fetchCacheEvictionPlans(DataStage stage, List<String> ids){
+        AQL aql = new AQL();
+        Map<String, Object> bindVars = new HashMap<>();
+        aql.addLine(AQL.trust("FOR id IN @ids"));
+        bindVars.put("ids", ids);
+        aql.addLine(AQL.trust("LET doc = DOCUMENT(id)"));
+        aql.addLine(AQL.trust(String.format("FILTER doc != NULL && doc.`%s` != NULL && doc.`%s` != NULL ", JsonLdConsts.TYPE, EBRAINSVocabulary.META_SPACE)));
+        aql.addLine(AQL.trust(String.format("RETURN { \"id\": id, \"type\": doc.`%s`,", JsonLdConsts.TYPE)));
+        aql.addLine(AQL.trust(String.format("    \"space\": doc.`%s`,", EBRAINSVocabulary.META_SPACE)));
+        aql.addLine(AQL.trust(String.format("    \"properties\": (FOR a IN ATTRIBUTES(doc, true) FILTER a NOT LIKE \"%s%%\" AND a NOT LIKE \"@%%\" RETURN a)}", EBRAINSVocabulary.META)));
+        return databases.getByStage(stage).query(aql.build().getValue(), bindVars, CacheEvictionPlan.class).asListRemaining();
     }
 
 
@@ -335,7 +322,12 @@ public class ArangoRepositoryCommons {
         DocumentDeleteOptions deleteOptions = new DocumentDeleteOptions().streamTransactionId(tx.getId());
         DocumentCreateOptions insertOptions = new DocumentCreateOptions().streamTransactionId(tx.getId());
         DocumentUpdateOptions updateOptions = new DocumentUpdateOptions().streamTransactionId(tx.getId());
-
+        List<String> allIds = null;
+        List<CacheEvictionPlan> cacheEvictionPlansBeforeTransaction = null;
+        if(stage == DataStage.IN_PROGRESS || stage == DataStage.RELEASED) {
+            allIds = Stream.concat(Stream.concat(removedDocuments.stream().map(ArangoDocumentReference::getId), edgeResolutionDependencies.keySet().stream().map(ArangoDocumentReference::getId)), insertedDocuments.values().stream().flatMap(Collection::stream).map(i -> jsonAdapter.fromJson(i, DynamicJson.class).getAs(ArangoVocabulary.ID, String.class))).distinct().collect(Collectors.toList());
+            cacheEvictionPlansBeforeTransaction = fetchCacheEvictionPlans(stage, allIds);
+        }
         try {
             removedDocuments.stream().collect(Collectors.groupingBy(ArangoDocumentReference::getArangoCollectionReference)).forEach((c,v)->db.collection(c.getCollectionName()).deleteDocuments(v.stream().map(r -> r.getDocumentId().toString()).collect(Collectors.toSet()), String.class, deleteOptions));
             edgeResolutionDependencies.values().stream().collect(Collectors.groupingBy(i -> i.getId().getArangoCollectionReference())).forEach((c, v) -> db.collection(c.getCollectionName()).updateDocuments(v.stream().map(doc -> jsonAdapter.toJson(doc.getDoc())).collect(Collectors.toList()), updateOptions));
@@ -345,6 +337,9 @@ public class ArangoRepositoryCommons {
         } catch (Exception e) {
             logger.debug(String.format("Execution of transaction has failed after %dms. \n\n TRANSACTION: %s\n\n", new Date().getTime()-startTransactionDate, tx.getId()));
             db.abortStreamTransaction(tx.getId());
+        }
+        if(stage == DataStage.IN_PROGRESS || stage == DataStage.RELEASED) {
+            cacheController.evictCacheByPlan(stage, cacheEvictionPlansBeforeTransaction, fetchCacheEvictionPlans(stage, allIds));
         }
 
     }

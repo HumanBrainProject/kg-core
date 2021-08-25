@@ -31,6 +31,7 @@ import eu.ebrains.kg.commons.jsonld.IndexedJsonLdDoc;
 import eu.ebrains.kg.commons.jsonld.JsonLdId;
 import eu.ebrains.kg.commons.jsonld.JsonLdIdMapping;
 import eu.ebrains.kg.commons.model.*;
+import eu.ebrains.kg.commons.model.internal.spaces.Space;
 import eu.ebrains.kg.commons.models.UserWithRoles;
 import eu.ebrains.kg.commons.permission.Functionality;
 import eu.ebrains.kg.commons.permissions.controller.Permissions;
@@ -82,7 +83,7 @@ public class EventController {
             case INSERT:
                 if (event.getSpace() == null) {
                     //The space doesn't exist - this means the user has to have space creation rights to execute this insertion.
-                    boolean spaceCreationPermission = permissions.hasPermission(userWithRoles, Functionality.CREATE_SPACE, event.getSpaceName());
+                    boolean spaceCreationPermission = permissions.hasPermission(userWithRoles, Functionality.MANAGE_SPACE, event.getSpaceName());
                     if (!spaceCreationPermission) {
                         throw new ForbiddenException(String.format("The creation of this instance involves the creation of the non-existing space %s - you don't have the according rights to do so!", event.getSpaceName()));
                     }
@@ -104,9 +105,6 @@ public class EventController {
             case UNRELEASE:
                 hasPermission = permissions.hasPermission(userWithRoles, Functionality.withSemanticsForOperation(semantics, event.getType(), Functionality.UNRELEASE), event.getSpaceName(),  event.getDocumentId());
                 break;
-            case META_DEPRECATION:
-                hasPermission = permissions.hasGlobalPermission(userWithRoles, Functionality.DEFINE_TYPES);
-                break;
         }
         if (!hasPermission) {
             throw new ForbiddenException();
@@ -115,9 +113,9 @@ public class EventController {
 
     public PersistedEvent persistEvent(Event event, DataStage dataStage) {
         UserWithRoles userWithRoles = authContext.getUserWithRoles();
-        logger.info(String.format("Received event of type %s for instance %s in space %s by user %s via client %s", event.getType().name(), event.getDocumentId(), event.getSpaceName() != null ? event.getSpaceName().getName() : null, userWithRoles != null && userWithRoles.getUser() != null ? userWithRoles.getUser().getUserName() : "anonymous", userWithRoles != null && userWithRoles.getClientId() != null ? userWithRoles.getClientId() : "unknown"));
+        logger.info(String.format("Received event of type %s for instance %s in space %s by user %s via client %s", event.getType().name(), event.getDocumentId(), event.getSpaceName() != null ? event.getSpaceName().getName() : null, userWithRoles != null && userWithRoles.getUser() != null ? userWithRoles.getUser().getUserName() : "anonymous", userWithRoles != null && userWithRoles.getClientId() != null ? userWithRoles.getClientId() : "direct access"));
         User user = userResolver.resolveUser(event);
-        PersistedEvent persistedEvent = new PersistedEvent(event, dataStage, user, Space.fromJsonLd(graphDBSpaces.getSpace(dataStage, event.getSpaceName() != null ? event.getSpaceName().getName() : null)));
+        PersistedEvent persistedEvent = new PersistedEvent(event, dataStage, user, graphDBSpaces.getSpace(event.getSpaceName()));
         ensureInternalIdInPayload(persistedEvent, userWithRoles);
         checkPermission(persistedEvent);
         if (persistedEvent.getType() == Event.Type.DELETE) {

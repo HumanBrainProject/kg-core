@@ -22,15 +22,12 @@
 
 package eu.ebrains.kg.core.api;
 
-import eu.ebrains.kg.arango.commons.model.InternalSpace;
 import eu.ebrains.kg.commons.Version;
 import eu.ebrains.kg.commons.api.Authentication;
 import eu.ebrains.kg.commons.config.openApiGroups.Admin;
 import eu.ebrains.kg.commons.jsonld.JsonLdDoc;
-import eu.ebrains.kg.commons.model.Space;
 import eu.ebrains.kg.commons.model.TermsOfUse;
 import eu.ebrains.kg.commons.permission.roles.RoleMapping;
-import eu.ebrains.kg.core.controller.CoreSpaceController;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -40,21 +37,10 @@ import java.util.Map;
 @RequestMapping(Version.API+"/setup")
 public class Setup {
 
-    private final CoreSpaceController spaceController;
     private final Authentication.Client authentication;
 
-    public Setup(CoreSpaceController spaceController, Authentication.Client authentication) {
-        this.spaceController = spaceController;
+    public Setup(Authentication.Client authentication) {
         this.authentication = authentication;
-    }
-
-    @PutMapping("/database")
-    @Admin
-    public void setupDatabaseStructures(){
-        //Create global spec space
-        Space space = new Space(InternalSpace.GLOBAL_SPEC, false, false);
-        space.setInternalSpace(true);
-        spaceController.createSpaceDefinition(space, true);
     }
 
     @PutMapping("/termsOfUse")

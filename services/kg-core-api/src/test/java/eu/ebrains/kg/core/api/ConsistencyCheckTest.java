@@ -31,6 +31,7 @@ import eu.ebrains.kg.commons.model.IngestConfiguration;
 import eu.ebrains.kg.commons.model.PaginationParam;
 import eu.ebrains.kg.commons.model.ResponseConfiguration;
 import eu.ebrains.kg.commons.model.Result;
+import eu.ebrains.kg.commons.model.external.types.TypeInformation;
 import eu.ebrains.kg.commons.semantics.vocabularies.SchemaOrgVocabulary;
 import eu.ebrains.kg.core.model.ExposedStage;
 import org.junit.Assert;
@@ -75,15 +76,15 @@ public class ConsistencyCheckTest {
             JsonLdDoc doc = new JsonLdDoc();
             doc.addTypes(type);
             doc.addProperty("http://schema.hbp.eu/foo", "instance" + i);
-            ResponseEntity<Result<NormalizedJsonLd>> document = instances.createNewInstance(doc, "foo", DEFAULT_RESPONSE_CONFIG, DEFAULT_INGEST_CONFIG, null);
+            ResponseEntity<Result<NormalizedJsonLd>> document = instances.createNewInstance(doc, "foo", DEFAULT_RESPONSE_CONFIG, DEFAULT_INGEST_CONFIG);
             JsonLdId id = document.getBody().getData().id();
             System.out.println(String.format("Created instance %s", id.getId()));
         }
         Assert.assertEquals(createInstances, getAllInstancesFromInProgress(ExposedStage.IN_PROGRESS).size());
-        Assert.assertEquals(1, types.getTypes(ExposedStage.IN_PROGRESS, null, false, false, false, EMPTY_PAGINATION).getSize());
-        List<NormalizedJsonLd> typeWithPropertiesAndCounts = types.getTypes(ExposedStage.IN_PROGRESS, null, true, true, true, EMPTY_PAGINATION).getData();
+        Assert.assertEquals(1, types.getTypes(ExposedStage.IN_PROGRESS, null, false, false, EMPTY_PAGINATION).getSize());
+        List<TypeInformation> typeWithPropertiesAndCounts = types.getTypes(ExposedStage.IN_PROGRESS, null, true, true, EMPTY_PAGINATION).getData();
         Assert.assertEquals(1, typeWithPropertiesAndCounts.size());
-        NormalizedJsonLd typeWithProperty = typeWithPropertiesAndCounts.get(0);
+        TypeInformation typeWithProperty = typeWithPropertiesAndCounts.get(0);
         Assert.assertEquals(type, typeWithProperty.get(SchemaOrgVocabulary.IDENTIFIER));
     }
 
@@ -101,7 +102,7 @@ public class ConsistencyCheckTest {
                 JsonLdDoc doc = new JsonLdDoc();
                 doc.addTypes(type);
                 doc.addProperty("http://schema.hbp.eu/foo", "updatedValue" + updated);
-                this.instances.contributeToInstancePartialReplacement(doc, idUtils.getUUID(instance.id()), false, DEFAULT_RESPONSE_CONFIG, DEFAULT_INGEST_CONFIG, null);
+                this.instances.contributeToInstancePartialReplacement(doc, idUtils.getUUID(instance.id()), false, DEFAULT_RESPONSE_CONFIG, DEFAULT_INGEST_CONFIG);
                 updated++;
             }
         }
@@ -131,7 +132,7 @@ public class ConsistencyCheckTest {
         int deleted = 0;
         for (NormalizedJsonLd instance : getAllInstancesFromInProgress(ExposedStage.IN_PROGRESS)) {
             if (deleted < createInstances * deleteRatio) {
-                this.instances.deleteInstance(idUtils.getUUID(instance.id()), null);
+                this.instances.deleteInstance(idUtils.getUUID(instance.id()));
                 deleted++;
             }
         }
@@ -148,7 +149,7 @@ public class ConsistencyCheckTest {
             if (updated < createInstances * updateRatio) {
                 JsonLdDoc doc = new JsonLdDoc();
                 doc.addProperty("http://schema.hbp.eu/foo", "valueWithoutType" + updated);
-                this.instances.contributeToInstancePartialReplacement(doc, idUtils.getUUID(instance.id()), true,  DEFAULT_RESPONSE_CONFIG, DEFAULT_INGEST_CONFIG, null);
+                this.instances.contributeToInstancePartialReplacement(doc, idUtils.getUUID(instance.id()), true,  DEFAULT_RESPONSE_CONFIG, DEFAULT_INGEST_CONFIG);
                 updated++;
             }
         }
@@ -160,7 +161,7 @@ public class ConsistencyCheckTest {
         testUpdate();
         int deleted = 0;
         for (NormalizedJsonLd instance : getAllInstancesFromInProgress(ExposedStage.IN_PROGRESS)) {
-            this.instances.deleteInstance(idUtils.getUUID(instance.id()), null);
+            this.instances.deleteInstance(idUtils.getUUID(instance.id()));
         }
         Assert.assertEquals(0, getAllInstancesFromInProgress(ExposedStage.IN_PROGRESS).size());
     }

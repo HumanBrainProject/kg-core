@@ -94,7 +94,7 @@ public class Permissions {
             return false;
         }
         switch (functionality) {
-            case CREATE_SPACE:
+            case MANAGE_SPACE:
                 if (space != null && userWithRoles != null) {
                     boolean clientOwnedSpace = isServiceAccountForClientSpace(userWithRoles, space);
                     boolean privateUserSpace = space.equals(userWithRoles.getPrivateSpace());

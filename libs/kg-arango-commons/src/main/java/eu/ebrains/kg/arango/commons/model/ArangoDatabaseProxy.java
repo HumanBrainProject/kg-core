@@ -25,6 +25,8 @@ package eu.ebrains.kg.arango.commons.model;
 import com.arangodb.ArangoCollection;
 import com.arangodb.ArangoDB;
 import com.arangodb.ArangoDatabase;
+import com.arangodb.entity.CollectionType;
+import com.arangodb.model.CollectionCreateOptions;
 
 public class ArangoDatabaseProxy {
 
@@ -69,6 +71,13 @@ public class ArangoDatabaseProxy {
         return db;
     }
 
+    public synchronized void createCollectionIfItDoesntExist(ArangoCollectionReference collection){
+        final ArangoDatabase db = get();
+        ArangoCollection c = db.collection(collection.getCollectionName());
+        if (!c.exists()) {
+            db.createCollection(collection.getCollectionName(), new CollectionCreateOptions().type(collection.isEdge() ? CollectionType.EDGES : CollectionType.DOCUMENT));
+        }
+    }
 
     public synchronized void createCollectionIfItDoesntExist(String collection){
         ArangoCollection c = get().collection(collection);

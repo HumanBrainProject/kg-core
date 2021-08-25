@@ -34,29 +34,21 @@ import org.springframework.stereotype.Component;
 @Scope("prototype")
 public class ArangoDatabases {
 
-    @Autowired
-    @Qualifier("released")
-    ArangoDatabaseProxy releasedDB;
+    final ArangoDatabaseProxy structureDB;
+    final ArangoDatabaseProxy releasedDB;
+    final ArangoDatabaseProxy nativeDB;
+    final ArangoDatabaseProxy inProgressDB;
 
-    @Autowired
-    @Qualifier("native")
-    ArangoDatabaseProxy nativeDB;
+    public ArangoDatabases(@Qualifier("structure") ArangoDatabaseProxy structureDB, @Qualifier("released") ArangoDatabaseProxy releasedDB, @Qualifier("native") ArangoDatabaseProxy nativeDB, @Qualifier("inProgress") ArangoDatabaseProxy inProgressDB) {
+        this.releasedDB = releasedDB;
+        this.nativeDB = nativeDB;
+        this.inProgressDB = inProgressDB;
+        this.structureDB = structureDB;
+    }
 
-    @Autowired
-    @Qualifier("inProgress")
-    ArangoDatabaseProxy inProgressDB;
-
-    @Autowired
-    @Qualifier("releasedMeta")
-    ArangoDatabaseProxy releasedMetaDB;
-
-    @Autowired
-    @Qualifier("nativeMeta")
-    ArangoDatabaseProxy nativeMetaDB;
-
-    @Autowired
-    @Qualifier("inProgressMeta")
-    ArangoDatabaseProxy inProgressMetaDB;
+    public ArangoDatabase getStructureDB(){
+        return this.structureDB.getOrCreate();
+    }
 
     public ArangoDatabase getByStage(DataStage stage) {
         switch (stage) {
@@ -70,19 +62,5 @@ public class ArangoDatabases {
                 throw new IllegalArgumentException("Unknown data stage requested: " + stage.name());
         }
     }
-
-    public ArangoDatabase getMetaByStage(DataStage stage) {
-        switch (stage) {
-            //The native space doesn't have its own meta data stage -> so we're reflecting on inProgress.
-            case NATIVE:
-            case IN_PROGRESS:
-                return inProgressMetaDB.getOrCreate();
-            case RELEASED:
-                return releasedMetaDB.getOrCreate();
-            default:
-                throw new IllegalArgumentException("Unknown data stage requested: " + stage.name());
-        }
-    }
-
 
 }

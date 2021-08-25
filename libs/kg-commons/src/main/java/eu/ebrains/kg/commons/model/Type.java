@@ -23,6 +23,8 @@
 package eu.ebrains.kg.commons.model;
 
 import eu.ebrains.kg.commons.jsonld.NormalizedJsonLd;
+import eu.ebrains.kg.commons.model.external.types.SpaceTypeInformation;
+import eu.ebrains.kg.commons.model.external.types.TypeInformation;
 import eu.ebrains.kg.commons.semantics.vocabularies.EBRAINSVocabulary;
 
 import java.net.URI;
@@ -89,6 +91,18 @@ public class Type {
     public int hashCode() {
         return Objects.hash(name);
     }
+
+    public static Type fromPayload(TypeInformation payload) {
+        Type targetType = new Type(payload.getIdentifier());
+        targetType.setLabelProperty(payload.getAs(EBRAINSVocabulary.META_TYPE_LABEL_PROPERTY, String.class));
+        targetType.setIgnoreIncomingLinks(payload.getAs(EBRAINSVocabulary.META_IGNORE_INCOMING_LINKS, Boolean.class));
+        final List<SpaceTypeInformation> spaces = payload.getSpaces();
+        if(spaces!=null){
+            targetType.spaces = spaces.stream().map(s -> SpaceName.fromString(s.getSpace())).collect(Collectors.toSet());
+        }
+        return targetType;
+    }
+
 
     public static Type fromPayload(NormalizedJsonLd payload) {
         Type targetType = new Type(payload.primaryIdentifier());

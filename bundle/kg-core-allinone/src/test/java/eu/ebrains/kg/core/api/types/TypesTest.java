@@ -26,6 +26,7 @@ import eu.ebrains.kg.commons.exception.ForbiddenException;
 import eu.ebrains.kg.commons.jsonld.NormalizedJsonLd;
 import eu.ebrains.kg.commons.model.Result;
 import eu.ebrains.kg.commons.model.SpaceName;
+import eu.ebrains.kg.commons.model.external.types.TypeInformation;
 import eu.ebrains.kg.commons.permission.roles.RoleMapping;
 import eu.ebrains.kg.commons.semantics.vocabularies.EBRAINSVocabulary;
 import eu.ebrains.kg.core.api.Instances;
@@ -70,10 +71,10 @@ public class TypesTest extends AbstractFunctionalityTest {
 
         //When
         test.execute(() -> {
-            Result<Map<String, Result<NormalizedJsonLd>>> typesByName = types.getTypesByName(Collections.singletonList(test.typeName), ExposedStage.IN_PROGRESS, false, false, null);
-            NormalizedJsonLd data = typesByName.getData().get(test.typeName).getData();
+            Result<Map<String, Result<TypeInformation>>> typesByName = types.getTypesByName(Collections.singletonList(test.typeName), ExposedStage.IN_PROGRESS, false, false,null);
+            TypeInformation data = typesByName.getData().get(test.typeName).getData();
             assertNotNull(data);
-            assertTrue(data.identifiers().contains(test.typeName));
+            assertEquals(test.typeName, data.getIdentifier());
             assertEquals("bar", data.get("http://foo"));
         });
     }
@@ -95,9 +96,9 @@ public class TypesTest extends AbstractFunctionalityTest {
 
         //When
         test.execute(() -> {
-            List<NormalizedJsonLd> response = test.assureValidPayload(test.response);
+            List<TypeInformation> response = test.assureValidPayload(test.response);
             assertEquals(1, response.size());
-            assertTrue(response.get(0).identifiers().contains(TestDataFactory.TEST_TYPE));
+            assertEquals(response.get(0).getIdentifier(), TestDataFactory.TEST_TYPE);
         });
     }
 
@@ -123,9 +124,9 @@ public class TypesTest extends AbstractFunctionalityTest {
         //When
         test.execute(() -> {
             //Then
-            List<NormalizedJsonLd> response = test.assureValidPayload(test.response);
+            List<TypeInformation> response = test.assureValidPayload(test.response);
             assertEquals(1, response.size());
-            assertTrue(response.get(0).identifiers().contains(TestDataFactory.TEST_TYPE));
+            assertEquals(response.get(0).getIdentifier(), TestDataFactory.TEST_TYPE);
         });
 
     }
@@ -153,9 +154,9 @@ public class TypesTest extends AbstractFunctionalityTest {
         //When
         test.execute(() -> {
             //Then
-            List<NormalizedJsonLd> response = test.assureValidPayload(test.response);
+            List<TypeInformation> response = test.assureValidPayload(test.response);
             assertEquals(1, response.size());
-            assertTrue(response.get(0).identifiers().contains(TestDataFactory.TEST_TYPE));
+            assertEquals(response.get(0).getIdentifier(), TestDataFactory.TEST_TYPE);
             List<NormalizedJsonLd> properties = response.get(0).getAsListOf(EBRAINSVocabulary.META_PROPERTIES, NormalizedJsonLd.class);
             assertNotNull(properties);
             assertTrue(properties.size() > smallPayload);
@@ -184,9 +185,9 @@ public class TypesTest extends AbstractFunctionalityTest {
         //When
         test.execute(() -> {
             //Then
-            List<NormalizedJsonLd> response = test.assureValidPayload(test.response);
+            List<TypeInformation> response = test.assureValidPayload(test.response);
             assertEquals(1, response.size());
-            assertTrue(response.get(0).identifiers().contains(TestDataFactory.TEST_TYPE));
+            assertEquals(response.get(0).getIdentifier(), TestDataFactory.TEST_TYPE);
         });
     }
 
@@ -215,7 +216,7 @@ public class TypesTest extends AbstractFunctionalityTest {
         test.execute(()->{
 
             //Then
-            Map<String, Result<NormalizedJsonLd>> map = test.assureValidPayload(test.response);
+            Map<String, Result<TypeInformation>> map = test.assureValidPayload(test.response);
             test.assureValidPayload(map.get(TestDataFactory.TEST_TYPE));
         });
     }

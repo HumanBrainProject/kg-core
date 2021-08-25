@@ -24,6 +24,7 @@ package eu.ebrains.kg.core.api.spaces;
 
 import eu.ebrains.kg.commons.exception.ForbiddenException;
 import eu.ebrains.kg.commons.jsonld.NormalizedJsonLd;
+import eu.ebrains.kg.commons.model.external.spaces.SpaceInformation;
 import eu.ebrains.kg.commons.permission.roles.RoleMapping;
 import eu.ebrains.kg.commons.semantics.vocabularies.SchemaOrgVocabulary;
 import eu.ebrains.kg.core.api.Instances;
@@ -59,8 +60,8 @@ public class SpacesTest extends AbstractFunctionalityTest {
         //When
         test.execute(() -> {
             //Then
-            NormalizedJsonLd normalizedJsonLd = test.assureValidPayload(test.space);
-            assertNotNull(normalizedJsonLd);
+            SpaceInformation spaceInformation = test.assureValidPayload(test.space);
+            assertNotNull(spaceInformation);
         });
     }
 
@@ -82,10 +83,10 @@ public class SpacesTest extends AbstractFunctionalityTest {
         //When
         test.execute(() -> {
             //Then
-            List<NormalizedJsonLd> normalizedJsonLd = test.assureValidPayload(test.response);
-            assertNotNull(normalizedJsonLd);
-            assertEquals(1, normalizedJsonLd.size());
-            assertEquals(test.space, normalizedJsonLd.get(0).getAs(SchemaOrgVocabulary.NAME, String.class));
+            List<SpaceInformation> spaceInformations = test.assureValidPayload(test.response);
+            assertNotNull(spaceInformations);
+            assertEquals(1, spaceInformations.size());
+            assertEquals(test.space, spaceInformations.get(0).getAs(SchemaOrgVocabulary.NAME, String.class));
         });
     }
 

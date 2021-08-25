@@ -28,7 +28,6 @@ import eu.ebrains.kg.commons.api.*;
 import eu.ebrains.kg.commons.exception.UnauthorizedException;
 import eu.ebrains.kg.commons.jsonld.*;
 import eu.ebrains.kg.commons.model.*;
-import eu.ebrains.kg.commons.models.ExternalEventInformation;
 import eu.ebrains.kg.commons.models.UserWithRoles;
 import eu.ebrains.kg.commons.permission.Functionality;
 import eu.ebrains.kg.commons.permission.FunctionalityInstance;
@@ -107,7 +106,7 @@ public class CoreInstanceController {
         this.invitation.calculateInstanceScope(instanceId);
     }
 
-    public ResponseEntity<Result<NormalizedJsonLd>> createNewInstance(JsonLdDoc jsonLdDoc, UUID id, SpaceName s, ResponseConfiguration responseConfiguration, IngestConfiguration ingestConfiguration, ExternalEventInformation externalEventInformation) {
+    public ResponseEntity<Result<NormalizedJsonLd>> createNewInstance(JsonLdDoc jsonLdDoc, UUID id, SpaceName s, ResponseConfiguration responseConfiguration, IngestConfiguration ingestConfiguration) {
         NormalizedJsonLd normalizedJsonLd;
         if (ingestConfiguration.isNormalizePayload()) {
             normalizedJsonLd = jsonLd.normalize(jsonLdDoc, true);
@@ -129,55 +128,42 @@ public class CoreInstanceController {
                 return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Result.nok(HttpStatus.INTERNAL_SERVER_ERROR.value(), String.format("The id and/or the payload you're providing is pointing to multiple instances (%s). This is an invalid state and should be reported to kg@ebrains.eu", instanceIdsInSameSpace.stream().map(i -> i.getUuid().toString()).distinct().collect(Collectors.joining(", ")))));
             }
         }
-        normalizedJsonLd.defineFieldUpdateTimes(normalizedJsonLd.keySet().stream().collect(Collectors.toMap(k -> k, k -> externalEventInformation != null && externalEventInformation.getExternalEventTime() != null ? externalEventInformation.getExternalEventTime() : ZonedDateTime.now())));
-        Event upsertEvent = createUpsertEvent(id, externalEventInformation, normalizedJsonLd, s);
+        normalizedJsonLd.defineFieldUpdateTimes(normalizedJsonLd.keySet().stream().collect(Collectors.toMap(k -> k, k -> ZonedDateTime.now())));
+        Event upsertEvent = createUpsertEvent(id, normalizedJsonLd, s);
         Set<InstanceId> ids = primaryStoreEvents.postEvent(upsertEvent, ingestConfiguration.isDeferInference());
         return handleIngestionResponse(responseConfiguration, ids);
     }
 
-    public ResponseEntity<Result<NormalizedJsonLd>> contributeToInstance(JsonLdDoc jsonLdDoc, InstanceId instanceId, boolean removeNonDeclaredProperties, ResponseConfiguration responseConfiguration, IngestConfiguration ingestConfiguration, ExternalEventInformation externalEventInformation) {
+    public ResponseEntity<Result<NormalizedJsonLd>> contributeToInstance(JsonLdDoc jsonLdDoc, InstanceId instanceId, boolean removeNonDeclaredProperties, ResponseConfiguration responseConfiguration, IngestConfiguration ingestConfiguration) {
         NormalizedJsonLd normalizedJsonLd;
         if (ingestConfiguration.isNormalizePayload()) {
             normalizedJsonLd = jsonLd.normalize(jsonLdDoc, true);
         } else {
             normalizedJsonLd = new NormalizedJsonLd(jsonLdDoc);
         }
-        normalizedJsonLd = patchInstance(instanceId, normalizedJsonLd, removeNonDeclaredProperties, externalEventInformation != null ? externalEventInformation.getExternalEventTime() : null);
-        Event upsertEvent = createUpsertEvent(instanceId.getUuid(), externalEventInformation, normalizedJsonLd, instanceId.getSpace());
+        normalizedJsonLd = patchInstance(instanceId, normalizedJsonLd, removeNonDeclaredProperties);
+        Event upsertEvent = createUpsertEvent(instanceId.getUuid(), normalizedJsonLd, instanceId.getSpace());
         Set<InstanceId> ids = primaryStoreEvents.postEvent(upsertEvent, ingestConfiguration.isDeferInference());
         return handleIngestionResponse(responseConfiguration, ids);
     }
 
-    public Set<InstanceId> deleteInstance(InstanceId instanceId, ExternalEventInformation externalEventInformation) {
+    public Set<InstanceId> deleteInstance(InstanceId instanceId) {
         Event deleteEvent = Event.createDeleteEvent(instanceId.getSpace(), instanceId.getUuid(), idUtils.buildAbsoluteUrl(instanceId.getUuid()));
-        handleExternalEventInformation(externalEventInformation, deleteEvent);
         return primaryStoreEvents.postEvent(deleteEvent, false);
     }
 
 
-    private Event createUpsertEvent(UUID id, ExternalEventInformation externalEventInformation, NormalizedJsonLd normalizedJsonLd, SpaceName s) {
-        Event upsertEvent = Event.createUpsertEvent(s, id, Event.Type.INSERT, normalizedJsonLd);
-        handleExternalEventInformation(externalEventInformation, upsertEvent);
-        return upsertEvent;
+    private Event createUpsertEvent(UUID id, NormalizedJsonLd normalizedJsonLd, SpaceName s) {
+        return Event.createUpsertEvent(s, id, Event.Type.INSERT, normalizedJsonLd);
     }
 
-    private void handleExternalEventInformation(ExternalEventInformation externalEventInformation, Event event) {
-        if (externalEventInformation != null) {
-            if (externalEventInformation.getExternalUserDefinition() != null) {
-                event.setUserId(externalEventInformation.getExternalUserDefinition());
-            }
-            if (externalEventInformation.getExternalEventTime() != null) {
-                event.setReportedTimeStampInMs(externalEventInformation.getExternalEventTime().toInstant().toEpochMilli());
-            }
-        }
-    }
 
-    private NormalizedJsonLd patchInstance(InstanceId instanceId, NormalizedJsonLd normalizedJsonLd, boolean removeNonDefinedKeys, ZonedDateTime eventDateTime) {
+    private NormalizedJsonLd patchInstance(InstanceId instanceId, NormalizedJsonLd normalizedJsonLd, boolean removeNonDefinedKeys) {
         InstanceId nativeId = new InstanceId(idUtils.getDocumentIdForUserAndInstance(authContext.getUserId(), instanceId.getUuid()), instanceId.getSpace(), instanceId.isDeprecated());
         NormalizedJsonLd instance = graphDBInstances.getInstanceById(nativeId.getSpace().getName(), nativeId.getUuid(), DataStage.NATIVE, true, false, false, null, true);
         if (instance == null) {
             Map<String, ZonedDateTime> updateTimes = new HashMap<>();
-            normalizedJsonLd.keySet().forEach(k -> updateTimes.put(k, eventDateTime != null ? eventDateTime : ZonedDateTime.now()));
+            normalizedJsonLd.keySet().forEach(k -> updateTimes.put(k, ZonedDateTime.now()));
             normalizedJsonLd.defineFieldUpdateTimes(updateTimes);
             return normalizedJsonLd;
         } else {
@@ -190,7 +176,7 @@ public class CoreInstanceController {
                     updateTimes.remove(k);
                     instance.remove(k);
                 } else {
-                    updateTimes.put(k, eventDateTime != null ? eventDateTime : ZonedDateTime.now());
+                    updateTimes.put(k, ZonedDateTime.now());
                     instance.put(k, value);
                 }
             });

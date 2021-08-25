@@ -27,6 +27,7 @@ import eu.ebrains.kg.arango.commons.model.AQLQuery;
 import eu.ebrains.kg.arango.commons.model.ArangoCollectionReference;
 import eu.ebrains.kg.arango.commons.model.InternalSpace;
 import eu.ebrains.kg.commons.model.PaginationParam;
+import eu.ebrains.kg.commons.model.Type;
 import eu.ebrains.kg.graphdb.queries.model.fieldFilter.Op;
 import eu.ebrains.kg.graphdb.queries.model.fieldFilter.PropertyFilter;
 import eu.ebrains.kg.graphdb.queries.model.spec.SpecProperty;
@@ -111,7 +112,8 @@ public class DataQueryBuilder {
         ArangoCollectionReference collectionReference = ArangoCollectionReference.fromSpace(InternalSpace.TYPE_SPACE);
         this.bindVars.put("@typeCollection", collectionReference.getCollectionName());
         this.bindVars.put("@typeRelation", InternalSpace.TYPE_EDGE_COLLECTION.getCollectionName());
-        this.bindVars.put("typeId", collectionReference.docWithStableId(this.specification.getRootType().getName()).getDocumentId().toString());
+        final Type rootType = this.specification.getRootType();
+        this.bindVars.put("typeId", collectionReference.docWithStableId(rootType.getName()).getDocumentId().toString());
         this.q.addLine(trust(""));
     }
 

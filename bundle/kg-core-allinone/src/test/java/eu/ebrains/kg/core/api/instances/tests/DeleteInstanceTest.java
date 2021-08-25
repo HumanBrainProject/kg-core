@@ -50,7 +50,7 @@ public class DeleteInstanceTest extends AbstractInstanceTest {
 
     @Override
     protected void run() {
-        response = instances.deleteInstance(idUtils.getUUID(originalInstance.id()), null);
+        response = instances.deleteInstance(idUtils.getUUID(originalInstance.id()));
     }
 
     public ResponseEntity<Result<NormalizedJsonLd>> fetchInstance(){

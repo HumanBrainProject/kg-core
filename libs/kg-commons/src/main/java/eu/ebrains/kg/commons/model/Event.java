@@ -30,7 +30,7 @@ import java.util.UUID;
 
 public class Event {
     public enum Type{
-        INSERT(DataStage.NATIVE), UPDATE(DataStage.NATIVE), DELETE(DataStage.IN_PROGRESS), RELEASE(DataStage.RELEASED), UNRELEASE(DataStage.RELEASED), META_DEPRECATION(DataStage.IN_PROGRESS);
+        INSERT(DataStage.NATIVE), UPDATE(DataStage.NATIVE), DELETE(DataStage.IN_PROGRESS), RELEASE(DataStage.RELEASED), UNRELEASE(DataStage.RELEASED);
         DataStage stage;
         Type(DataStage targetStage){
             this.stage = targetStage;
@@ -112,7 +112,4 @@ public class Event {
         this.userId = userId;
     }
 
-    public void setReportedTimeStampInMs(Long reportedTimeStampInMs) {
-        this.reportedTimeStampInMs = reportedTimeStampInMs;
-    }
 }

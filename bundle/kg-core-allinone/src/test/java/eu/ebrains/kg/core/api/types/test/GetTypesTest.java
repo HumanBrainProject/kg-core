@@ -26,6 +26,7 @@ import com.arangodb.ArangoDB;
 import eu.ebrains.kg.authentication.api.AuthenticationAPI;
 import eu.ebrains.kg.commons.jsonld.NormalizedJsonLd;
 import eu.ebrains.kg.commons.model.*;
+import eu.ebrains.kg.commons.model.external.types.TypeInformation;
 import eu.ebrains.kg.commons.permission.roles.RoleMapping;
 import eu.ebrains.kg.core.api.AbstractTest;
 import eu.ebrains.kg.core.api.Instances;
@@ -41,7 +42,7 @@ public class GetTypesTest extends AbstractTest {
     private final boolean withIncomingLinks;
     private final boolean withCounts;
 
-    public PaginatedResult<NormalizedJsonLd> response;
+    public PaginatedResult<TypeInformation> response;
 
     public GetTypesTest(ArangoDB.Builder database, AuthenticationAPI authenticationAPI,  SpaceName spaceName, boolean withProperties, boolean withIncomingLinks, boolean withCounts, RoleMapping[] roles, Types types, Instances instances) {
         super(database, authenticationAPI,  roles);
@@ -56,12 +57,12 @@ public class GetTypesTest extends AbstractTest {
     @Override
     protected void setup() {
         // We create a new instance so the type is implicitly created.
-        instances.createNewInstance(TestDataFactory.createTestData(smallPayload, 0, true), "functionalityTest", new ResponseConfiguration(), new IngestConfiguration(), null);
+        instances.createNewInstance(TestDataFactory.createTestData(smallPayload, 0, true), "functionalityTest", new ResponseConfiguration(), new IngestConfiguration());
 
     }
 
     @Override
     protected void run() {
-        response = this.types.getTypes(ExposedStage.IN_PROGRESS, spaceName == null ? null : spaceName.getName(), withProperties, withIncomingLinks, withCounts, new PaginationParam());
+        response = this.types.getTypes(ExposedStage.IN_PROGRESS, spaceName == null ? null : spaceName.getName(), withProperties, withIncomingLinks, new PaginationParam());
     }
 }

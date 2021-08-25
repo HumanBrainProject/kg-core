@@ -22,11 +22,11 @@
 
 package eu.ebrains.kg.commons.api;
 
+import eu.ebrains.kg.commons.jsonld.JsonLdId;
 import eu.ebrains.kg.commons.jsonld.NormalizedJsonLd;
-import eu.ebrains.kg.commons.model.DataStage;
-import eu.ebrains.kg.commons.model.Paginated;
-import eu.ebrains.kg.commons.model.PaginationParam;
-import eu.ebrains.kg.commons.model.Result;
+import eu.ebrains.kg.commons.model.*;
+import eu.ebrains.kg.commons.model.external.spaces.SpaceSpecification;
+import eu.ebrains.kg.commons.model.external.types.TypeInformation;
 
 import java.util.List;
 import java.util.Map;
@@ -35,11 +35,20 @@ public interface GraphDBTypes {
 
     interface Client extends GraphDBTypes {}
 
-    Paginated<NormalizedJsonLd> getTypes(DataStage stage, String space, boolean withIncomingLinks, PaginationParam paginationParam);
+    Paginated<TypeInformation> getTypes(DataStage stage, String space, boolean withProperties, boolean withIncomingLinks, PaginationParam paginationParam);
 
-    Paginated<NormalizedJsonLd> getTypesWithProperties(DataStage stage, String space, boolean withCounts, boolean withIncomingLinks, PaginationParam paginationParam);
+    Map<String, Result<TypeInformation>> getTypesByName(List<String> types, DataStage stage, String space, boolean withProperties, boolean withIncomingLinks);
 
-    Map<String, Result<NormalizedJsonLd>> getTypesByName(List<String> types, DataStage stage, String space);
+    void specifyType(JsonLdId typeName, NormalizedJsonLd normalizedJsonLd, boolean global);
 
-    Map<String, Result<NormalizedJsonLd>> getTypesWithPropertiesByName(List<String> types, DataStage stage, boolean withCounts, boolean withIncomingLinks, String space);
+    void removeTypeSpecification(JsonLdId typeName, boolean global);
+
+    void specifyProperty(JsonLdId propertyName, NormalizedJsonLd normalizedJsonLd, boolean global);
+
+    void removePropertySpecification(JsonLdId propertyName, boolean global);
+
+    void addOrUpdatePropertyToType(String typeName, String propertyName, NormalizedJsonLd payload, boolean global);
+
+    void removePropertyFromType(String typeName, String propertyName, boolean global);
+
 }

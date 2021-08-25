@@ -75,7 +75,6 @@ public class UserWithRolesTest {
         assertTrue(permissions.contains(new FunctionalityInstance(Functionality.WRITE, null, null)));
         assertTrue(permissions.contains(new FunctionalityInstance(Functionality.RELEASE, null, null)));
         assertTrue(permissions.contains(new FunctionalityInstance(Functionality.CREATE, null, null)));
-        assertTrue(permissions.contains(new FunctionalityInstance(Functionality.CREATE_CLIENT, null, null)));
     }
 
     @Test

@@ -70,21 +70,9 @@ public class GraphDBArangoConfiguration {
     }
 
     @Bean
-    @Qualifier("nativeMeta")
-    public ArangoDatabaseProxy produceDefaultMetaDb(@Qualifier("arangoBuilderForGraphDB") ArangoDB.Builder arangoDB) {
-        return new ArangoDatabaseProxy(arangoDB.build(), "kg1-native-meta");
-    }
-
-    @Bean
-    @Qualifier("inProgressMeta")
-    public ArangoDatabaseProxy produceInProgressMetaDB(@Qualifier("arangoBuilderForGraphDB") ArangoDB.Builder arangoDB) {
-        return new ArangoDatabaseProxy(arangoDB.build(), "kg1-inProgress-meta");
-    }
-
-    @Bean
-    @Qualifier("releasedMeta")
-    public ArangoDatabaseProxy produceReleaseMetaDb(@Qualifier("arangoBuilderForGraphDB") ArangoDB.Builder arangoDB) {
-        return new ArangoDatabaseProxy(arangoDB.build(), "kg1-released-meta");
+    @Qualifier("structure")
+    public ArangoDatabaseProxy produceStructureDb(@Qualifier("arangoBuilderForGraphDB") ArangoDB.Builder arangoDB) {
+        return new ArangoDatabaseProxy(arangoDB.build(), "kg1-structure");
     }
 
 

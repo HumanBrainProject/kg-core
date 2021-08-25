@@ -23,6 +23,7 @@
 package eu.ebrains.kg.commons.model;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import eu.ebrains.kg.commons.model.internal.spaces.Space;
 import eu.ebrains.kg.commons.semantics.vocabularies.SchemaOrgVocabulary;
 
 public class Client {

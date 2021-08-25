@@ -33,7 +33,7 @@ import java.util.stream.Collectors;
 /**
  * A JSON-LD in any format (with / without context) / @graph annotations, etc.
  */
-public class JsonLdDoc extends TreeMap<String, Object> {
+public class JsonLdDoc extends DynamicJson {
 
     public static final String APPLICATION_JSON = "application/json";
     public static final String APPLICATION_LD_JSON = "application/ld+json";
@@ -48,13 +48,7 @@ public class JsonLdDoc extends TreeMap<String, Object> {
 
 
     public List<String> types() {
-        Object type = get(JsonLdConsts.TYPE);
-        if (type instanceof Collection) {
-            return ((Collection<?>)type).stream().map(Object::toString).collect(Collectors.toList());
-        } else if (type instanceof String) {
-            return Collections.singletonList((String) type);
-        }
-        return Collections.emptyList();
+        return getAsListOf(JsonLdConsts.TYPE, String.class);
     }
 
     public void addTypes(String... types) {
@@ -94,88 +88,6 @@ public class JsonLdDoc extends TreeMap<String, Object> {
     public JsonLdId id() {
         String id = getAs(JsonLdConsts.ID, String.class);
         return id!=null ? new JsonLdId(id) : null;
-    }
-
-    public <T> List<T> getAsListOf(String key, Class<T> clazz) {
-        return getAsListOf(key, clazz, false);
-    }
-
-    public <T> List<T> getAsListOf(String key, Class<T> clazz, boolean skipWrongTypes){
-        Object o = get(key);
-        if(o instanceof Collection){
-            return ((Collection<?>)o).stream().map(i -> castType(clazz, i, !skipWrongTypes)).filter(Objects::nonNull).collect(Collectors.toList());
-        }
-        else{
-            T singleInstance = castType(clazz, o, !skipWrongTypes);
-            if(singleInstance!=null){
-                return Collections.singletonList(singleInstance);
-            }
-            else{
-                return Collections.emptyList();
-            }
-        }
-    }
-
-    public <T> T getAs(String key, Class<T> clazz, T fallback){
-        T value = castType(clazz, get(key), false);
-        return value != null ? value : fallback;
-    }
-
-    public <T> T getAs(String key, Class<T> clazz) {
-        return castType(clazz, get(key), true);
-    }
-
-    private <T> T castType(Class<T> clazz, Object o, boolean throwException) {
-        if (o == null) {
-            return null;
-        }
-        if(o instanceof Map){
-            if(clazz == Map.class){
-                return (T)o;
-            }
-            if(clazz == JsonLdId.class){
-                Object id = ((Map) o).get(JsonLdConsts.ID);
-                try {
-                    return id instanceof String ? (T) new JsonLdId((String) id) : null;
-                }
-                catch (IllegalArgumentException e){
-                    if(throwException){
-                        throw e;
-                    }
-                    return null;
-                }
-            }
-            if(clazz == JsonLdDoc.class){
-                return (T)new JsonLdDoc((Map)o);
-            }
-            else if(clazz == NormalizedJsonLd.class){
-                return (T) new NormalizedJsonLd((Map)o);
-            }
-        }
-        if(o instanceof Collection){
-            if(((Collection<?>)o).isEmpty()){
-                return null;
-            }
-            else if(((Collection<?>)o).size()==1) {
-                return castType(clazz, ((Collection<?>) o).iterator().next(), throwException);
-            }
-        }
-        if(clazz == UUID.class && o instanceof String){
-            return (T)UUID.fromString((String)o);
-        }
-        if(clazz == SpaceName.class && o instanceof String){
-            return (T)new SpaceName((String)o);
-        }
-        if (clazz.isInstance(o)) {
-            return (T) o;
-        } else {
-            if(throwException) {
-                throw new IllegalArgumentException(String.format("Wrong type casting - was expecting %s but got %s", clazz.getName(), o.getClass().getName()));
-            }
-            else{
-                return null;
-            }
-        }
     }
 
     public void addProperty(Object key, Object value) {

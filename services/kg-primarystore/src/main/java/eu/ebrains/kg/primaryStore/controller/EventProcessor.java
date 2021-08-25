@@ -137,7 +137,10 @@ public class EventProcessor {
     public List<PersistedEvent> autoRelease(List<PersistedEvent> events){
         events.forEach(e -> {
             if(e.getSpace() != null && e.getSpace().isAutoRelease()){
-                postEvent(new Event(e.getSpaceName(), e.getDocumentId(), new NormalizedJsonLd(e.getData()).removeAllInternalProperties().removeAllFieldsFromNamespace(EBRAINSVocabulary.META), Event.Type.RELEASE, new Date()), false);
+                final NormalizedJsonLd normalizedJsonLd = new NormalizedJsonLd(e.getData());
+                normalizedJsonLd.removeAllInternalProperties();
+                normalizedJsonLd.removeAllFieldsFromNamespace(EBRAINSVocabulary.META);
+                postEvent(new Event(e.getSpaceName(), e.getDocumentId(), normalizedJsonLd, Event.Type.RELEASE, new Date()), false);
             }
         });
         return events;

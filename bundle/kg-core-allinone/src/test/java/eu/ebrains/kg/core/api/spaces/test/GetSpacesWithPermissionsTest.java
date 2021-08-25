@@ -24,11 +24,11 @@ package eu.ebrains.kg.core.api.spaces.test;
 
 import com.arangodb.ArangoDB;
 import eu.ebrains.kg.authentication.api.AuthenticationAPI;
-import eu.ebrains.kg.commons.jsonld.NormalizedJsonLd;
 import eu.ebrains.kg.commons.model.IngestConfiguration;
 import eu.ebrains.kg.commons.model.PaginatedResult;
 import eu.ebrains.kg.commons.model.PaginationParam;
 import eu.ebrains.kg.commons.model.ResponseConfiguration;
+import eu.ebrains.kg.commons.model.external.spaces.SpaceInformation;
 import eu.ebrains.kg.commons.permission.roles.RoleMapping;
 import eu.ebrains.kg.core.api.AbstractTest;
 import eu.ebrains.kg.core.api.Instances;
@@ -41,7 +41,7 @@ public class GetSpacesWithPermissionsTest extends AbstractTest {
     private final Instances instances;
     private final Spaces spaces;
     public final String space = "functionalitytest";
-    public PaginatedResult<NormalizedJsonLd> response;
+    public PaginatedResult<SpaceInformation> response;
 
 
     public GetSpacesWithPermissionsTest(ArangoDB.Builder database, AuthenticationAPI authenticationAPI,  RoleMapping[] roles, Instances instances, Spaces spaces) {
@@ -53,11 +53,11 @@ public class GetSpacesWithPermissionsTest extends AbstractTest {
     @Override
     protected void setup() {
         // We create a new instance so the space is implicitly created.
-        instances.createNewInstance(TestDataFactory.createTestData(smallPayload, 0, true), space, new ResponseConfiguration(), new IngestConfiguration(), null);
+        instances.createNewInstance(TestDataFactory.createTestData(smallPayload, 0, true), space, new ResponseConfiguration(), new IngestConfiguration());
     }
 
     @Override
     protected void run() {
-        response = this.spaces.getSpaces(ExposedStage.IN_PROGRESS, new PaginationParam(), true);
+        response = this.spaces.getSpaces(new PaginationParam(), true);
     }
 }

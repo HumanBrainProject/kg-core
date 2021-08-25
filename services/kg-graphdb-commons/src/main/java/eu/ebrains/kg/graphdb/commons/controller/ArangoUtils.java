@@ -36,8 +36,10 @@ import eu.ebrains.kg.commons.jsonld.NormalizedJsonLd;
 import eu.ebrains.kg.commons.model.SpaceName;
 import eu.ebrains.kg.graphdb.ingestion.model.DocumentRelation;
 import eu.ebrains.kg.graphdb.instances.model.ArangoRelation;
+import eu.ebrains.kg.graphdb.structure.controller.StructureRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Component;
 
@@ -53,29 +55,39 @@ public class ArangoUtils {
 
     private final IdUtils idUtils;
 
+    private final boolean setupDBIndices;
+
 
     @PostConstruct
     public void configureArango(){
-        logger.debug("Setting up in progress db... ");
-        ArangoDatabase inProgressDB = arangoDatabases.inProgressDB.get();
-        inProgressDB.getCollections(new CollectionsReadOptions().excludeSystem(true)).forEach(c -> {
-            logger.debug(String.format("Ensuring configuration of collection \"%s\" in \"in progress\"", c.getName()));
-            ArangoCollection collection = inProgressDB.collection(c.getName());
-            ensureIndicesOnCollection(collection);
-        });
+        arangoDatabases.structureDB.createIfItDoesntExist();
+        arangoDatabases.inProgressDB.createIfItDoesntExist();
+        arangoDatabases.releasedDB.createIfItDoesntExist();
+        StructureRepository.setupCollections(arangoDatabases.structureDB);
 
-        ArangoDatabase releasedDB = arangoDatabases.releasedDB.get();
-        releasedDB.getCollections(new CollectionsReadOptions().excludeSystem(true)).forEach(c -> {
-            logger.debug(String.format("Ensuring configuration of collection \"%s\" in \"released\"", c.getName()));
-            ArangoCollection collection = releasedDB.collection(c.getName());
-            ensureIndicesOnCollection(collection);
-        });
+        if(setupDBIndices) {
+            logger.debug("Setting up in progress db... ");
+            ArangoDatabase inProgressDB = arangoDatabases.inProgressDB.get();
+            inProgressDB.getCollections(new CollectionsReadOptions().excludeSystem(true)).forEach(c -> {
+                logger.debug(String.format("Ensuring configuration of collection \"%s\" in \"in progress\"", c.getName()));
+                ArangoCollection collection = inProgressDB.collection(c.getName());
+                ensureIndicesOnCollection(collection);
+            });
+
+            ArangoDatabase releasedDB = arangoDatabases.releasedDB.get();
+            releasedDB.getCollections(new CollectionsReadOptions().excludeSystem(true)).forEach(c -> {
+                logger.debug(String.format("Ensuring configuration of collection \"%s\" in \"released\"", c.getName()));
+                ArangoCollection collection = releasedDB.collection(c.getName());
+                ensureIndicesOnCollection(collection);
+            });
+        }
     }
 
 
-    public ArangoUtils(ArangoDatabases arangoDatabases, IdUtils idUtils) {
+    public ArangoUtils(ArangoDatabases arangoDatabases, IdUtils idUtils, @Value("${eu.ebrains.kg.core.db.indices.setup:true}") boolean setupDBIndices) {
         this.arangoDatabases = arangoDatabases;
         this.idUtils = idUtils;
+        this.setupDBIndices = setupDBIndices;
     }
 
     private final Logger logger = LoggerFactory.getLogger(getClass());
@@ -109,9 +121,6 @@ public class ArangoUtils {
             logger.debug(String.format("Creating collection %s", c.getCollectionName()));
             db.createCollection(c.getCollectionName(), new CollectionCreateOptions().waitForSync(true).type(c.isEdge() != null && c.isEdge() ? CollectionType.EDGES : CollectionType.DOCUMENT));
             ensureIndicesOnCollection(collection);
-            if (c.equals(InternalSpace.DOCUMENT_RELATION_EDGE_COLLECTION)) {
-                collection.ensureSkiplistIndex(Collections.singletonList(DocumentRelation.TARGET_ORIGINAL_DOCUMENT), new SkiplistIndexOptions());
-            }
         }
         return collection;
     }

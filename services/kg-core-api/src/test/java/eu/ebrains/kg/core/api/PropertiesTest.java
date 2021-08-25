@@ -22,13 +22,12 @@
 
 package eu.ebrains.kg.core.api;
 
-import eu.ebrains.kg.commons.AuthContext;
-import eu.ebrains.kg.commons.IdUtils;
 import eu.ebrains.kg.commons.api.GraphDBTypes;
 import eu.ebrains.kg.commons.api.PrimaryStoreEvents;
 import eu.ebrains.kg.commons.jsonld.NormalizedJsonLd;
 import eu.ebrains.kg.commons.model.Result;
 import eu.ebrains.kg.commons.model.SpaceName;
+import eu.ebrains.kg.core.controller.CoreUtils;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -37,19 +36,16 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 
 public class PropertiesTest {
-    AuthContext authContext = Mockito.mock(AuthContext.class);
-    Properties instance = new Properties(Mockito.mock(GraphDBTypes.Client.class), Mockito.mock(PrimaryStoreEvents.Client.class), authContext, Mockito.mock(IdUtils.class));
+    Properties instance = new Properties(Mockito.mock(GraphDBTypes.Client.class));
 
     @Before
-    public void init() {
-        Mockito.doReturn(new SpaceName("foobar")).when(authContext).getClientSpace();
+    public void init(){
     }
 
     @Test
     public void testPropertyDefinitionOk() {
         NormalizedJsonLd ld = new NormalizedJsonLd();
-        ResponseEntity<Result<Void>> resultResponseEntity = instance.defineProperty(ld, false, "http://foobar");
-        Assert.assertEquals(HttpStatus.OK, resultResponseEntity.getStatusCode());
+        instance.defineProperty(ld, false, "http://foobar");
     }
 
 }

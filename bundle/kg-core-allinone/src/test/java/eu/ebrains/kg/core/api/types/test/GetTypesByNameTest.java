@@ -29,6 +29,7 @@ import eu.ebrains.kg.commons.model.IngestConfiguration;
 import eu.ebrains.kg.commons.model.ResponseConfiguration;
 import eu.ebrains.kg.commons.model.Result;
 import eu.ebrains.kg.commons.model.SpaceName;
+import eu.ebrains.kg.commons.model.external.types.TypeInformation;
 import eu.ebrains.kg.commons.permission.roles.RoleMapping;
 import eu.ebrains.kg.core.api.AbstractTest;
 import eu.ebrains.kg.core.api.Instances;
@@ -45,7 +46,7 @@ public class GetTypesByNameTest extends AbstractTest {
     private final SpaceName spaceName;
     private final boolean withProperties;
 
-    public  Result<Map<String, Result<NormalizedJsonLd>>> response;
+    public  Result<Map<String, Result<TypeInformation>>> response;
 
     public GetTypesByNameTest(ArangoDB.Builder database, AuthenticationAPI authenticationAPI,  SpaceName spaceName, boolean withProperties, RoleMapping[] roles, Types types, Instances instances) {
         super(database, authenticationAPI,  roles);
@@ -58,12 +59,12 @@ public class GetTypesByNameTest extends AbstractTest {
     @Override
     protected void setup() {
         // We create a new instance so the type is implicitly created.
-        instances.createNewInstance(TestDataFactory.createTestData(smallPayload, 0, true), "functionalityTest", new ResponseConfiguration(), new IngestConfiguration(), null);
+        instances.createNewInstance(TestDataFactory.createTestData(smallPayload, 0, true), "functionalityTest", new ResponseConfiguration(), new IngestConfiguration());
 
     }
 
     @Override
     protected void run() {
-         response = this.types.getTypesByName(Collections.singletonList(TestDataFactory.TEST_TYPE), ExposedStage.IN_PROGRESS, withProperties, withProperties, spaceName == null ? null : spaceName.getName());
+         response = this.types.getTypesByName(Collections.singletonList(TestDataFactory.TEST_TYPE), ExposedStage.IN_PROGRESS, withProperties, false, spaceName == null ? null : spaceName.getName());
     }
 }

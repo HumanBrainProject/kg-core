@@ -50,21 +50,6 @@ public class NormalizedJsonLd extends JsonLdDoc {
         return identifiers;
     }
 
-    public NormalizedJsonLd removeAllFieldsFromNamespace(String namespace){
-        this.keySet().removeIf(k -> k.startsWith(namespace));
-        return this;
-    }
-
-    public NormalizedJsonLd keepPropertiesOnly(Collection<String> whiteList){
-        this.keySet().removeIf(k -> !whiteList.contains(k));
-        return this;
-    }
-
-    public NormalizedJsonLd removeAllInternalProperties() {
-        this.keySet().removeIf(NormalizedJsonLd::isInternalKey);
-        return this;
-    }
-
     public void normalizeTypes() {
         Object type = get(JsonLdConsts.TYPE);
         if (type != null && !(type instanceof Collection)) {
@@ -72,18 +57,6 @@ public class NormalizedJsonLd extends JsonLdDoc {
         }
     }
 
-
-    public void visitPublicKeys(BiConsumer<String, Object> consumer) {
-        for (Object key : keySet()) {
-            if (key instanceof String && !isInternalKey((String) key)) {
-                consumer.accept((String) key, get(key));
-            }
-        }
-    }
-
-    public static boolean isInternalKey(String key) {
-        return key.startsWith("_");
-    }
 
     public void defineFieldUpdateTimes(Map<String, ZonedDateTime> fieldUpdateTimes) {
         put(EBRAINSVocabulary.META_PROPERTYUPDATES, serializeUpdateTimes(fieldUpdateTimes));

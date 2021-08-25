@@ -180,20 +180,6 @@ public class TodoListProcessorTest {
 
     }
 
-    @Test
-    public void upsertClientDefinition() {
-        //Given
-        NormalizedJsonLd editorClient = TestObjectFactory.createJsonLd("admin/kgeditorClient.json");
-
-        //When
-        ArangoDocumentReference clientId = todoListProcessor.upsertDocument(admin.doc(UUID.randomUUID()), editorClient, DataStage.IN_PROGRESS, null);
-
-        //Then
-        ArangoDocument client = repository.getDocument(DataStage.IN_PROGRESS, clientId);
-        Map docInMeta = arangoDatabases.getMetaByStage(DataStage.IN_PROGRESS).getDocument(clientId.getId(), Map.class);
-        Assert.assertNotNull(docInMeta);
-    }
-
 
     @Test
     public void upsertTypeDefinitionForClient() {
@@ -209,8 +195,7 @@ public class TodoListProcessorTest {
 
         //Then
         ArangoDocument typeDoc = repository.getDocument(DataStage.IN_PROGRESS, typeDocId);
-        Map docInMeta = arangoDatabases.getMetaByStage(DataStage.IN_PROGRESS).getDocument(typeDocId.getId(), Map.class);
-        Assert.assertNotNull(docInMeta);
+
     }
 
 
@@ -228,8 +213,6 @@ public class TodoListProcessorTest {
 
         //Then
         ArangoDocument typeDoc = repository.getDocument(DataStage.IN_PROGRESS, typeDocId);
-        Map docInMeta = arangoDatabases.getMetaByStage(DataStage.IN_PROGRESS).getDocument(typeDocId.getId(), Map.class);
-        Assert.assertNotNull(docInMeta);
     }
 
     @Test
@@ -246,8 +229,6 @@ public class TodoListProcessorTest {
 
         //Then
         ArangoDocument typeDoc = repository.getDocument(DataStage.IN_PROGRESS, typeDocId);
-        Map docInMeta = arangoDatabases.getMetaByStage(DataStage.IN_PROGRESS).getDocument(typeDocId.getId(), Map.class);
-        Assert.assertNotNull(docInMeta);
     }
 
 

@@ -39,6 +39,10 @@ public class FunctionalityInstance {
     private FunctionalityInstance(){}
 
     public boolean appliesTo(SpaceName space, UUID id){
+        if(space!=null && SpaceName.REVIEW_SPACE.equals(space.getName())){
+            //The review space is special -> we only grant read access
+            return this.functionality == Functionality.READ;
+        }
         if(this.space == null && this.id == null){
             return true;
         }

@@ -22,38 +22,25 @@
 
 package eu.ebrains.kg.core.api;
 
-import eu.ebrains.kg.arango.commons.model.InternalSpace;
-import eu.ebrains.kg.commons.AuthContext;
 import eu.ebrains.kg.commons.Version;
-import eu.ebrains.kg.commons.api.GraphDBSpaces;
-import eu.ebrains.kg.commons.api.PrimaryStoreEvents;
 import eu.ebrains.kg.commons.config.openApiGroups.Admin;
 import eu.ebrains.kg.commons.config.openApiGroups.Advanced;
-import eu.ebrains.kg.commons.jsonld.JsonLdId;
-import eu.ebrains.kg.commons.jsonld.NormalizedJsonLd;
+import eu.ebrains.kg.commons.exception.InvalidRequestException;
 import eu.ebrains.kg.commons.markers.ExposesInputWithoutEnrichedSensitiveData;
 import eu.ebrains.kg.commons.markers.ExposesSpace;
-import eu.ebrains.kg.commons.markers.ExposesType;
 import eu.ebrains.kg.commons.markers.WritesData;
-import eu.ebrains.kg.commons.model.*;
-import eu.ebrains.kg.commons.models.UserWithRoles;
-import eu.ebrains.kg.commons.permission.Functionality;
-import eu.ebrains.kg.commons.permission.FunctionalityInstance;
-import eu.ebrains.kg.commons.semantics.vocabularies.EBRAINSVocabulary;
-import eu.ebrains.kg.commons.semantics.vocabularies.SchemaOrgVocabulary;
+import eu.ebrains.kg.commons.model.PaginatedResult;
+import eu.ebrains.kg.commons.model.PaginationParam;
+import eu.ebrains.kg.commons.model.Result;
+import eu.ebrains.kg.commons.model.SpaceName;
+import eu.ebrains.kg.commons.model.external.spaces.SpaceInformation;
+import eu.ebrains.kg.commons.model.external.spaces.SpaceSpecification;
 import eu.ebrains.kg.core.controller.CoreSpaceController;
-import eu.ebrains.kg.core.controller.VirtualSpaceController;
-import eu.ebrains.kg.core.model.ExposedStage;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import org.springdoc.api.annotations.ParameterObject;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-
-import java.nio.charset.StandardCharsets;
-import java.util.*;
-import java.util.stream.Collectors;
 
 /**
  * The spaces API provides information about existing KG spaces
@@ -62,87 +49,25 @@ import java.util.stream.Collectors;
 @RequestMapping(Version.API + "/spaces")
 public class Spaces {
 
-    private final GraphDBSpaces.Client graphDBSpaces;
     private final CoreSpaceController spaceController;
-    private final AuthContext authContext;
-    private final PrimaryStoreEvents.Client primaryStoreEvents;
 
-    public Spaces(GraphDBSpaces.Client graphDBSpaces, CoreSpaceController spaceController, AuthContext authContext, PrimaryStoreEvents.Client primaryStoreEvents) {
-        this.graphDBSpaces = graphDBSpaces;
+    public Spaces(CoreSpaceController spaceController) {
         this.spaceController = spaceController;
-        this.authContext = authContext;
-        this.primaryStoreEvents = primaryStoreEvents;
     }
 
     @GetMapping("{space}")
     @ExposesSpace
     @Advanced
-    public Result<NormalizedJsonLd> getSpace(@RequestParam("stage") ExposedStage stage, @PathVariable("space") @Parameter(description = "The space to be read or \"" + SpaceName.PRIVATE_SPACE + "\" for your private space") String space, @RequestParam(value = "permissions", defaultValue = "false") boolean permissions) {
-        if(space!=null){
-            switch(space){
-                case SpaceName.PRIVATE_SPACE:
-                    return Result.ok(MYSPACE);
-                case VirtualSpaceController.INVITATION_SPACE:
-                    return Result.ok(INVITATIONS);
-            }
-        }
-        NormalizedJsonLd s = spaceController.getSpace(stage, space, permissions);
-        if (s != null) {
-            s.removeAllInternalProperties();
-        }
-        return Result.ok(s);
+    public Result<SpaceInformation> getSpace(@PathVariable("space") @Parameter(description = "The space to be read or \"" + SpaceName.PRIVATE_SPACE + "\" for your private space") String space, @RequestParam(value = "permissions", defaultValue = "false") boolean permissions) {
+        SpaceInformation s = spaceController.getSpace(SpaceName.fromString(space), permissions);
+        return s != null ? Result.ok(s) : null;
     }
-
-    private static NormalizedJsonLd createSpaceRepresentation(String name, Functionality... functionalities){
-        NormalizedJsonLd space = new NormalizedJsonLd();
-        space.put(SchemaOrgVocabulary.IDENTIFIER, name);
-        space.put(SchemaOrgVocabulary.NAME, name);
-        space.put(EBRAINSVocabulary.META_PERMISSIONS, Arrays.asList(functionalities));
-        return space;
-    }
-
-    private final static NormalizedJsonLd MYSPACE =  createSpaceRepresentation(SpaceName.PRIVATE_SPACE, Functionality.READ, Functionality.WRITE, Functionality.CREATE, Functionality.DELETE);
-    private final static NormalizedJsonLd INVITATIONS = createSpaceRepresentation(VirtualSpaceController.INVITATION_SPACE, Functionality.READ);
-
 
     @GetMapping
     @ExposesSpace
     @Advanced
-    public PaginatedResult<NormalizedJsonLd> getSpaces(@RequestParam("stage") ExposedStage stage, @ParameterObject PaginationParam paginationParam, @RequestParam(value = "permissions", defaultValue = "false") boolean permissions) {
-        ArrayList<NormalizedJsonLd> extraSpaces = new ArrayList<>();
-        extraSpaces.add(MYSPACE);
-        if(authContext.getUserWithRoles().hasInvitations()){
-            extraSpaces.add(INVITATIONS);
-        }
-        final int numberOfExtraSpaces = extraSpaces.size();
-        List<NormalizedJsonLd> extraSpacesToBeAdded = new ArrayList<>();
-        final long originalFrom = paginationParam.getFrom();
-        if(originalFrom < numberOfExtraSpaces){
-            //We need to add some extra spaces to the result
-            extraSpacesToBeAdded = extraSpaces.subList((int) originalFrom, numberOfExtraSpaces);
-            paginationParam.setFrom(0);
-            if(paginationParam.getSize()!=null){
-                paginationParam.setSize(paginationParam.getSize()-extraSpacesToBeAdded.size());
-            }
-        }
-        else{
-            paginationParam.setFrom(originalFrom-numberOfExtraSpaces);
-        }
-        Paginated<NormalizedJsonLd> spaces = graphDBSpaces.getSpaces(stage.getStage(), paginationParam);
-        final int numberOfExtraSpacesToBeAdded = extraSpacesToBeAdded.size();
-        extraSpacesToBeAdded.addAll(spaces.getData());
-        Paginated<NormalizedJsonLd> result = new Paginated<>(extraSpacesToBeAdded, spaces.getTotalResults()+numberOfExtraSpaces, extraSpacesToBeAdded.size(), originalFrom);
-        if (permissions) {
-            UserWithRoles userWithRoles = authContext.getUserWithRoles();
-            result.getData().forEach(space -> {
-                if(!space.containsKey(EBRAINSVocabulary.META_PERMISSIONS)) {
-                    List<Functionality> applyingFunctionalities = userWithRoles.getPermissions().stream().filter(f -> (f.getFunctionality().getStage() == null || f.getFunctionality().getStage() == stage.getStage()) && f.getFunctionality().getFunctionalityGroup() == Functionality.FunctionalityGroup.INSTANCE && f.appliesTo(Space.fromJsonLd(space).getName(), null)).map(FunctionalityInstance::getFunctionality).collect(Collectors.toList());
-                    space.put(EBRAINSVocabulary.META_PERMISSIONS, applyingFunctionalities);
-                }
-            });
-        }
-        result.getData().forEach(NormalizedJsonLd::removeAllInternalProperties);
-        return PaginatedResult.ok(result);
+    public PaginatedResult<SpaceInformation> getSpaces(@ParameterObject PaginationParam paginationParam, @RequestParam(value = "permissions", defaultValue = "false") boolean permissions) {
+        return PaginatedResult.ok(spaceController.getSpaces(paginationParam, permissions));
     }
 
 
@@ -150,101 +75,42 @@ public class Spaces {
     @PutMapping("{space}/types")
     @WritesData
     @Admin
-    public ResponseEntity<Result<Void>> assignTypeToSpace(@PathVariable("space") @Parameter(description = "The space be linked to or \"" + SpaceName.PRIVATE_SPACE + "\" for your private space") String space, @RequestParam("type") String type) {
-        NormalizedJsonLd payload = new NormalizedJsonLd();
-        SpaceName sp = authContext.resolveSpaceName(space);
-        payload.addTypes(EBRAINSVocabulary.META_TYPE_IN_SPACE_DEFINITION_TYPE);
-        Type t = new Type(type);
-        payload.addProperty(EBRAINSVocabulary.META_TYPE, new JsonLdId(t.getName()));
-        payload.addProperty(EBRAINSVocabulary.META_SPACES, Collections.singletonList(sp.getName()));
-        payload.setId(EBRAINSVocabulary.createIdForStructureDefinition("type2space", sp.getName(), t.getName()));
-        primaryStoreEvents.postEvent(Event.createUpsertEvent(InternalSpace.GLOBAL_SPEC, UUID.nameUUIDFromBytes(payload.id().getId().getBytes(StandardCharsets.UTF_8)), Event.Type.INSERT, payload), false);
-        return ResponseEntity.ok(Result.ok());
+    public void assignTypeToSpace(@PathVariable("space") @Parameter(description = "The space be linked to or \"" + SpaceName.PRIVATE_SPACE + "\" for your private space") String space, @RequestParam("type") String type) {
+        spaceController.addTypeToSpace(SpaceName.fromString(space), type);
     }
 
     @Operation(summary = "Remove a type in space definition")
     @DeleteMapping("{space}/types")
     @WritesData
     @Admin
-    public ResponseEntity<Result<Void>> removeTypeFromSpace(@PathVariable("space") @Parameter(description = "The space the type shall be removed from or \"" + SpaceName.PRIVATE_SPACE + "\" for your private space") String space, @RequestParam("type") String type) {
-        SpaceName spaceName = authContext.resolveSpaceName(space);
-        spaceController.removeTypeInSpaceLink(spaceName, new Type(type));
-        return ResponseEntity.ok(Result.ok());
+    public void removeTypeFromSpace(@PathVariable("space") @Parameter(description = "The space the type shall be removed from or \"" + SpaceName.PRIVATE_SPACE + "\" for your private space") String space, @RequestParam("type") String type) {
+        spaceController.removeTypeFromSpace(SpaceName.fromString(space), type);
     }
 
 
-    @Operation(summary = "Explicitly specify a space (incl. creation of roles in the authentication system)")
+    @Operation(summary = "Explicitly specify a space")
     @PutMapping("{space}/specification")
     @Admin
     @ExposesInputWithoutEnrichedSensitiveData
-    public ResponseEntity<Result<NormalizedJsonLd>> createSpaceDefinition(@PathVariable(value = "space") @Parameter(description = "The space the definition is valid for. Please note that you can't do so for your private space (\"" + SpaceName.PRIVATE_SPACE + "\")") String space, @RequestParam(value = "autorelease", required = false, defaultValue = "false") boolean autoRelease, @RequestParam(value = "clientSpace", required = false, defaultValue = "false") boolean clientSpace) {
-        SpaceName spaceName = authContext.resolveSpaceName(space);
-        if (spaceName != null) {
-            if(spaceName.equals(authContext.getUserWithRoles().getPrivateSpace())){
-                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Result.nok(HttpStatus.BAD_REQUEST.value(), "Your private space is configured by default - you can't do so yourself."));
-            }
+    public void createSpaceDefinition(@PathVariable(value = "space") @Parameter(description = "The space the definition is valid for. Please note that you can't do so for your private space (\"" + SpaceName.PRIVATE_SPACE + "\")") String space, @RequestParam(value = "autorelease", required = false, defaultValue = "false") boolean autoRelease, @RequestParam(value = "clientSpace", required = false, defaultValue = "false") boolean clientSpace) {
+        if(space == null){
+            throw new InvalidRequestException("You need to provide a space name to execute this functionality");
         }
-        return ResponseEntity.ok(Result.ok(spaceController.createSpaceDefinition(new Space(spaceName, autoRelease, clientSpace), true)));
+        SpaceSpecification spaceSpecification = new SpaceSpecification();
+        spaceSpecification.setName(space);
+        spaceSpecification.setIdentifier(space);
+        spaceSpecification.setAutoRelease(autoRelease);
+        spaceSpecification.setClientSpace(clientSpace);
+        spaceController.createSpaceDefinition(spaceSpecification);
     }
 
 
-    @Operation(summary = "Remove a space definition (this does not mean that its links are removed - it therefore can still appear in the type queries)")
+    @Operation(summary = "Remove a space definition")
     @DeleteMapping("{space}/specification")
     @Admin
     @ExposesInputWithoutEnrichedSensitiveData
-    public ResponseEntity<Result<Void>> removeSpaceDefinition(@PathVariable(value = "space") @Parameter(description = "The space the definition should be removed for. Please note that you can't do so for your private space (\"" + SpaceName.PRIVATE_SPACE + "\")") String space) {
-        SpaceName spaceName = authContext.resolveSpaceName(space);
-        if (spaceName != null) {
-            if(spaceName.equals(authContext.getUserWithRoles().getPrivateSpace())){
-                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Result.nok(HttpStatus.BAD_REQUEST.value(), "Your private space is configured by default - you can't do so yourself."));
-            }
-        }
+    public void removeSpaceDefinition(@PathVariable(value = "space") @Parameter(description = "The space the definition should be removed for. Please note that you can't do so for your private space (\"" + SpaceName.PRIVATE_SPACE + "\")") String space) {
         spaceController.removeSpaceDefinition(new SpaceName(space));
-        return ResponseEntity.ok(Result.ok());
-    }
-
-
-    @Operation(summary = "Remove all links of a space (if it is empty) so it is disappearing from the meta database. This does not remove the explicit specifications but keeps them e.g. if it is going to be reintroudced).")
-    @DeleteMapping("{space}/links")
-    @Admin
-    public void removeSpaceLinks(@PathVariable(value = "space") @Parameter(description = "The space links should be removed from or \"" + SpaceName.PRIVATE_SPACE + "\" for your private space.") String space) {
-        spaceController.removeSpaceLinks(authContext.resolveSpaceName(space));
-    }
-
-
-    @Operation(summary = "List candidate spaces for removal", description = "Returns a list of spaces which potentially could be removed because they are not in use (have no types)")
-    @GetMapping("/candidates/forRemoval")
-    @ExposesType
-    @Admin
-    public Result<List<String>> candidatesForDeprecation() {
-        List<NormalizedJsonLd> allSpaces = getSpaces(ExposedStage.IN_PROGRESS, new PaginationParam(), false).getData();
-        if (allSpaces != null) {
-            return Result.ok(allSpaces.stream().map(space -> space.getAs(SchemaOrgVocabulary.IDENTIFIER, String.class)).filter(spaceController::isSpaceEmpty).collect(Collectors.toList()));
-        }
-        return Result.ok(Collections.emptyList());
-    }
-
-
-    @Operation(summary = "Remove candidates", description = "Remove all candidates (instances without occurrences) in one go")
-    @DeleteMapping("/candidates/forRemoval")
-    @WritesData
-    @Admin
-    public ResponseEntity<List<Result<String>>> deprecateAllCandidates(@RequestParam(value = "removeRoles", required = false, defaultValue = "false") boolean removeRoles) {
-        Result<List<String>> listResult = candidatesForDeprecation();
-        if (listResult != null && listResult.getData() != null) {
-            List<Result<String>> result = new ArrayList<>();
-            listResult.getData().forEach(d -> {
-                try {
-                    removeSpaceLinks(d);
-                    removeSpaceDefinition(d);
-                    result.add(Result.ok(d));
-                } catch (Exception e) {
-                    result.add(Result.nok(HttpStatus.CONFLICT.value(), String.format("%s - %s", d, e.getMessage())));
-                }
-            });
-            return ResponseEntity.ok(result);
-        }
-        return ResponseEntity.notFound().build();
     }
 
 }

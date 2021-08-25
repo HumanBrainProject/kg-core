@@ -22,13 +22,15 @@
 
 package eu.ebrains.kg.commons.model;
 
+import eu.ebrains.kg.commons.jsonld.DynamicJson;
 import eu.ebrains.kg.commons.jsonld.NormalizedJsonLd;
+import eu.ebrains.kg.commons.model.external.types.TypeInformation;
 
 import java.util.Map;
 
 public class SuggestionResult {
     private Paginated<SuggestedLink> suggestions;
-    private Map<String, NormalizedJsonLd> types;
+    private Map<String, TypeInformation> types;
 
     public Paginated<SuggestedLink> getSuggestions() {
         return suggestions;
@@ -38,11 +40,11 @@ public class SuggestionResult {
         this.suggestions = suggestions;
     }
 
-    public Map<String, NormalizedJsonLd> getTypes() {
+    public Map<String, TypeInformation> getTypes() {
         return types;
     }
 
-    public void setTypes(Map<String, NormalizedJsonLd> types) {
+    public void setTypes(Map<String, TypeInformation> types) {
         this.types = types;
     }
 }

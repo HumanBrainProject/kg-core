@@ -26,6 +26,7 @@ import eu.ebrains.kg.commons.IdUtils;
 import eu.ebrains.kg.commons.jsonld.JsonLdId;
 import eu.ebrains.kg.commons.jsonld.NormalizedJsonLd;
 import eu.ebrains.kg.commons.model.*;
+import eu.ebrains.kg.commons.model.internal.spaces.Space;
 import eu.ebrains.kg.graphdb.commons.controller.ArangoRepositoryCommons;
 import org.junit.Test;
 import org.mockito.Mockito;
@@ -37,7 +38,7 @@ import java.util.UUID;
 public class TodoListProcessorUnitTest {
 
 
-    private TodoListProcessor processor = Mockito.spy(new TodoListProcessor(Mockito.mock(ArangoRepositoryCommons.class), Mockito.mock(StructureSplitter.class), Mockito.mock(MainEventTracker.class), Mockito.mock(IdUtils.class), Mockito.mock(DataController.class), Mockito.mock(MetaDataController.class), Mockito.mock(ReleasingController.class), true));
+    private TodoListProcessor processor = Mockito.spy(new TodoListProcessor(Mockito.mock(ArangoRepositoryCommons.class), Mockito.mock(StructureSplitter.class), Mockito.mock(MainEventTracker.class), Mockito.mock(IdUtils.class), Mockito.mock(DataController.class), Mockito.mock(ReleasingController.class)));
 
     @Test
     public void doProcessTodoList() {

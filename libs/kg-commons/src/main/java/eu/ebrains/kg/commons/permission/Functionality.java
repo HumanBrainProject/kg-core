@@ -39,8 +39,7 @@ public enum Functionality {
 
     //Space mgmt
     READ_SPACE(Permission.Level.GLOBAL_AND_SPACE, FunctionalityGroup.SPACES, null, null, null),
-    CREATE_SPACE(Permission.Level.GLOBAL_ONLY, FunctionalityGroup.SPACES, null, Event.Type.INSERT, EBRAINSVocabulary.META_SPACEDEFINITION_TYPE),
-    DELETE_SPACE(Permission.Level.GLOBAL_ONLY, FunctionalityGroup.SPACES, null, Event.Type.DELETE, EBRAINSVocabulary.META_SPACEDEFINITION_TYPE),
+    MANAGE_SPACE(Permission.Level.GLOBAL_ONLY, FunctionalityGroup.SPACES, null, Event.Type.INSERT, EBRAINSVocabulary.META_SPACEDEFINITION_TYPE),
 
     //Invitations
     INVITE_FOR_REVIEW(Permission.Level.ALL_LEVELS, FunctionalityGroup.INSTANCE, DataStage.IN_PROGRESS, null, null),
@@ -62,13 +61,10 @@ public enum Functionality {
     LIST_USERS_LIMITED(Permission.Level.GLOBAL_ONLY, FunctionalityGroup.USERS, DataStage.NATIVE, null, null),
 
     //Types
-    DEFINE_TYPES(Permission.Level.GLOBAL_ONLY, FunctionalityGroup.TYPES, null, null, null),
+    DEFINE_TYPES_AND_PROPERTIES(Permission.Level.GLOBAL_ONLY, FunctionalityGroup.TYPES, null, null, null),
 
     // Client mgmt
     READ_CLIENT(Permission.Level.GLOBAL_AND_SPACE, FunctionalityGroup.CLIENT, null, null, null),
-    CONFIGURE_CLIENT(Permission.Level.GLOBAL_AND_SPACE, FunctionalityGroup.CLIENT, null, Event.Type.UPDATE, EBRAINSVocabulary.META_CLIENTCONFIGURATION_TYPE),
-    CREATE_CLIENT(Permission.Level.GLOBAL_ONLY, FunctionalityGroup.CLIENT, null, Event.Type.INSERT, EBRAINSVocabulary.META_CLIENTCONFIGURATION_TYPE),
-    DELETE_CLIENT( Permission.Level.GLOBAL_ONLY, FunctionalityGroup.CLIENT, null, Event.Type.DELETE, EBRAINSVocabulary.META_CLIENTCONFIGURATION_TYPE),
     READ_CLIENT_PERMISSION(Permission.Level.GLOBAL_AND_SPACE, FunctionalityGroup.CLIENT, null, null, null),
     CREATE_CLIENT_PERMISSION( Permission.Level.GLOBAL_AND_SPACE, FunctionalityGroup.CLIENT, null, null, null),
     DELETE_CLIENT_PERMISSION(Permission.Level.GLOBAL_AND_SPACE, FunctionalityGroup.CLIENT, null, null, null),

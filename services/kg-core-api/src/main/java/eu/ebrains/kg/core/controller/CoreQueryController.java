@@ -56,11 +56,11 @@ public class CoreQueryController {
     }
 
     public ResponseEntity<Result<NormalizedJsonLd>> createNewQuery(NormalizedJsonLd query, UUID queryId, SpaceName space){
-        return instanceController.createNewInstance(query, queryId, space, new ResponseConfiguration(), new IngestConfiguration().setNormalizePayload(false), null);
+        return instanceController.createNewInstance(query, queryId, space, new ResponseConfiguration(), new IngestConfiguration().setNormalizePayload(false));
     }
 
     public ResponseEntity<Result<NormalizedJsonLd>> updateQuery(NormalizedJsonLd query, InstanceId instanceId){
-        return instanceController.contributeToInstance(query, instanceId, false, new ResponseConfiguration(), new IngestConfiguration().setNormalizePayload(false), null);
+        return instanceController.contributeToInstance(query, instanceId, false, new ResponseConfiguration(), new IngestConfiguration().setNormalizePayload(false));
     }
 
     public Paginated<NormalizedJsonLd> listQueries(String search, PaginationParam paginationParam){
@@ -98,6 +98,6 @@ public class CoreQueryController {
     }
 
     public Set<InstanceId> deleteQuery(InstanceId instanceId){
-        return instanceController.deleteInstance(instanceId, null);
+        return instanceController.deleteInstance(instanceId);
     }
 }
