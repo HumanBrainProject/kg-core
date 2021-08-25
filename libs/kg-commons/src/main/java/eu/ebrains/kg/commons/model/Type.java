@@ -40,17 +40,8 @@ import java.util.stream.Collectors;
 public class Type {
 
     private String name;
-    private String labelProperty;
     private transient Boolean ignoreIncomingLinks;
     private transient Set<SpaceName> spaces;
-
-    public String getLabelProperty() {
-        return labelProperty;
-    }
-
-    public void setLabelProperty(String labelProperty) {
-        this.labelProperty = labelProperty;
-    }
 
     public Type() {
     }
@@ -94,7 +85,6 @@ public class Type {
 
     public static Type fromPayload(TypeInformation payload) {
         Type targetType = new Type(payload.getIdentifier());
-        targetType.setLabelProperty(payload.getAs(EBRAINSVocabulary.META_TYPE_LABEL_PROPERTY, String.class));
         targetType.setIgnoreIncomingLinks(payload.getAs(EBRAINSVocabulary.META_IGNORE_INCOMING_LINKS, Boolean.class));
         final List<SpaceTypeInformation> spaces = payload.getSpaces();
         if(spaces!=null){
@@ -106,7 +96,6 @@ public class Type {
 
     public static Type fromPayload(NormalizedJsonLd payload) {
         Type targetType = new Type(payload.primaryIdentifier());
-        targetType.setLabelProperty(payload.getAs(EBRAINSVocabulary.META_TYPE_LABEL_PROPERTY, String.class));
         targetType.setIgnoreIncomingLinks(payload.getAs(EBRAINSVocabulary.META_IGNORE_INCOMING_LINKS, Boolean.class));
         List<NormalizedJsonLd> spaces = payload.getAsListOf(EBRAINSVocabulary.META_SPACES, NormalizedJsonLd.class);
         if(spaces!=null){

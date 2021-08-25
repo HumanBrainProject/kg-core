@@ -97,8 +97,7 @@ public class GraphDBInstancesAPI implements GraphDBInstances.Client {
                         .filter(p -> {
                             Boolean searchable = p.getAs(EBRAINSVocabulary.META_PROPERTY_SEARCHABLE, Boolean.class);
                             return searchable != null && searchable;
-                        }).map(Property::getIdentifier).filter(Objects::nonNull)
-                        .filter(p -> !p.equals(typeFromPayload.getLabelProperty())).collect(Collectors.toList());
+                        }).map(Property::getIdentifier).filter(Objects::nonNull).collect(Collectors.toList());
             }
         } else {
             final Result<TypeInformation> typeInformation = types.getTypesByName(Collections.singletonList(typeName), stage, space, false, false).get(typeName);
@@ -193,7 +192,8 @@ public class GraphDBInstancesAPI implements GraphDBInstances.Client {
                 .map(Property::getTargetTypes).flatMap(Collection::stream).map(TargetType::getType).distinct().collect(Collectors.toList());
         final Map<String, Result<TypeInformation>> targetTypeInformation = types.getTypesByName(targetTypesOfProperty, stage, null, false, false);
         suggestionResult.setTypes(targetTypeInformation.values().stream().collect(Collectors.toMap(k -> k.getData().getIdentifier(), Result::getData)));
-        Paginated<SuggestedLink> documentsByTypes = repository.getSuggestionsByTypes(stage, paginationParam, suggestionResult.getTypes().values().stream().map(Type::fromPayload).collect(Collectors.toList()), search, existingLinks);
+        final List<Type> targetTypes = suggestionResult.getTypes().values().stream().map(Type::fromPayload).filter(t -> targetType == null || t.getName().equals(targetType)).collect(Collectors.toList());
+        Paginated<SuggestedLink> documentsByTypes = repository.getSuggestionsByTypes(stage, paginationParam, targetTypes, search, existingLinks);
         suggestionResult.setSuggestions(documentsByTypes);
         return suggestionResult;
     }

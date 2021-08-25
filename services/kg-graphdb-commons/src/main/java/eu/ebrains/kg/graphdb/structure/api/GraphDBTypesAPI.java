@@ -200,7 +200,7 @@ public class GraphDBTypesAPI implements GraphDBTypes.Client {
         filteredTypes.forEach(type -> {
             final TypeInformation typeInformation = typeInformations.computeIfAbsent(type.getName(), t -> new TypeInformation());
             final DynamicJson specification = typesInSpaceBySpecification.get(type.getName());
-            typeInformation.setName(type.getName());
+            typeInformation.setName(Type.labelFromName(type.getName()));
             typeInformation.setIdentifier(type.getName());
             if (specification != null) {
                 specification.keySet().forEach(k -> {
