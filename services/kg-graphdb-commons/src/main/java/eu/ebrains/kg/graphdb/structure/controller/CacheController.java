@@ -73,7 +73,7 @@ public class CacheController {
             final CacheEvictionPlan cacheEvictionPlanBefore = plansBeforeTransaction.get(d);
             final CacheEvictionPlan cacheEvictionPlanAfter = plansAfterTransaction.get(d);
             return !CollectionUtils.isEmpty(getChangedTypes(cacheEvictionPlanBefore, cacheEvictionPlanAfter));
-        }).map(d -> new SpaceName(plansBeforeTransaction.get(d).getSpace()));
+        }).map(d -> plansBeforeTransaction.get(d) != null ? SpaceName.fromString(plansBeforeTransaction.get(d).getSpace()) : SpaceName.fromString(plansAfterTransaction.get(d).getSpace()));
 
         return Stream.concat(Stream.concat(fromDeleteOperations, fromCreateOperations), fromUpdateOperations).collect(Collectors.toSet());
     }
