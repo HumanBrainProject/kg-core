@@ -79,11 +79,15 @@ public class CacheController {
     }
 
     private List<String> getChangedTypes(CacheEvictionPlan cacheEvictionPlanBefore, CacheEvictionPlan cacheEvictionPlanAfter) {
-        boolean hasTypesNow = CollectionUtils.isEmpty(cacheEvictionPlanBefore.getType()) && !CollectionUtils.isEmpty(cacheEvictionPlanAfter.getType());
+        boolean neverHadTypes = (cacheEvictionPlanBefore == null || CollectionUtils.isEmpty(cacheEvictionPlanBefore.getType())) && (cacheEvictionPlanAfter==null || CollectionUtils.isEmpty(cacheEvictionPlanAfter.getType()));
+        if(neverHadTypes){
+            return Collections.emptyList();
+        }
+        boolean hasTypesNow = (cacheEvictionPlanBefore == null || CollectionUtils.isEmpty(cacheEvictionPlanBefore.getType())) && (cacheEvictionPlanAfter!=null && !CollectionUtils.isEmpty(cacheEvictionPlanAfter.getType()));
         if(hasTypesNow){
             return cacheEvictionPlanAfter.getType();
         }
-        boolean hadTypesBefore = !CollectionUtils.isEmpty(cacheEvictionPlanBefore.getType()) && CollectionUtils.isEmpty(cacheEvictionPlanAfter.getType());
+        boolean hadTypesBefore = (cacheEvictionPlanBefore != null && !CollectionUtils.isEmpty(cacheEvictionPlanBefore.getType())) && (cacheEvictionPlanAfter == null || CollectionUtils.isEmpty(cacheEvictionPlanAfter.getType()));
         if(hadTypesBefore){
             return cacheEvictionPlanBefore.getType();
         }
