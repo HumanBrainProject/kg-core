@@ -28,7 +28,6 @@ import eu.ebrains.kg.arango.commons.model.ArangoCollectionReference;
 import eu.ebrains.kg.arango.commons.model.ArangoDatabaseProxy;
 import eu.ebrains.kg.arango.commons.model.ArangoDocumentReference;
 import eu.ebrains.kg.arango.commons.model.InternalSpace;
-import eu.ebrains.kg.commons.AuthContext;
 import eu.ebrains.kg.commons.JsonAdapter;
 import eu.ebrains.kg.commons.exception.AmbiguousException;
 import eu.ebrains.kg.commons.jsonld.DynamicJson;
@@ -64,13 +63,11 @@ public class StructureRepository {
     private final JsonAdapter jsonAdapter;
     private final ArangoUtils arangoUtils;
     private final Logger logger = LoggerFactory.getLogger(getClass());
-    private final AuthContext authContext;
 
-    public StructureRepository(ArangoDatabases arangoDatabases, JsonAdapter jsonAdapter, ArangoUtils arangoUtils, AuthContext authContext) {
+    public StructureRepository(ArangoDatabases arangoDatabases, JsonAdapter jsonAdapter, ArangoUtils arangoUtils) {
         this.arangoDatabases = arangoDatabases;
         this.jsonAdapter = jsonAdapter;
         this.arangoUtils = arangoUtils;
-        this.authContext = authContext;
     }
 
     private final static ArangoCollectionReference SPACES = new ArangoCollectionReference("spaces", false);
@@ -79,7 +76,7 @@ public class StructureRepository {
     private final static ArangoCollectionReference TYPE_IN_SPACE = new ArangoCollectionReference("typeInSpace", true);
     private final static ArangoCollectionReference PROPERTY_IN_TYPE = new ArangoCollectionReference("propertyInType", true);
 
-    public static void setupCollections(ArangoDatabaseProxy database){
+    public static void setupCollections(ArangoDatabaseProxy database) {
         database.createCollectionIfItDoesntExist(SPACES);
         database.createCollectionIfItDoesntExist(TYPES);
         database.createCollectionIfItDoesntExist(PROPERTIES);
@@ -88,7 +85,7 @@ public class StructureRepository {
     }
 
     @Cacheable("reflectedSpaces")
-    public List<SpaceName> reflectSpaces(DataStage stage){
+    public List<SpaceName> reflectSpaces(DataStage stage) {
         logger.info("Missing cache hit: Fetching space reflection from database");
         final ArangoDatabase database = arangoDatabases.getByStage(stage);
         final List<CollectionEntity> spaces = database.getCollections(new CollectionsReadOptions().excludeSystem(true)).stream().filter(c -> c.getType() == CollectionType.DOCUMENT).filter(c -> !InternalSpace.INTERNAL_SPACENAMES.contains(c.getName())).distinct().collect(Collectors.toList());
@@ -98,7 +95,7 @@ public class StructureRepository {
         for (int i = 0; i < spaces.size(); i++) {
             bindVars.put(String.format("@collection%d", i), spaces.get(i).getName());
             query.addLine(AQL.trust(String.format("(FOR e IN @@collection%d FILTER e.@space != NULL AND e.@space != [] LIMIT 0,1 RETURN e.@space)", i)));
-            if(i<spaces.size()-1){
+            if (i < spaces.size() - 1) {
                 query.add(AQL.trust(", "));
             }
             bindVars.put("space", EBRAINSVocabulary.META_SPACE);
@@ -108,7 +105,7 @@ public class StructureRepository {
     }
 
     @CacheEvict("reflectedSpaces")
-    public void evictReflectedSpacesCache() {
+    public void evictReflectedSpacesCache(DataStage stage) {
         logger.info("Cache evict: clearing cache for reflected spaces");
     }
 
@@ -130,7 +127,7 @@ public class StructureRepository {
     }
 
     @Cacheable("typesInSpaceBySpec")
-    public List<String> getTypesInSpaceBySpecification(SpaceName spaceName){
+    public List<String> getTypesInSpaceBySpecification(SpaceName spaceName) {
         logger.info(String.format("Missing cache hit: Fetching types in space %s specifications from database", spaceName.getName()));
         final UUID spaceUUID = spaceSpecificationRef(spaceName.getName());
         AQL query = new AQL();
@@ -148,35 +145,39 @@ public class StructureRepository {
     }
 
     @Cacheable("typeSpecification")
-    public DynamicJson getTypeSpecification(String typeName){
+    public DynamicJson getTypeSpecification(String typeName) {
         logger.info(String.format("Missing cache hit: Fetching type specification for %s from database", typeName));
-        final UUID typeUUID = typeSpecificationRef(typeName);
-        AQL query = new AQL();
-        Map<String, Object> bindVars = new HashMap<>();
-        final Space clientSpace = authContext.getClientSpace();
-        query.addLine(AQL.trust("LET doc = DOCUMENT(@id)"));
-        bindVars.put("id", String.format("%s/%s", TYPES.getCollectionName(), typeUUID));
-        if(clientSpace!=null){
-            query.addLine(AQL.trust("LET result = MERGE(doc, NOT_NULL(DOCUMENT(@clientSpace, doc._key), {}))"));
-            bindVars.put("clientSpace", clientTypesCollection(clientSpace.getName().getName()).getCollectionName());
-            query.addLine(AQL.trust("RETURN KEEP(result, ATTRIBUTES(result, True))"));
-        }
-        else {
-            query.addLine(AQL.trust("RETURN KEEP(doc, ATTRIBUTES(doc, True))"));
-        }
-        final List<DynamicJson> dynamicJsons = arangoDatabases.getStructureDB().query(query.build().getValue(), bindVars, DynamicJson.class).asListRemaining();
-        if(dynamicJsons.isEmpty()){
-            return null;
-        }
-        if(dynamicJsons.size()>1){
-            throw new AmbiguousException(String.format("The lookup for %s resulted in too many results", bindVars.get("id")));
-        }
-        return dynamicJsons.get(0);
+        return doGetTypeSpecification(typeName, TYPES);
     }
 
     @CacheEvict("typeSpecification")
     public void evictTypeSpecification(String typeName) {
         logger.info(String.format("Cache evict: clearing cache for type specification %s", typeName));
+    }
+
+    @Cacheable("clientSpecificTypeSpecification")
+    public DynamicJson getClientSpecificTypeSpecification(String typeName, SpaceName clientSpaceName) {
+        logger.info(String.format("Missing cache hit: Fetching type specification for %s from database (client: %s)", typeName, clientSpaceName.getName()));
+        return doGetTypeSpecification(typeName, clientTypesCollection(clientSpaceName.getName()));
+    }
+
+    private DynamicJson doGetTypeSpecification(String typeName, ArangoCollectionReference collectionReference){
+        final UUID typeUUID = typeSpecificationRef(typeName);
+        AQL query = new AQL();
+        Map<String, Object> bindVars = new HashMap<>();
+        query.addLine(AQL.trust("LET doc = DOCUMENT(@id)"));
+        bindVars.put("id", String.format("%s/%s", TYPES.getCollectionName(), typeUUID));
+        query.addLine(AQL.trust("LET result = DOCUMENT(@clientSpace, doc._key)"));
+        query.addLine(AQL.trust("FILTER result != NULL"));
+        bindVars.put("clientSpace", collectionReference.getCollectionName());
+        query.addLine(AQL.trust("RETURN KEEP(result, ATTRIBUTES(result, True))"));
+        return getSingleResult(arangoDatabases.getStructureDB().query(query.build().getValue(), bindVars, DynamicJson.class).asListRemaining(), typeUUID);
+    }
+
+
+    @CacheEvict("clientSpecificTypeSpecification")
+    public void evictClientSpecificTypeSpecification(String typeName, SpaceName clientSpaceName) {
+        logger.info(String.format("Cache evict: clearing cache for type specification %s (client: %s)", typeName, clientSpaceName.getName()));
     }
 
     @Cacheable("typesInSpace")
@@ -202,29 +203,9 @@ public class StructureRepository {
     }
 
     @Cacheable("propertySpecification")
-    public DynamicJson getPropertyBySpecification(String propertyName){
-        final UUID propertyUUID = propertySpecificationRef(propertyName);
-        AQL query = new AQL();
-        Map<String, Object> bindVars = new HashMap<>();
-        query.addLine(AQL.trust("LET doc = DOCUMENT(@id)"));
-        bindVars.put("id", String.format("%s/%s", PROPERTIES.getCollectionName(), propertyUUID));
-        final Space clientSpace = authContext.getClientSpace();
-        if(clientSpace!=null){
-            query.addLine(AQL.trust("LET result = MERGE(doc, NOT_NULL(DOCUMENT(@clientSpace, doc._key), {}))"));
-            bindVars.put("clientSpace", clientTypesCollection(clientSpace.getName().getName()).getCollectionName());
-            query.addLine(AQL.trust("RETURN KEEP(result, ATTRIBUTES(result, True))"));
-        }
-        else {
-            query.addLine(AQL.trust("RETURN KEEP(doc, ATTRIBUTES(doc, True))"));
-        }
-        final List<DynamicJson> dynamicJsons = arangoDatabases.getStructureDB().query(query.build().getValue(), bindVars, DynamicJson.class).asListRemaining();
-        if(dynamicJsons.isEmpty()){
-            return null;
-        }
-        if(dynamicJsons.size()>1){
-            throw new AmbiguousException(String.format("The lookup for %s resulted in too many results", bindVars.get("id")));
-        }
-        return dynamicJsons.get(0);
+    public DynamicJson getPropertyBySpecification(String propertyName) {
+        logger.info(String.format("Missing cache hit: Reflecting property specification %s", propertyName));
+        return doGetPropertyBySpecification(propertyName, PROPERTIES);
     }
 
     @CacheEvict("propertySpecification")
@@ -233,31 +214,73 @@ public class StructureRepository {
     }
 
 
-    @Cacheable("propertiesInTypeSpecification")
-    public List<DynamicJson> getPropertiesOfTypeBySpecification(String type){
-        final UUID typeUUID = typeSpecificationRef(type);
+    @Cacheable("clientSpecificPropertySpecification")
+    public DynamicJson getClientSpecificPropertyBySpecification(String propertyName, SpaceName clientSpaceName) {
+        logger.info(String.format("Missing cache hit: Reflecting property specification %s (client: %s)", propertyName, clientSpaceName.getName()));
+        return doGetPropertyBySpecification(propertyName, clientTypesCollection(clientSpaceName.getName()));
+    }
+
+    private DynamicJson getSingleResult(List<DynamicJson> dynamicJsons, UUID id){
+        if (dynamicJsons.isEmpty()) {
+            return null;
+        }
+        if (dynamicJsons.size() > 1) {
+            throw new AmbiguousException(String.format("The lookup for %s resulted in too many results", id));
+        }
+        return dynamicJsons.get(0);
+    }
+
+    private DynamicJson doGetPropertyBySpecification(String propertyName, ArangoCollectionReference collectionReference) {
+        final UUID propertyUUID = propertySpecificationRef(propertyName);
         AQL query = new AQL();
         Map<String, Object> bindVars = new HashMap<>();
-        query.addLine(AQL.trust("FOR t IN @@collection FILTER t._from == @id"));
-        bindVars.put("@collection", PROPERTY_IN_TYPE.getCollectionName());
-        bindVars.put("id", String.format("%s/%s", TYPES.getCollectionName(), typeUUID));
-        final Space clientSpace = authContext.getClientSpace();
-        query.addLine(AQL.trust("LET doc = DOCUMENT(t._to)"));
-        query.addLine(AQL.trust("FILTER doc != NULL"));
-        if(clientSpace!=null){
-            query.addLine(AQL.trust("LET clientSpecific = NOT_NULL(DOCUMENT(@clientSpace, t._key), {})"));
-            bindVars.put("clientSpace", clientPropertyInTypeCollection(clientSpace.getName().getName()).getCollectionName());
-            query.addLine(AQL.trust(String.format("RETURN MERGE(KEEP(doc, [\"%s\"]), KEEP(t, ATTRIBUTES(t, True)), KEEP(t, ATTRIBUTES(clientSpecific, True)))", SchemaOrgVocabulary.IDENTIFIER)));
-        }
-        else {
-            query.addLine(AQL.trust(String.format("RETURN MERGE(KEEP(doc, [\"%s\"]), KEEP(t, ATTRIBUTES(t, True)))", SchemaOrgVocabulary.IDENTIFIER)));
-        }
-        return arangoDatabases.getStructureDB().query(query.build().getValue(), bindVars, DynamicJson.class).asListRemaining();
+        query.addLine(AQL.trust("LET doc = DOCUMENT(@id)"));
+        bindVars.put("id", String.format("%s/%s", collectionReference.getCollectionName(), propertyUUID));
+        query.addLine(AQL.trust("RETURN KEEP(doc, ATTRIBUTES(doc, True))"));
+        return getSingleResult(arangoDatabases.getStructureDB().query(query.build().getValue(), bindVars, DynamicJson.class).asListRemaining(), propertyUUID);
+    }
+
+    @CacheEvict("clientSpecificPropertySpecification")
+    public void evictClientSpecificPropertySpecificationCache(String propertyName, SpaceName clientSpaceName) {
+        logger.info(String.format("Cache evict: clearing cache for property %s (client: %s)", propertyName, clientSpaceName.getName()));
+    }
+
+
+    @Cacheable("propertiesInTypeSpecification")
+    public List<DynamicJson> getPropertiesOfTypeBySpecification(String type) {
+        logger.info(String.format("Missing cache hit: Reflecting properties for type %s", type));
+        return doGetPropertiesOfTypeBySpecification(type, PROPERTY_IN_TYPE);
     }
 
     @CacheEvict("propertiesInTypeSpecification")
     public void evictPropertiesInTypeBySpecificationCache(String type) {
         logger.info(String.format("Cache evict: clearing cache for properties in type %s", type));
+    }
+
+
+    @Cacheable("clientSpecificPropertiesInTypeSpecification")
+    public List<DynamicJson> getClientSpecificPropertiesOfTypeBySpecification(String type, SpaceName clientSpaceName) {
+        logger.info(String.format("Missing cache hit: Reflecting properties for type %s (client: %s)", type, clientSpaceName.getName()));
+        return doGetPropertiesOfTypeBySpecification(type, clientPropertyInTypeCollection(clientSpaceName.getName()));
+    }
+
+    private List<DynamicJson> doGetPropertiesOfTypeBySpecification(String type, ArangoCollectionReference collectionReference) {
+        final UUID typeUUID = typeSpecificationRef(type);
+        AQL query = new AQL();
+        Map<String, Object> bindVars = new HashMap<>();
+        query.addLine(AQL.trust("FOR t IN @@collection FILTER t._from == @id"));
+        bindVars.put("@collection", collectionReference.getCollectionName());
+        bindVars.put("id", String.format("%s/%s", TYPES.getCollectionName(), typeUUID));
+        query.addLine(AQL.trust("LET doc = DOCUMENT(t._to)"));
+        query.addLine(AQL.trust("FILTER doc != NULL"));
+        query.addLine(AQL.trust(String.format("RETURN MERGE(KEEP(doc, [\"%s\"]), KEEP(t, ATTRIBUTES(t, True)))", SchemaOrgVocabulary.IDENTIFIER)));
+        return arangoDatabases.getStructureDB().query(query.build().getValue(), bindVars, DynamicJson.class).asListRemaining();
+    }
+
+
+    @CacheEvict("clientSpecificPropertiesInTypeSpecification")
+    public void evictClientSpecificPropertiesInTypeBySpecificationCache(String type, SpaceName clientSpaceName) {
+        logger.info(String.format("Cache evict: clearing cache for properties in type %s (client: %s)", type, clientSpaceName.getName()));
     }
 
 
@@ -339,7 +362,6 @@ public class StructureRepository {
         final Collection<CollectionEntity> collections = db.getCollections(new CollectionsReadOptions().excludeSystem(true));
         return collections.stream().filter(c -> c.getType().equals(CollectionType.EDGES)).map(CollectionEntity::getName).filter(c -> !EDGE_BLACKLIST.contains(c)).collect(Collectors.toList());
     }
-
 
 
     private ArangoCollectionReference createClientCollection(String ref, String client, boolean edge) {

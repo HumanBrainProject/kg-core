@@ -187,9 +187,11 @@ public class GraphDBTypesAPI implements GraphDBTypes.Client {
     }
 
     private void readMetaDataStructureForSpace(DataStage stage, List<String> typeRestriction, boolean withIncomingLinks, boolean withProperties, Map<String, TypeInformation> typeInformations, Map<String, List<SpaceTypeInformation>> spaceTypeInformationLookup, List<String> allRelevantEdges, Space space) {
+        final SpaceName clientSpace = getClientSpace();
         final List<TypeWithInstanceCountReflection> typeWithInstanceCountReflections = space.isExistsInDB() ? structureRepository.reflectTypesInSpace(stage, space.getName()) : Collections.emptyList();
         final Set<String> reflectedTypes = typeWithInstanceCountReflections.stream().map(TypeWithInstanceCountReflection::getName).filter(Objects::nonNull).collect(Collectors.toSet());
         final Map<String, DynamicJson> typesInSpaceBySpecification = structureRepository.getTypesInSpaceBySpecification(space.getName()).stream().collect(Collectors.toMap(t -> t, structureRepository::getTypeSpecification));
+        final Map<String, DynamicJson> clientSpecificTypesInSpaceBySpecification = clientSpace == null ? Collections.emptyMap() : structureRepository.getTypesInSpaceBySpecification(space.getName()).stream().collect(Collectors.toMap(t -> t, v -> structureRepository.getClientSpecificTypeSpecification(v, clientSpace)));
         final Stream<TypeWithInstanceCountReflection> allTypes = Stream.concat(typeWithInstanceCountReflections.stream(), typesInSpaceBySpecification.keySet().stream().filter(k -> !reflectedTypes.contains(k)).map(k -> {
             TypeWithInstanceCountReflection r = new TypeWithInstanceCountReflection();
             r.setName(k);
@@ -209,6 +211,14 @@ public class GraphDBTypesAPI implements GraphDBTypes.Client {
                     }
                 });
             }
+            final DynamicJson clientSpecificSpecification = clientSpecificTypesInSpaceBySpecification.get(type.getName());
+            if (clientSpecificSpecification != null) {
+                clientSpecificSpecification.keySet().forEach(k -> {
+                    if (specification.get(k) != null) {
+                        typeInformation.put(k, clientSpecificSpecification.get(k));
+                    }
+                });
+            }
             List<SpaceTypeInformation> spaceTypeInformations = spaceTypeInformationLookup.computeIfAbsent(type.getName(), t -> new ArrayList<>());
             SpaceTypeInformation spaceTypeInformation = new SpaceTypeInformation();
             spaceTypeInformations.add(spaceTypeInformation);
@@ -220,6 +230,8 @@ public class GraphDBTypesAPI implements GraphDBTypes.Client {
                 final List<PropertyOfTypeInSpaceReflection> reflectedProperties = space.isExistsInDB() ? structureRepository.reflectPropertiesOfTypeInSpace(stage, space.getName(), type.getName()) : Collections.emptyList();
                 final Set<String> reflectedPropertyNames = reflectedProperties.stream().map(PropertyOfTypeInSpaceReflection::getName).collect(Collectors.toSet());
                 final Map<String, DynamicJson> propertiesOfTypeBySpecification = structureRepository.getPropertiesOfTypeBySpecification(type.getName()).stream().collect(Collectors.toMap(k -> k.getAs(SchemaOrgVocabulary.IDENTIFIER, String.class), v -> v));
+                final Map<String, DynamicJson> clientSpecificPropertiesOfTypeBySpecification = clientSpace==null ? Collections.emptyMap() : structureRepository.getClientSpecificPropertiesOfTypeBySpecification(type.getName(), clientSpace).stream().collect(Collectors.toMap(k -> k.getAs(SchemaOrgVocabulary.IDENTIFIER, String.class), v -> v));
+
                 Stream.concat(reflectedProperties.stream(), propertiesOfTypeBySpecification.keySet().stream().filter(k -> !reflectedPropertyNames.contains(k)).map(k -> {
                     //Create placeholders for those properties that are only existing in the specification
                     PropertyOfTypeInSpaceReflection p = new PropertyOfTypeInSpaceReflection();
@@ -240,6 +252,17 @@ public class GraphDBTypesAPI implements GraphDBTypes.Client {
                         });
                         targetTypesFromSpec.addAll(globalPropertySpec.getAsListOf(EBRAINSVocabulary.META_PROPERTY_TARGET_TYPES, String.class));
                     }
+                    if(clientSpace!=null) {
+                        final DynamicJson clientSpecificPropertySpec = structureRepository.getClientSpecificPropertyBySpecification(property.getName(), clientSpace);
+                        if (clientSpecificPropertySpec != null) {
+                            clientSpecificPropertySpec.keySet().forEach(k -> {
+                                //We don't allow client specific target type definitions.
+                                if (!EBRAINSVocabulary.META_PROPERTY_TARGET_TYPES.equals(k)) {
+                                    p.put(k, clientSpecificPropertySpec.get(k));
+                                }
+                            });
+                        }
+                    }
                     final DynamicJson propertySpecFromRelation = propertiesOfTypeBySpecification.get(property.getName());
                     if (propertySpecFromRelation != null) {
                         propertySpecFromRelation.keySet().forEach(k -> {
@@ -249,6 +272,15 @@ public class GraphDBTypesAPI implements GraphDBTypes.Client {
                             }
                         });
                         targetTypesFromSpec.addAll(propertySpecFromRelation.getAsListOf(EBRAINSVocabulary.META_PROPERTY_TARGET_TYPES, String.class));
+                    }
+                    final DynamicJson clientSpecificPropertySpecFromRelation = clientSpecificPropertiesOfTypeBySpecification.get(property.getName());
+                    if (clientSpecificPropertySpecFromRelation != null) {
+                        clientSpecificPropertySpecFromRelation.keySet().forEach(k -> {
+                            //We don't allow client specific target type definitions.
+                            if (!EBRAINSVocabulary.META_PROPERTY_TARGET_TYPES.equals(k)) {
+                                p.put(k, clientSpecificPropertySpecFromRelation.get(k));
+                            }
+                        });
                     }
                     p.setOccurrences(property.getOccurrences());
                     p.setIdentifier(property.getName());
@@ -309,8 +341,15 @@ public class GraphDBTypesAPI implements GraphDBTypes.Client {
     @Override
     public void specifyType(JsonLdId typeName, NormalizedJsonLd normalizedJsonLd, boolean global) {
         if (permissionsController.canManageTypesAndProperties(authContext.getUserWithRoles())) {
-            structureRepository.createOrUpdateTypeDocument(typeName, normalizedJsonLd, global ? null : getClientSpace());
-            structureRepository.evictTypeSpecification(typeName.getId());
+            if(global) {
+                structureRepository.createOrUpdateTypeDocument(typeName, normalizedJsonLd, null);
+                structureRepository.evictTypeSpecification(typeName.getId());
+            }
+            else{
+                final SpaceName clientSpace = getClientSpaceOrThrowException();
+                structureRepository.createOrUpdateTypeDocument(typeName, normalizedJsonLd, clientSpace);
+                structureRepository.evictClientSpecificTypeSpecification(typeName.getId(), clientSpace);
+            }
         } else {
             throw new ForbiddenException("You don't have the required rights to define types");
         }
@@ -319,27 +358,47 @@ public class GraphDBTypesAPI implements GraphDBTypes.Client {
     @Override
     public void removeTypeSpecification(JsonLdId typeName, boolean global) {
         if (permissionsController.canManageTypesAndProperties(authContext.getUserWithRoles())) {
-            structureRepository.removeTypeDocument(typeName, global ? null : getClientSpace());
-            structureRepository.evictTypeSpecification(typeName.getId());
+
+            if(global){
+                structureRepository.removeTypeDocument(typeName, null);
+                structureRepository.evictTypeSpecification(typeName.getId());
+            }
+            else{
+                final SpaceName clientSpace = getClientSpaceOrThrowException();
+                structureRepository.removeTypeDocument(typeName, clientSpace);
+                structureRepository.evictClientSpecificTypeSpecification(typeName.getId(), clientSpace);
+            }
         } else {
             throw new ForbiddenException("You don't have the required rights to define types");
         }
     }
 
-    private SpaceName getClientSpace() {
-        Space space = authContext.getClientSpace();
-        if (space == null) {
+    private SpaceName getClientSpaceOrThrowException(){
+        final SpaceName clientSpace = getClientSpace();
+        if(clientSpace==null){
             throw new IllegalArgumentException("You need to be logged in with a client to be able to specify a type non-globally");
         }
-        return space.getName();
+        return clientSpace;
+    }
+
+    private SpaceName getClientSpace() {
+        Space space = authContext.getClientSpace();
+        return space == null ? null : space.getName();
     }
 
 
     @Override
     public void specifyProperty(JsonLdId propertyName, NormalizedJsonLd normalizedJsonLd, boolean global) {
         if (permissionsController.canManageTypesAndProperties(authContext.getUserWithRoles())) {
-            structureRepository.createOrUpdatePropertyDocument(propertyName, normalizedJsonLd, global ? null : getClientSpace());
-            structureRepository.evictPropertySpecificationCache(propertyName.getId());
+            if(global) {
+                structureRepository.createOrUpdatePropertyDocument(propertyName, normalizedJsonLd, null);
+                structureRepository.evictPropertySpecificationCache(propertyName.getId());
+            }
+            else{
+                final SpaceName clientSpace = getClientSpaceOrThrowException();
+                structureRepository.createOrUpdatePropertyDocument(propertyName, normalizedJsonLd,  clientSpace);
+                structureRepository.evictClientSpecificPropertySpecificationCache(propertyName.getId(), clientSpace);
+            }
         } else {
             throw new ForbiddenException("You don't have the required rights to define types");
         }
@@ -348,8 +407,15 @@ public class GraphDBTypesAPI implements GraphDBTypes.Client {
     @Override
     public void removePropertySpecification(JsonLdId propertyName, boolean global) {
         if (permissionsController.canManageTypesAndProperties(authContext.getUserWithRoles())) {
-            structureRepository.removePropertyDocument(propertyName, global ? null : getClientSpace());
-            structureRepository.evictPropertySpecificationCache(propertyName.getId());
+            if(global) {
+                structureRepository.removePropertyDocument(propertyName, null);
+                structureRepository.evictPropertySpecificationCache(propertyName.getId());
+            }
+            else{
+                SpaceName clientSpace = getClientSpaceOrThrowException();
+                structureRepository.removePropertyDocument(propertyName, clientSpace);
+                structureRepository.evictClientSpecificPropertySpecificationCache(propertyName.getId(), clientSpace);
+            }
         } else {
             throw new ForbiddenException("You don't have the required rights to define types");
         }
@@ -359,8 +425,15 @@ public class GraphDBTypesAPI implements GraphDBTypes.Client {
     public void addOrUpdatePropertyToType(String typeName, String propertyName, NormalizedJsonLd payload,
                                           boolean global) {
         if (permissionsController.canManageTypesAndProperties(authContext.getUserWithRoles())) {
-            structureRepository.addLinkBetweenTypeAndProperty(typeName, propertyName, payload, global ? null : getClientSpace());
-            structureRepository.evictPropertiesInTypeBySpecificationCache(typeName);
+            if(global) {
+                structureRepository.addLinkBetweenTypeAndProperty(typeName, propertyName, payload, null);
+                structureRepository.evictPropertiesInTypeBySpecificationCache(typeName);
+            }
+            else{
+                SpaceName clientSpace = getClientSpaceOrThrowException();
+                structureRepository.addLinkBetweenTypeAndProperty(typeName, propertyName, payload, clientSpace);
+                structureRepository.evictClientSpecificPropertiesInTypeBySpecificationCache(typeName, clientSpace);
+            }
         } else {
             throw new ForbiddenException("You don't have the required rights to define types");
         }
@@ -369,8 +442,15 @@ public class GraphDBTypesAPI implements GraphDBTypes.Client {
     @Override
     public void removePropertyFromType(String typeName, String propertyName, boolean global) {
         if (permissionsController.canManageTypesAndProperties(authContext.getUserWithRoles())) {
-            structureRepository.removeLinkBetweenTypeAndProperty(typeName, propertyName, global ? null : getClientSpace());
-            structureRepository.evictPropertiesInTypeBySpecificationCache(typeName);
+            if(global) {
+                structureRepository.removeLinkBetweenTypeAndProperty(typeName, propertyName, null);
+                structureRepository.evictPropertiesInTypeBySpecificationCache(typeName);
+            }
+            else{
+                SpaceName clientSpace = getClientSpaceOrThrowException();
+                structureRepository.removeLinkBetweenTypeAndProperty(typeName, propertyName, clientSpace);
+                structureRepository.evictClientSpecificPropertiesInTypeBySpecificationCache(typeName, clientSpace);
+            }
         } else {
             throw new ForbiddenException("You don't have the required rights to define types");
         }

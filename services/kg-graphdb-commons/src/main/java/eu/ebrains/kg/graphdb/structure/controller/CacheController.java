@@ -172,7 +172,7 @@ public class CacheController {
         final Set<String> updateIds = getUpdateIds(beforeTransactionById, afterTransactionById);
 
         if(hasCreatedOrRemovedSpaces(stage, beforeTransactionById, afterTransactionById, createIds, deleteIds)){
-            structureRepository.evictReflectedSpacesCache();
+            structureRepository.evictReflectedSpacesCache(stage);
         }
 
         final Set<SpaceName> spaceTypesForCacheEviction = findSpacesForCacheEviction(beforeTransactionById, afterTransactionById, createIds, deleteIds, updateIds);

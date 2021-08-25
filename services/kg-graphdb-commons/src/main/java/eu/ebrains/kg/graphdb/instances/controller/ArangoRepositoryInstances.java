@@ -835,11 +835,6 @@ public class ArangoRepositoryInstances {
         ).map(c -> AQL.preventAqlInjection(c.getName()).getValue()).collect(Collectors.toSet());
     }
 
-    @ExposesData
-    public List<NormalizedJsonLd> getDocumentsByOutgoingRelation(DataStage stage, SpaceName space, UUID id, ArangoRelation relation, boolean embedded, boolean alternatives) {
-        return getDocumentsByRelation(stage, space, id, relation, false, false, embedded, alternatives);
-    }
-
     private List<NormalizedJsonLd> getDocumentsByRelation(DataStage stage, SpaceName space, UUID id, ArangoRelation relation, boolean incoming, boolean useOriginalTo, boolean embedded, boolean alternatives) {
         List<NormalizedJsonLd> result = arangoUtils.getDocumentsByRelation(databases.getByStage(stage), space, id, relation, incoming, useOriginalTo);
         handleAlternativesAndEmbedded(result, stage, alternatives, embedded);
