@@ -71,7 +71,7 @@ public class MetaDataController {
                 readMetaDataStructureForSpace(stage, typeRestriction, withIncomingLinks, withProperties, typeInformation, spaceTypeInformationLookup, allRelevantEdges, space, clientSpace);
             }
         }
-        final List<TypeInformation> result = aggregateGlobalInformation(withProperties, typeInformation);
+        final List<TypeInformation> result = aggregateGlobalInformation(withProperties, typeInformation, spaceRestriction==null);
         if (withIncomingLinks) {
             aggregateIncomingLinks(result);
         }
@@ -140,7 +140,9 @@ public class MetaDataController {
         });
     }
 
-    private List<TypeInformation> aggregateGlobalInformation(boolean withProperties, Map<String, TypeInformation> typeInformation) {
+    private final static List<String> GLOBAL_PROPERTY_BLACKLIST = Arrays.asList(EBRAINSVocabulary.META_OCCURRENCES, EBRAINSVocabulary.META_PROPERTY_TARGET_TYPES, SchemaOrgVocabulary.IDENTIFIER);
+
+    private List<TypeInformation> aggregateGlobalInformation(boolean withProperties, Map<String, TypeInformation> typeInformation, boolean clearAdditionalInfoForPropertiesInSpaces) {
         return typeInformation.values().stream().peek(t -> {
             t.setOccurrences(t.getSpaces().stream().mapToInt(SpaceTypeInformation::getOccurrences).sum());
             if (withProperties) {
@@ -152,6 +154,15 @@ public class MetaDataController {
                     Property globalProperty = new Property();
                     globalProperty.setIdentifier(p);
                     globalProperty.setOccurrences(spaceProperties.stream().mapToInt(Property::getOccurrences).sum());
+                    spaceProperties.forEach(s -> {
+                        final Set<String> relevantKeys = s.keySet().stream().filter(k -> !GLOBAL_PROPERTY_BLACKLIST.contains(k)).collect(Collectors.toSet());
+                        relevantKeys.forEach(k->{
+                            globalProperty.put(k, s.get(k));
+                        });
+                        if(clearAdditionalInfoForPropertiesInSpaces){
+                            relevantKeys.forEach(s::remove);
+                        }
+                    });
                     final Map<String, List<TargetType>> targetTypesMap = spaceProperties.stream().map(Property::getTargetTypes).flatMap(Collection::stream).collect(Collectors.groupingBy(TargetType::getType));
                     if (!targetTypesMap.isEmpty()) {
                         List<TargetType> targetTypes = new ArrayList<>();
