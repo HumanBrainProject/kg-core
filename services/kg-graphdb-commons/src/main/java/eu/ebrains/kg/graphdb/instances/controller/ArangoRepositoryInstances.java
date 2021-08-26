@@ -609,6 +609,7 @@ public class ArangoRepositoryInstances {
             Tuple<DocumentsByTypeMode, Set<SpaceName>> restrictToSpaces = restrictToSpaces(typeWithLabelInfo, stage);
             DocumentsByTypeMode mode = restrictToSpaces.getA();
             if (mode != DocumentsByTypeMode.EMPTY) {
+                iterateThroughTypeList(Collections.singletonList(typeWithLabelInfo), null, bindVars, aql);
                 if (search != null && InstanceId.deserialize(search) != null) {
                     mode = DocumentsByTypeMode.BY_ID;
                 }
