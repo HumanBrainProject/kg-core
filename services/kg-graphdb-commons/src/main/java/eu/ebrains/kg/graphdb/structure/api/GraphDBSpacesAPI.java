@@ -25,31 +25,28 @@ import eu.ebrains.kg.commons.model.Paginated;
 import eu.ebrains.kg.commons.model.PaginationParam;
 import eu.ebrains.kg.commons.model.SpaceName;
 import eu.ebrains.kg.commons.model.external.spaces.SpaceSpecification;
-import eu.ebrains.kg.commons.model.external.types.SpaceReference;
 import eu.ebrains.kg.commons.model.internal.spaces.Space;
 import eu.ebrains.kg.graphdb.commons.controller.PermissionsController;
-import eu.ebrains.kg.graphdb.structure.controller.SpaceController;
+import eu.ebrains.kg.graphdb.structure.controller.MetaDataController;
 import eu.ebrains.kg.graphdb.structure.controller.StructureRepository;
 import org.springframework.stereotype.Component;
 
-import javax.xml.crypto.Data;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
-import java.util.function.Function;
 
 @Component
 public class GraphDBSpacesAPI implements GraphDBSpaces.Client {
 
 
     private final StructureRepository structureRepository;
-    private final SpaceController spaces;
+    private final MetaDataController metaDataController;
     private final PermissionsController permissionsController;
     private final AuthContext authContext;
 
-    public GraphDBSpacesAPI(StructureRepository structureRepository, SpaceController spaces, PermissionsController permissionsController, AuthContext authContext) {
+    public GraphDBSpacesAPI(StructureRepository structureRepository, MetaDataController metaDataController, PermissionsController permissionsController, AuthContext authContext) {
         this.structureRepository = structureRepository;
-        this.spaces = spaces;
+        this.metaDataController = metaDataController;
         this.permissionsController = permissionsController;
         this.authContext = authContext;
     }
@@ -58,7 +55,7 @@ public class GraphDBSpacesAPI implements GraphDBSpaces.Client {
         return new Space(new SpaceName(name), false, false);
     }
     private List<Space> getSpaces(){
-        List<Space> spaces = this.spaces.getSpaces(DataStage.IN_PROGRESS);
+        List<Space> spaces = this.metaDataController.getSpaces(DataStage.IN_PROGRESS, authContext.getUserWithRoles());
         final SpaceName privateSpace = authContext.getUserWithRoles().getPrivateSpace();
         final Optional<Space> existingPrivateSpace = spaces.stream().filter(s -> s.getName().equals(privateSpace)).findAny();
         if (existingPrivateSpace.isPresent()) {

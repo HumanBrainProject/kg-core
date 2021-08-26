@@ -225,4 +225,13 @@ public class UserWithRoles {
     public boolean hasInvitations(){
         return this.invitations!=null && !this.invitations.isEmpty();
     }
+
+    public final static UserWithRoles INTERNAL_ADMIN = createInternalAdminUser();
+
+    private static UserWithRoles createInternalAdminUser(){
+        User user = new User("kgInternalAdmin", "KG Internal admin user", "kg@ebrains.eu", "KG Internal", "Admin", "kgInternalAdmin");
+        return new UserWithRoles(user, Collections.singletonList(RoleMapping.ADMIN.toRole(null).getName()), null, null);
+    }
+
+
 }

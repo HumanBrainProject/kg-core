@@ -18,17 +18,18 @@ package eu.ebrains.kg.graphdb.structure.controller;
 
 import eu.ebrains.kg.arango.commons.model.ArangoCollectionReference;
 import eu.ebrains.kg.arango.commons.model.InternalSpace;
+import eu.ebrains.kg.commons.AuthContext;
 import eu.ebrains.kg.commons.Triple;
 import eu.ebrains.kg.commons.Tuple;
 import eu.ebrains.kg.commons.model.DataStage;
 import eu.ebrains.kg.commons.model.SpaceName;
 import eu.ebrains.kg.commons.model.internal.spaces.Space;
 import eu.ebrains.kg.graphdb.ingestion.model.CacheEvictionPlan;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.springframework.lang.NonNull;
 import org.springframework.stereotype.Component;
 import org.springframework.util.CollectionUtils;
 
+import javax.annotation.PostConstruct;
 import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -36,13 +37,20 @@ import java.util.stream.Stream;
 @Component
 public class CacheController {
 
-    private final Logger logger = LoggerFactory.getLogger(getClass());
     private final StructureRepository structureRepository;
-    private final SpaceController spaceController;
+    private final MetaDataController metaDataController;
+    private final AuthContext authContext;
 
-    public CacheController(StructureRepository structureRepository, SpaceController spaceController) {
+    @PostConstruct
+    public void setup(){
+        metaDataController.initializeCache();
+    }
+
+
+    public CacheController(StructureRepository structureRepository, MetaDataController metaDataController, AuthContext authContext) {
         this.structureRepository = structureRepository;
-        this.spaceController = spaceController;
+        this.metaDataController = metaDataController;
+        this.authContext = authContext;
     }
 
     private Set<String> getDeleteIds(Map<String, CacheEvictionPlan> plansBeforeTransaction, Map<String, CacheEvictionPlan> plansAfterTransaction){
@@ -78,16 +86,16 @@ public class CacheController {
         return Stream.concat(Stream.concat(fromDeleteOperations, fromCreateOperations), fromUpdateOperations).collect(Collectors.toSet());
     }
 
-    private List<String> getChangedTypes(CacheEvictionPlan cacheEvictionPlanBefore, CacheEvictionPlan cacheEvictionPlanAfter) {
-        boolean neverHadTypes = (cacheEvictionPlanBefore == null || CollectionUtils.isEmpty(cacheEvictionPlanBefore.getType())) && (cacheEvictionPlanAfter==null || CollectionUtils.isEmpty(cacheEvictionPlanAfter.getType()));
+    private List<String> getChangedTypes(@NonNull CacheEvictionPlan cacheEvictionPlanBefore, @NonNull CacheEvictionPlan cacheEvictionPlanAfter) {
+        boolean neverHadTypes = CollectionUtils.isEmpty(cacheEvictionPlanBefore.getType()) && CollectionUtils.isEmpty(cacheEvictionPlanAfter.getType());
         if(neverHadTypes){
             return Collections.emptyList();
         }
-        boolean hasTypesNow = (cacheEvictionPlanBefore == null || CollectionUtils.isEmpty(cacheEvictionPlanBefore.getType())) && (cacheEvictionPlanAfter!=null && !CollectionUtils.isEmpty(cacheEvictionPlanAfter.getType()));
+        boolean hasTypesNow = CollectionUtils.isEmpty(cacheEvictionPlanBefore.getType()) && !CollectionUtils.isEmpty(cacheEvictionPlanAfter.getType());
         if(hasTypesNow){
             return cacheEvictionPlanAfter.getType();
         }
-        boolean hadTypesBefore = (cacheEvictionPlanBefore != null && !CollectionUtils.isEmpty(cacheEvictionPlanBefore.getType())) && (cacheEvictionPlanAfter == null || CollectionUtils.isEmpty(cacheEvictionPlanAfter.getType()));
+        boolean hadTypesBefore = !CollectionUtils.isEmpty(cacheEvictionPlanBefore.getType()) && CollectionUtils.isEmpty(cacheEvictionPlanAfter.getType());
         if(hadTypesBefore){
             return cacheEvictionPlanBefore.getType();
         }
@@ -154,7 +162,7 @@ public class CacheController {
     }
 
     private boolean hasCreatedOrRemovedSpaces(DataStage stage, Map<String, CacheEvictionPlan> plansBeforeTransaction, Map<String, CacheEvictionPlan> plansAfterTransaction, Set<String> createIds, Set<String> deleteIds){
-        final List<Space> spaces = this.spaceController.getSpaces(stage);
+        final List<Space> spaces = this.metaDataController.getSpaces(stage, authContext.getUserWithRoles());
         final Set<String> reflectedSpaceNames = spaces.stream().filter(Space::isReflected).collect(Collectors.toSet()).stream().map(s -> s.getName().getName()).collect(Collectors.toSet());
         final boolean hasReflectedSpaceOnlyInDelete = deleteIds.stream().map(c -> plansBeforeTransaction.get(c).getSpace()).anyMatch(reflectedSpaceNames::contains);
         if(hasReflectedSpaceOnlyInDelete){

@@ -458,7 +458,7 @@ public class ArangoRepositoryInstances {
             // If there is only one type and one space for this type, we have the chance to optimize the query... Please
             // note that we're not restricting the spaces to the ones the user can read because the suggestions are
             // working with minimal data and are not affected by the read rights.
-            aql.indent().addLine(AQL.trust(String.format("FOR v IN @@singleSpace OPTIONS {indexHint: \"%s\"}", ArangoUtils.BROWSE_AND_SEARCH_INDEX)));
+            aql.indent().addLine(AQL.trust(String.format("FOR v IN @@singleSpace OPTIONS {indexHint: \"%s\"}", ArangoDatabases.BROWSE_AND_SEARCH_INDEX)));
             aql.addLine(AQL.trust(String.format("FILTER @typeFilter IN v.`%s` AND v.`%s` == null", JsonLdConsts.TYPE, IndexedJsonLdDoc.EMBEDDED)));
             bindVars.put("typeFilter", type.get(0).getName());
             bindVars.put("@singleSpace", ArangoCollectionReference.fromSpace(type.get(0).getSpaces().iterator().next()).getCollectionName());
@@ -628,7 +628,7 @@ public class ArangoRepositoryInstances {
                         bindVars.put("documentById", search);
                         break;
                     case SIMPLE:
-                        aql.indent().addLine(AQL.trust(String.format("FOR v IN @@singleSpace OPTIONS {indexHint: \"%s\"}", ArangoUtils.BROWSE_AND_SEARCH_INDEX)));
+                        aql.indent().addLine(AQL.trust(String.format("FOR v IN @@singleSpace OPTIONS {indexHint: \"%s\"}", ArangoDatabases.BROWSE_AND_SEARCH_INDEX)));
                         aql.addLine(AQL.trust(String.format("FILTER @typeFilter IN v.`%s` AND v.`%s` == null", JsonLdConsts.TYPE, IndexedJsonLdDoc.EMBEDDED)));
                         bindVars.put("typeFilter", typeWithLabelInfo.getName());
                         bindVars.put("@singleSpace", ArangoCollectionReference.fromSpace(restrictToSpaces.getB().iterator().next()).getCollectionName());
