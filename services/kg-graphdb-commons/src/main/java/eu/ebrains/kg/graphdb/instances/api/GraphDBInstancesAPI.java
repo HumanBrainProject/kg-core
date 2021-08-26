@@ -183,10 +183,10 @@ public class GraphDBInstancesAPI implements GraphDBInstances.Client {
 
         final Map<String, Result<TypeInformation>> sourceTypeInformation = types.getTypesByName(sourceTypes.stream().map(Type::getName).collect(Collectors.toList()), stage, space, true, false);
         final List<String> targetTypesOfProperty = sourceTypeInformation.values().stream().map(s -> s.getData().getProperties()).flatMap(Collection::stream).filter(p -> propertyName.equals(p.getIdentifier()))
-                .map(Property::getTargetTypes).flatMap(Collection::stream).map(TargetType::getType).distinct().collect(Collectors.toList());
+                .map(Property::getTargetTypes).flatMap(Collection::stream).map(TargetType::getType).filter(t -> targetType == null || t.equals(targetType)).distinct().collect(Collectors.toList());
         final Map<String, Result<TypeInformation>> targetTypeInformation = types.getTypesByName(targetTypesOfProperty, stage, null, false, false);
         suggestionResult.setTypes(targetTypeInformation.values().stream().collect(Collectors.toMap(k -> k.getData().getIdentifier(), Result::getData)));
-        final List<Type> targetTypes = suggestionResult.getTypes().values().stream().map(Type::fromPayload).filter(t -> targetType == null || t.getName().equals(targetType)).collect(Collectors.toList());
+        final List<Type> targetTypes = suggestionResult.getTypes().values().stream().map(Type::fromPayload).collect(Collectors.toList());
         Paginated<SuggestedLink> documentsByTypes = repository.getSuggestionsByTypes(stage, paginationParam, targetTypes, search, existingLinks);
         suggestionResult.setSuggestions(documentsByTypes);
         return suggestionResult;
