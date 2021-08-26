@@ -17,6 +17,7 @@
 package eu.ebrains.kg.graphdb.structure.controller;
 
 import eu.ebrains.kg.arango.commons.model.ArangoCollectionReference;
+import eu.ebrains.kg.commons.Tuple;
 import eu.ebrains.kg.commons.jsonld.DynamicJson;
 import eu.ebrains.kg.commons.model.DataStage;
 import eu.ebrains.kg.commons.model.SpaceName;
@@ -35,7 +36,6 @@ import org.slf4j.LoggerFactory;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
 
-import javax.annotation.PostConstruct;
 import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -156,9 +156,7 @@ public class MetaDataController {
                     globalProperty.setOccurrences(spaceProperties.stream().mapToInt(Property::getOccurrences).sum());
                     spaceProperties.forEach(s -> {
                         final Set<String> relevantKeys = s.keySet().stream().filter(k -> !GLOBAL_PROPERTY_BLACKLIST.contains(k)).collect(Collectors.toSet());
-                        relevantKeys.forEach(k->{
-                            globalProperty.put(k, s.get(k));
-                        });
+                        relevantKeys.forEach(k-> globalProperty.put(k, s.get(k)));
                         if(clearAdditionalInfoForPropertiesInSpaces){
                             relevantKeys.forEach(s::remove);
                         }
@@ -199,8 +197,8 @@ public class MetaDataController {
     private void readMetaDataStructureForSpace(DataStage stage, List<String> typeRestriction, boolean withIncomingLinks, boolean withProperties, Map<String, TypeInformation> typeInformations, Map<String, List<SpaceTypeInformation>> spaceTypeInformationLookup, List<String> allRelevantEdges, Space space, SpaceName clientSpace) {
         final List<TypeWithInstanceCountReflection> typeWithInstanceCountReflections = space.isExistsInDB() ? structureRepository.reflectTypesInSpace(stage, space.getName()) : Collections.emptyList();
         final Set<String> reflectedTypes = typeWithInstanceCountReflections.stream().map(TypeWithInstanceCountReflection::getName).filter(Objects::nonNull).collect(Collectors.toSet());
-        final Map<String, DynamicJson> typesInSpaceBySpecification = structureRepository.getTypesInSpaceBySpecification(space.getName()).stream().collect(Collectors.toMap(t -> t, structureRepository::getTypeSpecification));
-        final Map<String, DynamicJson> clientSpecificTypesInSpaceBySpecification = clientSpace == null ? Collections.emptyMap() : structureRepository.getTypesInSpaceBySpecification(space.getName()).stream().collect(Collectors.toMap(t -> t, v -> structureRepository.getClientSpecificTypeSpecification(v, clientSpace)));
+        final Map<String, DynamicJson> typesInSpaceBySpecification = structureRepository.getTypesInSpaceBySpecification(space.getName()).stream().map(t -> new Tuple<String, DynamicJson>().setA(t).setB(structureRepository.getTypeSpecification(t))).filter(t -> t.getB()!=null).collect(Collectors.toMap(Tuple::getA, Tuple::getB));
+        final Map<String, DynamicJson> clientSpecificTypesInSpaceBySpecification = clientSpace == null ? Collections.emptyMap() : typesInSpaceBySpecification.keySet().stream().map(t -> new Tuple<String, DynamicJson>().setA(t).setB(structureRepository.getClientSpecificTypeSpecification(t, clientSpace))).filter(t -> t.getB()!=null).collect(Collectors.toMap(Tuple::getA, Tuple::getB));
         final Stream<TypeWithInstanceCountReflection> allTypes = Stream.concat(typeWithInstanceCountReflections.stream(), typesInSpaceBySpecification.keySet().stream().filter(k -> !reflectedTypes.contains(k)).map(k -> {
             TypeWithInstanceCountReflection r = new TypeWithInstanceCountReflection();
             r.setName(k);

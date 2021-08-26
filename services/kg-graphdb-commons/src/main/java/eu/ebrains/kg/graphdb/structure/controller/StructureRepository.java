@@ -162,16 +162,20 @@ public class StructureRepository {
     }
 
     private DynamicJson doGetTypeSpecification(String typeName, ArangoCollectionReference collectionReference){
-        final UUID typeUUID = typeSpecificationRef(typeName);
-        AQL query = new AQL();
-        Map<String, Object> bindVars = new HashMap<>();
-        query.addLine(AQL.trust("LET doc = DOCUMENT(@id)"));
-        bindVars.put("id", String.format("%s/%s", TYPES.getCollectionName(), typeUUID));
-        query.addLine(AQL.trust("LET result = DOCUMENT(@clientSpace, doc._key)"));
-        query.addLine(AQL.trust("FILTER result != NULL"));
-        bindVars.put("clientSpace", collectionReference.getCollectionName());
-        query.addLine(AQL.trust("RETURN KEEP(result, ATTRIBUTES(result, True))"));
-        return getSingleResult(arangoDatabases.getStructureDB().query(query.build().getValue(), bindVars, DynamicJson.class).asListRemaining(), typeUUID);
+        final ArangoDatabase structureDB = arangoDatabases.getStructureDB();
+        if(structureDB.collection(collectionReference.getCollectionName()).exists()) {
+            final UUID typeUUID = typeSpecificationRef(typeName);
+            AQL query = new AQL();
+            Map<String, Object> bindVars = new HashMap<>();
+            query.addLine(AQL.trust("LET doc = DOCUMENT(@id)"));
+            bindVars.put("id", String.format("%s/%s", TYPES.getCollectionName(), typeUUID));
+            query.addLine(AQL.trust("LET result = DOCUMENT(@clientSpace, doc._key)"));
+            query.addLine(AQL.trust("FILTER result != NULL"));
+            bindVars.put("clientSpace", collectionReference.getCollectionName());
+            query.addLine(AQL.trust("RETURN KEEP(result, ATTRIBUTES(result, True))"));
+            return getSingleResult(structureDB.query(query.build().getValue(), bindVars, DynamicJson.class).asListRemaining(), typeUUID);
+        }
+        return null;
     }
 
 
@@ -231,13 +235,17 @@ public class StructureRepository {
     }
 
     private DynamicJson doGetPropertyBySpecification(String propertyName, ArangoCollectionReference collectionReference) {
-        final UUID propertyUUID = propertySpecificationRef(propertyName);
-        AQL query = new AQL();
-        Map<String, Object> bindVars = new HashMap<>();
-        query.addLine(AQL.trust("LET doc = DOCUMENT(@id)"));
-        bindVars.put("id", String.format("%s/%s", collectionReference.getCollectionName(), propertyUUID));
-        query.addLine(AQL.trust("RETURN KEEP(doc, ATTRIBUTES(doc, True))"));
-        return getSingleResult(arangoDatabases.getStructureDB().query(query.build().getValue(), bindVars, DynamicJson.class).asListRemaining(), propertyUUID);
+        final ArangoDatabase structureDB = arangoDatabases.getStructureDB();
+        if(structureDB.collection(collectionReference.getCollectionName()).exists()) {
+            final UUID propertyUUID = propertySpecificationRef(propertyName);
+            AQL query = new AQL();
+            Map<String, Object> bindVars = new HashMap<>();
+            query.addLine(AQL.trust("LET doc = DOCUMENT(@id)"));
+            bindVars.put("id", String.format("%s/%s", collectionReference.getCollectionName(), propertyUUID));
+            query.addLine(AQL.trust("RETURN KEEP(doc, ATTRIBUTES(doc, True))"));
+            return getSingleResult(structureDB.query(query.build().getValue(), bindVars, DynamicJson.class).asListRemaining(), propertyUUID);
+        }
+        return null;
     }
 
     @CacheEvict("clientSpecificPropertySpecification")
@@ -265,16 +273,20 @@ public class StructureRepository {
     }
 
     private List<DynamicJson> doGetPropertiesOfTypeBySpecification(String type, ArangoCollectionReference collectionReference) {
-        final UUID typeUUID = typeSpecificationRef(type);
-        AQL query = new AQL();
-        Map<String, Object> bindVars = new HashMap<>();
-        query.addLine(AQL.trust("FOR t IN @@collection FILTER t._from == @id"));
-        bindVars.put("@collection", collectionReference.getCollectionName());
-        bindVars.put("id", String.format("%s/%s", TYPES.getCollectionName(), typeUUID));
-        query.addLine(AQL.trust("LET doc = DOCUMENT(t._to)"));
-        query.addLine(AQL.trust("FILTER doc != NULL"));
-        query.addLine(AQL.trust(String.format("RETURN MERGE(KEEP(doc, [\"%s\"]), KEEP(t, ATTRIBUTES(t, True)))", SchemaOrgVocabulary.IDENTIFIER)));
-        return arangoDatabases.getStructureDB().query(query.build().getValue(), bindVars, DynamicJson.class).asListRemaining();
+        final ArangoDatabase structureDB = arangoDatabases.getStructureDB();
+        if(structureDB.collection(collectionReference.getCollectionName()).exists()) {
+            final UUID typeUUID = typeSpecificationRef(type);
+            AQL query = new AQL();
+            Map<String, Object> bindVars = new HashMap<>();
+            query.addLine(AQL.trust("FOR t IN @@collection FILTER t._from == @id"));
+            bindVars.put("@collection", collectionReference.getCollectionName());
+            bindVars.put("id", String.format("%s/%s", TYPES.getCollectionName(), typeUUID));
+            query.addLine(AQL.trust("LET doc = DOCUMENT(t._to)"));
+            query.addLine(AQL.trust("FILTER doc != NULL"));
+            query.addLine(AQL.trust(String.format("RETURN MERGE(KEEP(doc, [\"%s\"]), KEEP(t, ATTRIBUTES(t, True)))", SchemaOrgVocabulary.IDENTIFIER)));
+            return structureDB.query(query.build().getValue(), bindVars, DynamicJson.class).asListRemaining();
+        }
+        return Collections.emptyList();
     }
 
 
