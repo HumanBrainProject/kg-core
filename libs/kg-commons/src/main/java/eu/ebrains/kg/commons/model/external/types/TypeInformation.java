@@ -100,4 +100,10 @@ public class TypeInformation extends DynamicJson {
         remove(EBRAINSVocabulary.META_SPACES);
     }
 
+
+    @JsonIgnore
+    public void clearProperties(){
+        remove(EBRAINSVocabulary.META_PROPERTIES);
+    }
+
 }

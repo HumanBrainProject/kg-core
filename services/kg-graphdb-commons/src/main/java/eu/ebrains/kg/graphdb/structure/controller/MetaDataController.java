@@ -68,10 +68,11 @@ public class MetaDataController {
             // We need all spaces either if there is no space filter or if we require incoming links (because we need to reflect on the whole structure to capture all).
             // If there is a space filter applied and no requirement for incoming links, we can speed things up.
             if (withIncomingLinks || spaceRestriction == null || space.getName().getName().equals(spaceRestriction)) {
-                readMetaDataStructureForSpace(stage, typeRestriction, withIncomingLinks, withProperties, typeInformation, spaceTypeInformationLookup, allRelevantEdges, space, clientSpace);
+                //When asking for incoming links we need to fetch the properties as well -> otherwise we won't have the required information available.
+                readMetaDataStructureForSpace(stage, typeRestriction, withIncomingLinks, withIncomingLinks || withProperties, typeInformation, spaceTypeInformationLookup, allRelevantEdges, space, clientSpace);
             }
         }
-        final List<TypeInformation> result = aggregateGlobalInformation(withProperties, typeInformation, spaceRestriction==null);
+        final List<TypeInformation> result = aggregateGlobalInformation(withIncomingLinks || withProperties, typeInformation, spaceRestriction==null);
         if (withIncomingLinks) {
             aggregateIncomingLinks(result);
         }
@@ -91,6 +92,14 @@ public class MetaDataController {
                 }
                 return r;
             }).filter(Objects::nonNull).collect(Collectors.toList());
+        }
+        if(withIncomingLinks && !withProperties){
+            // We needed to reflect on the properties beforehand to evaluate the incoming links.
+            // But the end-result shouldn't contain them, so we're going to clear it before returning.
+            resultsRestrictedBySpace.forEach(r -> {
+                r.clearProperties();
+                r.getSpaces().forEach(space -> space.setProperties(null));
+            });
         }
 
         final List<TypeInformation> sortedResult = resultsRestrictedBySpace.stream().sorted(Comparator.comparing(TypeInformation::getName)).collect(Collectors.toList());
@@ -134,9 +143,7 @@ public class MetaDataController {
                                 }))));
         result.forEach(r -> {
             final List<IncomingLink> incomingLinksForType = incomingLinks.get(r.getIdentifier());
-            if (incomingLinksForType != null) {
-                r.setIncomingLinks(incomingLinksForType.stream().sorted(Comparator.comparing(IncomingLink::getIdentifier)).collect(Collectors.toList()));
-            }
+            r.setIncomingLinks(incomingLinksForType != null ? incomingLinksForType.stream().sorted(Comparator.comparing(IncomingLink::getIdentifier)).collect(Collectors.toList()) : Collections.emptyList());
         });
     }
 
