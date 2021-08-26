@@ -161,9 +161,9 @@ public class StructureRepository {
         return doGetTypeSpecification(typeName, clientTypesCollection(clientSpaceName.getName()));
     }
 
-    private DynamicJson doGetTypeSpecification(String typeName, ArangoCollectionReference collectionReference){
+    private DynamicJson doGetTypeSpecification(String typeName, ArangoCollectionReference collectionReference) {
         final ArangoDatabase structureDB = arangoDatabases.getStructureDB();
-        if(structureDB.collection(collectionReference.getCollectionName()).exists()) {
+        if (structureDB.collection(collectionReference.getCollectionName()).exists()) {
             final UUID typeUUID = typeSpecificationRef(typeName);
             AQL query = new AQL();
             Map<String, Object> bindVars = new HashMap<>();
@@ -224,7 +224,7 @@ public class StructureRepository {
         return doGetPropertyBySpecification(propertyName, clientTypesCollection(clientSpaceName.getName()));
     }
 
-    private DynamicJson getSingleResult(List<DynamicJson> dynamicJsons, UUID id){
+    private DynamicJson getSingleResult(List<DynamicJson> dynamicJsons, UUID id) {
         if (dynamicJsons.isEmpty()) {
             return null;
         }
@@ -236,7 +236,7 @@ public class StructureRepository {
 
     private DynamicJson doGetPropertyBySpecification(String propertyName, ArangoCollectionReference collectionReference) {
         final ArangoDatabase structureDB = arangoDatabases.getStructureDB();
-        if(structureDB.collection(collectionReference.getCollectionName()).exists()) {
+        if (structureDB.collection(collectionReference.getCollectionName()).exists()) {
             final UUID propertyUUID = propertySpecificationRef(propertyName);
             AQL query = new AQL();
             Map<String, Object> bindVars = new HashMap<>();
@@ -274,7 +274,7 @@ public class StructureRepository {
 
     private List<DynamicJson> doGetPropertiesOfTypeBySpecification(String type, ArangoCollectionReference collectionReference) {
         final ArangoDatabase structureDB = arangoDatabases.getStructureDB();
-        if(structureDB.collection(collectionReference.getCollectionName()).exists()) {
+        if (structureDB.collection(collectionReference.getCollectionName()).exists()) {
             final UUID typeUUID = typeSpecificationRef(type);
             AQL query = new AQL();
             Map<String, Object> bindVars = new HashMap<>();
@@ -294,7 +294,6 @@ public class StructureRepository {
     public void evictClientSpecificPropertiesInTypeBySpecificationCache(String type, SpaceName clientSpaceName) {
         logger.info(String.format("Cache evict: clearing cache for properties in type %s (client: %s)", type, clientSpaceName.getName()));
     }
-
 
 
     @Cacheable("propertiesOfTypeInSpace")
@@ -423,7 +422,12 @@ public class StructureRepository {
     public void removeSpaceDocument(SpaceName spaceName) {
         final ArangoDatabase structureDB = arangoDatabases.getStructureDB();
         final ArangoCollection spaces = arangoUtils.getOrCreateArangoCollection(structureDB, SPACES);
-        spaces.deleteDocument(spaceSpecificationRef(spaceName.getName()).toString());
+        final String id = spaceSpecificationRef(spaceName.getName()).toString();
+        if (spaces.documentExists(id)) {
+            spaces.deleteDocument(id);
+        } else {
+            logger.info(String.format("Was trying to remove document %s but it doesn't exist in collection %s", id, spaces.name()));
+        }
     }
 
     public void addLinkBetweenSpaceAndType(SpaceName spaceName, String type) {
@@ -439,7 +443,12 @@ public class StructureRepository {
     public void removeLinkBetweenSpaceAndType(SpaceName spaceName, String type) {
         final ArangoDatabase structureDB = arangoDatabases.getStructureDB();
         final ArangoCollection typeInSpace = arangoUtils.getOrCreateArangoCollection(structureDB, TYPE_IN_SPACE);
-        typeInSpace.deleteDocument(typeInSpaceSpecificationRef(spaceName.getName(), type).toString());
+        final String id = typeInSpaceSpecificationRef(spaceName.getName(), type).toString();
+        if (typeInSpace.documentExists(id)) {
+            typeInSpace.deleteDocument(id);
+        } else {
+            logger.info(String.format("Was trying to remove document %s but it doesn't exist in collection %s", id, typeInSpace.name()));
+        }
     }
 
     public void createOrUpdateTypeDocument(JsonLdId typeName, NormalizedJsonLd typeSpecification, SpaceName clientSpace) {
@@ -455,7 +464,12 @@ public class StructureRepository {
         final ArangoDatabase structureDB = arangoDatabases.getStructureDB();
         ArangoCollectionReference collection = clientSpace == null ? TYPES : clientTypesCollection(clientSpace.getName());
         final ArangoCollection types = arangoUtils.getOrCreateArangoCollection(structureDB, collection);
-        types.deleteDocument(typeSpecificationRef(typeName.getId()).toString());
+        final String id = typeSpecificationRef(typeName.getId()).toString();
+        if (types.documentExists(id)) {
+            types.deleteDocument(id);
+        } else {
+            logger.info(String.format("Was trying to remove document %s but it doesn't exist in collection %s", id, types.name()));
+        }
     }
 
 
@@ -472,7 +486,13 @@ public class StructureRepository {
         final ArangoDatabase structureDB = arangoDatabases.getStructureDB();
         ArangoCollectionReference collection = clientSpace == null ? PROPERTIES : clientPropertiesCollection(clientSpace.getName());
         final ArangoCollection properties = arangoUtils.getOrCreateArangoCollection(structureDB, collection);
-        properties.deleteDocument(propertySpecificationRef(propertyName.getId()).toString());
+        final String id = propertySpecificationRef(propertyName.getId()).toString();
+        if (properties.documentExists(id)) {
+            properties.deleteDocument(id);
+        } else {
+            logger.info(String.format("Was trying to remove document %s but it doesn't exist in collection %s", id, properties.name()));
+        }
+
     }
 
     public void addLinkBetweenTypeAndProperty(String type, String property, NormalizedJsonLd payload, SpaceName clientSpace) {
@@ -490,7 +510,12 @@ public class StructureRepository {
         final ArangoDatabase structureDB = arangoDatabases.getStructureDB();
         ArangoCollectionReference collection = clientSpace == null ? PROPERTY_IN_TYPE : clientPropertyInTypeCollection(clientSpace.getName());
         final ArangoCollection propertyInType = arangoUtils.getOrCreateArangoCollection(structureDB, collection);
-        propertyInType.deleteDocument(propertyInTypeSpecificationRef(type, property).toString());
+        final String id = propertyInTypeSpecificationRef(type, property).toString();
+        if (propertyInType.documentExists(id)) {
+            propertyInType.deleteDocument(id);
+        } else {
+            logger.info(String.format("Was trying to remove document %s but it doesn't exist in collection %s", id, propertyInType.name()));
+        }
     }
 
 }
