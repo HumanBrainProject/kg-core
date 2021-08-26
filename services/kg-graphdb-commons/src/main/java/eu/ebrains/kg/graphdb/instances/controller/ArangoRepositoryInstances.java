@@ -561,8 +561,11 @@ public class ArangoRepositoryInstances {
     }
 
 
-    private Tuple<DocumentsByTypeMode, Set<SpaceName>> restrictToSpaces(Type typeWithLabelInfo, DataStage stage) {
+    private Tuple<DocumentsByTypeMode, Set<SpaceName>> restrictToSpaces(Type typeWithLabelInfo, DataStage stage, SpaceName spaceFilter) {
         Set<SpaceName> spaces = typeWithLabelInfo.getSpaces();
+        if(spaceFilter!=null){
+            spaces = spaces.stream().filter(s -> spaceFilter.getName().equals(s.getName())).collect(Collectors.toSet());
+        }
         UserWithRoles userWithRoles = authContext.getUserWithRoles();
         if (!permissionsController.hasGlobalReadPermissions(userWithRoles, stage)) {
             //We filter out those spaces to which the user doesn't have read access to.
@@ -606,10 +609,9 @@ public class ArangoRepositoryInstances {
             ArangoDatabase database = databases.getByStage(stage);
             Map<String, Object> bindVars = new HashMap<>();
             AQL aql = new AQL();
-            Tuple<DocumentsByTypeMode, Set<SpaceName>> restrictToSpaces = restrictToSpaces(typeWithLabelInfo, stage);
+            Tuple<DocumentsByTypeMode, Set<SpaceName>> restrictToSpaces = restrictToSpaces(typeWithLabelInfo, stage, space);
             DocumentsByTypeMode mode = restrictToSpaces.getA();
             if (mode != DocumentsByTypeMode.EMPTY) {
-                iterateThroughTypeList(Collections.singletonList(typeWithLabelInfo), null, bindVars, aql);
                 if (search != null && InstanceId.deserialize(search) != null) {
                     mode = DocumentsByTypeMode.BY_ID;
                 }
@@ -622,6 +624,11 @@ public class ArangoRepositoryInstances {
                             aql.specifyWhitelist();
                             bindVars.putAll(whitelistFilter);
                         }
+                }
+                switch(mode){
+                    case SIMPLE:
+                    case DYNAMIC:
+                        iterateThroughTypeList(Collections.singletonList(typeWithLabelInfo), searchableProperties, bindVars, aql);
                 }
                 switch (mode) {
                     case BY_ID:
@@ -641,7 +648,6 @@ public class ArangoRepositoryInstances {
                         break;
                     case DYNAMIC:
                         arangoUtils.getOrCreateArangoCollection(database, InternalSpace.TYPE_EDGE_COLLECTION);
-                        iterateThroughTypeList(Collections.singletonList(typeWithLabelInfo), searchableProperties, bindVars, aql);
                         aql.indent().addLine(AQL.trust("FOR v IN 1..1 OUTBOUND typeDefinition.type @@typeRelationCollection"));
                         bindVars.put("@typeRelationCollection", InternalSpace.TYPE_EDGE_COLLECTION.getCollectionName());
                         break;
