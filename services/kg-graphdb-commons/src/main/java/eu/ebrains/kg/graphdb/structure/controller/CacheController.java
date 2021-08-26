@@ -57,23 +57,23 @@ public class CacheController {
 
     private Set<String> getUpdateIds(Map<String, CacheEvictionPlan> plansBeforeTransaction, Map<String, CacheEvictionPlan> plansAfterTransaction){
         //An update of an instance is characterized by an id appearing at both times, before and after the transaction
-        return plansAfterTransaction.keySet().stream().filter(id -> !plansBeforeTransaction.containsKey(id)).collect(Collectors.toSet());
+        return plansAfterTransaction.keySet().stream().filter(plansBeforeTransaction::containsKey).collect(Collectors.toSet());
     }
 
 
     private Set<SpaceName> findSpacesForCacheEviction(Map<String, CacheEvictionPlan> plansBeforeTransaction, Map<String, CacheEvictionPlan> plansAfterTransaction, Set<String> createIds, Set<String> deleteIds, Set<String> updateIds){
         //We evict all caches for delete operations if the original instance had types
-        final Stream<SpaceName> fromDeleteOperations = deleteIds.stream().map(plansBeforeTransaction::get).filter(d -> CollectionUtils.isEmpty(d.getType())).map(d -> new SpaceName(d.getSpace()));
+        final Stream<SpaceName> fromDeleteOperations = deleteIds.stream().map(plansBeforeTransaction::get).filter(d -> !CollectionUtils.isEmpty(d.getType())).map(d -> new SpaceName(d.getSpace()));
 
         //We evict all caches for create operations if the new instance has types
-        final Stream<SpaceName> fromCreateOperations = createIds.stream().map(plansAfterTransaction::get).filter(d -> CollectionUtils.isEmpty(d.getType())).map(d -> new SpaceName(d.getSpace()));
+        final Stream<SpaceName> fromCreateOperations = createIds.stream().map(plansAfterTransaction::get).filter(d -> !CollectionUtils.isEmpty(d.getType())).map(d -> new SpaceName(d.getSpace()));
 
         //For update operations we only want the ones which are having changing types
         final Stream<SpaceName> fromUpdateOperations = updateIds.stream().filter(d -> {
             final CacheEvictionPlan cacheEvictionPlanBefore = plansBeforeTransaction.get(d);
             final CacheEvictionPlan cacheEvictionPlanAfter = plansAfterTransaction.get(d);
             return !CollectionUtils.isEmpty(getChangedTypes(cacheEvictionPlanBefore, cacheEvictionPlanAfter));
-        }).map(d -> plansBeforeTransaction.get(d) != null ? SpaceName.fromString(plansBeforeTransaction.get(d).getSpace()) : SpaceName.fromString(plansAfterTransaction.get(d).getSpace()));
+        }).map(d -> SpaceName.fromString(plansBeforeTransaction.get(d).getSpace()));
 
         return Stream.concat(Stream.concat(fromDeleteOperations, fromCreateOperations), fromUpdateOperations).collect(Collectors.toSet());
     }
