@@ -29,7 +29,6 @@ import com.arangodb.model.DocumentCreateOptions;
 import com.arangodb.model.SkiplistIndexOptions;
 import eu.ebrains.kg.arango.commons.model.ArangoCollectionReference;
 import eu.ebrains.kg.arango.commons.model.ArangoDatabaseProxy;
-import eu.ebrains.kg.graphdb.commons.controller.GraphDBArangoUtils;
 import eu.ebrains.kg.commons.IdUtils;
 import eu.ebrains.kg.commons.JsonAdapter;
 import eu.ebrains.kg.commons.Tuple;
