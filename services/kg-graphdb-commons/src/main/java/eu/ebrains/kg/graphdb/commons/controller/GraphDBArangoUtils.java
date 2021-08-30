@@ -24,11 +24,10 @@ package eu.ebrains.kg.graphdb.commons.controller;
 
 import com.arangodb.ArangoCollection;
 import com.arangodb.ArangoDatabase;
-import com.arangodb.entity.CollectionType;
 import com.arangodb.model.AqlQueryOptions;
-import com.arangodb.model.CollectionCreateOptions;
 import eu.ebrains.kg.arango.commons.aqlBuilder.ArangoVocabulary;
 import eu.ebrains.kg.arango.commons.model.ArangoCollectionReference;
+import eu.ebrains.kg.arango.commons.model.ArangoDatabaseProxy;
 import eu.ebrains.kg.arango.commons.model.InternalSpace;
 import eu.ebrains.kg.commons.IdUtils;
 import eu.ebrains.kg.commons.jsonld.IndexedJsonLdDoc;
@@ -44,12 +43,11 @@ import javax.annotation.PostConstruct;
 import java.util.*;
 
 @Component
-public class ArangoUtils {
+public class GraphDBArangoUtils {
 
     private final ArangoDatabases arangoDatabases;
 
     private final IdUtils idUtils;
-
 
 
     @PostConstruct
@@ -57,32 +55,14 @@ public class ArangoUtils {
         arangoDatabases.setup();
     }
 
-
-    public ArangoUtils(ArangoDatabases arangoDatabases, IdUtils idUtils) {
+    public GraphDBArangoUtils(ArangoDatabases arangoDatabases, IdUtils idUtils) {
         this.arangoDatabases = arangoDatabases;
         this.idUtils = idUtils;
     }
 
-    private final Logger logger = LoggerFactory.getLogger(getClass());
-
     @Cacheable(value="arangoCollection", key="{#db.name(), #c.collectionName}")
     public ArangoCollection getOrCreateArangoCollection(ArangoDatabase db, ArangoCollectionReference c) {
-        ArangoCollection collection = db.collection(c.getCollectionName());
-        if (!collection.exists()) {
-            return createArangoCollection(db, c);
-        }
-        return collection;
-    }
-
-    private synchronized ArangoCollection createArangoCollection(ArangoDatabase db, ArangoCollectionReference c) {
-        ArangoCollection collection = db.collection(c.getCollectionName());
-        //We check again, if the collection has been created in the meantime
-        if (!collection.exists()) {
-            logger.debug(String.format("Creating collection %s", c.getCollectionName()));
-            db.createCollection(c.getCollectionName(), new CollectionCreateOptions().waitForSync(true).type(c.isEdge() != null && c.isEdge() ? CollectionType.EDGES : CollectionType.DOCUMENT));
-            ArangoDatabases.ensureIndicesOnCollection(collection);
-        }
-        return collection;
+        return ArangoDatabaseProxy.getOrCreateArangoCollection(db, c);
     }
 
 

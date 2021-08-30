@@ -35,7 +35,7 @@ import eu.ebrains.kg.commons.models.UserWithRoles;
 import eu.ebrains.kg.commons.query.KgQuery;
 import eu.ebrains.kg.graphdb.commons.controller.ArangoDatabases;
 import eu.ebrains.kg.graphdb.commons.controller.ArangoRepositoryCommons;
-import eu.ebrains.kg.graphdb.commons.controller.ArangoUtils;
+import eu.ebrains.kg.graphdb.commons.controller.GraphDBArangoUtils;
 import eu.ebrains.kg.graphdb.commons.controller.PermissionsController;
 import eu.ebrains.kg.graphdb.queries.model.spec.Specification;
 import eu.ebrains.kg.graphdb.queries.utils.DataQueryBuilder;
@@ -64,12 +64,12 @@ public class QueryController {
 
     private final ArangoDatabases arangoDatabases;
 
-    private final ArangoUtils arangoUtils;
+    private final GraphDBArangoUtils graphDBArangoUtils;
 
-    public QueryController(SpecificationInterpreter specificationInterpreter, ArangoDatabases arangoDatabases, ArangoRepositoryCommons arangoRepositoryCommons, PermissionsController permissionsController, ArangoUtils arangoUtils) {
+    public QueryController(SpecificationInterpreter specificationInterpreter, ArangoDatabases arangoDatabases, ArangoRepositoryCommons arangoRepositoryCommons, PermissionsController permissionsController, GraphDBArangoUtils graphDBArangoUtils) {
         this.specificationInterpreter = specificationInterpreter;
         this.arangoDatabases = arangoDatabases;
-        this.arangoUtils = arangoUtils;
+        this.graphDBArangoUtils = graphDBArangoUtils;
         this.arangoRepositoryCommons = arangoRepositoryCommons;
         this.permissionsController = permissionsController;
     }
@@ -88,8 +88,8 @@ public class QueryController {
         else {
             whitelistFilter = permissionsController.whitelistFilterForReadInstances(userWithRoles, query.getStage());
         }
-        arangoUtils.getOrCreateArangoCollection(database, ArangoCollectionReference.fromSpace(InternalSpace.TYPE_SPACE));
-        arangoUtils.getOrCreateArangoCollection(database, InternalSpace.TYPE_EDGE_COLLECTION);
+        graphDBArangoUtils.getOrCreateArangoCollection(database, ArangoCollectionReference.fromSpace(InternalSpace.TYPE_SPACE));
+        graphDBArangoUtils.getOrCreateArangoCollection(database, InternalSpace.TYPE_EDGE_COLLECTION);
         AQLQuery aql = new DataQueryBuilder(specification, paginationParam, whitelistFilter, filterValues, database.getCollections().stream().map(c -> new ArangoCollectionReference(c.getName(), c.getType() == CollectionType.EDGES)).collect(Collectors.toList())).build();
         aql.addBindVar("idRestriction", query.getIdRestrictions() == null ? Collections.emptyList() : query.getIdRestrictions().stream().filter(Objects::nonNull).map(UUID::toString).collect(Collectors.toList()));
         try {

@@ -47,9 +47,9 @@ public class EntryHookDocuments {
     private final Logger logger = LoggerFactory.getLogger(getClass());
     private final ArangoDatabases databases;
     private final IdUtils idUtils;
-    private final ArangoUtils utils;
+    private final GraphDBArangoUtils utils;
 
-    public EntryHookDocuments(ArangoDatabases databases, ArangoUtils utils, IdUtils idUtils) {
+    public EntryHookDocuments(ArangoDatabases databases, GraphDBArangoUtils utils, IdUtils idUtils) {
         this.databases = databases;
         this.utils = utils;
         this.idUtils = idUtils;

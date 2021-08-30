@@ -37,7 +37,7 @@ import eu.ebrains.kg.commons.model.IdWithAlternatives;
 import eu.ebrains.kg.commons.model.SpaceName;
 import eu.ebrains.kg.commons.semantics.vocabularies.EBRAINSVocabulary;
 import eu.ebrains.kg.graphdb.commons.controller.ArangoRepositoryCommons;
-import eu.ebrains.kg.graphdb.commons.controller.ArangoUtils;
+import eu.ebrains.kg.graphdb.commons.controller.GraphDBArangoUtils;
 import eu.ebrains.kg.graphdb.commons.controller.EntryHookDocuments;
 import eu.ebrains.kg.graphdb.commons.model.ArangoDocument;
 import eu.ebrains.kg.graphdb.commons.model.ArangoEdge;
@@ -60,16 +60,16 @@ public class DataController {
     private final IdUtils idUtils;
     private final ArangoRepositoryCommons repository;
     private final EntryHookDocuments entryHookDocuments;
-    private final ArangoUtils arangoUtils;
+    private final GraphDBArangoUtils graphDBArangoUtils;
     private final Ids.Client ids;
     private final ReleasingController releasingController;
     private final TypeUtils typeUtils;
 
-    public DataController(IdUtils idUtils, ArangoRepositoryCommons repository, EntryHookDocuments entryHookDocuments, ArangoUtils arangoUtils, Ids.Client ids, ReleasingController releasingController, TypeUtils typeUtils) {
+    public DataController(IdUtils idUtils, ArangoRepositoryCommons repository, EntryHookDocuments entryHookDocuments, GraphDBArangoUtils graphDBArangoUtils, Ids.Client ids, ReleasingController releasingController, TypeUtils typeUtils) {
         this.idUtils = idUtils;
         this.repository = repository;
         this.entryHookDocuments = entryHookDocuments;
-        this.arangoUtils = arangoUtils;
+        this.graphDBArangoUtils = graphDBArangoUtils;
         this.ids = ids;
         this.releasingController = releasingController;
         this.typeUtils = typeUtils;
@@ -146,7 +146,7 @@ public class DataController {
                 ArangoDocumentReference mergedDocumentRef = targetDocumentRef.getArangoCollectionReference().doc(mergedDocumentId);
                 List<ArangoEdge> incomingRelationsForDocument = repository.getIncomingRelationsForDocument(stage, mergedDocumentRef);
                 for (ArangoEdge arangoEdge : incomingRelationsForDocument) {
-                    if (!arangoUtils.isInternalCollection(arangoEdge.getId().getArangoCollectionReference())) {
+                    if (!graphDBArangoUtils.isInternalCollection(arangoEdge.getId().getArangoCollectionReference())) {
                         //redirect them to the new targetId
                         logger.debug(String.format("I'm redirecting the link from %s to %s due to a merge", arangoEdge.getTo().getId(), targetDocumentRef.getId()));
                         arangoEdge.setTo(targetDocumentRef);

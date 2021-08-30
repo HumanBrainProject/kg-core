@@ -44,7 +44,6 @@ import eu.ebrains.kg.commons.model.Paginated;
 import eu.ebrains.kg.commons.semantics.vocabularies.EBRAINSVocabulary;
 import eu.ebrains.kg.graphdb.commons.model.ArangoDocument;
 import eu.ebrains.kg.graphdb.commons.model.ArangoEdge;
-import eu.ebrains.kg.graphdb.commons.model.ArangoInstance;
 import eu.ebrains.kg.graphdb.ingestion.model.*;
 import eu.ebrains.kg.graphdb.structure.controller.CacheController;
 import org.apache.commons.lang3.StringUtils;
@@ -64,7 +63,7 @@ public class ArangoRepositoryCommons {
 
     private final JsonAdapter jsonAdapter;
 
-    private final ArangoUtils utils;
+    private final GraphDBArangoUtils utils;
 
     private final EntryHookDocuments entryHookDocuments;
 
@@ -72,7 +71,7 @@ public class ArangoRepositoryCommons {
 
     private final Logger logger = LoggerFactory.getLogger(getClass());
 
-    public ArangoRepositoryCommons(ArangoDatabases databases, JsonAdapter jsonAdapter, ArangoUtils utils, EntryHookDocuments entryHookDocuments, CacheController cacheController) {
+    public ArangoRepositoryCommons(ArangoDatabases databases, JsonAdapter jsonAdapter, GraphDBArangoUtils utils, EntryHookDocuments entryHookDocuments, CacheController cacheController) {
         this.databases = databases;
         this.jsonAdapter = jsonAdapter;
         this.utils = utils;

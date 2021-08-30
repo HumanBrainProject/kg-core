@@ -41,7 +41,7 @@ import eu.ebrains.kg.commons.model.internal.spaces.Space;
 import eu.ebrains.kg.commons.semantics.vocabularies.EBRAINSVocabulary;
 import eu.ebrains.kg.commons.semantics.vocabularies.SchemaOrgVocabulary;
 import eu.ebrains.kg.graphdb.commons.controller.ArangoDatabases;
-import eu.ebrains.kg.graphdb.commons.controller.ArangoUtils;
+import eu.ebrains.kg.graphdb.commons.controller.GraphDBArangoUtils;
 import eu.ebrains.kg.graphdb.commons.model.ArangoEdge;
 import eu.ebrains.kg.graphdb.structure.model.PropertyOfTypeInSpaceReflection;
 import eu.ebrains.kg.graphdb.structure.model.TargetTypeReflection;
@@ -61,13 +61,13 @@ public class StructureRepository {
 
     private final ArangoDatabases arangoDatabases;
     private final JsonAdapter jsonAdapter;
-    private final ArangoUtils arangoUtils;
+    private final GraphDBArangoUtils graphDBArangoUtils;
     private final Logger logger = LoggerFactory.getLogger(getClass());
 
-    public StructureRepository(ArangoDatabases arangoDatabases, JsonAdapter jsonAdapter, ArangoUtils arangoUtils) {
+    public StructureRepository(ArangoDatabases arangoDatabases, JsonAdapter jsonAdapter, GraphDBArangoUtils graphDBArangoUtils) {
         this.arangoDatabases = arangoDatabases;
         this.jsonAdapter = jsonAdapter;
-        this.arangoUtils = arangoUtils;
+        this.graphDBArangoUtils = graphDBArangoUtils;
     }
 
     private final static ArangoCollectionReference SPACES = new ArangoCollectionReference("spaces", false);
@@ -413,7 +413,7 @@ public class StructureRepository {
 
     public void createOrUpdateSpaceDocument(SpaceSpecification spaceSpecification) {
         final ArangoDatabase structureDB = arangoDatabases.getStructureDB();
-        final ArangoCollection spaces = arangoUtils.getOrCreateArangoCollection(structureDB, SPACES);
+        final ArangoCollection spaces = graphDBArangoUtils.getOrCreateArangoCollection(structureDB, SPACES);
         final DynamicJson arangoDoc = jsonAdapter.fromJson(jsonAdapter.toJson(spaceSpecification), DynamicJson.class);
         arangoDoc.put(ArangoVocabulary.KEY, spaceSpecificationRef(spaceSpecification.getName()));
         spaces.insertDocument(arangoDoc, new DocumentCreateOptions().overwrite(true));
@@ -421,7 +421,7 @@ public class StructureRepository {
 
     public void removeSpaceDocument(SpaceName spaceName) {
         final ArangoDatabase structureDB = arangoDatabases.getStructureDB();
-        final ArangoCollection spaces = arangoUtils.getOrCreateArangoCollection(structureDB, SPACES);
+        final ArangoCollection spaces = graphDBArangoUtils.getOrCreateArangoCollection(structureDB, SPACES);
         final String id = spaceSpecificationRef(spaceName.getName()).toString();
         if (spaces.documentExists(id)) {
             spaces.deleteDocument(id);
@@ -436,13 +436,13 @@ public class StructureRepository {
         edge.setFrom(new ArangoDocumentReference(SPACES, spaceSpecificationRef(spaceName.getName())));
         edge.setTo(new ArangoDocumentReference(TYPES, typeSpecificationRef(type)));
         edge.redefineId(new ArangoDocumentReference(TYPE_IN_SPACE, typeInSpaceSpecificationRef(spaceName.getName(), type)));
-        final ArangoCollection typeInSpace = arangoUtils.getOrCreateArangoCollection(structureDB, TYPE_IN_SPACE);
+        final ArangoCollection typeInSpace = graphDBArangoUtils.getOrCreateArangoCollection(structureDB, TYPE_IN_SPACE);
         typeInSpace.insertDocument(jsonAdapter.toJson(edge), new DocumentCreateOptions().overwrite(true));
     }
 
     public void removeLinkBetweenSpaceAndType(SpaceName spaceName, String type) {
         final ArangoDatabase structureDB = arangoDatabases.getStructureDB();
-        final ArangoCollection typeInSpace = arangoUtils.getOrCreateArangoCollection(structureDB, TYPE_IN_SPACE);
+        final ArangoCollection typeInSpace = graphDBArangoUtils.getOrCreateArangoCollection(structureDB, TYPE_IN_SPACE);
         final String id = typeInSpaceSpecificationRef(spaceName.getName(), type).toString();
         if (typeInSpace.documentExists(id)) {
             typeInSpace.deleteDocument(id);
@@ -454,7 +454,7 @@ public class StructureRepository {
     public void createOrUpdateTypeDocument(JsonLdId typeName, NormalizedJsonLd typeSpecification, SpaceName clientSpace) {
         final ArangoDatabase structureDB = arangoDatabases.getStructureDB();
         ArangoCollectionReference collection = clientSpace == null ? TYPES : clientTypesCollection(clientSpace.getName());
-        final ArangoCollection types = arangoUtils.getOrCreateArangoCollection(structureDB, collection);
+        final ArangoCollection types = graphDBArangoUtils.getOrCreateArangoCollection(structureDB, collection);
         typeSpecification.put(ArangoVocabulary.KEY, typeSpecificationRef(typeName.getId()));
         typeSpecification.put(SchemaOrgVocabulary.IDENTIFIER, typeName.getId());
         types.insertDocument(typeSpecification, new DocumentCreateOptions().overwrite(true));
@@ -463,7 +463,7 @@ public class StructureRepository {
     public void removeTypeDocument(JsonLdId typeName, SpaceName clientSpace) {
         final ArangoDatabase structureDB = arangoDatabases.getStructureDB();
         ArangoCollectionReference collection = clientSpace == null ? TYPES : clientTypesCollection(clientSpace.getName());
-        final ArangoCollection types = arangoUtils.getOrCreateArangoCollection(structureDB, collection);
+        final ArangoCollection types = graphDBArangoUtils.getOrCreateArangoCollection(structureDB, collection);
         final String id = typeSpecificationRef(typeName.getId()).toString();
         if (types.documentExists(id)) {
             types.deleteDocument(id);
@@ -476,7 +476,7 @@ public class StructureRepository {
     public void createOrUpdatePropertyDocument(JsonLdId propertyName, NormalizedJsonLd propertySpecification, SpaceName clientSpace) {
         final ArangoDatabase structureDB = arangoDatabases.getStructureDB();
         ArangoCollectionReference collection = clientSpace == null ? PROPERTIES : clientPropertiesCollection(clientSpace.getName());
-        final ArangoCollection properties = arangoUtils.getOrCreateArangoCollection(structureDB, collection);
+        final ArangoCollection properties = graphDBArangoUtils.getOrCreateArangoCollection(structureDB, collection);
         propertySpecification.put(ArangoVocabulary.KEY, propertySpecificationRef(propertyName.getId()));
         propertySpecification.put(SchemaOrgVocabulary.IDENTIFIER, propertyName.getId());
         properties.insertDocument(propertySpecification, new DocumentCreateOptions().overwrite(true));
@@ -485,7 +485,7 @@ public class StructureRepository {
     public void removePropertyDocument(JsonLdId propertyName, SpaceName clientSpace) {
         final ArangoDatabase structureDB = arangoDatabases.getStructureDB();
         ArangoCollectionReference collection = clientSpace == null ? PROPERTIES : clientPropertiesCollection(clientSpace.getName());
-        final ArangoCollection properties = arangoUtils.getOrCreateArangoCollection(structureDB, collection);
+        final ArangoCollection properties = graphDBArangoUtils.getOrCreateArangoCollection(structureDB, collection);
         final String id = propertySpecificationRef(propertyName.getId()).toString();
         if (properties.documentExists(id)) {
             properties.deleteDocument(id);
@@ -502,14 +502,14 @@ public class StructureRepository {
         payload.put(ArangoVocabulary.KEY, propertyInTypeSpecificationRef(type, property));
         payload.remove(ArangoVocabulary.ID);
         ArangoCollectionReference collection = clientSpace == null ? PROPERTY_IN_TYPE : clientPropertyInTypeCollection(clientSpace.getName());
-        final ArangoCollection propertyInType = arangoUtils.getOrCreateArangoCollection(structureDB, collection);
+        final ArangoCollection propertyInType = graphDBArangoUtils.getOrCreateArangoCollection(structureDB, collection);
         propertyInType.insertDocument(payload, new DocumentCreateOptions().overwrite(true));
     }
 
     public void removeLinkBetweenTypeAndProperty(String type, String property, SpaceName clientSpace) {
         final ArangoDatabase structureDB = arangoDatabases.getStructureDB();
         ArangoCollectionReference collection = clientSpace == null ? PROPERTY_IN_TYPE : clientPropertyInTypeCollection(clientSpace.getName());
-        final ArangoCollection propertyInType = arangoUtils.getOrCreateArangoCollection(structureDB, collection);
+        final ArangoCollection propertyInType = graphDBArangoUtils.getOrCreateArangoCollection(structureDB, collection);
         final String id = propertyInTypeSpecificationRef(type, property).toString();
         if (propertyInType.documentExists(id)) {
             propertyInType.deleteDocument(id);

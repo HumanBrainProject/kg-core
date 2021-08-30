@@ -24,14 +24,8 @@ package eu.ebrains.kg.graphdb.commons.controller;
 
 import com.arangodb.ArangoCollection;
 import com.arangodb.ArangoDatabase;
-import com.arangodb.entity.CollectionType;
 import com.arangodb.model.CollectionsReadOptions;
-import com.arangodb.model.HashIndexOptions;
-import com.arangodb.model.SkiplistIndexOptions;
-import eu.ebrains.kg.arango.commons.aqlBuilder.ArangoVocabulary;
 import eu.ebrains.kg.arango.commons.model.ArangoDatabaseProxy;
-import eu.ebrains.kg.commons.jsonld.IndexedJsonLdDoc;
-import eu.ebrains.kg.commons.jsonld.JsonLdConsts;
 import eu.ebrains.kg.commons.model.DataStage;
 import eu.ebrains.kg.graphdb.structure.controller.StructureRepository;
 import org.slf4j.Logger;
@@ -41,16 +35,11 @@ import org.springframework.context.annotation.Scope;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
 
-import java.util.Arrays;
-import java.util.Collections;
-
 @Component
 @Scope("prototype")
 public class ArangoDatabases {
 
     private static final Logger logger = LoggerFactory.getLogger(ArangoDatabases.class);
-
-    public static final String BROWSE_AND_SEARCH_INDEX = "browseAndSearch";
 
     final ArangoDatabaseProxy structureDB;
     final ArangoDatabaseProxy releasedDB;
@@ -75,28 +64,14 @@ public class ArangoDatabases {
         inProgress.getCollections(new CollectionsReadOptions().excludeSystem(true)).forEach(c -> {
             logger.debug(String.format("Ensuring configuration of collection \"%s\" in \"in progress\"", c.getName()));
             ArangoCollection collection = inProgress.collection(c.getName());
-            ensureIndicesOnCollection(collection);
+            ArangoDatabaseProxy.ensureIndicesOnCollection(collection);
         });
         ArangoDatabase released = releasedDB.get();
         released.getCollections(new CollectionsReadOptions().excludeSystem(true)).forEach(c -> {
             logger.debug(String.format("Ensuring configuration of collection \"%s\" in \"released\"", c.getName()));
             ArangoCollection collection = released.collection(c.getName());
-            ensureIndicesOnCollection(collection);
+            ArangoDatabaseProxy.ensureIndicesOnCollection(collection);
         });
-    }
-
-
-    public static void ensureIndicesOnCollection(ArangoCollection collection){
-        logger.debug(String.format("Ensuring indices properly set for collection %s", collection.name()));
-        collection.ensureHashIndex(Collections.singleton(ArangoVocabulary.COLLECTION), new HashIndexOptions());
-        collection.ensureSkiplistIndex(Collections.singletonList(JsonLdConsts.ID), new SkiplistIndexOptions());
-        if (collection.getInfo().getType() == CollectionType.EDGES) {
-            collection.ensureSkiplistIndex(Collections.singletonList(IndexedJsonLdDoc.ORIGINAL_TO), new SkiplistIndexOptions());
-        } else {
-            collection.ensureSkiplistIndex(Arrays.asList(JsonLdConsts.TYPE + "[*]", IndexedJsonLdDoc.EMBEDDED, IndexedJsonLdDoc.LABEL, ArangoVocabulary.KEY), new SkiplistIndexOptions().name(BROWSE_AND_SEARCH_INDEX));
-            collection.ensureSkiplistIndex(Collections.singletonList(IndexedJsonLdDoc.IDENTIFIERS + "[*]"), new SkiplistIndexOptions());
-            collection.ensureSkiplistIndex(Collections.singletonList(IndexedJsonLdDoc.EMBEDDED), new SkiplistIndexOptions());
-        }
     }
 
 

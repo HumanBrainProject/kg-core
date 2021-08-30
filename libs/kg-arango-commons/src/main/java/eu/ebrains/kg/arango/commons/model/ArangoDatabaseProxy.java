@@ -27,8 +27,21 @@ import com.arangodb.ArangoDB;
 import com.arangodb.ArangoDatabase;
 import com.arangodb.entity.CollectionType;
 import com.arangodb.model.CollectionCreateOptions;
+import com.arangodb.model.HashIndexOptions;
+import com.arangodb.model.SkiplistIndexOptions;
+import eu.ebrains.kg.arango.commons.aqlBuilder.ArangoVocabulary;
+import eu.ebrains.kg.commons.jsonld.IndexedJsonLdDoc;
+import eu.ebrains.kg.commons.jsonld.JsonLdConsts;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.util.Arrays;
+import java.util.Collections;
 
 public class ArangoDatabaseProxy {
+
+    public static final String BROWSE_AND_SEARCH_INDEX = "browseAndSearch";
+    private static final Logger logger = LoggerFactory.getLogger(ArangoDatabaseProxy.class);
 
     public final static int ARANGO_TIMEOUT = 10 * 60 * 1000;
     public final static int ARANGO_MAX_CONNECTIONS = 10;
@@ -85,4 +98,38 @@ public class ArangoDatabaseProxy {
             c.create();
         }
     }
+
+    public static ArangoCollection getOrCreateArangoCollection(ArangoDatabase db, ArangoCollectionReference c) {
+        ArangoCollection collection = db.collection(c.getCollectionName());
+        if (!collection.exists()) {
+            return createArangoCollection(db, c);
+        }
+        return collection;
+    }
+
+    private static synchronized ArangoCollection createArangoCollection(ArangoDatabase db, ArangoCollectionReference c) {
+        ArangoCollection collection = db.collection(c.getCollectionName());
+        //We check again, if the collection has been created in the meantime
+        if (!collection.exists()) {
+            logger.debug(String.format("Creating collection %s", c.getCollectionName()));
+            db.createCollection(c.getCollectionName(), new CollectionCreateOptions().waitForSync(true).type(c.isEdge() != null && c.isEdge() ? CollectionType.EDGES : CollectionType.DOCUMENT));
+            ensureIndicesOnCollection(collection);
+        }
+        return collection;
+    }
+
+
+    public static void ensureIndicesOnCollection(ArangoCollection collection){
+        logger.debug(String.format("Ensuring indices properly set for collection %s", collection.name()));
+        collection.ensureHashIndex(Collections.singleton(ArangoVocabulary.COLLECTION), new HashIndexOptions());
+        collection.ensureSkiplistIndex(Collections.singletonList(JsonLdConsts.ID), new SkiplistIndexOptions());
+        if (collection.getInfo().getType() == CollectionType.EDGES) {
+            collection.ensureSkiplistIndex(Collections.singletonList(IndexedJsonLdDoc.ORIGINAL_TO), new SkiplistIndexOptions());
+        } else {
+            collection.ensureSkiplistIndex(Arrays.asList(JsonLdConsts.TYPE + "[*]", IndexedJsonLdDoc.EMBEDDED, IndexedJsonLdDoc.LABEL, ArangoVocabulary.KEY), new SkiplistIndexOptions().name(BROWSE_AND_SEARCH_INDEX));
+            collection.ensureSkiplistIndex(Collections.singletonList(IndexedJsonLdDoc.IDENTIFIERS + "[*]"), new SkiplistIndexOptions());
+            collection.ensureSkiplistIndex(Collections.singletonList(IndexedJsonLdDoc.EMBEDDED), new SkiplistIndexOptions());
+        }
+    }
+
 }

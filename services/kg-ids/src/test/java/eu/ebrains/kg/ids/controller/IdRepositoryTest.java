@@ -50,7 +50,7 @@ public class IdRepositoryTest {
         SpaceName foo = new SpaceName("foo");
         IdUtils idUtils = new IdUtils(namespace);
 
-        IdRepository idRepository = Mockito.spy(new IdRepository(Mockito.mock(ArangoDatabaseProxy.class), new JsonAdapter4Test(), idUtils));
+        IdRepository idRepository = Mockito.spy(new IdRepository(Mockito.mock(ArangoDatabaseProxy.class), new JsonAdapter4Test(), idUtils, Mockito.mock(IdsDBUtils.class)));
         ArangoCollection collection = Mockito.mock(ArangoCollection.class);
         Mockito.doReturn(collection).when(idRepository).getOrCreateCollection(Mockito.any());
 
