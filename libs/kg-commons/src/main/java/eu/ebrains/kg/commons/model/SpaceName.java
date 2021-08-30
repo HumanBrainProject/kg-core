@@ -80,4 +80,12 @@ public class SpaceName {
     public String toString() {
         return name;
     }
+
+
+    public static String translateSpace(String spaceName, SpaceName privateUserSpace){
+        if(privateUserSpace!=null && privateUserSpace.getName().equals(spaceName)){
+            return SpaceName.PRIVATE_SPACE;
+        }
+        return spaceName;
+    }
 }

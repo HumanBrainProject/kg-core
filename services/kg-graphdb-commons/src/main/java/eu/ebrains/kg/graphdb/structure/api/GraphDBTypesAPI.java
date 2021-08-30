@@ -53,14 +53,14 @@ public class GraphDBTypesAPI implements GraphDBTypes.Client {
     @Override
     public Paginated<TypeInformation> getTypes(DataStage stage, String space, boolean withProperties,
                                                boolean withIncomingLinks, PaginationParam paginationParam) {
-        return PaginationParam.paginate(metaDataController.readMetaDataStructure(stage, space, null, withProperties, withIncomingLinks, authContext.getUserWithRoles(), getClientSpace()), paginationParam);
+        return PaginationParam.paginate(metaDataController.readMetaDataStructure(stage, space, null, withProperties, withIncomingLinks, authContext.getUserWithRoles(), getClientSpace(), authContext.getUserWithRolesWithoutTermsCheck().getPrivateSpace()), paginationParam);
     }
 
 
     @Override
     public Map<String, Result<TypeInformation>> getTypesByName(List<String> types, DataStage stage, String space,
                                                                boolean withProperties, boolean withIncomingLinks) {
-        final List<TypeInformation> typeInformation = metaDataController.readMetaDataStructure(stage, space, types, withProperties, withIncomingLinks, authContext.getUserWithRoles(), getClientSpace());
+        final List<TypeInformation> typeInformation = metaDataController.readMetaDataStructure(stage, space, types, withProperties, withIncomingLinks, authContext.getUserWithRoles(), getClientSpace(), authContext.getUserWithRolesWithoutTermsCheck().getPrivateSpace());
         return typeInformation.stream().filter(t -> types.contains(t.getIdentifier())).collect(Collectors.toMap(TypeInformation::getIdentifier, Result::ok));
     }
 

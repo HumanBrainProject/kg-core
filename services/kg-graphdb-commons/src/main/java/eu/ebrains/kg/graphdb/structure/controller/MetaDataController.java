@@ -55,21 +55,22 @@ public class MetaDataController {
     @Async
     public void initializeCache(){
         logger.info("Initial cache population");
-        readMetaDataStructure(DataStage.IN_PROGRESS, null, null, true, true, UserWithRoles.INTERNAL_ADMIN, null);
+        readMetaDataStructure(DataStage.IN_PROGRESS, null, null, true, true, UserWithRoles.INTERNAL_ADMIN, null, null);
     }
 
-    public List<TypeInformation> readMetaDataStructure(DataStage stage, String spaceRestriction, List<String> typeRestriction, boolean withProperties, boolean withIncomingLinks, UserWithRoles userWithRoles, SpaceName clientSpace) {
+    public List<TypeInformation> readMetaDataStructure(DataStage stage, String spaceRestriction, List<String> typeRestriction, boolean withProperties, boolean withIncomingLinks, UserWithRoles userWithRoles, SpaceName clientSpace, SpaceName privateUserSpace) {
         Date start = new Date();
         Map<String, TypeInformation> typeInformation = new HashMap<>();
         Map<String, List<SpaceTypeInformation>> spaceTypeInformationLookup = new HashMap<>();
         final List<String> allRelevantEdges = structureRepository.getAllRelevantEdges(stage);
         final List<Space> s = getSpaces(stage, userWithRoles);
+        String resolvedSpaceRestriction = privateUserSpace != null && SpaceName.PRIVATE_SPACE.equals(spaceRestriction) ? privateUserSpace.getName() : spaceRestriction;
         for (Space space : s) {
             // We need all spaces either if there is no space filter or if we require incoming links (because we need to reflect on the whole structure to capture all).
             // If there is a space filter applied and no requirement for incoming links, we can speed things up.
-            if (withIncomingLinks || spaceRestriction == null || space.getName().getName().equals(spaceRestriction)) {
+            if (withIncomingLinks || resolvedSpaceRestriction == null || space.getName().getName().equals(resolvedSpaceRestriction)) {
                 //When asking for incoming links we need to fetch the properties as well -> otherwise we won't have the required information available.
-                readMetaDataStructureForSpace(stage, typeRestriction, withIncomingLinks, withIncomingLinks || withProperties, typeInformation, spaceTypeInformationLookup, allRelevantEdges, space, clientSpace);
+                readMetaDataStructureForSpace(stage, typeRestriction, withIncomingLinks, withIncomingLinks || withProperties, typeInformation, spaceTypeInformationLookup, allRelevantEdges, space, clientSpace, privateUserSpace);
             }
         }
         final List<TypeInformation> result = aggregateGlobalInformation(withIncomingLinks || withProperties, typeInformation, spaceRestriction==null);
@@ -201,7 +202,7 @@ public class MetaDataController {
         }).collect(Collectors.toList());
     }
 
-    private void readMetaDataStructureForSpace(DataStage stage, List<String> typeRestriction, boolean withIncomingLinks, boolean withProperties, Map<String, TypeInformation> typeInformations, Map<String, List<SpaceTypeInformation>> spaceTypeInformationLookup, List<String> allRelevantEdges, Space space, SpaceName clientSpace) {
+    private void readMetaDataStructureForSpace(DataStage stage, List<String> typeRestriction, boolean withIncomingLinks, boolean withProperties, Map<String, TypeInformation> typeInformations, Map<String, List<SpaceTypeInformation>> spaceTypeInformationLookup, List<String> allRelevantEdges, Space space, SpaceName clientSpace, SpaceName privateUserSpace) {
         final List<TypeWithInstanceCountReflection> typeWithInstanceCountReflections = space.isExistsInDB() ? structureRepository.reflectTypesInSpace(stage, space.getName()) : Collections.emptyList();
         final Set<String> reflectedTypes = typeWithInstanceCountReflections.stream().map(TypeWithInstanceCountReflection::getName).filter(Objects::nonNull).collect(Collectors.toSet());
         final Map<String, DynamicJson> typesInSpaceBySpecification = structureRepository.getTypesInSpaceBySpecification(space.getName()).stream().map(t -> new Tuple<String, DynamicJson>().setA(t).setB(structureRepository.getTypeSpecification(t))).filter(t -> t.getB()!=null).collect(Collectors.toMap(Tuple::getA, Tuple::getB));
@@ -237,7 +238,7 @@ public class MetaDataController {
             SpaceTypeInformation spaceTypeInformation = new SpaceTypeInformation();
             spaceTypeInformations.add(spaceTypeInformation);
             typeInformation.setSpaces(spaceTypeInformations);
-            spaceTypeInformation.setSpace(space.getName().getName());
+            spaceTypeInformation.setSpace(SpaceName.translateSpace(space.getName().getName(), privateUserSpace));
             spaceTypeInformation.setOccurrences(type.getOccurrences());
             if (withProperties) {
                 spaceTypeInformation.setProperties(new ArrayList<>());
@@ -318,7 +319,7 @@ public class MetaDataController {
                             for (TargetTypeReflection reflection : targetTypeReflectionsByType.get(targetType)) {
                                 if (reflection.getSpace() != null) {
                                     SpaceReference spaceReference = new SpaceReference();
-                                    spaceReference.setSpace(reflection.getSpace());
+                                    spaceReference.setSpace(SpaceName.translateSpace(reflection.getSpace(), privateUserSpace));
                                     spaceReference.setOccurrences(reflection.getOccurrences());
                                     totalOccurrences += reflection.getOccurrences();
                                     spaceReferences.add(spaceReference);
@@ -335,6 +336,7 @@ public class MetaDataController {
 
         });
     }
+
 
     public List<Space> getSpaces(DataStage stage, UserWithRoles userWithRoles){
         final List<SpaceName> reflectedSpaces = this.structureRepository.reflectSpaces(stage);
