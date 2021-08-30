@@ -26,7 +26,6 @@ import eu.ebrains.kg.commons.AuthContext;
 import eu.ebrains.kg.commons.IdUtils;
 import eu.ebrains.kg.commons.api.GraphDBInstances;
 import eu.ebrains.kg.commons.jsonld.InstanceId;
-import eu.ebrains.kg.commons.jsonld.JsonLdDoc;
 import eu.ebrains.kg.commons.jsonld.JsonLdId;
 import eu.ebrains.kg.commons.jsonld.NormalizedJsonLd;
 import eu.ebrains.kg.commons.markers.ExposesData;
@@ -90,8 +89,10 @@ public class GraphDBInstancesAPI implements GraphDBInstances.Client {
             //Since we're either sorting or searching by label, we need to reflect on the type -> we therefore have to resolve the type in the database first...
             final Result<TypeInformation> typeInformation = types.getTypesByName(Collections.singletonList(typeName), stage, space, false, false).get(typeName);
             if(typeInformation!=null && typeInformation.getData()!=null){
-                Type typeFromPayload = Type.fromPayload(typeInformation.getData());
-                type = typeFromPayload;
+                type = Type.fromPayload(typeInformation.getData());
+                if(space!=null) {
+                    type.getSpaces().add(SpaceName.fromString(space));
+                }
                 //We're also interested in the properties which are marked as "searchable"
                 searchableProperties = typeInformation.getData().getProperties().stream()
                         .filter(p -> {

@@ -365,7 +365,7 @@ public class MetaDataController {
         Set<SpaceName> whitelistedSpaces = permissionsController.whitelistedSpaceReads(userWithRoles);
         List<Space> spaceDefinitions;
         if (whitelistedSpaces != null) {
-            spaceDefinitions = allSpaces.filter(s -> !whitelistedSpaces.contains(s.getName())).collect(Collectors.toList());
+            spaceDefinitions = allSpaces.filter(s -> whitelistedSpaces.contains(s.getName())).collect(Collectors.toList());
         } else {
             spaceDefinitions = allSpaces.collect(Collectors.toList());
         }
