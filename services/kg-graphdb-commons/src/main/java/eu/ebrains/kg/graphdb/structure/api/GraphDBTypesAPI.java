@@ -18,6 +18,7 @@ package eu.ebrains.kg.graphdb.structure.api;
 
 import eu.ebrains.kg.commons.AuthContext;
 import eu.ebrains.kg.commons.api.GraphDBTypes;
+import eu.ebrains.kg.commons.api.Ids;
 import eu.ebrains.kg.commons.exception.ForbiddenException;
 import eu.ebrains.kg.commons.jsonld.JsonLdId;
 import eu.ebrains.kg.commons.jsonld.NormalizedJsonLd;
@@ -29,7 +30,6 @@ import eu.ebrains.kg.graphdb.structure.controller.MetaDataController;
 import eu.ebrains.kg.graphdb.structure.controller.StructureRepository;
 import org.springframework.stereotype.Component;
 
-import javax.annotation.PostConstruct;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -42,28 +42,26 @@ public class GraphDBTypesAPI implements GraphDBTypes.Client {
     private final MetaDataController metaDataController;
     private final PermissionsController permissionsController;
 
-    public GraphDBTypesAPI(AuthContext authContext, MetaDataController metaDataController, StructureRepository structureRepository, PermissionsController permissionsController) {
+
+    public GraphDBTypesAPI(AuthContext authContext, StructureRepository structureRepository, MetaDataController metaDataController, PermissionsController permissionsController) {
         this.authContext = authContext;
-        this.metaDataController = metaDataController;
         this.structureRepository = structureRepository;
+        this.metaDataController = metaDataController;
         this.permissionsController = permissionsController;
     }
-
 
     @Override
     public Paginated<TypeInformation> getTypes(DataStage stage, String space, boolean withProperties,
                                                boolean withIncomingLinks, PaginationParam paginationParam) {
-        return PaginationParam.paginate(metaDataController.readMetaDataStructure(stage, space, null, withProperties, withIncomingLinks, authContext.getUserWithRoles(), getClientSpace(), authContext.getUserWithRolesWithoutTermsCheck().getPrivateSpace()), paginationParam);
+        return PaginationParam.paginate(metaDataController.readMetaDataStructure(stage, space, null, withProperties, withIncomingLinks, authContext.getUserWithRoles(), getClientSpace(), authContext.getUserWithRolesWithoutTermsCheck().getPrivateSpace(), authContext.getUserWithRolesWithoutTermsCheck().getInvitations()), paginationParam);
     }
-
 
     @Override
     public Map<String, Result<TypeInformation>> getTypesByName(List<String> types, DataStage stage, String space,
                                                                boolean withProperties, boolean withIncomingLinks) {
-        final List<TypeInformation> typeInformation = metaDataController.readMetaDataStructure(stage, space, types, withProperties, withIncomingLinks, authContext.getUserWithRoles(), getClientSpace(), authContext.getUserWithRolesWithoutTermsCheck().getPrivateSpace());
+        final List<TypeInformation> typeInformation = metaDataController.readMetaDataStructure(stage, space, types, withProperties, withIncomingLinks, authContext.getUserWithRoles(), getClientSpace(), authContext.getUserWithRolesWithoutTermsCheck().getPrivateSpace(), authContext.getUserWithRolesWithoutTermsCheck().getInvitations());
         return typeInformation.stream().filter(t -> types.contains(t.getIdentifier())).collect(Collectors.toMap(TypeInformation::getIdentifier, Result::ok));
     }
-
 
     @Override
     public void specifyType(JsonLdId typeName, NormalizedJsonLd normalizedJsonLd, boolean global) {

@@ -223,9 +223,8 @@ public class Instances {
             return PaginatedResult.ok(new Paginated<>(instancesByInvitation, instancesByInvitation.size(), total, paginationParam.getFrom()));
         }
         else{
-            SpaceName spaceName = authContext.resolveSpaceName(space);
             searchByLabel = enrichSearchTermIfItIsAUUID(searchByLabel);
-            result = PaginatedResult.ok(instanceController.getInstances(stage.getStage(), new Type(type), spaceName, searchByLabel, filterProperty, filterValue, responseConfiguration, paginationParam));
+            result = PaginatedResult.ok(instanceController.getInstances(stage.getStage(), new Type(type), SpaceName.fromString(space), searchByLabel, filterProperty, filterValue, responseConfiguration, paginationParam));
         }
         result.setExecutionDetails(startTime, new Date());
         return result;

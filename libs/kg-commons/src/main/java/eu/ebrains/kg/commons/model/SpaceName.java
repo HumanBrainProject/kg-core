@@ -52,7 +52,7 @@ public class SpaceName {
     }
 
     public static SpaceName fromString(String name){
-        return name!=null ? new SpaceName(name): null;
+        return name!=null && !name.isBlank() ? new SpaceName(name): null;
     }
 
     private String normalizeName(String name) {

@@ -22,6 +22,7 @@
 
 package eu.ebrains.kg.commons.jsonld;
 
+import eu.ebrains.kg.commons.model.SpaceName;
 import eu.ebrains.kg.commons.semantics.vocabularies.EBRAINSVocabulary;
 
 import java.time.ZonedDateTime;
@@ -54,6 +55,13 @@ public class NormalizedJsonLd extends JsonLdDoc {
         Object type = get(JsonLdConsts.TYPE);
         if (type != null && !(type instanceof Collection)) {
             put(JsonLdConsts.TYPE, Collections.singletonList(type));
+        }
+    }
+
+    public void resolvePrivateSpace(SpaceName privateSpace){
+        final String s = getAs(EBRAINSVocabulary.META_SPACE, String.class);
+        if(privateSpace.getName().equals(s)){
+            put(EBRAINSVocabulary.META_SPACE, SpaceName.PRIVATE_SPACE);
         }
     }
 

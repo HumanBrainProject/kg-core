@@ -684,7 +684,14 @@ public class ArangoRepositoryInstances {
                 Paginated<NormalizedJsonLd> normalizedJsonLdPaginated = arangoRepositoryCommons.queryDocuments(database, new AQLQuery(aql, bindVars));
                 handleAlternativesAndEmbedded(normalizedJsonLdPaginated.getData(), stage, alternatives, embedded);
                 exposeRevision(normalizedJsonLdPaginated.getData());
-                normalizedJsonLdPaginated.getData().forEach(NormalizedJsonLd::removeAllInternalProperties);
+                final SpaceName privateSpace = authContext.getUserWithRolesWithoutTermsCheck().getPrivateSpace();
+                normalizedJsonLdPaginated.getData().forEach(r -> {
+                    r.removeAllInternalProperties();
+                    final String s = r.getAs(EBRAINSVocabulary.META_SPACE, String.class);
+                    if(privateSpace.getName().equals(s)){
+                        r.put(EBRAINSVocabulary.META_SPACE, SpaceName.PRIVATE_SPACE);
+                    }
+                });
                 return normalizedJsonLdPaginated;
             }
         }

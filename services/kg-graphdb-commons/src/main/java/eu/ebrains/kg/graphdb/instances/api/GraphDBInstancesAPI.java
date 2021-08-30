@@ -105,7 +105,7 @@ public class GraphDBInstancesAPI implements GraphDBInstances.Client {
                 type = Type.fromPayload(typeInformation.getData());
             }
         }
-        return repository.getDocumentsByTypes(stage, type, space != null && !space.isBlank() ? new SpaceName(space) : null, filterProperty, filterValue, paginationParam, searchByLabel, returnEmbedded, returnAlternatives, searchableProperties);
+        return repository.getDocumentsByTypes(stage, type, SpaceName.PRIVATE_SPACE.equals(space) ? authContext.getUserWithRolesWithoutTermsCheck().getPrivateSpace() : SpaceName.fromString(space), filterProperty, filterValue, paginationParam, searchByLabel, returnEmbedded, returnAlternatives, searchableProperties);
     }
 
     @Override
