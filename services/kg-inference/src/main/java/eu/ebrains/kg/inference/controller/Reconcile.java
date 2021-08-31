@@ -321,7 +321,11 @@ public class Reconcile {
                     if (documentsForKey.size() == 1) {
                         //Single occurrence - the merge is easy. :)
                         NormalizedJsonLd doc = documentsForKey.get(0).getDoc();
-                        inferredDocument.asIndexed().getDoc().addProperty(key, doc.get(key));
+                        final Object value = doc.get(key);
+                        //We only add the property to the inferred document if it is not-null.
+                        if(value!=null){
+                            inferredDocument.asIndexed().getDoc().addProperty(key, value);
+                        }
                         JsonLdDoc alternative = createAlternative(key, doc.get(key), true, Collections.singletonList(doc.getAs(EBRAINSVocabulary.META_USER, JsonLdId.class)));
                         if (alternative != null) {
                             alternatives.put(key, Collections.singletonList(alternative));
@@ -347,7 +351,11 @@ public class Reconcile {
                                 //Users are ignored for the reconciled instance since they can be reconstructed from the alternatives
                                 break;
                             default:
-                                inferredDocument.asIndexed().getDoc().addProperty(key, firstDoc.getDoc().get(key));
+                                final Object propertyValue = firstDoc.getDoc().get(key);
+                                //We only add the property to the inferred document if it is not-null.
+                                if(propertyValue!=null) {
+                                    inferredDocument.asIndexed().getDoc().addProperty(key, propertyValue);
+                                }
                                 Object nullGroup = new Object();
                                 Map<Object, List<IndexedJsonLdDoc>> documentsByValue = documentsForKey.stream().collect(Collectors.groupingBy(d -> d.getDoc().getOrDefault(key, nullGroup)));
                                 final List<JsonLdDoc> alternativePayloads = documentsByValue.keySet().stream().map(value -> {
