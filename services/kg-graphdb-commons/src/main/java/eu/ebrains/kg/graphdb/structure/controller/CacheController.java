@@ -117,11 +117,24 @@ public class CacheController {
             final CacheEvictionPlan planAfter = plansAfterTransaction.get(d);
             final SpaceName spaceName = new SpaceName(planBefore.getSpace());
             final List<String> changedTypes = getChangedTypes(planBefore, planAfter);
+            Set<Tuple<SpaceName, String>> collector = new HashSet<>();
             if(changedTypes!=null){
-                return changedTypes.stream().map(t -> new Tuple<SpaceName, String>().setA(spaceName).setB(t)).collect(Collectors.toSet());
+                collector.addAll(changedTypes.stream().map(t -> new Tuple<SpaceName, String>().setA(spaceName).setB(t)).collect(Collectors.toSet()));
             }
-            return null;
-        }).filter(Objects::nonNull).flatMap(Collection::stream);
+            if((planBefore.getProperties() == null && planAfter.getProperties() != null) || !planBefore.getProperties().equals(planAfter.getProperties())){
+                Set<String> allTypes = new HashSet<>();
+                if(planAfter.getType()!=null){
+                    allTypes.addAll(planAfter.getType());
+                }
+                if(planBefore.getType()!=null){
+                    allTypes.addAll(planBefore.getType());
+                }
+                allTypes.forEach(t -> {
+                    collector.add(new Tuple<SpaceName, String>().setA(spaceName).setB(t));
+                });
+            }
+            return collector;
+        }).flatMap(Collection::stream);
         return Stream.concat(Stream.concat(fromCreateOperations, fromDeleteOperations), fromUpdateOperations).collect(Collectors.toSet());
     }
 
