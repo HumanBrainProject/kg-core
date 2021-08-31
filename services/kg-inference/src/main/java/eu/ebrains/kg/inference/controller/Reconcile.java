@@ -37,6 +37,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
+import org.springframework.util.CollectionUtils;
 
 import java.time.ZonedDateTime;
 import java.util.*;
@@ -349,10 +350,17 @@ public class Reconcile {
                                 inferredDocument.asIndexed().getDoc().addProperty(key, firstDoc.getDoc().get(key));
                                 Object nullGroup = new Object();
                                 Map<Object, List<IndexedJsonLdDoc>> documentsByValue = documentsForKey.stream().collect(Collectors.groupingBy(d -> d.getDoc().getOrDefault(key, nullGroup)));
-                                alternatives.put(key, documentsByValue.keySet().stream().map(value -> {
+                                final List<JsonLdDoc> alternativePayloads = documentsByValue.keySet().stream().map(value -> {
                                     List<IndexedJsonLdDoc> docs = documentsByValue.get(value);
                                     return createAlternative(key, value == nullGroup ? null : value, docs.contains(firstDoc), docs.stream().filter(d -> d.getDoc() != null && d.getDoc().getAs(EBRAINSVocabulary.META_USER, NormalizedJsonLd.class) != null).map(doc -> doc.getDoc().getAs(EBRAINSVocabulary.META_USER, NormalizedJsonLd.class).id()).distinct().collect(Collectors.toList()));
-                                }).filter(Objects::nonNull).collect(Collectors.toList()));
+                                }).filter(Objects::nonNull).collect(Collectors.toList());
+                                if(!CollectionUtils.isEmpty(alternativePayloads)) {
+                                    alternatives.put(key, alternativePayloads);
+                                }
+                                else{
+                                    //FIXME do we want to remove this code? It is cleaning up some data and therefore is rather defensive
+                                    alternatives.remove(key);
+                                }
                                 break;
                         }
                     }

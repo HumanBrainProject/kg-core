@@ -210,7 +210,7 @@ public class ArangoRepositoryCommons {
         aql.addLine(AQL.trust("FOR id IN @ids"));
         bindVars.put("ids", ids);
         aql.addLine(AQL.trust("LET doc = DOCUMENT(id)"));
-        aql.addLine(AQL.trust(String.format("FILTER doc != NULL && doc.`%s` != NULL && doc.`%s` != NULL ", JsonLdConsts.TYPE, EBRAINSVocabulary.META_SPACE)));
+        aql.addLine(AQL.trust(String.format("FILTER doc != NULL && doc.`%s` != NULL && doc.`%s` != NULL && doc.`%s` != []", JsonLdConsts.TYPE, EBRAINSVocabulary.META_SPACE, EBRAINSVocabulary.META_SPACE)));
         aql.addLine(AQL.trust(String.format("RETURN { \"id\": id, \"type\": doc.`%s`,", JsonLdConsts.TYPE)));
         aql.addLine(AQL.trust(String.format("    \"space\": doc.`%s`,", EBRAINSVocabulary.META_SPACE)));
         aql.addLine(AQL.trust(String.format("    \"properties\": (FOR a IN ATTRIBUTES(doc, true) FILTER a NOT LIKE \"%s%%\" AND a NOT LIKE \"@%%\" RETURN a)}", EBRAINSVocabulary.META)));
