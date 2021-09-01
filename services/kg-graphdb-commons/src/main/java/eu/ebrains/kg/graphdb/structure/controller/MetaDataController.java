@@ -58,6 +58,8 @@ public class MetaDataController {
     public void initializeCache() {
         logger.info("Initial cache population");
         readMetaDataStructure(DataStage.IN_PROGRESS, null, null, true, true, UserWithRoles.INTERNAL_ADMIN, null, null, null);
+        readMetaDataStructure(DataStage.RELEASED, null, null, true, true, UserWithRoles.INTERNAL_ADMIN, null, null, null);
+
     }
 
 
@@ -355,7 +357,7 @@ public class MetaDataController {
         final List<SpaceName> reflectedSpaces = this.structureRepository.reflectSpaces(stage);
         final List<Space> spaceSpecifications = this.structureRepository.getSpaceSpecifications();
         final Set<SpaceName> spacesWithSpecifications = spaceSpecifications.stream().map(Space::getName).collect(Collectors.toSet());
-        final Stream<Space> allSpaces = Stream.concat(spaceSpecifications.stream(), reflectedSpaces.stream().filter(s -> !spacesWithSpecifications.contains(s))
+        final Stream<Space> allSpaces = Stream.concat(spaceSpecifications.stream().map(s->new Space(s.getName(), s.isAutoRelease(), s.isClientSpace())), reflectedSpaces.stream().filter(s -> !spacesWithSpecifications.contains(s))
                 .map(s -> new Space(s, false, false).setReflected(true)))
                 .peek(s -> {
                     if (reflectedSpaces.contains(s.getName())) {
