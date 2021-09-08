@@ -35,19 +35,21 @@ import java.util.stream.Collectors;
  * Example: Space-administrator inherits the permissions of Space-Curator etc...
  */
 public enum RoleMapping {
-    CONSUMER(false, true,null, Functionality.READ_RELEASED, Functionality.EXECUTE_QUERY, Functionality.CREATE_QUERY, Functionality.READ_QUERY, Functionality.DELETE_QUERY, Functionality.READ_SPACE),
-    REVIEWER(true, false, CONSUMER, Functionality.READ, Functionality.SUGGEST, Functionality.INVITE_FOR_REVIEW, Functionality.MINIMAL_READ, Functionality.RELEASE_STATUS, Functionality.LIST_USERS_LIMITED),
-    EDITOR(true, false, REVIEWER, Functionality.WRITE, Functionality.CREATE, Functionality.INVITE_FOR_SUGGESTION, Functionality.DELETE),
-    OWNER(true, false, EDITOR, Functionality.RELEASE, Functionality.UNRELEASE),
-    ADMIN(true, false, null, Functionality.values());
+    CONSUMER(false, true,false, null, Functionality.READ_RELEASED, Functionality.EXECUTE_QUERY, Functionality.CREATE_QUERY, Functionality.READ_QUERY, Functionality.DELETE_QUERY, Functionality.READ_SPACE),
+    REVIEWER(true, false, true, CONSUMER, Functionality.READ, Functionality.SUGGEST, Functionality.INVITE_FOR_REVIEW, Functionality.MINIMAL_READ, Functionality.RELEASE_STATUS),
+    EDITOR(true, false, true, REVIEWER, Functionality.WRITE, Functionality.CREATE, Functionality.INVITE_FOR_SUGGESTION, Functionality.DELETE),
+    OWNER(true, false, true, EDITOR, Functionality.RELEASE, Functionality.UNRELEASE),
+    ADMIN(true, false, true, null, Functionality.values());
 
     private final RoleMapping childRole;
     private final String name;
     private final Set<Functionality> functionality;
     private final boolean globalMinimalRead;
     private final boolean globalMinimalReadReleased;
+    private final boolean globalRestrictedUserListing;
 
-    RoleMapping(boolean globalMinimalRead, boolean globalMinimalReadReleased, RoleMapping childRole, Functionality... functionality) {
+    RoleMapping(boolean globalMinimalRead, boolean globalMinimalReadReleased, boolean globalRestrictedUserListing, RoleMapping childRole, Functionality... functionality) {
+        this.globalRestrictedUserListing = globalRestrictedUserListing;
         this.globalMinimalRead = globalMinimalRead;
         this.globalMinimalReadReleased = globalMinimalReadReleased;
         this.name = name().toLowerCase().replaceAll("_", "-");
@@ -100,6 +102,10 @@ public enum RoleMapping {
 
     private Set<FunctionalityInstance> getFunctionalityInstances(SpaceName space) {
         Set<FunctionalityInstance> functionalityInstances = getAllFunctionality().stream().map(f -> new FunctionalityInstance(f, space, null)).collect(Collectors.toSet());
+        if(globalRestrictedUserListing) {
+            //Every authenticated user with at least reviewer rights in one of the spaces has the right to list users in a limited way
+            functionalityInstances.add(new FunctionalityInstance(Functionality.LIST_USERS_LIMITED, null, null));
+        }
         if(globalMinimalReadReleased){
             functionalityInstances.add(new FunctionalityInstance(Functionality.MINIMAL_READ_RELEASED, null, null));
         }
