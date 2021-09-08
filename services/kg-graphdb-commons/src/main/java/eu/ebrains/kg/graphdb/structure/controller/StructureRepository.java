@@ -334,7 +334,7 @@ public class StructureRepository {
         aql.addLine(AQL.trust("LET targetType = FLATTEN("));
         aql.addLine(AQL.trust("       FOR target IN 1..1 OUTBOUND i @@propertyEdge"));
         bindVars.put("@propertyEdge", edgeCollection.getCollectionName());
-        aql.addLine(AQL.trust("FILTER target != NULL"));
+        aql.addLine(AQL.trust("FILTER target != NULL AND target.`@type` != NULL"));
         aql.addLine(AQL.trust(String.format("FOR type IN target.`%s`", JsonLdConsts.TYPE)));
         aql.addLine(AQL.trust(String.format("COLLECT t = type, s=target.`%s` WITH COUNT INTO length", EBRAINSVocabulary.META_SPACE)));
         aql.addLine(AQL.trust("RETURN {"));
