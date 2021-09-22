@@ -87,6 +87,9 @@ public class Instances {
     @ExposesData
     @Simple
     public ResponseEntity<Result<NormalizedJsonLd>> createNewInstance(@RequestBody JsonLdDoc jsonLdDoc, @RequestParam(value = "space") @Parameter(description = "The space name the instance shall be stored in or \""+SpaceName.PRIVATE_SPACE+"\" if you want to store it to your private space") String space, @ParameterObject ResponseConfiguration responseConfiguration, @ParameterObject  IngestConfiguration ingestConfiguration) {
+        if(!jsonLdDoc.isValidType()) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Result.nok(HttpStatus.BAD_REQUEST.value(), "@type should contain a list of valid urls"));
+        }
         Date startTime = new Date();
         UUID id = UUID.randomUUID();
         logger.debug(String.format("Creating new instance with id %s", id));
@@ -110,6 +113,9 @@ public class Instances {
     @WritesData
     @Simple
     public ResponseEntity<Result<NormalizedJsonLd>> createNewInstance(@RequestBody JsonLdDoc jsonLdDoc, @PathVariable("id") UUID id, @RequestParam(value = "space") @Parameter(description = "The space name the instance shall be stored in or \""+SpaceName.PRIVATE_SPACE+"\" if you want to store it to your private space") String space,  @ParameterObject ResponseConfiguration responseConfiguration, @ParameterObject  IngestConfiguration ingestConfiguration) {
+        if(!jsonLdDoc.isValidType()) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Result.nok(HttpStatus.BAD_REQUEST.value(), "@type should contain a list of valid urls"));
+        }
         Date startTime = new Date();
         //We want to prevent the UUID to be used twice...
         InstanceId instanceId = idsController.resolveId(DataStage.IN_PROGRESS, id);
@@ -154,6 +160,9 @@ public class Instances {
     @WritesData
     @Simple
     public ResponseEntity<Result<NormalizedJsonLd>> contributeToInstanceFullReplacement(@RequestBody JsonLdDoc jsonLdDoc, @PathVariable("id") UUID id, @RequestParam(value = "undeprecate", required = false, defaultValue = "false") boolean undeprecate,  @ParameterObject ResponseConfiguration responseConfiguration,  @ParameterObject IngestConfiguration ingestConfiguration) {
+        if(!jsonLdDoc.isValidType()) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Result.nok(HttpStatus.BAD_REQUEST.value(), "@type should contain a list of valid urls"));
+        }
         return contributeToInstance(jsonLdDoc, id, undeprecate, responseConfiguration, ingestConfiguration, true);
     }
 
@@ -163,6 +172,9 @@ public class Instances {
     @WritesData
     @Simple
     public ResponseEntity<Result<NormalizedJsonLd>> contributeToInstancePartialReplacement(@RequestBody JsonLdDoc jsonLdDoc, @PathVariable("id") UUID id, @RequestParam(value = "undeprecate", required = false, defaultValue = "false") boolean undeprecate,  @ParameterObject ResponseConfiguration responseConfiguration,  @ParameterObject IngestConfiguration ingestConfiguration) {
+        if(jsonLdDoc.hasType() && !jsonLdDoc.isValidType()) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Result.nok(HttpStatus.BAD_REQUEST.value(), "@type does not contain a list of valid urls"));
+        }
         return contributeToInstance(jsonLdDoc, id, undeprecate, responseConfiguration, ingestConfiguration, false);
     }
 
