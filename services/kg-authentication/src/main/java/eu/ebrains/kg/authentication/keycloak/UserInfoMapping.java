@@ -23,6 +23,7 @@
 package eu.ebrains.kg.authentication.keycloak;
 
 import eu.ebrains.kg.authentication.controller.AuthenticationRepository;
+import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Component;
 
@@ -45,6 +46,11 @@ public class UserInfoMapping {
     public List<String> getUserOrClientProfile(String token){
         Map<String, Object> userInfo = keycloakClient.getUserInfo(token);
         return authenticationRepository.getRolesFromUserInfo(userInfo);
+    }
+
+    @CacheEvict("userRoleMapping")
+    public void evictUserOrClientProfile(String token){
+
     }
 
 }

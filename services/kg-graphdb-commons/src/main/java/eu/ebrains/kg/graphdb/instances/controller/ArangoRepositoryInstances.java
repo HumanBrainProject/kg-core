@@ -117,8 +117,8 @@ public class ArangoRepositoryInstances {
     }
 
     @ExposesData
-    public NormalizedJsonLd getQuery(DataStage stage, SpaceName space, UUID id) {
-        ArangoDocument document = arangoRepositoryCommons.getDocument(stage, ArangoCollectionReference.fromSpace(space).doc(id));
+    public NormalizedJsonLd getQuery(SpaceName space, UUID id) {
+        ArangoDocument document = arangoRepositoryCommons.getDocument(DataStage.IN_PROGRESS, ArangoCollectionReference.fromSpace(space).doc(id));
         if (document == null || !document.getDoc().types().contains(EBRAINSVocabulary.META_QUERY_TYPE)) {
             //If it's not a query, it's not exposed...
             return null;

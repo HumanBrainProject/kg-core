@@ -71,12 +71,9 @@ public class CoreQueryController {
         return graphDBInstances.getQueriesByType(DataStage.IN_PROGRESS, search, false, false, paginationParam, type.getName());
     }
 
-    public KgQuery fetchQueryById(InstanceId instanceId, DataStage stage){
+    public NormalizedJsonLd fetchQueryById(InstanceId instanceId){
         if(instanceId!=null) {
-            final NormalizedJsonLd queryById = graphDBInstances.getQueryById(instanceId.getSpace().getName(), instanceId.getUuid(), stage);
-            if(queryById!=null){
-                return new KgQuery(queryById, stage);
-            }
+            return graphDBInstances.getQueryById(instanceId.getSpace().getName(), instanceId.getUuid());
         }
         return null;
     }

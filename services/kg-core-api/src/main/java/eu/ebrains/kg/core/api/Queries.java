@@ -108,8 +108,8 @@ public class Queries {
     @ExposesQuery
     public ResponseEntity<Result<NormalizedJsonLd>> getQuerySpecification(@PathVariable("queryId") UUID queryId) {
         InstanceId instanceId = ids.resolveId(DataStage.IN_PROGRESS, queryId);
-        KgQuery kgQuery = queryController.fetchQueryById(instanceId, DataStage.IN_PROGRESS);
-        return kgQuery != null ? ResponseEntity.ok(Result.ok(kgQuery.getPayload())): ResponseEntity.notFound().build();
+        NormalizedJsonLd kgQuery = queryController.fetchQueryById(instanceId);
+        return kgQuery != null ? ResponseEntity.ok(Result.ok(kgQuery)): ResponseEntity.notFound().build();
     }
 
     @Operation(summary = "Remove a query specification")
@@ -160,7 +160,11 @@ public class Queries {
         allRequestParams.remove("from");
         allRequestParams.remove("size");
         InstanceId queryInstance = ids.resolveId(DataStage.IN_PROGRESS, queryId);
-        KgQuery query = queryController.fetchQueryById(queryInstance, stage.getStage());
+        final NormalizedJsonLd queryPayload = queryController.fetchQueryById(queryInstance);
+        if(queryPayload==null){
+            return null;
+        }
+        KgQuery query = new KgQuery(queryPayload, stage.getStage());
         if(instanceId!=null){
             query.setIdRestrictions(Collections.singletonList(instanceId));
         }
