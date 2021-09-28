@@ -26,6 +26,7 @@ import eu.ebrains.kg.commons.AuthContext;
 import eu.ebrains.kg.commons.IdUtils;
 import eu.ebrains.kg.commons.Version;
 import eu.ebrains.kg.commons.api.GraphDBInstances;
+import eu.ebrains.kg.commons.api.JsonLd;
 import eu.ebrains.kg.commons.api.Release;
 import eu.ebrains.kg.commons.config.openApiGroups.Admin;
 import eu.ebrains.kg.commons.config.openApiGroups.Advanced;
@@ -48,7 +49,9 @@ import org.slf4j.LoggerFactory;
 import org.springdoc.api.annotations.ParameterObject;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.util.CollectionUtils;
 import org.springframework.web.bind.annotation.*;
+import eu.ebrains.kg.commons.jsonld.*;
 
 import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
@@ -68,10 +71,11 @@ public class Instances {
     private final GraphDBInstances.Client graphDBInstances;
     private final IdsController idsController;
     private final VirtualSpaceController virtualSpaceController;
+    private final JsonLd.Client jsonLd;
 
     private final Logger logger = LoggerFactory.getLogger(getClass());
 
-    public Instances(CoreInstanceController instanceController, Release.Client release, IdUtils idUtils, AuthContext authContext, GraphDBInstances.Client graphDBInstances, IdsController idsController, VirtualSpaceController virtualSpaceController) {
+    public Instances(CoreInstanceController instanceController, Release.Client release, IdUtils idUtils, AuthContext authContext, GraphDBInstances.Client graphDBInstances, IdsController idsController, VirtualSpaceController virtualSpaceController, JsonLd.Client jsonLd) {
         this.instanceController = instanceController;
         this.release = release;
         this.idUtils = idUtils;
@@ -79,6 +83,7 @@ public class Instances {
         this.graphDBInstances = graphDBInstances;
         this.idsController = idsController;
         this.virtualSpaceController = virtualSpaceController;
+        this.jsonLd = jsonLd;
     }
 
     @Operation(summary = "Create new instance with a system generated id")
@@ -89,6 +94,22 @@ public class Instances {
     public ResponseEntity<Result<NormalizedJsonLd>> createNewInstance(@RequestBody JsonLdDoc jsonLdDoc, @RequestParam(value = "space") @Parameter(description = "The space name the instance shall be stored in or \""+SpaceName.PRIVATE_SPACE+"\" if you want to store it to your private space") String space, @ParameterObject ResponseConfiguration responseConfiguration, @ParameterObject  IngestConfiguration ingestConfiguration) {
         if(!jsonLdDoc.isValidType()) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Result.nok(HttpStatus.BAD_REQUEST.value(), "@type should contain a list of valid urls"));
+        }
+        List<Object> invalidIds = jsonLdDoc.getInvalidIds();
+        if (!CollectionUtils.isEmpty(invalidIds) && invalidIds.stream().allMatch(o -> o instanceof String)) {
+            jsonLdDoc = jsonLd.normalize(jsonLdDoc, true);
+            invalidIds = jsonLdDoc.getInvalidIds();
+        }
+        if (!CollectionUtils.isEmpty(invalidIds)) {
+            List<String> ids = invalidIds.stream().map(Object::toString).collect(Collectors.toList());
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Result.nok(HttpStatus.BAD_REQUEST.value(), String.format("Payload contains some @id which are not fully qualified name : %s", String.join(",", ids))));
+        }
+        if(!jsonLdDoc.isValidEmbeddedInstances()) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Result.nok(HttpStatus.BAD_REQUEST.value(), "Embedded instances should contain @type which contains a list of valid urls"));
+        }
+        List<String> invalidKeys = jsonLdDoc.getInvalidIRIKeys();
+        if (!CollectionUtils.isEmpty(invalidKeys)) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Result.nok(HttpStatus.BAD_REQUEST.value(), String.format("Payload contains some keys which are not fully qualified name : %s", String.join(",", invalidKeys))));
         }
         Date startTime = new Date();
         UUID id = UUID.randomUUID();
@@ -115,6 +136,22 @@ public class Instances {
     public ResponseEntity<Result<NormalizedJsonLd>> createNewInstance(@RequestBody JsonLdDoc jsonLdDoc, @PathVariable("id") UUID id, @RequestParam(value = "space") @Parameter(description = "The space name the instance shall be stored in or \""+SpaceName.PRIVATE_SPACE+"\" if you want to store it to your private space") String space,  @ParameterObject ResponseConfiguration responseConfiguration, @ParameterObject  IngestConfiguration ingestConfiguration) {
         if(!jsonLdDoc.isValidType()) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Result.nok(HttpStatus.BAD_REQUEST.value(), "@type should contain a list of valid urls"));
+        }
+        List<Object> invalidIds = jsonLdDoc.getInvalidIds();
+        if (!CollectionUtils.isEmpty(invalidIds) && invalidIds.stream().allMatch(o -> o instanceof String)) {
+            jsonLdDoc = jsonLd.normalize(jsonLdDoc, true);
+            invalidIds = jsonLdDoc.getInvalidIds();
+        }
+        if (!CollectionUtils.isEmpty(invalidIds)) {
+            List<String> ids = invalidIds.stream().map(o -> o.toString()).collect(Collectors.toList());
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Result.nok(HttpStatus.BAD_REQUEST.value(), String.format("Payload contains some @id which are not fully qualified name : %s", String.join(",", ids))));
+        }
+        if(!jsonLdDoc.isValidEmbeddedInstances()) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Result.nok(HttpStatus.BAD_REQUEST.value(), "Embedded instances should contain @type which contains a list of valid urls"));
+        }
+        List<String> invalidKeys = jsonLdDoc.getInvalidIRIKeys();
+        if (!CollectionUtils.isEmpty(invalidKeys)) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Result.nok(HttpStatus.BAD_REQUEST.value(), String.format("Payload contains some keys which are not fully qualified name : %s", String.join(",", invalidKeys))));
         }
         Date startTime = new Date();
         //We want to prevent the UUID to be used twice...
@@ -163,6 +200,22 @@ public class Instances {
         if(!jsonLdDoc.isValidType()) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Result.nok(HttpStatus.BAD_REQUEST.value(), "@type should contain a list of valid urls"));
         }
+        List<Object> invalidIds = jsonLdDoc.getInvalidIds();
+        if (!CollectionUtils.isEmpty(invalidIds) && invalidIds.stream().allMatch(o -> o instanceof String)) {
+            jsonLdDoc = jsonLd.normalize(jsonLdDoc, true);
+            invalidIds = jsonLdDoc.getInvalidIds();
+        }
+        if (!CollectionUtils.isEmpty(invalidIds)) {
+            List<String> ids = invalidIds.stream().map(o -> o.toString()).collect(Collectors.toList());
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Result.nok(HttpStatus.BAD_REQUEST.value(), String.format("Payload contains some @id which are not fully qualified name : %s", String.join(",", ids))));
+        }
+        if(!jsonLdDoc.isValidEmbeddedInstances()) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Result.nok(HttpStatus.BAD_REQUEST.value(), "Embedded instances should contain @type which contains a list of valid urls"));
+        }
+        List<String> invalidKeys = jsonLdDoc.getInvalidIRIKeys();
+        if (!CollectionUtils.isEmpty(invalidKeys)) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Result.nok(HttpStatus.BAD_REQUEST.value(), String.format("Payload contains some keys which are not fully qualified name : %s", String.join(",", invalidKeys))));
+        }
         return contributeToInstance(jsonLdDoc, id, undeprecate, responseConfiguration, ingestConfiguration, true);
     }
 
@@ -174,6 +227,22 @@ public class Instances {
     public ResponseEntity<Result<NormalizedJsonLd>> contributeToInstancePartialReplacement(@RequestBody JsonLdDoc jsonLdDoc, @PathVariable("id") UUID id, @RequestParam(value = "undeprecate", required = false, defaultValue = "false") boolean undeprecate,  @ParameterObject ResponseConfiguration responseConfiguration,  @ParameterObject IngestConfiguration ingestConfiguration) {
         if(jsonLdDoc.hasType() && !jsonLdDoc.isValidType()) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Result.nok(HttpStatus.BAD_REQUEST.value(), "@type does not contain a list of valid urls"));
+        }
+        List<Object> invalidIds = jsonLdDoc.getInvalidIds();
+        if (!CollectionUtils.isEmpty(invalidIds) && invalidIds.stream().allMatch(o -> o instanceof String)) {
+            jsonLdDoc = jsonLd.normalize(jsonLdDoc, true);
+            invalidIds = jsonLdDoc.getInvalidIds();
+        }
+        if (!CollectionUtils.isEmpty(invalidIds)) {
+            List<String> ids = invalidIds.stream().map(o -> o.toString()).collect(Collectors.toList());
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Result.nok(HttpStatus.BAD_REQUEST.value(), String.format("Payload contains some @id which are not fully qualified name : %s", String.join(",\n", ids))));
+        }
+        if(!jsonLdDoc.isValidEmbeddedInstances()) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Result.nok(HttpStatus.BAD_REQUEST.value(), "Embedded instances should contain @type which contains a list of valid urls"));
+        }
+        List<String> invalidKeys = jsonLdDoc.getInvalidIRIKeys();
+        if (!CollectionUtils.isEmpty(invalidKeys)) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Result.nok(HttpStatus.BAD_REQUEST.value(), String.format("Payload contains some keys which are not fully qualified name : %s", String.join(",", invalidKeys))));
         }
         return contributeToInstance(jsonLdDoc, id, undeprecate, responseConfiguration, ingestConfiguration, false);
     }

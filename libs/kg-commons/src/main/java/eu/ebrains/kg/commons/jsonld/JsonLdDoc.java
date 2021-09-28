@@ -118,20 +118,140 @@ public class JsonLdDoc extends DynamicJson {
     }
 
     public boolean hasType() {
-        return get(JsonLdConsts.TYPE) != null;
+        return hasType(this);
+    }
+
+    private boolean hasType(Map object) {
+        return object.containsKey(JsonLdConsts.TYPE);
     }
 
     public boolean isValidType() {
-        Object type = get(JsonLdConsts.TYPE);
+        return isValidType(this);
+    }
+
+    private boolean isValidType(Map object) {
+        Object type = object.get(JsonLdConsts.TYPE);
         if (type instanceof List && !CollectionUtils.isEmpty((Collection<?>) type)) {
             for (Object o : ((List) type)) {
-                if (!(o instanceof String) || !((String) o).matches("http(s?)://.*")) {
+                if (!isValidIRI(o)) {
                     return false;
                 }
             }
             return true;
         }
         return false;
+    }
+
+    public boolean isValidEmbeddedInstances() {
+        for (String key : keySet()) {
+            if (!DynamicJson.isInternalKey(key)) {
+                Object value = get(key);
+                if (value instanceof Collection) {
+                    for (Object individualValue : ((Collection) value)) {
+                        if (!isValidEmbeddedInstance(individualValue)) {
+                            return false;
+                        }
+                    }
+                } else if (!isValidEmbeddedInstance(value)) {
+                    return false;
+                }
+            }
+        }
+        return true;
+    }
+
+    private boolean isValidEmbeddedInstance(Object value) {
+        if (value instanceof Map) {
+            Map object = (Map) value;
+            return object.containsKey(JsonLdConsts.ID) || (hasType(object) && isValidType(object));
+        }
+        return true;
+    }
+
+    public List<String> getInvalidIRIKeys() {
+        List<String> list = new ArrayList<>();
+        for (String key : keySet()) {
+            if (!DynamicJson.isInternalKey(key) && !key.equals(JsonLdConsts.ID) && !key.equals(JsonLdConsts.TYPE)) { // @id and type validations are done in a separate method
+                if (!isValidIRI(key)) {
+                    list.add(key);
+                }
+                Object value = get(key);
+                if (value instanceof Collection) {
+                    for (Object individualValue : ((Collection) value)) {
+                        list.addAll(getInvalidIRIKeys(individualValue));
+                    }
+                } else {
+                    list.addAll(getInvalidIRIKeys(value));
+                }
+            }
+        }
+        return list;
+    }
+
+    private List<String> getInvalidIRIKeys(Object value) {
+        if (value instanceof Map) {
+            Map object = (Map) value;
+            if (object.containsKey(JsonLdConsts.ID)) {
+                return Collections.emptyList(); // if it contains an @id we ignore the rest of the object
+            } else {
+                List<String> list = new ArrayList<>();
+                for (Object key : object.keySet()) {
+                    if (!key.equals(JsonLdConsts.TYPE)) { // type validation is done in a separate method
+                        if (!isValidIRI(key)) {
+                            list.add((String) key);
+                        }
+                        list.addAll(getInvalidIRIKeys(object.get(key)));
+                    }
+                }
+                return list;
+            }
+        }
+        return Collections.emptyList();
+    }
+
+    public List<Object> getInvalidIds() {
+        List<Object> list = new ArrayList<>();
+        for (String key : keySet()) {
+            if (!DynamicJson.isInternalKey(key) && !key.equals(JsonLdConsts.TYPE)) { // type validations is done in a separate method
+                Object value = get(key);
+                if (key.equals(JsonLdConsts.ID)) {
+                    if (!isValidIRI(value)) {
+                        list.add(key);
+                    }
+                } else if (value instanceof Collection) {
+                    for (Object individualValue : ((Collection) value)) {
+                        list.addAll(getInvalidIds(individualValue));
+                    }
+                } else {
+                    list.addAll(getInvalidIds(value));
+                }
+            }
+        }
+        return list;
+    }
+
+    private List<Object> getInvalidIds(Object value) {
+        if (value instanceof Map) {
+            Map object = (Map) value;
+            if (object.containsKey(JsonLdConsts.ID)) { // link to an instance
+                Object o = object.get(JsonLdConsts.ID);
+                if (!isValidIRI(o)) {
+                    return Collections.singletonList(o);
+                }
+                return Collections.emptyList();
+            } else { // embedded instance, check further
+                List<Object> list = new ArrayList<>();
+                for (Object o : object.values()) {
+                    list.addAll(getInvalidIds(o));
+                }
+                return list;
+            }
+        }
+        return Collections.emptyList();
+    }
+
+    private boolean isValidIRI(Object value) {
+        return value instanceof String && ((String) value).matches("http(s?)://.*");
     }
 
     public String primaryIdentifier() {
