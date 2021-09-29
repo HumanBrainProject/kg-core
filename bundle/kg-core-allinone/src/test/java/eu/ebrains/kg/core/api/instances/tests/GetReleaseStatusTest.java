@@ -68,7 +68,7 @@ public class GetReleaseStatusTest extends AbstractInstanceTest {
         releaseStatusAfterReleasing = assureValidPayload(instances.getReleaseStatus(uuid, ReleaseTreeScope.TOP_INSTANCE_ONLY));
 
         beAdmin();
-        instances.contributeToInstancePartialReplacement(TestDataFactory.createTestData(smallPayload, 0, true), uuid, false, defaultResponseConfiguration, defaultIngestConfiguration);
+        instances.contributeToInstancePartialReplacement(TestDataFactory.createTestData(smallPayload, 0, true), uuid, false, defaultResponseConfiguration, defaultDeferInference);
         beInCurrentRole();
 
         releaseStatusAfterChange = assureValidPayload(instances.getReleaseStatus(uuid, ReleaseTreeScope.TOP_INSTANCE_ONLY));

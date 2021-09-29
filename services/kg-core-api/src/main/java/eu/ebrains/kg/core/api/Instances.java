@@ -91,13 +91,16 @@ public class Instances {
     @WritesData
     @ExposesData
     @Simple
-    public ResponseEntity<Result<NormalizedJsonLd>> createNewInstance(@RequestBody JsonLdDoc jsonLdDoc, @RequestParam(value = "space") @Parameter(description = "The space name the instance shall be stored in or \""+SpaceName.PRIVATE_SPACE+"\" if you want to store it to your private space") String space, @ParameterObject ResponseConfiguration responseConfiguration, @ParameterObject  IngestConfiguration ingestConfiguration) {
+    public ResponseEntity<Result<NormalizedJsonLd>> createNewInstance(@RequestBody JsonLdDoc jsonLdDoc, @RequestParam(value = "space") @Parameter(description = "The space name the instance shall be stored in or \""+SpaceName.PRIVATE_SPACE+"\" if you want to store it to your private space") String space, @ParameterObject ResponseConfiguration responseConfiguration, @RequestParam(required = false, defaultValue = "false") boolean deferInference) {
+        IngestConfiguration ingestConfiguration = new IngestConfiguration();
+        ingestConfiguration.setDeferInference(deferInference);
         if(!jsonLdDoc.isValidType()) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Result.nok(HttpStatus.BAD_REQUEST.value(), "@type should contain a list of valid urls"));
         }
         List<Object> invalidIds = jsonLdDoc.getInvalidIds();
         if (!CollectionUtils.isEmpty(invalidIds) && invalidIds.stream().allMatch(o -> o instanceof String)) {
             jsonLdDoc = jsonLd.normalize(jsonLdDoc, true);
+            ingestConfiguration.setNormalizePayload(false);
             invalidIds = jsonLdDoc.getInvalidIds();
         }
         if (!CollectionUtils.isEmpty(invalidIds)) {
@@ -133,13 +136,16 @@ public class Instances {
     @ExposesData
     @WritesData
     @Simple
-    public ResponseEntity<Result<NormalizedJsonLd>> createNewInstance(@RequestBody JsonLdDoc jsonLdDoc, @PathVariable("id") UUID id, @RequestParam(value = "space") @Parameter(description = "The space name the instance shall be stored in or \""+SpaceName.PRIVATE_SPACE+"\" if you want to store it to your private space") String space,  @ParameterObject ResponseConfiguration responseConfiguration, @ParameterObject  IngestConfiguration ingestConfiguration) {
+    public ResponseEntity<Result<NormalizedJsonLd>> createNewInstance(@RequestBody JsonLdDoc jsonLdDoc, @PathVariable("id") UUID id, @RequestParam(value = "space") @Parameter(description = "The space name the instance shall be stored in or \""+SpaceName.PRIVATE_SPACE+"\" if you want to store it to your private space") String space,  @ParameterObject ResponseConfiguration responseConfiguration, @RequestParam(required = false, defaultValue = "false") boolean deferInference) {
+        IngestConfiguration ingestConfiguration = new IngestConfiguration();
+        ingestConfiguration.setDeferInference(deferInference);
         if(!jsonLdDoc.isValidType()) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Result.nok(HttpStatus.BAD_REQUEST.value(), "@type should contain a list of valid urls"));
         }
         List<Object> invalidIds = jsonLdDoc.getInvalidIds();
         if (!CollectionUtils.isEmpty(invalidIds) && invalidIds.stream().allMatch(o -> o instanceof String)) {
             jsonLdDoc = jsonLd.normalize(jsonLdDoc, true);
+            ingestConfiguration.setNormalizePayload(false);
             invalidIds = jsonLdDoc.getInvalidIds();
         }
         if (!CollectionUtils.isEmpty(invalidIds)) {
@@ -196,13 +202,16 @@ public class Instances {
     @ExposesData
     @WritesData
     @Simple
-    public ResponseEntity<Result<NormalizedJsonLd>> contributeToInstanceFullReplacement(@RequestBody JsonLdDoc jsonLdDoc, @PathVariable("id") UUID id, @RequestParam(value = "undeprecate", required = false, defaultValue = "false") boolean undeprecate,  @ParameterObject ResponseConfiguration responseConfiguration,  @ParameterObject IngestConfiguration ingestConfiguration) {
+    public ResponseEntity<Result<NormalizedJsonLd>> contributeToInstanceFullReplacement(@RequestBody JsonLdDoc jsonLdDoc, @PathVariable("id") UUID id, @RequestParam(value = "undeprecate", required = false, defaultValue = "false") boolean undeprecate,  @ParameterObject ResponseConfiguration responseConfiguration, @RequestParam(required = false, defaultValue = "false") boolean deferInference) {
+        IngestConfiguration ingestConfiguration = new IngestConfiguration();
+        ingestConfiguration.setDeferInference(deferInference);
         if(!jsonLdDoc.isValidType()) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Result.nok(HttpStatus.BAD_REQUEST.value(), "@type should contain a list of valid urls"));
         }
         List<Object> invalidIds = jsonLdDoc.getInvalidIds();
         if (!CollectionUtils.isEmpty(invalidIds) && invalidIds.stream().allMatch(o -> o instanceof String)) {
             jsonLdDoc = jsonLd.normalize(jsonLdDoc, true);
+            ingestConfiguration.setNormalizePayload(false);
             invalidIds = jsonLdDoc.getInvalidIds();
         }
         if (!CollectionUtils.isEmpty(invalidIds)) {
@@ -224,13 +233,16 @@ public class Instances {
     @ExposesData
     @WritesData
     @Simple
-    public ResponseEntity<Result<NormalizedJsonLd>> contributeToInstancePartialReplacement(@RequestBody JsonLdDoc jsonLdDoc, @PathVariable("id") UUID id, @RequestParam(value = "undeprecate", required = false, defaultValue = "false") boolean undeprecate,  @ParameterObject ResponseConfiguration responseConfiguration,  @ParameterObject IngestConfiguration ingestConfiguration) {
+    public ResponseEntity<Result<NormalizedJsonLd>> contributeToInstancePartialReplacement(@RequestBody JsonLdDoc jsonLdDoc, @PathVariable("id") UUID id, @RequestParam(value = "undeprecate", required = false, defaultValue = "false") boolean undeprecate,  @ParameterObject ResponseConfiguration responseConfiguration, @RequestParam(required = false, defaultValue = "false") boolean deferInference) {
+        IngestConfiguration ingestConfiguration = new IngestConfiguration();
+        ingestConfiguration.setDeferInference(deferInference);
         if(jsonLdDoc.hasType() && !jsonLdDoc.isValidType()) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Result.nok(HttpStatus.BAD_REQUEST.value(), "@type does not contain a list of valid urls"));
         }
         List<Object> invalidIds = jsonLdDoc.getInvalidIds();
         if (!CollectionUtils.isEmpty(invalidIds) && invalidIds.stream().allMatch(o -> o instanceof String)) {
             jsonLdDoc = jsonLd.normalize(jsonLdDoc, true);
+            ingestConfiguration.setNormalizePayload(false);
             invalidIds = jsonLdDoc.getInvalidIds();
         }
         if (!CollectionUtils.isEmpty(invalidIds)) {

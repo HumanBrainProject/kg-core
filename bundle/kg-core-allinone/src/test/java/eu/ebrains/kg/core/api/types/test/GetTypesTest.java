@@ -57,7 +57,7 @@ public class GetTypesTest extends AbstractTest {
     @Override
     protected void setup() {
         // We create a new instance so the type is implicitly created.
-        instances.createNewInstance(TestDataFactory.createTestData(smallPayload, 0, true), "functionalityTest", new ResponseConfiguration(), new IngestConfiguration());
+        instances.createNewInstance(TestDataFactory.createTestData(smallPayload, 0, true), "functionalityTest", new ResponseConfiguration(), false);
 
     }
 

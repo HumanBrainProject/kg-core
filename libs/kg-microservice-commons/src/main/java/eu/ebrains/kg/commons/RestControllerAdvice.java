@@ -39,10 +39,9 @@ import org.springframework.web.context.request.WebRequest;
 public class RestControllerAdvice {
 
     @ModelAttribute
-    public IngestConfiguration ingestConfiguration(@RequestParam(value = "deferInference", required = false, defaultValue = "false") boolean deferInference, @RequestParam(value = "normalizePayload", required = false, defaultValue = "true") boolean normalizePayload) {
+    public IngestConfiguration ingestConfiguration(@RequestParam(value = "deferInference", required = false, defaultValue = "false") boolean deferInference) {
         IngestConfiguration ingestConfiguration = new IngestConfiguration();
         ingestConfiguration.setDeferInference(deferInference);
-        ingestConfiguration.setNormalizePayload(normalizePayload);
         return ingestConfiguration;
     }
 

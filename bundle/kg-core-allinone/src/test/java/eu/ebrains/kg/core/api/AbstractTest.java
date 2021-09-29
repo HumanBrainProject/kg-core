@@ -45,7 +45,7 @@ public abstract class AbstractTest {
     protected static final int averagePayload = 25;
     protected static final int bigPayload = 100;
 
-    protected IngestConfiguration defaultIngestConfiguration = new IngestConfiguration().setNormalizePayload(false).setDeferInference(false);
+    protected boolean defaultDeferInference = false;
     protected ExtendedResponseConfiguration defaultResponseConfiguration = new ExtendedResponseConfiguration();
     protected PaginationParam defaultPaginationParam = new PaginationParam().setFrom(0).setSize(20l);
 
