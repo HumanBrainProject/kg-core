@@ -45,7 +45,7 @@ public abstract class AbstractSystemTest {
 
     protected PaginationParam EMPTY_PAGINATION = new PaginationParam();
     protected ExtendedResponseConfiguration DEFAULT_RESPONSE_CONFIG = new ExtendedResponseConfiguration();
-    protected IngestConfiguration DEFAULT_INGEST_CONFIG = new IngestConfiguration().setNormalizePayload(false);
+    protected boolean DEFAULT_DEFER_INFERENCE = false;
 
 
     protected static final int smallPayload = 5;
