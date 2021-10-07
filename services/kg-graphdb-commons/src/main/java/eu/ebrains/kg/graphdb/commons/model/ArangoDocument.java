@@ -109,7 +109,14 @@ public class ArangoDocument implements ArangoInstance {
                     JsonLdId newValue = oldToNew.get(jsonLdId.getId());
                     return newValue != null ? newValue : jsonLdId;
                 }).collect(Collectors.toList());
-                doc.put(key, newJsonLds);
+                if(doc.getAs(key, JsonLdId.class, null) != null){
+                    //The original value was a single JsonLdId - we want to maintain this, so we return the first (and only) result of the new jsonLds
+                    doc.put(key, newJsonLds.get(0));
+                }
+                else {
+                    //Otherwise, we apply the list.
+                    doc.put(key, newJsonLds);
+                }
             }
         }
     }
