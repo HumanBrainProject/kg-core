@@ -72,6 +72,13 @@ public class IdRepository {
         this.idsDBUtils = idsDBUtils;
     }
 
+    public void remove(DataStage stage, PersistedId id){
+        ArangoCollection coll = getOrCreateCollection(stage);
+        if(coll.documentExists(id.getKey())){
+            coll.deleteDocument(id.getKey());
+        }
+    }
+
     /**
      * @return ids which have been merged newly into the persisted id
      */
@@ -132,7 +139,6 @@ public class IdRepository {
         }
         sb.append("    RETURN doc\n");
         List<PersistedId> persistedIds = database.query(sb.toString(), bindVars, new AqlQueryOptions(), String.class).asListRemaining().stream().map(s -> jsonAdapter.fromJson(s, PersistedId.class)).collect(Collectors.toList());
-        Set<String> deprecatedInstances = persistedIds.stream().filter(PersistedId::isDeprecated).map(id -> idUtils.buildAbsoluteUrl(id.getUUID()).getId()).collect(Collectors.toSet());
         Map<String, SpaceName> resultingSpaceByIdentifier = new HashMap<>();
         Map<String, Set<JsonLdId>> resultingIdsByIdentifier = new HashMap<>();
         persistedIds.forEach(id -> {
@@ -153,12 +159,12 @@ public class IdRepository {
             JsonLdId absoluteId = idUtils.buildAbsoluteUrl(id.getId());
             if (absoluteId != null) {
                 if (resultingIdsByIdentifier.containsKey(absoluteId.getId())) {
-                    mappings.add(new JsonLdIdMapping(id.getId(), resultingIdsByIdentifier.get(absoluteId.getId()), resultingSpaceByIdentifier.get(absoluteId.getId()), deprecatedInstances.contains(absoluteId.getId())));
+                    mappings.add(new JsonLdIdMapping(id.getId(), resultingIdsByIdentifier.get(absoluteId.getId()), resultingSpaceByIdentifier.get(absoluteId.getId())));
                 } else if (id.getAlternatives() != null) {
                     for (String alternative : id.getAlternatives()) {
                         if (resultingIdsByIdentifier.containsKey(alternative)) {
                             Set<JsonLdId> resolvedIds = resultingIdsByIdentifier.get(alternative);
-                            mappings.add(new JsonLdIdMapping(id.getId(), resolvedIds, resultingSpaceByIdentifier.get(alternative), resolvedIds.stream().anyMatch(resolvedId -> deprecatedInstances.contains(resolvedId.getId()))));
+                            mappings.add(new JsonLdIdMapping(id.getId(), resolvedIds, resultingSpaceByIdentifier.get(alternative)));
                             break;
                         }
                     }

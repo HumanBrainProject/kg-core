@@ -340,7 +340,10 @@ public class ArangoRepositoryCommons {
         if(stage == DataStage.IN_PROGRESS || stage == DataStage.RELEASED) {
             cacheController.evictCacheByPlan(stage, cacheEvictionPlansBeforeTransaction, fetchCacheEvictionPlans(stage, allIds));
         }
+    }
 
+    public Set<ArangoDocumentReference> findNativeDependenciesForDocumentId(ArangoDocumentReference documentId) {
+        return findArangoReferencesForDocumentId(databases.getByStage(DataStage.NATIVE), documentId.getDocumentId());
     }
 
     private Set<ArangoDocumentReference> findRemovalOfAllDependenciesForDocumentId(ArangoDatabase db, ArangoDocumentReference delete, Set<ArangoDocumentReference> skipList) {

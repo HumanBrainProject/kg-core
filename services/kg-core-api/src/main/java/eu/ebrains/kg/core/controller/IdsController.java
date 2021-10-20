@@ -47,9 +47,6 @@ public class IdsController {
         this.idUtils = idUtils;
     }
 
-    public void undeprecateInstance(UUID instance) {
-        api.deprecateId(DataStage.IN_PROGRESS, instance, true);
-    }
 
     public InstanceId resolveId(DataStage stage, UUID id) {
         List<InstanceId> documentIds = resolveIdsByUUID(stage, Collections.singletonList(id), false);
@@ -80,7 +77,7 @@ public class IdsController {
                     filter(id -> id.getResolvedIds() != null && id.getResolvedIds().size() == 1).
                     map(id -> {
                         idWithAlternatives.stream().filter(idWithAlternative -> id.getRequestedId().equals(idWithAlternative.getId())).forEach(idWithAlternative -> idWithAlternative.setFound(true));
-                        return new InstanceId(idUtils.getUUID(id.getResolvedIds().iterator().next()), id.getSpace(), id.isDeprecated());
+                        return new InstanceId(idUtils.getUUID(id.getResolvedIds().iterator().next()), id.getSpace());
                     }).
                     collect(Collectors.toList()));
         }

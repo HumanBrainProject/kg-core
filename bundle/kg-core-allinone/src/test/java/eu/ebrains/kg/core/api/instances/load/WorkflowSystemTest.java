@@ -107,7 +107,7 @@ public class WorkflowSystemTest extends AbstractInstancesLoadTest {
         //When
         JsonLdDoc doc = new JsonLdDoc();
         doc.addProperty("https://core.kg.ebrains.eu/fooE", "fooEUpdated");
-        ResponseEntity<Result<NormalizedJsonLd>> resultResponseEntity = instances.contributeToInstancePartialReplacement(doc, idUtils.getUUID(id), false, DEFAULT_RESPONSE_CONFIG, DEFAULT_INGEST_CONFIG);
+        ResponseEntity<Result<NormalizedJsonLd>> resultResponseEntity = instances.contributeToInstancePartialReplacement(doc, idUtils.getUUID(id), DEFAULT_RESPONSE_CONFIG, DEFAULT_INGEST_CONFIG);
 
         //Then
         assertEquals("fooEUpdated", resultResponseEntity.getBody().getData().getAs("https://core.kg.ebrains.eu/fooE", String.class));
@@ -126,7 +126,7 @@ public class WorkflowSystemTest extends AbstractInstancesLoadTest {
         //Update
         JsonLdDoc doc = new JsonLdDoc();
         doc.addProperty("https://core.kg.ebrains.eu/fooE", "fooEUpdated");
-        ResponseEntity<Result<NormalizedJsonLd>> resultResponseEntity = instances.contributeToInstancePartialReplacement(doc, idUtils.getUUID(id), false, DEFAULT_RESPONSE_CONFIG, DEFAULT_INGEST_CONFIG);
+        ResponseEntity<Result<NormalizedJsonLd>> resultResponseEntity = instances.contributeToInstancePartialReplacement(doc, idUtils.getUUID(id), DEFAULT_RESPONSE_CONFIG, DEFAULT_INGEST_CONFIG);
 
         //Then
         assertEquals("fooEUpdated", resultResponseEntity.getBody().getData().getAs("https://core.kg.ebrains.eu/fooE", String.class));

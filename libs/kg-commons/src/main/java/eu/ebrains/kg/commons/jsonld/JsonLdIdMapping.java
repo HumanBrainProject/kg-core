@@ -30,21 +30,15 @@ import java.util.UUID;
 public class JsonLdIdMapping {
     private String space;
     private UUID requestedId;
-    private boolean deprecated;
     private Set<JsonLdId> resolvedIds;
 
     public JsonLdIdMapping() {
     }
 
-    public JsonLdIdMapping(UUID requestedId, Set<JsonLdId> resolvedIds, SpaceName space, boolean deprecated) {
+    public JsonLdIdMapping(UUID requestedId, Set<JsonLdId> resolvedIds, SpaceName space) {
         this.requestedId = requestedId;
         this.resolvedIds = resolvedIds;
-        this.deprecated = deprecated;
         this.space = space != null ? space.getName() : null;
-    }
-
-    public boolean isDeprecated() {
-        return deprecated;
     }
 
     public SpaceName getSpace(){

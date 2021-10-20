@@ -26,9 +26,7 @@ import eu.ebrains.kg.arango.commons.model.ArangoCollectionReference;
 import eu.ebrains.kg.arango.commons.model.ArangoDocumentReference;
 import eu.ebrains.kg.arango.commons.model.InternalSpace;
 import eu.ebrains.kg.commons.IdUtils;
-import eu.ebrains.kg.commons.jsonld.InstanceId;
-import eu.ebrains.kg.commons.jsonld.JsonLdId;
-import eu.ebrains.kg.commons.jsonld.NormalizedJsonLd;
+import eu.ebrains.kg.commons.jsonld.*;
 import eu.ebrains.kg.commons.model.DataStage;
 import eu.ebrains.kg.commons.model.TodoItem;
 import eu.ebrains.kg.commons.model.User;
@@ -116,6 +114,9 @@ public class TodoListProcessor {
                     break;
                 case DELETE:
                     logger.info("Removing an instance");
+                    //Since we're going to do a "hard" delete, we also have to remove all instances that have been contributing to it.
+                    final List<ArangoDocumentReference> nativeDocumentsByInferredInstance = getNativeDocumentsByInferredInstance(rootDocumentReference);
+                    repository.executeTransactional(DataStage.NATIVE, dataController.createDeleteOperations(stage, nativeDocumentsByInferredInstance));
                     deleteDocument(DataStage.IN_PROGRESS, rootDocumentReference);
                     break;
                 case UNRELEASE:
@@ -131,6 +132,13 @@ public class TodoListProcessor {
             logger.debug("Updating last seen event id");
             eventTracker.updateLastSeenEventId(stage, todoItem.getEventId());
         }
+    }
+
+    private List<ArangoDocumentReference> getNativeDocumentsByInferredInstance(ArangoDocumentReference rootDocumentReference) {
+        final ArangoDocument document = repository.getDocument(DataStage.IN_PROGRESS, rootDocumentReference);
+        final NormalizedJsonLd doc = document.asIndexedDoc().getDoc();
+        final List<String> inferenceSourceDocs = doc.getAsListOf(InferredJsonLdDoc.INFERENCE_OF, String.class);
+        return inferenceSourceDocs.stream().map(inferenceSourceDoc -> new ArangoDocumentReference(document.getId().getArangoCollectionReference(), idUtils.getUUID(new JsonLdId(inferenceSourceDoc)))).collect(Collectors.toList());
     }
 
     private void handleUserRepresentation(User user, InstanceId instanceId) {
@@ -182,7 +190,7 @@ public class TodoListProcessor {
 
     public void deleteDocument(DataStage stage, ArangoDocumentReference documentReference) {
         if (repository.doesDocumentExist(stage, documentReference)) {
-            repository.executeTransactional(stage, dataController.createDeleteOperations(stage, documentReference));
+            repository.executeTransactional(stage, dataController.createDeleteOperations(stage, Collections.singletonList(documentReference)));
         } else {
             logger.warn(String.format("Tried to remove non-existent document with id %s in stage %s", documentReference.getId(), stage.name()));
         }

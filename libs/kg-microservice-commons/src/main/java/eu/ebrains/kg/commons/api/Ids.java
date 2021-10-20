@@ -37,7 +37,7 @@ public interface Ids {
 
     List<JsonLdId> createOrUpdateId(IdWithAlternatives idWithAlternatives, DataStage stage);
 
-    List<JsonLdId> deprecateId(DataStage stage, UUID id, boolean revert);
+    void removeId(DataStage stage, UUID id);
 
     List<JsonLdIdMapping> resolveId(List<IdWithAlternatives> idWithAlternatives, DataStage stage) throws AmbiguousIdException;
 

@@ -159,7 +159,7 @@ public class CoreInstanceController {
 
 
     private NormalizedJsonLd patchInstance(InstanceId instanceId, NormalizedJsonLd normalizedJsonLd, boolean removeNonDefinedKeys) {
-        InstanceId nativeId = new InstanceId(idUtils.getDocumentIdForUserAndInstance(authContext.getUserId(), instanceId.getUuid()), instanceId.getSpace(), instanceId.isDeprecated());
+        InstanceId nativeId = new InstanceId(idUtils.getDocumentIdForUserAndInstance(authContext.getUserId(), instanceId.getUuid()), instanceId.getSpace());
         NormalizedJsonLd instance = graphDBInstances.getInstanceById(nativeId.getSpace().getName(), nativeId.getUuid(), DataStage.NATIVE, true, false, false, null, true);
         if (instance == null) {
             Map<String, ZonedDateTime> updateTimes = new HashMap<>();
@@ -202,8 +202,8 @@ public class CoreInstanceController {
             }
         }).filter(Objects::nonNull).collect(Collectors.toList());
         List<InstanceId> idsAfterResolution = this.ids.resolveIdsByUUID(stage, validUUIDs, true);
-        idsAfterResolution.stream().filter(instanceId -> !instanceId.isDeprecated()).filter(InstanceId::isUnresolved).forEach(id -> result.put(id.getUuid().toString(), Result.nok(HttpStatus.NOT_FOUND.value(), HttpStatus.NOT_FOUND.getReasonPhrase())));
-        Map<UUID, Result<NormalizedJsonLd>> instancesByIds = graphDBInstances.getInstancesByIds(idsAfterResolution.stream().filter(i -> !i.isUnresolved() && !i.isDeprecated()).map(InstanceId::serialize).collect(Collectors.toList()), stage, responseConfiguration.isReturnEmbedded(), responseConfiguration.isReturnAlternatives(), responseConfiguration.isReturnIncomingLinks(), responseConfiguration.getIncomingLinksPageSize());
+        idsAfterResolution.stream().filter(InstanceId::isUnresolved).forEach(id -> result.put(id.getUuid().toString(), Result.nok(HttpStatus.NOT_FOUND.value(), HttpStatus.NOT_FOUND.getReasonPhrase())));
+        Map<UUID, Result<NormalizedJsonLd>> instancesByIds = graphDBInstances.getInstancesByIds(idsAfterResolution.stream().filter(i -> !i.isUnresolved()).map(InstanceId::serialize).collect(Collectors.toList()), stage, responseConfiguration.isReturnEmbedded(), responseConfiguration.isReturnAlternatives(), responseConfiguration.isReturnIncomingLinks(), responseConfiguration.getIncomingLinksPageSize());
         instancesByIds.forEach((k, v) -> result.put(k.toString(), v));
         ids.stream().filter(Objects::nonNull).forEach(
                 id -> {
@@ -259,7 +259,7 @@ public class CoreInstanceController {
 
     public Paginated<NormalizedJsonLd> getIncomingLinks(UUID id, DataStage stage, String property, Type type, PaginationParam pagination){
         InstanceId instanceId = ids.resolveId(stage, id);
-        if(instanceId == null || instanceId.isDeprecated()){
+        if(instanceId == null){
             return null;
         }
         return graphDBInstances.getIncomingLinks(instanceId.getSpace().getName(), instanceId.getUuid(), stage, property, type.getName(), pagination);
@@ -267,7 +267,7 @@ public class CoreInstanceController {
 
     public NormalizedJsonLd getInstanceById(UUID id, DataStage stage, ExtendedResponseConfiguration responseConfiguration) {
         InstanceId instanceId = ids.resolveId(stage, id);
-        if (instanceId == null || instanceId.isDeprecated()) {
+        if (instanceId == null) {
             return null;
         }
         if (responseConfiguration.isReturnPayload()) {

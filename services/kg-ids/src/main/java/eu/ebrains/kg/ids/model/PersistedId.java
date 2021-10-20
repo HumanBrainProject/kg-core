@@ -40,7 +40,6 @@ public class PersistedId {
 
     private Set<String> alternativeIds = new HashSet<>();
 
-    private boolean deprecated;
 
     public String getKey() {
         return key;
@@ -70,13 +69,5 @@ public class PersistedId {
     public PersistedId setAlternativeIds(Set<String> alternativeIds) {
         this.alternativeIds = alternativeIds;
         return this;
-    }
-
-    public boolean isDeprecated() {
-        return deprecated;
-    }
-
-    public void setDeprecated(boolean deprecated) {
-        this.deprecated = deprecated;
     }
 }

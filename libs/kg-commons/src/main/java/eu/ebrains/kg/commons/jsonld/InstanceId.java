@@ -41,21 +41,11 @@ public class InstanceId {
     public InstanceId(UUID id, SpaceName space, boolean deprecated) {
         this.uuid = id;
         this.space = space;
-        this.deprecated = deprecated;
     }
 
     private UUID uuid;
     private SpaceName space;
-    private boolean deprecated;
-    private transient boolean  unresolved;
-
-    public boolean isDeprecated() {
-        return deprecated;
-    }
-
-    public void setDeprecated(boolean deprecated) {
-        this.deprecated = deprecated;
-    }
+    private transient boolean unresolved;
 
     public boolean isUnresolved() {
         return unresolved;

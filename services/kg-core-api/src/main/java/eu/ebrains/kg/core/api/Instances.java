@@ -126,18 +126,12 @@ public class Instances {
         return newInstance;
     }
 
-    private ResponseEntity<Result<NormalizedJsonLd>> contributeToInstance(@RequestBody JsonLdDoc jsonLdDoc, UUID id, boolean undeprecate, @ParameterObject ResponseConfiguration responseConfiguration,  @ParameterObject IngestConfiguration ingestConfiguration, boolean removeNonDeclaredFields) {
+    private ResponseEntity<Result<NormalizedJsonLd>> contributeToInstance(@RequestBody JsonLdDoc jsonLdDoc, UUID id, @ParameterObject ResponseConfiguration responseConfiguration,  @ParameterObject IngestConfiguration ingestConfiguration, boolean removeNonDeclaredFields) {
         Date startTime = new Date();
         logger.debug(String.format("Contributing to instance with id %s", id));
         InstanceId instanceId = idsController.resolveId(DataStage.IN_PROGRESS, id);
         if (instanceId == null) {
             return ResponseEntity.notFound().build();
-        } else if (instanceId.isDeprecated()) {
-            if (undeprecate) {
-                idsController.undeprecateInstance(instanceId.getUuid());
-            } else {
-                return ResponseEntity.status(HttpStatus.GONE).body(Result.nok(HttpStatus.GONE.value(), "The instance you're trying to contribute to has been deprecated."));
-            }
         }
         ResponseEntity<Result<NormalizedJsonLd>> resultResponseEntity = instanceController.contributeToInstance(jsonLdDoc, instanceId, removeNonDeclaredFields, responseConfiguration, ingestConfiguration);
         logger.debug(String.format("Done contributing to instance with id %s", id));
@@ -153,8 +147,8 @@ public class Instances {
     @ExposesData
     @WritesData
     @Simple
-    public ResponseEntity<Result<NormalizedJsonLd>> contributeToInstanceFullReplacement(@RequestBody JsonLdDoc jsonLdDoc, @PathVariable("id") UUID id, @RequestParam(value = "undeprecate", required = false, defaultValue = "false") boolean undeprecate,  @ParameterObject ResponseConfiguration responseConfiguration,  @ParameterObject IngestConfiguration ingestConfiguration) {
-        return contributeToInstance(jsonLdDoc, id, undeprecate, responseConfiguration, ingestConfiguration, true);
+    public ResponseEntity<Result<NormalizedJsonLd>> contributeToInstanceFullReplacement(@RequestBody JsonLdDoc jsonLdDoc, @PathVariable("id") UUID id,  @ParameterObject ResponseConfiguration responseConfiguration,  @ParameterObject IngestConfiguration ingestConfiguration) {
+        return contributeToInstance(jsonLdDoc, id, responseConfiguration, ingestConfiguration, true);
     }
 
     @Operation(summary = "Partially update contribution to an existing instance")
@@ -162,8 +156,8 @@ public class Instances {
     @ExposesData
     @WritesData
     @Simple
-    public ResponseEntity<Result<NormalizedJsonLd>> contributeToInstancePartialReplacement(@RequestBody JsonLdDoc jsonLdDoc, @PathVariable("id") UUID id, @RequestParam(value = "undeprecate", required = false, defaultValue = "false") boolean undeprecate,  @ParameterObject ResponseConfiguration responseConfiguration,  @ParameterObject IngestConfiguration ingestConfiguration) {
-        return contributeToInstance(jsonLdDoc, id, undeprecate, responseConfiguration, ingestConfiguration, false);
+    public ResponseEntity<Result<NormalizedJsonLd>> contributeToInstancePartialReplacement(@RequestBody JsonLdDoc jsonLdDoc, @PathVariable("id") UUID id, @ParameterObject ResponseConfiguration responseConfiguration,  @ParameterObject IngestConfiguration ingestConfiguration) {
+        return contributeToInstance(jsonLdDoc, id, responseConfiguration, ingestConfiguration, false);
     }
 
     @Operation(summary = "Get the instance")
@@ -253,10 +247,10 @@ public class Instances {
             if(jsonLdIdMapping.getResolvedIds() != null && jsonLdIdMapping.getResolvedIds().size()==1){
                 String identifier = uuidToIdentifier.get(jsonLdIdMapping.getRequestedId());
                 JsonLdId resolvedId = jsonLdIdMapping.getResolvedIds().iterator().next();
-                identifierToInstanceIdLookup.put(identifier, new InstanceId(idUtils.getUUID(resolvedId), jsonLdIdMapping.getSpace(), jsonLdIdMapping.isDeprecated()));
+                identifierToInstanceIdLookup.put(identifier, new InstanceId(idUtils.getUUID(resolvedId), jsonLdIdMapping.getSpace()));
             }
         });
-        Map<String, Result<NormalizedJsonLd>> instancesByIds = instanceController.getInstancesByIds(identifierToInstanceIdLookup.values().stream().filter(id -> !id.isDeprecated()).map(id -> id.getUuid().toString()).collect(Collectors.toList()), stage.getStage(), responseConfiguration);
+        Map<String, Result<NormalizedJsonLd>> instancesByIds = instanceController.getInstancesByIds(identifierToInstanceIdLookup.values().stream().map(id -> id.getUuid().toString()).collect(Collectors.toList()), stage.getStage(), responseConfiguration);
         Map<String, Result<NormalizedJsonLd>> result = new HashMap<>();
         identifiers.forEach(identifier -> {
             InstanceId instanceId = identifierToInstanceIdLookup.get(identifier);
@@ -270,7 +264,7 @@ public class Instances {
         return Result.ok(result);
     }
 
-    @Operation(summary = "Deprecate an instance")
+    @Operation(summary = "Delete an instance")
     @DeleteMapping("/instances/{id}")
     @WritesData
     //It only indirectly exposes the ids due to its status codes (you can tell if an id exists based on the return code this method provides)
@@ -305,9 +299,6 @@ public class Instances {
         if (instanceId == null) {
             return ResponseEntity.notFound().build();
         }
-        else if(instanceId.isDeprecated()){
-            return ResponseEntity.status(HttpStatus.GONE).build();
-        }
         release.releaseInstance(instanceId.getSpace().getName(), instanceId.getUuid(), revision);
         return ResponseEntity.ok(Result.<Void>ok().setExecutionDetails(startTime, new Date()));
     }
@@ -324,9 +315,6 @@ public class Instances {
         InstanceId instanceId = idsController.resolveId(DataStage.IN_PROGRESS, id);
         if (instanceId == null) {
             return ResponseEntity.notFound().build();
-        }
-        else if(instanceId.isDeprecated()){
-            return ResponseEntity.status(HttpStatus.GONE).build();
         }
         release.unreleaseInstance(instanceId.getSpace().getName(), instanceId.getUuid());
         return ResponseEntity.ok(Result.<Void>ok().setExecutionDetails(startTime, new Date()));
@@ -346,9 +334,6 @@ public class Instances {
         if (instanceId == null) {
             return ResponseEntity.notFound().build();
         }
-        else if(instanceId.isDeprecated()){
-            return ResponseEntity.status(HttpStatus.GONE).build();
-        }
         ReleaseStatus releaseStatus = release.getReleaseStatus(instanceId.getSpace().getName(), instanceId.getUuid(), releaseTreeScope);
         return ResponseEntity.ok(Result.ok(releaseStatus));
     }
@@ -364,7 +349,7 @@ public class Instances {
     @Advanced
     public Result<Map<UUID, Result<ReleaseStatus>>> getReleaseStatusByIds(@RequestBody List<UUID> listOfIds, @RequestParam("releaseTreeScope") ReleaseTreeScope releaseTreeScope) {
         List<InstanceId> instanceIds = idsController.resolveIdsByUUID(DataStage.IN_PROGRESS, listOfIds, false);
-        return Result.ok(instanceIds.stream().filter(instanceId -> !instanceId.isDeprecated() &&  instanceId.getUuid()!=null).collect(Collectors.toMap(InstanceId::getUuid, instanceId -> {
+        return Result.ok(instanceIds.stream().filter(instanceId -> instanceId.getUuid()!=null).collect(Collectors.toMap(InstanceId::getUuid, instanceId -> {
                     try {
                         return Result.ok(release.getReleaseStatus(instanceId.getSpace().getName(), instanceId.getUuid(), releaseTreeScope));
                     }

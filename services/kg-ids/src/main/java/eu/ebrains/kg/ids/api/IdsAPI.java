@@ -63,13 +63,11 @@ public class IdsAPI implements Ids.Client {
     }
 
     @Override
-    public List<JsonLdId> deprecateId(DataStage stage, UUID id, boolean revert) {
+    public void removeId(DataStage stage, UUID id) {
         PersistedId foundId = idRepository.getId(id, stage);
-        if(foundId==null){
-            return null;
+        if(foundId!=null) {
+            idRepository.remove(stage, foundId);
         }
-        foundId.setDeprecated(!revert);
-        return idRepository.upsert(stage, foundId);
     }
 
     @Override

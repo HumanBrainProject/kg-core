@@ -31,7 +31,6 @@ import eu.ebrains.kg.commons.jsonld.IndexedJsonLdDoc;
 import eu.ebrains.kg.commons.jsonld.JsonLdId;
 import eu.ebrains.kg.commons.jsonld.JsonLdIdMapping;
 import eu.ebrains.kg.commons.model.*;
-import eu.ebrains.kg.commons.model.internal.spaces.Space;
 import eu.ebrains.kg.commons.models.UserWithRoles;
 import eu.ebrains.kg.commons.permission.Functionality;
 import eu.ebrains.kg.commons.permissions.controller.Permissions;
@@ -119,7 +118,7 @@ public class EventController {
         ensureInternalIdInPayload(persistedEvent, userWithRoles);
         checkPermission(persistedEvent);
         if (persistedEvent.getType() == Event.Type.DELETE) {
-            ids.deprecateId(DataStage.IN_PROGRESS, persistedEvent.getDocumentId(), false);
+            ids.removeId(DataStage.IN_PROGRESS, persistedEvent.getDocumentId());
         } else {
             switch (dataStage){
                 case IN_PROGRESS:
