@@ -290,7 +290,6 @@ public class ArangoRepositoryCommons {
             ArangoCollectionReference collection = upsert.getDocumentReference().getArangoCollectionReference();
             ArangoDocument arangoDocument = ArangoDocument.from(upsert.getPayload());
             arangoDocument.asIndexedDoc().setCollection(arangoDocument.getId().getArangoCollectionReference().getCollectionName());
-            arangoDocument.getDoc().normalizeTypes();
             arangoDocument.asIndexedDoc().updateIdentifiers();
             arangoDocument.setKeyBasedOnId();
             insertedDocuments.computeIfAbsent(collection, x->new ArrayList<>()).add(jsonAdapter.toJson(upsert.getPayload()));

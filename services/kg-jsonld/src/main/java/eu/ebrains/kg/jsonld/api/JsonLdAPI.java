@@ -26,6 +26,7 @@ import com.apicatalog.jsonld.JsonLd;
 import com.apicatalog.jsonld.JsonLdError;
 import com.apicatalog.jsonld.document.JsonDocument;
 import eu.ebrains.kg.commons.JsonAdapter;
+import eu.ebrains.kg.commons.exception.InvalidRequestException;
 import eu.ebrains.kg.commons.jsonld.JsonLdConsts;
 import eu.ebrains.kg.commons.jsonld.JsonLdDoc;
 import eu.ebrains.kg.commons.jsonld.NormalizedJsonLd;
@@ -123,7 +124,7 @@ public class JsonLdAPI implements eu.ebrains.kg.commons.api.JsonLd.Client {
             return flattenLists(normalized, null, null);
         } catch (JsonLdError ex) {
             logger.error("Was not able to handle payload", ex);
-            throw new RuntimeException(ex);
+            throw new InvalidRequestException(ex.getMessage());
         }
     }
 

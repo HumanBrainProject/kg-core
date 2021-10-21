@@ -106,13 +106,7 @@ public class CoreInstanceController {
         this.invitation.calculateInstanceScope(instanceId);
     }
 
-    public ResponseEntity<Result<NormalizedJsonLd>> createNewInstance(JsonLdDoc jsonLdDoc, UUID id, SpaceName s, ResponseConfiguration responseConfiguration, IngestConfiguration ingestConfiguration) {
-        NormalizedJsonLd normalizedJsonLd;
-        if (ingestConfiguration.isNormalizePayload()) {
-            normalizedJsonLd = jsonLd.normalize(jsonLdDoc, true);
-        } else {
-            normalizedJsonLd = new NormalizedJsonLd(jsonLdDoc);
-        }
+    public ResponseEntity<Result<NormalizedJsonLd>> createNewInstance(NormalizedJsonLd normalizedJsonLd, UUID id, SpaceName s, ResponseConfiguration responseConfiguration, IngestConfiguration ingestConfiguration) {
         long startIdResolution = new Date().getTime();
         List<InstanceId> instanceIdsInSameSpace = ids.resolveIds(DataStage.IN_PROGRESS, new IdWithAlternatives(id, s, normalizedJsonLd.allIdentifiersIncludingId()), false).stream().filter(i -> s.equals(i.getSpace())).collect(Collectors.toList());
         logger.debug(String.format("Resolved %d instances for ids in %d ms", instanceIdsInSameSpace.size(), new Date().getTime()-startIdResolution));
@@ -134,13 +128,7 @@ public class CoreInstanceController {
         return handleIngestionResponse(responseConfiguration, ids);
     }
 
-    public ResponseEntity<Result<NormalizedJsonLd>> contributeToInstance(JsonLdDoc jsonLdDoc, InstanceId instanceId, boolean removeNonDeclaredProperties, ResponseConfiguration responseConfiguration, IngestConfiguration ingestConfiguration) {
-        NormalizedJsonLd normalizedJsonLd;
-        if (ingestConfiguration.isNormalizePayload()) {
-            normalizedJsonLd = jsonLd.normalize(jsonLdDoc, true);
-        } else {
-            normalizedJsonLd = new NormalizedJsonLd(jsonLdDoc);
-        }
+    public ResponseEntity<Result<NormalizedJsonLd>> contributeToInstance(NormalizedJsonLd normalizedJsonLd, InstanceId instanceId, boolean removeNonDeclaredProperties, ResponseConfiguration responseConfiguration, IngestConfiguration ingestConfiguration) {
         normalizedJsonLd = patchInstance(instanceId, normalizedJsonLd, removeNonDeclaredProperties);
         Event upsertEvent = createUpsertEvent(instanceId.getUuid(), normalizedJsonLd, instanceId.getSpace());
         Set<InstanceId> ids = primaryStoreEvents.postEvent(upsertEvent, ingestConfiguration.isDeferInference());

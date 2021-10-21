@@ -1,0 +1,8 @@
+{
+  "@type": ["http://Test"],
+  "http://link": [
+    {
+      "@id": "wrongReference"
+    }
+  ]
+}

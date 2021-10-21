@@ -25,7 +25,6 @@ package eu.ebrains.kg.commons.model;
 public class IngestConfiguration {
 
     private boolean deferInference = false;
-    private boolean normalizePayload = true;
 
     public boolean isDeferInference() {
         return deferInference;
@@ -33,15 +32,6 @@ public class IngestConfiguration {
 
     public IngestConfiguration setDeferInference(boolean deferInference) {
         this.deferInference = deferInference;
-        return this;
-    }
-
-    public boolean isNormalizePayload() {
-        return normalizePayload;
-    }
-
-    public IngestConfiguration setNormalizePayload(boolean normalizePayload) {
-        this.normalizePayload = normalizePayload;
         return this;
     }
 }
