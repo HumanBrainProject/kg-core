@@ -53,7 +53,7 @@ public class AuthContext {
     }
 
     public Space getClientSpace(){
-        return getUserWithRoles()!=null && getUserWithRoles().getClientId()!=null ? new Space(new SpaceName(getUserWithRoles().getClientId()),  false, true) : null;
+        return getUserWithRoles()!=null && getUserWithRoles().getClientId()!=null ? new Space(new SpaceName(getUserWithRoles().getClientId()),  false, true, false) : null;
     }
 
     public String getUserId(){

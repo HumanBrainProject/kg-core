@@ -32,10 +32,7 @@ import eu.ebrains.kg.systemTest.controller.TestObjectFactory;
 import eu.ebrains.kg.systemTest.serviceCall.SystemTestToCore;
 import org.springframework.stereotype.Component;
 
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
-import java.util.UUID;
+import java.util.*;
 
 @Component
 public class RegressionController {
@@ -55,7 +52,8 @@ public class RegressionController {
         Type type = new Type(payload.types().stream().findFirst().orElseThrow());
         long fromInstances = coreSvc.getInstances(type, 0, 0, DataStage.IN_PROGRESS).getTotal();
         List<Tuple<Type, Long>> types = coreSvc.getTypes(DataStage.IN_PROGRESS);
-        Long fromStats = types.stream().filter(t -> t.getA().equals(type)).findFirst().orElse(new Tuple<Type, Long>().setB(0L)).getB();
+        final Optional<Tuple<Type, Long>> typeInfo = types.stream().filter(t -> t.getA().equals(type)).findFirst();
+        Long fromStats = typeInfo.isPresent() ? typeInfo.get().getB() : 0L;
         if(fromInstances == fromStats){
             return fromInstances;
         }

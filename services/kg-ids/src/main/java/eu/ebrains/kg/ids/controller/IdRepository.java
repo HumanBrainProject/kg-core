@@ -111,8 +111,8 @@ public class IdRepository {
     }
 
     public List<JsonLdIdMapping> resolveIds(DataStage stage, List<IdWithAlternatives> ids) {
-        Set<Tuple<String, SpaceName>> idsWithAlternatives = ids.stream().filter(Objects::nonNull).filter(id -> id.getAlternatives() != null).map(id -> id.getAlternatives().stream().map(alternative -> new Tuple<String, SpaceName>().setA(alternative).setB(id.getSpace() != null ? new SpaceName(id.getSpace()) : null)).collect(Collectors.toSet())).flatMap(Collection::stream).filter(Objects::nonNull).collect(Collectors.toSet());
-        idsWithAlternatives.addAll(ids.stream().map(id -> id != null ? new Tuple<String, SpaceName>().setA(idUtils.buildAbsoluteUrl(id.getId()).getId()).setB(id.getSpace() != null ? new SpaceName(id.getSpace()) : null) : null).filter(Objects::nonNull).collect(Collectors.toSet()));
+        Set<Tuple<String, SpaceName>> idsWithAlternatives = ids.stream().filter(Objects::nonNull).filter(id -> id.getAlternatives() != null).map(id -> id.getAlternatives().stream().map(alternative -> new Tuple<>(alternative, id.getSpace() != null ? new SpaceName(id.getSpace()) : null)).collect(Collectors.toSet())).flatMap(Collection::stream).filter(Objects::nonNull).collect(Collectors.toSet());
+        idsWithAlternatives.addAll(ids.stream().map(id -> id != null ? new Tuple<>(idUtils.buildAbsoluteUrl(id.getId()).getId(), id.getSpace() != null ? new SpaceName(id.getSpace()) : null) : null).filter(Objects::nonNull).collect(Collectors.toSet()));
         String collectionName = getCollectionName(stage);
         ArangoDatabase database = arangoDatabase.getOrCreate();
         if (!database.collection(collectionName).exists() || idsWithAlternatives.isEmpty()) {

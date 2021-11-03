@@ -29,6 +29,12 @@ public class Triple<A, B, C> {
     private B b;
     private C c;
 
+    public Triple(A a, B b, C c) {
+        this.a = a;
+        this.b = b;
+        this.c = c;
+    }
+
     public Triple<A, B, C> setA(A a) {
         this.a = a;
         return this;

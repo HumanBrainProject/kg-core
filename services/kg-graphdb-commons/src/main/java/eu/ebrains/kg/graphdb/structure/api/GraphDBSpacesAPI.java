@@ -52,7 +52,7 @@ public class GraphDBSpacesAPI implements GraphDBSpaces.Client {
     }
 
     private static Space createSpaceRepresentation(String name){
-        return new Space(new SpaceName(name), false, false);
+        return new Space(new SpaceName(name), false, false, false);
     }
     private List<Space> getSpaces(){
         List<Space> spaces = this.metaDataController.getSpaces(DataStage.IN_PROGRESS, authContext.getUserWithRoles());

@@ -39,11 +39,12 @@ public class Space extends DynamicJson {
 
     public Space(){}
 
-    public Space(SpaceName name, boolean autoRelease, boolean clientSpace) {
+    public Space(SpaceName name, boolean autoRelease, boolean clientSpace, boolean deferCache) {
         setName(name);
         setIdentifier(name.getName());
         setAutoRelease(autoRelease);
         setClientSpace(clientSpace);
+        setDeferCache(deferCache);
     }
     @JsonIgnore
     private boolean existsInDB;
@@ -138,6 +139,18 @@ public class Space extends DynamicJson {
     public void setAutoRelease(Boolean autoRelease) {
         this.put(EBRAINSVocabulary.META_AUTORELEASE_SPACE, autoRelease);
     }
+
+    @JsonGetter(EBRAINSVocabulary.META_DEFER_CACHE_SPACE)
+    public boolean isDeferCache(){
+        return getAs(EBRAINSVocabulary.META_DEFER_CACHE_SPACE, Boolean.class, false);
+    }
+    @JsonSetter(EBRAINSVocabulary.META_DEFER_CACHE_SPACE)
+    public void setDeferCache(Boolean deferCache) {
+        this.put(EBRAINSVocabulary.META_DEFER_CACHE_SPACE, deferCache);
+    }
+
+
+
 
     @JsonIgnore
     public static JsonLdId createId(SpaceName name){

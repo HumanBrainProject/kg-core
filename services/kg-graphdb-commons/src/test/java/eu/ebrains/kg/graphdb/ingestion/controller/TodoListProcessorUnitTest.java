@@ -46,7 +46,7 @@ public class TodoListProcessorUnitTest {
         //Given
         UUID id1 = UUID.randomUUID();
         SpaceName spaceName = new SpaceName("foo");
-        Space space = new Space(spaceName, false, false);
+        Space space = new Space(spaceName, false, false, false);
         List<TodoItem> todoItems = Arrays.asList(
                 TodoItem.fromEvent(new PersistedEvent(Event.createDeleteEvent(spaceName, id1, new JsonLdId("http://foobar/"+id1)), DataStage.NATIVE, null, space)),
                 TodoItem.fromEvent(new PersistedEvent(Event.createUpsertEvent(spaceName, UUID.randomUUID(), Event.Type.INSERT, Mockito.mock(NormalizedJsonLd.class)), DataStage.NATIVE, null, space)),

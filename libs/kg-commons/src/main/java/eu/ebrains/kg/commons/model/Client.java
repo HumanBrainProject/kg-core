@@ -65,6 +65,6 @@ public class Client {
     }
 
     public Space getSpace() {
-        return new Space(new SpaceName(getIdentifier()),  true, true);
+        return new Space(new SpaceName(getIdentifier()),  true, true, false);
     }
 }

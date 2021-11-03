@@ -35,6 +35,9 @@ public class SpaceSpecification {
     @JsonProperty(EBRAINSVocabulary.META_AUTORELEASE_SPACE)
     private Boolean autoRelease;
 
+    @JsonProperty(EBRAINSVocabulary.META_DEFER_CACHE_SPACE)
+    private Boolean deferCache;
+
     @JsonProperty(EBRAINSVocabulary.META_CLIENT_SPACE)
     private Boolean clientSpace;
 
@@ -70,9 +73,17 @@ public class SpaceSpecification {
         this.clientSpace = clientSpace;
     }
 
+    public Boolean getDeferCache() {
+        return deferCache;
+    }
+
+    public void setDeferCache(Boolean deferCache) {
+        this.deferCache = deferCache;
+    }
+
     @JsonIgnore
     public Space toSpace(){
-       return new Space(new SpaceName(name), autoRelease != null && autoRelease, false);
+       return new Space(new SpaceName(name), autoRelease != null && autoRelease, false, deferCache != null && deferCache);
     }
 
 }

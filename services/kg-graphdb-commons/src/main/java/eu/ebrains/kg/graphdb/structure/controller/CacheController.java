@@ -25,12 +25,17 @@ import eu.ebrains.kg.commons.model.DataStage;
 import eu.ebrains.kg.commons.model.SpaceName;
 import eu.ebrains.kg.commons.model.internal.spaces.Space;
 import eu.ebrains.kg.graphdb.ingestion.model.CacheEvictionPlan;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.lang.NonNull;
 import org.springframework.stereotype.Component;
 import org.springframework.util.CollectionUtils;
 
 import javax.annotation.PostConstruct;
+import java.time.Duration;
+import java.time.LocalDateTime;
 import java.util.*;
+import java.util.concurrent.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -41,8 +46,11 @@ public class CacheController {
     private final MetaDataController metaDataController;
     private final AuthContext authContext;
 
+    private final Logger logger = LoggerFactory.getLogger(getClass());
+    private final ScheduledExecutorService scheduler = Executors.newSingleThreadScheduledExecutor();
+
     @PostConstruct
-    public void setup(){
+    public void setup() {
         metaDataController.initializeCache();
     }
 
@@ -53,23 +61,23 @@ public class CacheController {
         this.authContext = authContext;
     }
 
-    private Set<String> getDeleteIds(Map<String, CacheEvictionPlan> plansBeforeTransaction, Map<String, CacheEvictionPlan> plansAfterTransaction){
+    private Set<String> getDeleteIds(Map<String, CacheEvictionPlan> plansBeforeTransaction, Map<String, CacheEvictionPlan> plansAfterTransaction) {
         //A removal of an instance is characterized by an id appearing before the transaction but not afterwards anymore
         return plansBeforeTransaction.keySet().stream().filter(id -> !plansAfterTransaction.containsKey(id)).collect(Collectors.toSet());
     }
 
-    private Set<String> getCreateIds(Map<String, CacheEvictionPlan> plansBeforeTransaction, Map<String, CacheEvictionPlan> plansAfterTransaction){
+    private Set<String> getCreateIds(Map<String, CacheEvictionPlan> plansBeforeTransaction, Map<String, CacheEvictionPlan> plansAfterTransaction) {
         //A creation of an instance is characterized by an id appearing after the transaction but not before
         return plansAfterTransaction.keySet().stream().filter(id -> !plansBeforeTransaction.containsKey(id)).collect(Collectors.toSet());
     }
 
-    private Set<String> getUpdateIds(Map<String, CacheEvictionPlan> plansBeforeTransaction, Map<String, CacheEvictionPlan> plansAfterTransaction){
+    private Set<String> getUpdateIds(Map<String, CacheEvictionPlan> plansBeforeTransaction, Map<String, CacheEvictionPlan> plansAfterTransaction) {
         //An update of an instance is characterized by an id appearing at both times, before and after the transaction
         return plansAfterTransaction.keySet().stream().filter(plansBeforeTransaction::containsKey).collect(Collectors.toSet());
     }
 
 
-    private Set<SpaceName> findSpacesForCacheEviction(Map<String, CacheEvictionPlan> plansBeforeTransaction, Map<String, CacheEvictionPlan> plansAfterTransaction, Set<String> createIds, Set<String> deleteIds, Set<String> updateIds){
+    private Set<SpaceName> findSpacesForCacheEviction(Map<String, CacheEvictionPlan> plansBeforeTransaction, Map<String, CacheEvictionPlan> plansAfterTransaction, Set<String> createIds, Set<String> deleteIds, Set<String> updateIds) {
         //We evict all caches for delete operations if the original instance had types
         final Stream<SpaceName> fromDeleteOperations = deleteIds.stream().map(plansBeforeTransaction::get).filter(d -> !CollectionUtils.isEmpty(d.getType())).map(d -> new SpaceName(d.getSpace()));
 
@@ -88,15 +96,15 @@ public class CacheController {
 
     private List<String> getChangedTypes(@NonNull CacheEvictionPlan cacheEvictionPlanBefore, @NonNull CacheEvictionPlan cacheEvictionPlanAfter) {
         boolean neverHadTypes = CollectionUtils.isEmpty(cacheEvictionPlanBefore.getType()) && CollectionUtils.isEmpty(cacheEvictionPlanAfter.getType());
-        if(neverHadTypes){
+        if (neverHadTypes) {
             return Collections.emptyList();
         }
         boolean hasTypesNow = CollectionUtils.isEmpty(cacheEvictionPlanBefore.getType()) && !CollectionUtils.isEmpty(cacheEvictionPlanAfter.getType());
-        if(hasTypesNow){
+        if (hasTypesNow) {
             return cacheEvictionPlanAfter.getType();
         }
         boolean hadTypesBefore = !CollectionUtils.isEmpty(cacheEvictionPlanBefore.getType()) && CollectionUtils.isEmpty(cacheEvictionPlanAfter.getType());
-        if(hadTypesBefore){
+        if (hadTypesBefore) {
             return cacheEvictionPlanBefore.getType();
         }
         final Stream<String> beforeDiff = cacheEvictionPlanBefore.getType().stream().filter(t -> !cacheEvictionPlanAfter.getType().contains(t));
@@ -104,7 +112,7 @@ public class CacheController {
         return Stream.concat(beforeDiff, afterDiff).collect(Collectors.toList());
     }
 
-    private Set<Tuple<SpaceName, String>> findSpaceTypesForPropertyEviction(Map<String, CacheEvictionPlan> plansBeforeTransaction, Map<String, CacheEvictionPlan> plansAfterTransaction, Set<String> createIds, Set<String> deleteIds, Set<String> updateIds){
+    private Set<Tuple<SpaceName, String>> findSpaceTypesForPropertyEviction(Map<String, CacheEvictionPlan> plansBeforeTransaction, Map<String, CacheEvictionPlan> plansAfterTransaction, Set<String> createIds, Set<String> deleteIds, Set<String> updateIds) {
         //We evict all caches for delete operations
         Stream<Tuple<SpaceName, String>> fromDeleteOperations = getAllSpaceTypesForPropertyEviction(plansBeforeTransaction, deleteIds);
 
@@ -118,19 +126,19 @@ public class CacheController {
             final SpaceName spaceName = new SpaceName(planBefore.getSpace());
             final List<String> changedTypes = getChangedTypes(planBefore, planAfter);
             Set<Tuple<SpaceName, String>> collector = new HashSet<>();
-            if(changedTypes!=null){
-                collector.addAll(changedTypes.stream().map(t -> new Tuple<SpaceName, String>().setA(spaceName).setB(t)).collect(Collectors.toSet()));
+            if (changedTypes != null) {
+                collector.addAll(changedTypes.stream().map(t -> new Tuple<>(spaceName, t)).collect(Collectors.toSet()));
             }
-            if((planBefore.getProperties() == null && planAfter.getProperties() != null) || !planBefore.getProperties().equals(planAfter.getProperties())){
+            if ((planBefore.getProperties() == null && planAfter.getProperties() != null) || !planBefore.getProperties().equals(planAfter.getProperties())) {
                 Set<String> allTypes = new HashSet<>();
-                if(planAfter.getType()!=null){
+                if (planAfter.getType() != null) {
                     allTypes.addAll(planAfter.getType());
                 }
-                if(planBefore.getType()!=null){
+                if (planBefore.getType() != null) {
                     allTypes.addAll(planBefore.getType());
                 }
                 allTypes.forEach(t -> {
-                    collector.add(new Tuple<SpaceName, String>().setA(spaceName).setB(t));
+                    collector.add(new Tuple<>(spaceName, t));
                 });
             }
             return collector;
@@ -139,7 +147,7 @@ public class CacheController {
     }
 
 
-    private Set<Triple<SpaceName, String, String>> findSpaceTypePropertiesForTargetTypeEviction(Map<String, CacheEvictionPlan> plansBeforeTransaction, Map<String, CacheEvictionPlan> plansAfterTransaction, Set<String> createIds, Set<String> deleteIds, Set<String> updateIds, List<String> allRelevantEdges){
+    private Set<Triple<SpaceName, String, String>> findSpaceTypePropertiesForTargetTypeEviction(Map<String, CacheEvictionPlan> plansBeforeTransaction, Map<String, CacheEvictionPlan> plansAfterTransaction, Set<String> createIds, Set<String> deleteIds, Set<String> updateIds, List<String> allRelevantEdges) {
         //We evict all caches for delete operations
         Stream<Triple<SpaceName, String, String>> fromDeleteOperations = getAllSpaceTypePropertiesForTargetTypeEviction(plansBeforeTransaction, deleteIds, allRelevantEdges);
 
@@ -155,12 +163,11 @@ public class CacheController {
     }
 
 
-
     private Stream<Tuple<SpaceName, String>> getAllSpaceTypesForPropertyEviction(Map<String, CacheEvictionPlan> plans, Set<String> ids) {
-       return ids.stream().map(p -> {
+        return ids.stream().map(p -> {
             final CacheEvictionPlan plan = plans.get(p);
             final SpaceName spaceName = new SpaceName(plan.getSpace());
-            return plan.getType().stream().map(t -> new Tuple<SpaceName, String>().setA(spaceName).setB(t)).collect(Collectors.toSet());
+            return plan.getType().stream().map(t -> new Tuple<>(spaceName, t)).collect(Collectors.toSet());
         }).flatMap(Collection::stream);
     }
 
@@ -169,22 +176,25 @@ public class CacheController {
             final CacheEvictionPlan plan = plans.get(p);
             final SpaceName spaceName = new SpaceName(plan.getSpace());
             return plan.getProperties().stream().filter(property -> allRelevantEdges.contains(new ArangoCollectionReference(property, true).getCollectionName()))
-                    .map(property -> plan.getType().stream().map(t -> new Triple<SpaceName, String, String>().setA(spaceName).setB(t).setC(property)).collect(Collectors.toSet())
-            ).flatMap(Collection::stream).collect(Collectors.toSet());
-            }).flatMap(Collection::stream);
+                    .map(property -> plan.getType().stream().map(t -> new Triple<>(spaceName, t, property)).collect(Collectors.toSet())
+                    ).flatMap(Collection::stream).collect(Collectors.toSet());
+        }).flatMap(Collection::stream);
     }
 
-    private boolean hasCreatedOrRemovedSpaces(DataStage stage, Map<String, CacheEvictionPlan> plansBeforeTransaction, Map<String, CacheEvictionPlan> plansAfterTransaction, Set<String> createIds, Set<String> deleteIds){
-        final List<Space> spaces = this.metaDataController.getSpaces(stage, authContext.getUserWithRoles());
+    private boolean hasCreatedOrRemovedSpaces(List<Space> spaces, Map<String, CacheEvictionPlan> plansBeforeTransaction, Map<String, CacheEvictionPlan> plansAfterTransaction, Set<String> createIds, Set<String> deleteIds) {
         final Set<String> reflectedSpaceNames = spaces.stream().filter(Space::isReflected).collect(Collectors.toSet()).stream().map(s -> s.getName().getName()).collect(Collectors.toSet());
         final boolean hasReflectedSpaceOnlyInDelete = deleteIds.stream().map(c -> plansBeforeTransaction.get(c).getSpace()).anyMatch(reflectedSpaceNames::contains);
-        if(hasReflectedSpaceOnlyInDelete){
+        if (hasReflectedSpaceOnlyInDelete) {
             //We can't tell with the given information if the space is gone after the deletion, but we can restrict it to the spaces being reflected only
             return true;
         }
         final Set<String> existingSpaces = spaces.stream().map(s -> s.getName().getName()).collect(Collectors.toSet());
         return createIds.stream().map(c -> plansAfterTransaction.get(c).getSpace()).filter(c -> !InternalSpace.INTERNAL_SPACENAMES.contains(c)).anyMatch(c -> !existingSpaces.contains(c));
     }
+
+    private final Map<Tuple<SpaceName, DataStage>, LocalDateTime> deferredSpaceTypesForCacheEviction = Collections.synchronizedMap(new HashMap<>());
+    private final Map<Tuple<Tuple<SpaceName, String>, DataStage>, LocalDateTime> deferredSpaceTypesForPropertyEviction = Collections.synchronizedMap(new HashMap<>());
+    private final Map<Tuple<Triple<SpaceName, String, String>, DataStage>, LocalDateTime> deferredSpaceTypePropertiesForTargetTypeEviction = Collections.synchronizedMap(new HashMap<>());
 
 
     public void evictCacheByPlan(DataStage stage, List<CacheEvictionPlan> plansBeforeTransaction, List<CacheEvictionPlan> plansAfterTransaction) {
@@ -195,19 +205,53 @@ public class CacheController {
         final Set<String> createIds = getCreateIds(beforeTransactionById, afterTransactionById);
         final Set<String> deleteIds = getDeleteIds(beforeTransactionById, afterTransactionById);
         final Set<String> updateIds = getUpdateIds(beforeTransactionById, afterTransactionById);
+        final List<Space> allSpaces = this.metaDataController.getSpaces(stage, authContext.getUserWithRoles());
 
-        if(hasCreatedOrRemovedSpaces(stage, beforeTransactionById, afterTransactionById, createIds, deleteIds)){
+        if (hasCreatedOrRemovedSpaces(allSpaces, beforeTransactionById, afterTransactionById, createIds, deleteIds)) {
             structureRepository.evictReflectedSpacesCache(stage);
         }
+        final Set<SpaceName> deferredCacheEvictionSpaces = allSpaces.stream().filter(Space::isDeferCache).map(Space::getName).collect(Collectors.toSet());
 
         final Set<SpaceName> spaceTypesForCacheEviction = findSpacesForCacheEviction(beforeTransactionById, afterTransactionById, createIds, deleteIds, updateIds);
-        spaceTypesForCacheEviction.forEach(s -> structureRepository.evictTypesInSpaceCache(stage, s));
+        //Evict all of those which are not deferred
+        spaceTypesForCacheEviction.stream().filter(s -> !deferredCacheEvictionSpaces.contains(s)).forEach(s -> structureRepository.evictTypesInSpaceCache(stage, s));
+        spaceTypesForCacheEviction.stream().filter(deferredCacheEvictionSpaces::contains).forEach(s -> deferredSpaceTypesForCacheEviction.put(new Tuple<>(s, stage), LocalDateTime.now()));
+
 
         final Set<Tuple<SpaceName, String>> spaceTypesForPropertyEviction = findSpaceTypesForPropertyEviction(beforeTransactionById, afterTransactionById, createIds, deleteIds, updateIds);
-        spaceTypesForPropertyEviction.forEach(t -> structureRepository.evictPropertiesOfTypeInSpaceCache(stage, t.getA(), t.getB()));
+        spaceTypesForPropertyEviction.stream().filter(t -> !deferredCacheEvictionSpaces.contains(t.getA())).forEach(t -> structureRepository.evictPropertiesOfTypeInSpaceCache(stage, t.getA(), t.getB()));
+        spaceTypesForPropertyEviction.stream().filter(t -> deferredCacheEvictionSpaces.contains(t.getA())).forEach(t -> deferredSpaceTypesForPropertyEviction.put(new Tuple<>(t, stage), LocalDateTime.now()));
 
         final List<String> allRelevantEdges = structureRepository.getAllRelevantEdges(stage);
         final Set<Triple<SpaceName, String, String>> spaceTypePropertiesForTargetTypeEviction = findSpaceTypePropertiesForTargetTypeEviction(beforeTransactionById, afterTransactionById, createIds, deleteIds, updateIds, allRelevantEdges);
-        spaceTypePropertiesForTargetTypeEviction.forEach(p -> structureRepository.evictTargetTypesCache(stage, p.getA(), p.getB(), p.getC()));
+        spaceTypePropertiesForTargetTypeEviction.stream().filter(p -> !deferredCacheEvictionSpaces.contains(p.getA())).forEach(p -> structureRepository.evictTargetTypesCache(stage, p.getA(), p.getB(), p.getC()));
+        spaceTypePropertiesForTargetTypeEviction.stream().filter(p -> deferredCacheEvictionSpaces.contains(p.getA())).forEach(p -> deferredSpaceTypePropertiesForTargetTypeEviction.put(new Tuple<>(p, stage), LocalDateTime.now()));
+
+
+        scheduler.schedule(this::checkDeferredCacheEviction, DEFER_CACHE_EVICTION_DELAY_IN_S + 1, TimeUnit.SECONDS);
+
+    }
+
+    private static final int DEFER_CACHE_EVICTION_DELAY_IN_S = 10;
+
+    private void checkDeferredCacheEviction() {
+        logger.info("Checking for deferred cache eviction...");
+        deferredSpaceTypesForCacheEviction.keySet().stream().filter(k ->
+                Duration.between(deferredSpaceTypesForCacheEviction.get(k), LocalDateTime.now()).toSeconds()
+                        > DEFER_CACHE_EVICTION_DELAY_IN_S).forEach(k -> {
+            structureRepository.evictTypesInSpaceCache(k.getB(), k.getA());
+            deferredSpaceTypesForCacheEviction.remove(k);
+        });
+        deferredSpaceTypesForPropertyEviction.keySet().stream().filter(k ->
+                Duration.between(deferredSpaceTypesForPropertyEviction.get(k), LocalDateTime.now()).toSeconds() > DEFER_CACHE_EVICTION_DELAY_IN_S).forEach(k -> {
+            structureRepository.evictPropertiesOfTypeInSpaceCache(k.getB(), k.getA().getA(), k.getA().getB());
+            deferredSpaceTypesForPropertyEviction.remove(k);
+        });
+        deferredSpaceTypePropertiesForTargetTypeEviction.keySet().stream().filter(k ->
+                Duration.between(deferredSpaceTypePropertiesForTargetTypeEviction.get(k), LocalDateTime.now()).toSeconds() > DEFER_CACHE_EVICTION_DELAY_IN_S).forEach(k -> {
+            structureRepository.evictTargetTypesCache(k.getB(), k.getA().getA(), k.getA().getB(), k.getA().getC());
+            deferredSpaceTypePropertiesForTargetTypeEviction.remove(k);
+        });
+
     }
 }

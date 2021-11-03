@@ -58,7 +58,7 @@ public class QueriesTest extends AbstractFunctionalityTest {
         List<Tuple<RoleMapping, RoleMapping>> result = new ArrayList<>();
         for (RoleMapping roleMappingA : roleMappingsA) {
             for (RoleMapping roleMappingB : roleMappingsB) {
-                result.add(new Tuple<RoleMapping, RoleMapping>().setA(roleMappingA).setB(roleMappingB));
+                result.add(new Tuple<>(roleMappingA, roleMappingB));
             }
         }
         return result;

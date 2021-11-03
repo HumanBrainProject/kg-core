@@ -573,12 +573,12 @@ public class ArangoRepositoryInstances {
             //We can only make use of a simple mode if the user doesn't have explicit instance permissions
             //If so, we fall back to the slightly slower dynamic resolution since this is rather an edge case.
             if (spaces.isEmpty()) {
-                return new Tuple<DocumentsByTypeMode, Set<SpaceName>>().setA(DocumentsByTypeMode.EMPTY).setB(spaces);
+                return new Tuple<>(DocumentsByTypeMode.EMPTY, spaces);
             } else if (spaces.size() == 1) {
-                return new Tuple<DocumentsByTypeMode, Set<SpaceName>>().setA(DocumentsByTypeMode.SIMPLE).setB(spaces);
+                return new Tuple<>(DocumentsByTypeMode.SIMPLE, spaces);
             }
         }
-        return new Tuple<DocumentsByTypeMode, Set<SpaceName>>().setA(DocumentsByTypeMode.DYNAMIC).setB(spaces);
+        return new Tuple<>(DocumentsByTypeMode.DYNAMIC, spaces);
     }
 
     private enum DocumentsByTypeMode {
