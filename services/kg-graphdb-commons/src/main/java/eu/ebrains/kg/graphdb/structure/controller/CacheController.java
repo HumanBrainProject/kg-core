@@ -233,21 +233,25 @@ public class CacheController {
     }
 
     private static final int DEFER_CACHE_EVICTION_DELAY_IN_S = 10;
+    private static final int DEFER_CACHE_EVICTION_MAX_MAP_ENTRIES = 100000;
 
     private void checkDeferredCacheEviction() {
         logger.info("Checking for deferred cache eviction...");
         deferredSpaceTypesForCacheEviction.keySet().stream().filter(k ->
+                deferredSpaceTypesForCacheEviction.size()>DEFER_CACHE_EVICTION_MAX_MAP_ENTRIES ||
                 Duration.between(deferredSpaceTypesForCacheEviction.get(k), LocalDateTime.now()).toSeconds()
                         > DEFER_CACHE_EVICTION_DELAY_IN_S).forEach(k -> {
             structureRepository.evictTypesInSpaceCache(k.getB(), k.getA());
             deferredSpaceTypesForCacheEviction.remove(k);
         });
         deferredSpaceTypesForPropertyEviction.keySet().stream().filter(k ->
+                deferredSpaceTypesForPropertyEviction.size()>DEFER_CACHE_EVICTION_MAX_MAP_ENTRIES ||
                 Duration.between(deferredSpaceTypesForPropertyEviction.get(k), LocalDateTime.now()).toSeconds() > DEFER_CACHE_EVICTION_DELAY_IN_S).forEach(k -> {
             structureRepository.evictPropertiesOfTypeInSpaceCache(k.getB(), k.getA().getA(), k.getA().getB());
             deferredSpaceTypesForPropertyEviction.remove(k);
         });
         deferredSpaceTypePropertiesForTargetTypeEviction.keySet().stream().filter(k ->
+                deferredSpaceTypePropertiesForTargetTypeEviction.size()>DEFER_CACHE_EVICTION_MAX_MAP_ENTRIES ||
                 Duration.between(deferredSpaceTypePropertiesForTargetTypeEviction.get(k), LocalDateTime.now()).toSeconds() > DEFER_CACHE_EVICTION_DELAY_IN_S).forEach(k -> {
             structureRepository.evictTargetTypesCache(k.getB(), k.getA().getA(), k.getA().getB(), k.getA().getC());
             deferredSpaceTypePropertiesForTargetTypeEviction.remove(k);
