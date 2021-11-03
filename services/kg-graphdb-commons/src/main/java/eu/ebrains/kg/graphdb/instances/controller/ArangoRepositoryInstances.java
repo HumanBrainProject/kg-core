@@ -221,7 +221,7 @@ public class ArangoRepositoryInstances {
                     if (extendedTypeInfo != null) {
                         extendedTypeInfo.keySet().stream().filter(k -> !typeInformationBlacklist.contains(k)).forEach(extendedTypeInfoKey -> typeDefinition.put(extendedTypeInfoKey, extendedTypeInfo.get(extendedTypeInfoKey)));
                     }
-                    NormalizedJsonLd propertyDefinition = extendedTypeInfo.getAsListOf(EBRAINSVocabulary.META_PROPERTIES, NormalizedJsonLd.class).stream()
+                    NormalizedJsonLd propertyDefinition = extendedTypeInfo.getAsListOf(EBRAINSVocabulary.META_PROPERTIES, NormalizedJsonLd.class).stream().filter(Objects::nonNull)
                             .filter(f -> f.identifiers().contains(property))
                             .findFirst()
                             .orElse(null);
