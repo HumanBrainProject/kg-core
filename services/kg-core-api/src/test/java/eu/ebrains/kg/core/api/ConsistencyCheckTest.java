@@ -27,10 +27,7 @@ import eu.ebrains.kg.commons.jsonld.IndexedJsonLdDoc;
 import eu.ebrains.kg.commons.jsonld.JsonLdDoc;
 import eu.ebrains.kg.commons.jsonld.JsonLdId;
 import eu.ebrains.kg.commons.jsonld.NormalizedJsonLd;
-import eu.ebrains.kg.commons.model.IngestConfiguration;
-import eu.ebrains.kg.commons.model.PaginationParam;
-import eu.ebrains.kg.commons.model.ResponseConfiguration;
-import eu.ebrains.kg.commons.model.Result;
+import eu.ebrains.kg.commons.model.*;
 import eu.ebrains.kg.commons.model.external.types.TypeInformation;
 import eu.ebrains.kg.commons.semantics.vocabularies.SchemaOrgVocabulary;
 import eu.ebrains.kg.core.model.ExposedStage;
@@ -63,7 +60,7 @@ public class ConsistencyCheckTest {
     Types types;
 
     PaginationParam EMPTY_PAGINATION = new PaginationParam();
-    ResponseConfiguration DEFAULT_RESPONSE_CONFIG = new ResponseConfiguration();
+    ExtendedResponseConfiguration DEFAULT_RESPONSE_CONFIG = new ExtendedResponseConfiguration();
     IngestConfiguration DEFAULT_INGEST_CONFIG = new IngestConfiguration();
 
     int createInstances = 10;

@@ -24,6 +24,7 @@ package eu.ebrains.kg.core.api.spaces.test;
 
 import com.arangodb.ArangoDB;
 import eu.ebrains.kg.authentication.api.AuthenticationAPI;
+import eu.ebrains.kg.commons.model.ExtendedResponseConfiguration;
 import eu.ebrains.kg.commons.model.IngestConfiguration;
 import eu.ebrains.kg.commons.model.ResponseConfiguration;
 import eu.ebrains.kg.commons.model.Result;
@@ -49,7 +50,7 @@ public class GetSpaceWithPermissionsTest extends AbstractTest {
     @Override
     protected void setup() {
         // We create a new instance so the space is implicitly created.
-        instances.createNewInstance(TestDataFactory.createTestData(smallPayload, 0, true), "functionalityTest", new ResponseConfiguration(), new IngestConfiguration());
+        instances.createNewInstance(TestDataFactory.createTestData(smallPayload, 0, true), "functionalityTest", new ExtendedResponseConfiguration(), new IngestConfiguration());
     }
 
     @Override

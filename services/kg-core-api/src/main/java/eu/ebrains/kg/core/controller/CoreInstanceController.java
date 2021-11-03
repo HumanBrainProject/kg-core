@@ -106,7 +106,7 @@ public class CoreInstanceController {
         this.invitation.calculateInstanceScope(instanceId);
     }
 
-    public ResponseEntity<Result<NormalizedJsonLd>> createNewInstance(JsonLdDoc jsonLdDoc, UUID id, SpaceName s, ResponseConfiguration responseConfiguration, IngestConfiguration ingestConfiguration) {
+    public ResponseEntity<Result<NormalizedJsonLd>> createNewInstance(JsonLdDoc jsonLdDoc, UUID id, SpaceName s, ExtendedResponseConfiguration responseConfiguration, IngestConfiguration ingestConfiguration) {
         NormalizedJsonLd normalizedJsonLd;
         if (ingestConfiguration.isNormalizePayload()) {
             normalizedJsonLd = jsonLd.normalize(jsonLdDoc, true);

@@ -25,6 +25,7 @@ package eu.ebrains.kg.core.api.properties.test;
 import com.arangodb.ArangoDB;
 import eu.ebrains.kg.authentication.api.AuthenticationAPI;
 import eu.ebrains.kg.commons.jsonld.NormalizedJsonLd;
+import eu.ebrains.kg.commons.model.ExtendedResponseConfiguration;
 import eu.ebrains.kg.commons.model.IngestConfiguration;
 import eu.ebrains.kg.commons.model.ResponseConfiguration;
 import eu.ebrains.kg.commons.permission.roles.RoleMapping;
@@ -52,7 +53,7 @@ public class DefinePropertyGlobalTest extends AbstractTest {
     @Override
     protected void setup() {
         // We create a new instance so the type and its properties are implicitly created.
-        instance = assureValidPayload(instances.createNewInstance(TestDataFactory.createTestData(smallPayload, 0, true), "functionalityTest", new ResponseConfiguration(), new IngestConfiguration()));
+        instance = assureValidPayload(instances.createNewInstance(TestDataFactory.createTestData(smallPayload, 0, true), "functionalityTest", new ExtendedResponseConfiguration(), new IngestConfiguration()));
         property = instance.keySet().stream().filter(k -> k.startsWith(TestDataFactory.DYNAMIC_FIELD_PREFIX)).findFirst().orElse(null);
         type = instance.types().get(0);
     }

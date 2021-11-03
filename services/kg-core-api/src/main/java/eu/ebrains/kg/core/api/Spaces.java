@@ -25,6 +25,7 @@ package eu.ebrains.kg.core.api;
 import eu.ebrains.kg.commons.Version;
 import eu.ebrains.kg.commons.config.openApiGroups.Admin;
 import eu.ebrains.kg.commons.config.openApiGroups.Advanced;
+import eu.ebrains.kg.commons.exception.InstanceNotFoundException;
 import eu.ebrains.kg.commons.exception.InvalidRequestException;
 import eu.ebrains.kg.commons.markers.ExposesInputWithoutEnrichedSensitiveData;
 import eu.ebrains.kg.commons.markers.ExposesSpace;
@@ -60,7 +61,10 @@ public class Spaces {
     @Advanced
     public Result<SpaceInformation> getSpace(@PathVariable("space") @Parameter(description = "The space to be read or \"" + SpaceName.PRIVATE_SPACE + "\" for your private space") String space, @RequestParam(value = "permissions", defaultValue = "false") boolean permissions) {
         SpaceInformation s = spaceController.getSpace(SpaceName.fromString(space), permissions);
-        return s != null ? Result.ok(s) : null;
+        if(s != null){
+            return Result.ok(s);
+        }
+        throw new InstanceNotFoundException(String.format("Space %s was not found", space));
     }
 
     @GetMapping

@@ -25,10 +25,7 @@ package eu.ebrains.kg.core.api.types.test;
 import com.arangodb.ArangoDB;
 import eu.ebrains.kg.authentication.api.AuthenticationAPI;
 import eu.ebrains.kg.commons.jsonld.NormalizedJsonLd;
-import eu.ebrains.kg.commons.model.IngestConfiguration;
-import eu.ebrains.kg.commons.model.ResponseConfiguration;
-import eu.ebrains.kg.commons.model.Result;
-import eu.ebrains.kg.commons.model.SpaceName;
+import eu.ebrains.kg.commons.model.*;
 import eu.ebrains.kg.commons.model.external.types.TypeInformation;
 import eu.ebrains.kg.commons.permission.roles.RoleMapping;
 import eu.ebrains.kg.core.api.AbstractTest;
@@ -59,7 +56,7 @@ public class GetTypesByNameTest extends AbstractTest {
     @Override
     protected void setup() {
         // We create a new instance so the type is implicitly created.
-        instances.createNewInstance(TestDataFactory.createTestData(smallPayload, 0, true), "functionalityTest", new ResponseConfiguration(), new IngestConfiguration());
+        instances.createNewInstance(TestDataFactory.createTestData(smallPayload, 0, true), "functionalityTest", new ExtendedResponseConfiguration(), new IngestConfiguration());
 
     }
 
