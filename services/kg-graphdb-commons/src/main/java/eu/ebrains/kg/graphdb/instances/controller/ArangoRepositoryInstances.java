@@ -220,14 +220,14 @@ public class ArangoRepositoryInstances {
                     TypeInformation extendedTypeInfo = extendedTypesByIdentifier.get(type);
                     if (extendedTypeInfo != null) {
                         extendedTypeInfo.keySet().stream().filter(k -> !typeInformationBlacklist.contains(k)).forEach(extendedTypeInfoKey -> typeDefinition.put(extendedTypeInfoKey, extendedTypeInfo.get(extendedTypeInfoKey)));
-                    }
-                    NormalizedJsonLd propertyDefinition = extendedTypeInfo.getAsListOf(EBRAINSVocabulary.META_PROPERTIES, NormalizedJsonLd.class).stream().filter(Objects::nonNull)
-                            .filter(f -> f.identifiers().contains(property))
-                            .findFirst()
-                            .orElse(null);
-                    if (propertyDefinition != null) {
-                        String nameForReverseLink = propertyDefinition.getAs(EBRAINSVocabulary.META_NAME_REVERSE_LINK, String.class);
-                        typeDefinition.put(EBRAINSVocabulary.META_NAME_REVERSE_LINK, nameForReverseLink);
+                        NormalizedJsonLd propertyDefinition = extendedTypeInfo.getAsListOf(EBRAINSVocabulary.META_PROPERTIES, NormalizedJsonLd.class).stream().filter(Objects::nonNull)
+                                .filter(f -> f.identifiers().contains(property))
+                                .findFirst()
+                                .orElse(null);
+                        if (propertyDefinition != null) {
+                            String nameForReverseLink = propertyDefinition.getAs(EBRAINSVocabulary.META_NAME_REVERSE_LINK, String.class);
+                            typeDefinition.put(EBRAINSVocabulary.META_NAME_REVERSE_LINK, nameForReverseLink);
+                        }
                     }
                     Map<String, Object> values = typeMap.get(type);
                     if (values != null && values.get("data") instanceof Collection) {
