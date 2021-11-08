@@ -34,77 +34,39 @@ public class InsertSystemTest extends AbstractInstancesLoadTest {
 
     @Test
     public void testInsertSmallNoLink() throws IOException {
-        testInsert(smallPayload, batchInsertion, true, false, false, null);
+        testInsert(smallPayload, batchInsertion, true,  false, null);
     }
 
     @Test
     public void testInsertSmallImmediateLink() throws IOException {
-        testInsert(smallPayload, batchInsertion, true, false, false, PerformanceTestUtils.Link.PREVIOUS);
-    }
-
-    @Test
-    public void testInsertSmallDeferredLink() throws IOException {
-        testInsert(smallPayload, batchInsertion, true, false, false, PerformanceTestUtils.Link.NEXT);
-    }
-
-    @Test
-    public void testInsertNoLinkDeferred() throws IOException {
-        testInsert(smallPayload, batchInsertion, true, true, false, null);
+        testInsert(smallPayload, batchInsertion, true,  false, PerformanceTestUtils.Link.PREVIOUS);
     }
 
     @Test
     public void testInsertSmallNoLinkNormalize() throws IOException {
-        testInsert(smallPayload, batchInsertion, true, false, true, null);
-    }
-
-    @Test
-    public void testInsertSmallDeferredLinkNormalize() throws IOException {
-        testInsert(smallPayload, batchInsertion, true, false, true, PerformanceTestUtils.Link.NEXT);
-    }
-
-    @Test
-    public void testInsertSmallNoLinkDeferredNormalize() throws IOException {
-        testInsert(smallPayload, batchInsertion, true, true, true, null);
+        testInsert(smallPayload, batchInsertion, true,  true, null);
     }
 
     @Test
     public void testInsertAverageNoLink() throws IOException {
-        testInsert(averagePayload, batchInsertion, true, false, false, null);
-    }
-
-    @Test
-    public void testInsertAverageNoLinkDeferred() throws IOException {
-        testInsert(averagePayload, batchInsertion, true, true, false, null);
+        testInsert(averagePayload, batchInsertion, true,  false, null);
     }
 
     @Test
     public void testInsertAverageNoLinkNormalize() throws IOException {
-        testInsert(averagePayload, batchInsertion, true, false, true, null);
+        testInsert(averagePayload, batchInsertion, true,  true, null);
     }
 
-    @Test
-    public void testInsertAverageNoLinkDeferredNormalize() throws IOException {
-        testInsert(averagePayload, batchInsertion, true, true, true, null);
-    }
 
     @Test
     public void testInsertBigNoLinkInference() throws IOException {
-        testInsert(bigPayload, batchInsertion, true, false, false, null);
-    }
-
-    @Test
-    public void testInsertBigNoLinkInferenceDeferred() throws IOException {
-        testInsert(bigPayload, batchInsertion, true, true, false, null);
+        testInsert(bigPayload, batchInsertion, true,  false, null);
     }
 
     @Test
     public void testInsertBigNoLinkInferenceNormalize() throws IOException {
-        testInsert(bigPayload, batchInsertion, true, false, true, null);
+        testInsert(bigPayload, batchInsertion, true, true, null);
     }
 
-    @Test
-    public void testInsertBigNoLinkInferenceDeferredNormalize() throws IOException {
-        testInsert(bigPayload, batchInsertion, true, true, true, null);
-    }
 
 }

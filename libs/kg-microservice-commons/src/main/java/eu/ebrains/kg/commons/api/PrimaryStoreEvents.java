@@ -32,9 +32,7 @@ public interface PrimaryStoreEvents {
 
     interface Client extends PrimaryStoreEvents {}
 
-    Set<InstanceId> postEvent(Event event, boolean deferInference);
-
-    void inferDeferred(String space, boolean sync);
+    Set<InstanceId> postEvent(Event event);
 
     void infer(String space, UUID id);
 }

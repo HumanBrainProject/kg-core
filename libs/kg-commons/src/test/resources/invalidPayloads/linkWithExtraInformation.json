@@ -1,0 +1,7 @@
+{
+  "@type": ["http://Test"],
+  "http://link": {
+    "@id": "http://anotherInstance",
+    "http://someProperty": "foo"
+  }
+}

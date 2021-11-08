@@ -50,7 +50,7 @@ public class GetSpacesWithPermissionsTest extends AbstractTest {
     @Override
     protected void setup() {
         // We create a new instance so the space is implicitly created.
-        instances.createNewInstance(TestDataFactory.createTestData(smallPayload, 0, true), space, new ExtendedResponseConfiguration(), new IngestConfiguration());
+        instances.createNewInstance(TestDataFactory.createTestData(smallPayload, 0, true), space, new ExtendedResponseConfiguration());
     }
 
     @Override

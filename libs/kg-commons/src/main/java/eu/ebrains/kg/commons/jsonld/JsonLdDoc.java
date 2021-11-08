@@ -22,7 +22,7 @@
 
 package eu.ebrains.kg.commons.jsonld;
 
-import eu.ebrains.kg.commons.model.SpaceName;
+import eu.ebrains.kg.commons.exception.InvalidRequestException;
 import eu.ebrains.kg.commons.semantics.vocabularies.HBPVocabulary;
 import eu.ebrains.kg.commons.semantics.vocabularies.SchemaOrgVocabulary;
 
@@ -51,6 +51,17 @@ public class JsonLdDoc extends DynamicJson {
         return getAsListOf(JsonLdConsts.TYPE, String.class);
     }
 
+    public void normalizeTypes() {
+        visitKeys((map, key) -> {
+            if (JsonLdConsts.TYPE.equals(key)) {
+                final Object type = map.get(key);
+                if (type != null && !(type instanceof Collection)) {
+                    map.put(JsonLdConsts.TYPE, Collections.singletonList(type));
+                }
+            }
+        });
+    }
+
     public void addTypes(String... types) {
         List<String> allTypes = new ArrayList<>(types());
         for (String type : types) {
@@ -65,7 +76,7 @@ public class JsonLdDoc extends DynamicJson {
         return getAsListOf(SchemaOrgVocabulary.IDENTIFIER, String.class).stream().filter(this::isValidIdentifier).collect(Collectors.toSet());
     }
 
-    private boolean isValidIdentifier(String identifier){
+    private boolean isValidIdentifier(String identifier) {
         return !identifier.trim().isBlank();
     }
 
@@ -82,53 +93,134 @@ public class JsonLdDoc extends DynamicJson {
     }
 
     public void setId(JsonLdId id) {
-        put(JsonLdConsts.ID, id!=null ? id.getId() : null);
+        put(JsonLdConsts.ID, id != null ? id.getId() : null);
     }
 
     public JsonLdId id() {
         String id = getAs(JsonLdConsts.ID, String.class);
-        return id!=null ? new JsonLdId(id) : null;
+        return id != null ? new JsonLdId(id) : null;
     }
 
     public void addProperty(Object key, Object value) {
         put(key.toString(), value);
     }
 
-    public void addReference(String propertyName, String url){
+    public void addReference(String propertyName, String url) {
         Map<String, String> reference = new HashMap<>();
         reference.put(JsonLdConsts.ID, url);
         addToProperty(propertyName, reference);
     }
 
-    public JsonLdDoc addToProperty(String propertyName, Object value){
+    public JsonLdDoc addToProperty(String propertyName, Object value) {
         addToProperty(propertyName, value, this);
         return this;
     }
 
-    public boolean isOfType(String lookupType){
+    public boolean isOfType(String lookupType) {
         Object type = get(JsonLdConsts.TYPE);
-        if(type!=null && lookupType!=null){
-            if(type instanceof String){
+        if (type != null && lookupType != null) {
+            if (type instanceof String) {
                 return type.equals(lookupType);
-            }
-            else if(type instanceof Collection){
-                return ((Collection)type).contains(lookupType);
+            } else if (type instanceof Collection) {
+                return ((Collection) type).contains(lookupType);
             }
         }
         return false;
     }
 
-    public String primaryIdentifier(){
-        if(this.containsKey(SchemaOrgVocabulary.IDENTIFIER)){
-            Object identifier = get(SchemaOrgVocabulary.IDENTIFIER);
-            if(identifier instanceof List && !((List)identifier).isEmpty()){
-                for (Object o : ((List) identifier)) {
-                    if(o instanceof String){
-                        return (String)o;
-                    }
+    public boolean hasType() {
+        return hasType(this);
+    }
+
+    private boolean hasType(Map<?,?> object) {
+        return object.containsKey(JsonLdConsts.TYPE);
+    }
+
+    private boolean isValidType(Object type) {
+        if (type instanceof List && !((List<?>) type).isEmpty()) {
+            for (Object o : ((List<?>) type)) {
+                if (!isValidIRI(o)) {
+                    return false;
                 }
             }
-            else if(identifier instanceof String){
+            return true;
+        }
+        return false;
+    }
+
+    private void validateEmbeddedInstances(String key, Object value){
+        if(value instanceof Collection){
+            for (Object o : ((Collection<?>) value)) {
+                doValidateEmbeddedInstance(key, o);
+            }
+        }
+        else{
+            doValidateEmbeddedInstance(key, value);
+        }
+    }
+
+    private void doValidateEmbeddedInstance(String key, Object o){
+        if(o instanceof Map && !((Map<?, ?>) o).containsKey(JsonLdConsts.ID)){
+            //It's an embedded instance
+            final Map<?,?> embeddedInstance = (Map<?,?>) o;
+            if(!embeddedInstance.containsKey(JsonLdConsts.TYPE)){
+                throw new InvalidRequestException(String.format("The embedded structure of %s needs to provide an @type", key));
+            }
+        }
+    }
+
+    public void validate(boolean requiresTypeAtRootLevel){
+        visitKeys((map, key)->{
+            boolean rootLevel = map == this;
+            final Object value = map.get(key);
+            if(requiresTypeAtRootLevel && rootLevel){
+                final Object type = map.get(JsonLdConsts.TYPE);
+                if(type==null){
+                    throw new InvalidRequestException("A payload needs to provide the @type argument");
+                }
+            }
+            switch (key){
+                case JsonLdConsts.ID:
+                    if(!isValidIRI(value)){
+                        throw new InvalidRequestException(String.format("Payload contains at least one invalid @id: %s", value));
+                    }
+                    if(!rootLevel && map.keySet().size()>1){
+                        //If we're not at the root level, the "@id" should be the only element in a map
+                        throw new InvalidRequestException(String.format("The reference to %s contained additional fields -> this is not allowed", value));
+                    }
+                    break;
+                case JsonLdConsts.TYPE:
+                    if(!isValidType(value)){
+                        throw new InvalidRequestException("@type should contain a list of valid urls");
+                    }
+                    break;
+                default:
+                    if(!isInternalKey(key)) {
+                        if (!isValidIRI(key)) {
+                            throw new InvalidRequestException(String.format("The property %s is not fully qualified", key));
+                        }
+                        validateEmbeddedInstances(key, value);
+                    }
+                    break;
+            }
+        });
+
+    }
+
+    private boolean isValidIRI(Object value) {
+        return value instanceof String && ((String) value).matches("http(s?)://.*");
+    }
+
+    public String primaryIdentifier() {
+        if (this.containsKey(SchemaOrgVocabulary.IDENTIFIER)) {
+            Object identifier = get(SchemaOrgVocabulary.IDENTIFIER);
+            if (identifier instanceof List && !((List) identifier).isEmpty()) {
+                for (Object o : ((List) identifier)) {
+                    if (o instanceof String) {
+                        return (String) o;
+                    }
+                }
+            } else if (identifier instanceof String) {
                 return (String) identifier;
             }
         }
@@ -136,35 +228,33 @@ public class JsonLdDoc extends DynamicJson {
     }
 
 
-    public void addAlternative(String propertyName, Alternative value){
-        Map<String, Object> alternatives = (Map<String, Object>)get(HBPVocabulary.INFERENCE_ALTERNATIVES);
-        if(alternatives==null){
+    public void addAlternative(String propertyName, Alternative value) {
+        Map<String, Object> alternatives = (Map<String, Object>) get(HBPVocabulary.INFERENCE_ALTERNATIVES);
+        if (alternatives == null) {
             alternatives = new TreeMap<>();
             put(HBPVocabulary.INFERENCE_ALTERNATIVES, alternatives);
         }
         Object v;
-        if(alternatives.isEmpty()){
+        if (alternatives.isEmpty()) {
             v = new ArrayList<Alternative>();
             ((List) v).add(value);
-        }else{
+        } else {
             v = value;
         }
-        if(!value.getUserIds().isEmpty() && !value.getUserIds().stream().allMatch(Objects::isNull)){
+        if (!value.getUserIds().isEmpty() && !value.getUserIds().stream().allMatch(Objects::isNull)) {
             addToProperty(propertyName, v, alternatives);
         }
     }
 
-    private static void addToProperty(String propertyName, Object value, Map map){
+    private static void addToProperty(String propertyName, Object value, Map map) {
         Object o = map.get(propertyName);
-        if(o==null){
+        if (o == null) {
             map.put(propertyName, value);
-        }
-        else if(o instanceof Collection){
-            if(!((Collection)o).contains(value)) {
+        } else if (o instanceof Collection) {
+            if (!((Collection) o).contains(value)) {
                 ((Collection) o).add(value);
             }
-        }
-        else if(!o.equals(value)){
+        } else if (!o.equals(value)) {
             List<Object> list = new ArrayList<>();
             list.add(o);
             list.add(value);
@@ -172,42 +262,41 @@ public class JsonLdDoc extends DynamicJson {
         }
     }
 
-    public void processLinks(Consumer<Map> referenceConsumer){
+    public void processLinks(Consumer<Map> referenceConsumer) {
         processLinks(referenceConsumer, this, true);
     }
 
-    private void processLinks(Consumer<Map> referenceConsumer, Map currentMap, boolean root){
+    private void processLinks(Consumer<Map> referenceConsumer, Map currentMap, boolean root) {
         //Skip root-id
-        if(!root && currentMap.containsKey(JsonLdConsts.ID)){
+        if (!root && currentMap.containsKey(JsonLdConsts.ID)) {
             Object id = currentMap.get(JsonLdConsts.ID);
-            if(id!=null){
+            if (id != null) {
                 referenceConsumer.accept(currentMap);
             }
-        }
-        else {
+        } else {
             for (Object key : currentMap.keySet()) {
                 Object value = currentMap.get(key);
-                if(value instanceof Map){
-                    processLinks(referenceConsumer, (Map)value, false);
+                if (value instanceof Map) {
+                    processLinks(referenceConsumer, (Map) value, false);
                 }
             }
         }
     }
 
-    public void replaceNamespace(String oldNamespace, String newNamespace){
+    public void replaceNamespace(String oldNamespace, String newNamespace) {
         replaceNamespace(oldNamespace, newNamespace, this);
     }
 
-    private void replaceNamespace(String oldNamespace, String newNamespace, Map currentMap){
+    private void replaceNamespace(String oldNamespace, String newNamespace, Map currentMap) {
         HashSet keyList = new HashSet<>(currentMap.keySet());
         for (Object key : keyList) {
-            if(key instanceof String){
-                if(((String)key).startsWith(oldNamespace)){
+            if (key instanceof String) {
+                if (((String) key).startsWith(oldNamespace)) {
                     Object value = currentMap.remove(key);
-                    if(value instanceof Map){
-                        replaceNamespace(oldNamespace, newNamespace, (Map)value);
+                    if (value instanceof Map) {
+                        replaceNamespace(oldNamespace, newNamespace, (Map) value);
                     }
-                    currentMap.put(newNamespace+((String)key).substring(oldNamespace.length()), value);
+                    currentMap.put(newNamespace + ((String) key).substring(oldNamespace.length()), value);
                 }
             }
         }

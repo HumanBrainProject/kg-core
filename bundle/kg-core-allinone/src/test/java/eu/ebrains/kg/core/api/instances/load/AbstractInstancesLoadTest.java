@@ -23,7 +23,6 @@
 package eu.ebrains.kg.core.api.instances.load;
 
 import eu.ebrains.kg.commons.jsonld.NormalizedJsonLd;
-import eu.ebrains.kg.commons.model.IngestConfiguration;
 import eu.ebrains.kg.commons.model.Result;
 import eu.ebrains.kg.core.api.Inference;
 import eu.ebrains.kg.core.api.Instances;
@@ -34,8 +33,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 
 import java.io.IOException;
-import java.time.Duration;
-import java.time.Instant;
 import java.util.List;
 import java.util.Objects;
 
@@ -49,7 +46,7 @@ public class AbstractInstancesLoadTest extends AbstractLoadTest {
 
 
     // INSERTION
-    protected void testInsert(int numberOfFields, int numberOfIterations, boolean parallelize, boolean deferInference, boolean normalize, PerformanceTestUtils.Link link) throws IOException {
+    protected void testInsert(int numberOfFields, int numberOfIterations, boolean parallelize, boolean normalize, PerformanceTestUtils.Link link) throws IOException {
         StringBuilder title = new StringBuilder();
         switch(numberOfFields){
             case smallPayload:
@@ -68,34 +65,20 @@ public class AbstractInstancesLoadTest extends AbstractLoadTest {
         title.append(", ");
         title.append(link == null ? "no link" : link == PerformanceTestUtils.Link.PREVIOUS ? "immediate link" : "deferred link");
         title.append(", ");
-        title.append(deferInference ? "deferred / async" : "sync");
-        title.append(", ");
         title.append(normalize ? "normalization" : "no normalization");
         utils.addSection(title.toString());
 
         // When
-        List<ResponseEntity<Result<NormalizedJsonLd>>> results = utils.executeMany(numberOfFields, normalize, numberOfIterations, parallelize, link, p -> instances.createNewInstance(p, "test", DEFAULT_RESPONSE_CONFIG, new IngestConfiguration().setNormalizePayload(normalize).setDeferInference(deferInference)));
+        List<ResponseEntity<Result<NormalizedJsonLd>>> results = utils.executeMany(numberOfFields, normalize, numberOfIterations, parallelize, link, p -> instances.createNewInstance(p, "test", DEFAULT_RESPONSE_CONFIG));
 
         //Then
         for (int i = 0; i < results.size(); i++) {
             System.out.printf("Result %d: %d ms%n", i, Objects.requireNonNull(results.get(i).getBody()).getDurationInMs());
         }
-
-        if (deferInference) {
-            triggerDeferredInference();
-        }
     }
 
     protected List<NormalizedJsonLd> getAllInstancesFromInProgress(ExposedStage stage) {
         return this.instances.getInstances(stage, type, null, null, null, null, DEFAULT_RESPONSE_CONFIG, EMPTY_PAGINATION).getData();
-    }
-
-    protected void triggerDeferredInference() {
-        Instant start = Instant.now();
-        System.out.println("Trigger inference");
-        inference.triggerDeferredInference(true, "test");
-        Instant end = Instant.now();
-        System.out.printf("Inference handled in %d ms%n", Duration.between(start, end).toMillis());
     }
 
 }

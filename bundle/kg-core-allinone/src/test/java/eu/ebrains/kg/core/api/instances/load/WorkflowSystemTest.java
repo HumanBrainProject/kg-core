@@ -53,10 +53,10 @@ public class WorkflowSystemTest extends AbstractInstancesLoadTest {
 
 
     @Test
-    public void testReleaseAndUnreleaseAndReReleaseInstance() throws IOException {
+    public void testReleaseAndUnreleaseAndReReleaseInstance() {
         //Given
         JsonLdDoc payload = TestDataFactory.createTestData(smallPayload, true, 0, null);
-        ResponseEntity<Result<NormalizedJsonLd>> instance = instances.createNewInstance(payload, "test", DEFAULT_RESPONSE_CONFIG, DEFAULT_INGEST_CONFIG);
+        ResponseEntity<Result<NormalizedJsonLd>> instance = instances.createNewInstance(payload, "test", DEFAULT_RESPONSE_CONFIG);
         JsonLdId id = instance.getBody().getData().id();
         IndexedJsonLdDoc from = IndexedJsonLdDoc.from(instance.getBody().getData());
 
@@ -81,7 +81,7 @@ public class WorkflowSystemTest extends AbstractInstancesLoadTest {
     public void testInsertAndDeleteInstance() throws IOException {
         //Given
         JsonLdDoc payload = TestDataFactory.createTestData(smallPayload, true, 0, null);
-        ResponseEntity<Result<NormalizedJsonLd>> instance = instances.createNewInstance(payload, "test", DEFAULT_RESPONSE_CONFIG, DEFAULT_INGEST_CONFIG);
+        ResponseEntity<Result<NormalizedJsonLd>> instance = instances.createNewInstance(payload, "test", DEFAULT_RESPONSE_CONFIG);
         JsonLdId id = instance.getBody().getData().id();
 
         //When
@@ -101,13 +101,13 @@ public class WorkflowSystemTest extends AbstractInstancesLoadTest {
         //Given
         JsonLdDoc payload = TestDataFactory.createTestData(smallPayload, true, 0, null);
 
-        ResponseEntity<Result<NormalizedJsonLd>> instance = instances.createNewInstance(payload, "test", DEFAULT_RESPONSE_CONFIG, DEFAULT_INGEST_CONFIG);
+        ResponseEntity<Result<NormalizedJsonLd>> instance = instances.createNewInstance(payload, "test", DEFAULT_RESPONSE_CONFIG);
         JsonLdId id = instance.getBody().getData().id();
 
         //When
         JsonLdDoc doc = new JsonLdDoc();
         doc.addProperty("https://core.kg.ebrains.eu/fooE", "fooEUpdated");
-        ResponseEntity<Result<NormalizedJsonLd>> resultResponseEntity = instances.contributeToInstancePartialReplacement(doc, idUtils.getUUID(id), DEFAULT_RESPONSE_CONFIG, DEFAULT_INGEST_CONFIG);
+        ResponseEntity<Result<NormalizedJsonLd>> resultResponseEntity = instances.contributeToInstancePartialReplacement(doc, idUtils.getUUID(id), DEFAULT_RESPONSE_CONFIG);
 
         //Then
         assertEquals("fooEUpdated", resultResponseEntity.getBody().getData().getAs("https://core.kg.ebrains.eu/fooE", String.class));
@@ -118,7 +118,7 @@ public class WorkflowSystemTest extends AbstractInstancesLoadTest {
     public void testFullCycle() throws IOException {
         //Given
         JsonLdDoc payload = TestDataFactory.createTestData(smallPayload, true, 0, null);
-        ResponseEntity<Result<NormalizedJsonLd>> instance = instances.createNewInstance(payload, "test", DEFAULT_RESPONSE_CONFIG, DEFAULT_INGEST_CONFIG);
+        ResponseEntity<Result<NormalizedJsonLd>> instance = instances.createNewInstance(payload, "test", DEFAULT_RESPONSE_CONFIG);
         JsonLdId id = instance.getBody().getData().id();
         IndexedJsonLdDoc from = IndexedJsonLdDoc.from(instance.getBody().getData());
 
@@ -126,7 +126,7 @@ public class WorkflowSystemTest extends AbstractInstancesLoadTest {
         //Update
         JsonLdDoc doc = new JsonLdDoc();
         doc.addProperty("https://core.kg.ebrains.eu/fooE", "fooEUpdated");
-        ResponseEntity<Result<NormalizedJsonLd>> resultResponseEntity = instances.contributeToInstancePartialReplacement(doc, idUtils.getUUID(id), DEFAULT_RESPONSE_CONFIG, DEFAULT_INGEST_CONFIG);
+        ResponseEntity<Result<NormalizedJsonLd>> resultResponseEntity = instances.contributeToInstancePartialReplacement(doc, idUtils.getUUID(id), DEFAULT_RESPONSE_CONFIG);
 
         //Then
         assertEquals("fooEUpdated", resultResponseEntity.getBody().getData().getAs("https://core.kg.ebrains.eu/fooE", String.class));

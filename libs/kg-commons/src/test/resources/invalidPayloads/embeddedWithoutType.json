@@ -1,0 +1,6 @@
+{
+  "@type": ["http://Test"],
+  "http://embedded": {
+    "http://someProperty": "foo"
+  }
+}

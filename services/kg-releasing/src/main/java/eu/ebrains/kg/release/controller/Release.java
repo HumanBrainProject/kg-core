@@ -54,7 +54,7 @@ public class Release {
             //Revision is optional -> if not provided, we just continue with the releasing process.
             throw new IllegalArgumentException("Incorrect revision provided");
         }
-        primaryStoreEvents.postEvent(new Event(space, id, jsonLdDoc.getDoc(), Event.Type.RELEASE, new Date()), false);
+        primaryStoreEvents.postEvent(new Event(space, id, jsonLdDoc.getDoc(), Event.Type.RELEASE, new Date()));
     }
 
     public void unrelease(SpaceName space, UUID id) {
@@ -62,7 +62,7 @@ public class Release {
         if (jsonLdDoc == null) {
             throw new IllegalArgumentException(String.format("Instance %s/%s not found", space.getName(), id));
         }
-        primaryStoreEvents.postEvent(new Event(space, id, jsonLdDoc.getDoc(), Event.Type.UNRELEASE, new Date()), false);
+        primaryStoreEvents.postEvent(new Event(space, id, jsonLdDoc.getDoc(), Event.Type.UNRELEASE, new Date()));
     }
 
     public ReleaseStatus getStatus(SpaceName space, UUID id, ReleaseTreeScope treeScope) {

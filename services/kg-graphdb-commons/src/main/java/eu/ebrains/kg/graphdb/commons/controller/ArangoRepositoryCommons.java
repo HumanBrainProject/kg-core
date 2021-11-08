@@ -198,9 +198,9 @@ public class ArangoRepositoryCommons {
 
     public void executeTransactional(DataStage stage, List<? extends DBOperation> operations) {
         UUID transactionId = UUID.randomUUID();
-        logger.debug(String.format("Executing transaction %s on stage %s ", transactionId.toString(), stage.name()));
+        logger.debug(String.format("Executing transaction %s on stage %s ", transactionId, stage.name()));
         executeTransactional(stage, databases.getByStage(stage), operations);
-        logger.debug(String.format("Finished transaction %s on stage %s", transactionId.toString(), stage.name()));
+        logger.debug(String.format("Finished transaction %s on stage %s", transactionId, stage.name()));
     }
 
 
@@ -290,7 +290,6 @@ public class ArangoRepositoryCommons {
             ArangoCollectionReference collection = upsert.getDocumentReference().getArangoCollectionReference();
             ArangoDocument arangoDocument = ArangoDocument.from(upsert.getPayload());
             arangoDocument.asIndexedDoc().setCollection(arangoDocument.getId().getArangoCollectionReference().getCollectionName());
-            arangoDocument.getDoc().normalizeTypes();
             arangoDocument.asIndexedDoc().updateIdentifiers();
             arangoDocument.setKeyBasedOnId();
             insertedDocuments.computeIfAbsent(collection, x->new ArrayList<>()).add(jsonAdapter.toJson(upsert.getPayload()));

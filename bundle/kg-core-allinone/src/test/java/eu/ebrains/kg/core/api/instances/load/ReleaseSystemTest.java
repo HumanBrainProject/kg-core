@@ -56,7 +56,7 @@ public class ReleaseSystemTest extends AbstractInstancesLoadTest {
     @Test
     public void testReleaseSingleAverageNoLink() throws IOException {
         //Given
-        testInsert(averagePayload, 1, false, false, false, null);
+        testInsert(averagePayload, 1, false, false, null);
         List<NormalizedJsonLd> allInstancesFromInProgress = getAllInstancesFromInProgress(ExposedStage.IN_PROGRESS).subList(0, batchInsertion);
         //When
         long startTime = new Date().getTime();
@@ -72,7 +72,7 @@ public class ReleaseSystemTest extends AbstractInstancesLoadTest {
     @Test
     public void testReleaseSingleAverageNoLinkfullParallelism() throws IOException, InterruptedException {
         //Given
-        testInsert(averagePayload, 1, false, false, false, null);
+        testInsert(averagePayload, 1, false,  false, null);
         List<NormalizedJsonLd> allInstancesFromInProgress = getAllInstancesFromInProgress(ExposedStage.IN_PROGRESS).subList(0, batchInsertion);
 
         //When
@@ -99,7 +99,7 @@ public class ReleaseSystemTest extends AbstractInstancesLoadTest {
         List<ResponseEntity<Result<NormalizedJsonLd>>> l = new ArrayList<>();
         for (int i = 0; i < smallBatchInsertion; i++) {
             Mockito.doReturn(i).when(testInformation).getExecutionNumber();
-            ResponseEntity<Result<NormalizedJsonLd>> instance = instances.createNewInstance(payload, "test", DEFAULT_RESPONSE_CONFIG, DEFAULT_INGEST_CONFIG);
+            ResponseEntity<Result<NormalizedJsonLd>> instance = instances.createNewInstance(payload, "test", DEFAULT_RESPONSE_CONFIG);
             l.add(instance);
         }
 

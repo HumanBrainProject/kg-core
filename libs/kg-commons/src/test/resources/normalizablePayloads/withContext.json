@@ -1,0 +1,8 @@
+{
+  "@context": {
+    "@vocab": "http://schema.org/"
+  },
+  "@type": "http://Test",
+  "name": "test"
+
+}

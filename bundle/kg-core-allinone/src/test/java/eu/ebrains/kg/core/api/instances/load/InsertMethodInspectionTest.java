@@ -33,19 +33,19 @@ public class InsertMethodInspectionTest extends AbstractInstancesLoadTest {
 
     @Test
     public void methodInspectionInsertSmallNoLink() throws IOException {
-        testInsert(smallPayload, batchInsertion, false, false, false, null);
+        testInsert(smallPayload, batchInsertion, false, false,  null);
 
     }
 
     @Test
     public void methodInspectionInsertSmallNoLinkNormalize() throws IOException {
-        testInsert(smallPayload, batchInsertion, false, false, true, null);
+        testInsert(smallPayload, batchInsertion, false, true, null);
 
     }
 
     @Test
     public void methodInspectionInsertAverageImmediateLink() throws IOException {
-        testInsert(averagePayload, batchInsertion, false, false, true, PerformanceTestUtils.Link.PREVIOUS);
+        testInsert(averagePayload, batchInsertion, false,  true, PerformanceTestUtils.Link.PREVIOUS);
     }
 
 }

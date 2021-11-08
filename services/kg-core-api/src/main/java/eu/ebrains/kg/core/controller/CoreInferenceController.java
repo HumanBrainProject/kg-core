@@ -122,7 +122,4 @@ public class CoreInferenceController {
         return uuid;
     }
 
-    public void triggerDeferredInference(SpaceName space, boolean synchronous) {
-        primaryStoreEvents.inferDeferred(space.getName(), synchronous);
-    }
 }

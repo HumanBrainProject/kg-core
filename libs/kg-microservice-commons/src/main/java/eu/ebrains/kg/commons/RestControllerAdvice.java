@@ -23,7 +23,6 @@
 package eu.ebrains.kg.commons;
 
 import eu.ebrains.kg.commons.exception.*;
-import eu.ebrains.kg.commons.model.IngestConfiguration;
 import eu.ebrains.kg.commons.model.PaginationParam;
 import eu.ebrains.kg.commons.model.ResponseConfiguration;
 import eu.ebrains.kg.commons.model.Result;
@@ -37,15 +36,6 @@ import org.springframework.web.context.request.WebRequest;
  */
 @ControllerAdvice(annotations = RestController.class)
 public class RestControllerAdvice {
-
-    @ModelAttribute
-    public IngestConfiguration ingestConfiguration(@RequestParam(value = "deferInference", required = false, defaultValue = "false") boolean deferInference, @RequestParam(value = "normalizePayload", required = false, defaultValue = "true") boolean normalizePayload) {
-        IngestConfiguration ingestConfiguration = new IngestConfiguration();
-        ingestConfiguration.setDeferInference(deferInference);
-        ingestConfiguration.setNormalizePayload(normalizePayload);
-        return ingestConfiguration;
-    }
-
 
     @ModelAttribute
     public ResponseConfiguration responseConfiguration(@RequestParam(value = "returnPayload", required = false, defaultValue = "true") boolean returnPayload, @RequestParam(value = "returnPermissions", required = false, defaultValue = "false") boolean returnPermissions, @RequestParam(value = "returnAlternatives", required = false, defaultValue = "false") boolean returnAlternatives, @RequestParam(value = "returnEmbedded", required = false, defaultValue = "true") boolean returnEmbedded) {
@@ -73,6 +63,7 @@ public class RestControllerAdvice {
     protected ResponseEntity<?> handleInstanceNotFound(RuntimeException ex, WebRequest request) {
         return ResponseEntity.notFound().build();
     }
+
 
     @ExceptionHandler({InvalidRequestException.class, AmbiguousException.class, IllegalArgumentException.class})
     protected ResponseEntity<?> handleInvalidRequest(RuntimeException ex, WebRequest request) {

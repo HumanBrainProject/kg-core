@@ -27,8 +27,10 @@ import eu.ebrains.kg.commons.semantics.vocabularies.EBRAINSVocabulary;
 
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.*;
-import java.util.function.BiConsumer;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
 
 /**
  * A  JSON-LD in compacted format with applied context. It is the JSON-LD which comes the closest to basic JSON.
@@ -51,12 +53,6 @@ public class NormalizedJsonLd extends JsonLdDoc {
         return identifiers;
     }
 
-    public void normalizeTypes() {
-        Object type = get(JsonLdConsts.TYPE);
-        if (type != null && !(type instanceof Collection)) {
-            put(JsonLdConsts.TYPE, Collections.singletonList(type));
-        }
-    }
 
     public void resolvePrivateSpace(SpaceName privateSpace){
         final String s = getAs(EBRAINSVocabulary.META_SPACE, String.class);

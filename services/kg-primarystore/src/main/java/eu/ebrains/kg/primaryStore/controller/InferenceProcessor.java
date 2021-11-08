@@ -27,18 +27,14 @@ import eu.ebrains.kg.commons.api.Inference;
 import eu.ebrains.kg.commons.model.DataStage;
 import eu.ebrains.kg.commons.model.PersistedEvent;
 import eu.ebrains.kg.commons.model.SpaceName;
-import eu.ebrains.kg.primaryStore.model.DeferredInference;
-import eu.ebrains.kg.primaryStore.model.ExecutedDeferredInference;
 import eu.ebrains.kg.primaryStore.model.FailedEvent;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Component;
 
 import java.time.ZonedDateTime;
 import java.util.List;
 import java.util.UUID;
-import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 
 @Component
@@ -46,14 +42,11 @@ public class InferenceProcessor {
 
     private final Indexing.Client indexing;
 
-
     private final EventRepository eventRepository;
 
     private final EventController eventController;
 
     private final Inference.Client inference;
-
-    private static final int LIMIT_DEFERRED_INFERENCE_RETRIES = 10;
 
     private final Logger logger = LoggerFactory.getLogger(getClass());
 
@@ -62,34 +55,6 @@ public class InferenceProcessor {
         this.eventRepository = eventRepository;
         this.eventController = eventController;
         this.inference = inference;
-    }
-
-    @Async
-    public CompletableFuture<ExecutedDeferredInference> asyncDoDeferInference(DeferredInference deferredInference){
-        return CompletableFuture.completedFuture(doDeferInference(deferredInference,  0));
-    }
-
-    private ExecutedDeferredInference doDeferInference(DeferredInference deferredInference, int retry){
-        try {
-            List<PersistedEvent> persistedEvents = triggerInference(deferredInference.getSpace(), deferredInference.getUuid());
-            eventRepository.removeDeferredInference(deferredInference);
-            return new ExecutedDeferredInference(persistedEvents, deferredInference, true, null);
-        } catch (Exception e) {
-            if(LIMIT_DEFERRED_INFERENCE_RETRIES>retry) {
-                logger.error(String.format("Was not able to infer deferred instance %s", deferredInference.getKey()), e);
-                return new ExecutedDeferredInference(null, deferredInference, false, e);
-            }
-            else{
-                int retryInSecs = retry*retry;
-                logger.warn(String.format("Was not able to infer deferred instance %s - I will retry for the %d time in %d seconds", deferredInference.getKey(), retry, retryInSecs), e);
-                try {
-                    Thread.sleep(retryInSecs * 1000L);
-                } catch (InterruptedException ex) {
-                    ex.printStackTrace();
-                }
-                return doDeferInference(deferredInference, ++retry);
-            }
-        }
     }
 
     public List<PersistedEvent> triggerInference(SpaceName space, UUID documentId){

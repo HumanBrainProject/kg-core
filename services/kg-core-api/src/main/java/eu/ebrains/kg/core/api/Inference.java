@@ -56,11 +56,4 @@ public class Inference {
         }
     }
 
-    @Operation(summary = "Triggers the inference of all documents which have been tagged to be deferred as part of their creation/contribution")
-    @PostMapping("/{space}/deferred")
-    public void triggerDeferredInference(@RequestParam(value = "sync", required = false, defaultValue = "false") boolean sync, @PathVariable(value = "space") String space) {
-        SpaceName spaceName = authContext.resolveSpaceName(space);
-        inferenceController.triggerDeferredInference(spaceName, sync);
-    }
-
 }

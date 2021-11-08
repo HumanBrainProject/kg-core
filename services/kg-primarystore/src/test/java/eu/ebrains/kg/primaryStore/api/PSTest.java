@@ -53,7 +53,7 @@ public class PSTest {
         Event event = new Event(space, UUID.randomUUID(), carl, Event.Type.INSERT, new Date());
 
         //When
-        primaryStore.postEvent(event, false);
+        primaryStore.postEvent(event);
 
         //Then
     }
@@ -61,12 +61,12 @@ public class PSTest {
     private void createMilhouseInfra() {
         NormalizedJsonLd milhouse1 = TestObjectFactory.createJsonLd(space, "milhouse1.json");
         Event milhouse1Event = new Event(space, UUID.randomUUID(), milhouse1, Event.Type.INSERT, new Date());
-        primaryStore.postEvent(milhouse1Event, false);
+        primaryStore.postEvent(milhouse1Event);
 
         NormalizedJsonLd milhouse2 = TestObjectFactory.createJsonLd(space, "milhouse2.json");
 
         Event milhouse2Event = new Event(space, UUID.randomUUID(), milhouse2, Event.Type.INSERT, new Date());
-        primaryStore.postEvent(milhouse2Event, false);
+        primaryStore.postEvent(milhouse2Event);
     }
 
     @Test
@@ -78,7 +78,7 @@ public class PSTest {
         NormalizedJsonLd milhouseMerge = TestObjectFactory.createJsonLd(space, "milhouseMergeUpdate.json");
 
         Event milhouseMergeEvent = new Event(space, UUID.randomUUID(), milhouseMerge, Event.Type.UPDATE, new Date());
-        primaryStore.postEvent(milhouseMergeEvent, false);
+        primaryStore.postEvent(milhouseMergeEvent);
 
         //Then
         System.out.println("Hello world");
@@ -94,7 +94,7 @@ public class PSTest {
         //When
         NormalizedJsonLd milhouseMerge = TestObjectFactory.createJsonLd(space, "milhouseMergeInsert.json");
         Event milhouseMergeEvent = new Event(space, UUID.randomUUID(), milhouseMerge, Event.Type.INSERT, new Date());
-        primaryStore.postEvent(milhouseMergeEvent, false);
+        primaryStore.postEvent(milhouseMergeEvent);
 
         //Then
         System.out.println("Hello world");

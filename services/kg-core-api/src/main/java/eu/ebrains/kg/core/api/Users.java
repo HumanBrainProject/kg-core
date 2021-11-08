@@ -199,7 +199,7 @@ public class Users {
         UUID uuid = createUserPictureId(userId);
         doc.setId(idUtils.buildAbsoluteUrl(uuid));
         doc.addTypes(EBRAINSVocabulary.META_USER_PICTURE_TYPE);
-        primaryStoreEvents.postEvent(Event.createUpsertEvent(targetSpace, uuid, Event.Type.INSERT, doc), false);
+        primaryStoreEvents.postEvent(Event.createUpsertEvent(targetSpace, uuid, Event.Type.INSERT, doc));
         return ResponseEntity.ok(Result.ok());
     }
 

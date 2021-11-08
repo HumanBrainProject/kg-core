@@ -23,12 +23,9 @@
 package eu.ebrains.kg.commons.jsonld;
 
 import eu.ebrains.kg.commons.model.SpaceName;
-import eu.ebrains.kg.commons.semantics.vocabularies.HBPVocabulary;
-import eu.ebrains.kg.commons.semantics.vocabularies.SchemaOrgVocabulary;
 
 import java.util.*;
 import java.util.function.BiConsumer;
-import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
 /**
@@ -103,6 +100,28 @@ public class DynamicJson extends TreeMap<String, Object> {
             }
         }
     }
+
+    protected void visitKeys(BiConsumer<Map<String, Object>, String> consumer){
+        doVisitKey(consumer, this);
+    }
+
+    private void doVisitKey(BiConsumer<Map<String, Object>, String> consumer, Map<String, Object> map){
+        for (String key : map.keySet()) {
+            consumer.accept(map, key);
+            final Object value = map.get(key);
+            if(value instanceof Collection<?>){
+                for (Object o : ((Collection<?>) value)) {
+                    if(o instanceof Map){
+                        doVisitKey(consumer, (Map<String, Object>)o);
+                    }
+                }
+            }
+            else if(value instanceof Map){
+                doVisitKey(consumer, (Map<String, Object>)value);
+            }
+        }
+    }
+
 
     public static boolean isInternalKey(String key) {
         return key.startsWith("_");

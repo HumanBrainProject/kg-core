@@ -45,7 +45,7 @@ public class DeleteSystemTest extends AbstractInstancesLoadTest {
     @Test
     public void testDeleteSingleAverageNoLink() throws IOException {
         //Given
-        testInsert(averagePayload, 1, false, false, false, null);
+        testInsert(averagePayload, 1, false, false, null);
         List<NormalizedJsonLd> allInstancesFromInProgress = getAllInstancesFromInProgress(ExposedStage.IN_PROGRESS).subList(0, batchInsertion);
         //When
         for (int i = 0; i < allInstancesFromInProgress.size(); i++) {
@@ -58,7 +58,7 @@ public class DeleteSystemTest extends AbstractInstancesLoadTest {
     @Test
     public void testDeleteSingleAverageNoLinkFullParallelism() throws IOException, InterruptedException {
         //Given
-        testInsert(averagePayload, 1, false, false, false, null);
+        testInsert(averagePayload, 1, false, false, null);
         List<NormalizedJsonLd> allInstancesFromInProgress = getAllInstancesFromInProgress(ExposedStage.IN_PROGRESS).subList(0, batchInsertion);
 
         //When

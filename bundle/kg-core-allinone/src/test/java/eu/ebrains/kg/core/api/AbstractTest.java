@@ -45,7 +45,6 @@ public abstract class AbstractTest {
     protected static final int averagePayload = 25;
     protected static final int bigPayload = 100;
 
-    protected IngestConfiguration defaultIngestConfiguration = new IngestConfiguration().setNormalizePayload(false).setDeferInference(false);
     protected ExtendedResponseConfiguration defaultResponseConfiguration = new ExtendedResponseConfiguration();
     protected PaginationParam defaultPaginationParam = new PaginationParam().setFrom(0).setSize(20l);
 
@@ -154,7 +153,7 @@ public abstract class AbstractTest {
     private void clearDatabase() {
         ArangoDB arango = database.build();
         arango.getDatabases().stream().filter(db -> db.startsWith("kg")).forEach(db -> {
-            System.out.println(String.format("Removing database %s", db));
+            System.out.printf("Removing database %s%n", db);
             arango.db(db).drop();
         });
     }

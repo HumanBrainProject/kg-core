@@ -24,14 +24,11 @@ package eu.ebrains.kg.primaryStore.controller;
 
 import com.arangodb.ArangoCollection;
 import com.arangodb.model.*;
-import eu.ebrains.kg.arango.commons.aqlBuilder.AQL;
 import eu.ebrains.kg.arango.commons.model.ArangoCollectionReference;
 import eu.ebrains.kg.arango.commons.model.ArangoDatabaseProxy;
 import eu.ebrains.kg.commons.JsonAdapter;
 import eu.ebrains.kg.commons.model.DataStage;
 import eu.ebrains.kg.commons.model.PersistedEvent;
-import eu.ebrains.kg.commons.model.SpaceName;
-import eu.ebrains.kg.primaryStore.model.DeferredInference;
 import eu.ebrains.kg.primaryStore.model.FailedEvent;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -39,7 +36,6 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Component;
 
 import java.util.*;
-import java.util.stream.Collectors;
 
 @Component
 public class EventRepository {
@@ -66,25 +62,6 @@ public class EventRepository {
         }
     }
 
-    void recordDeferredInference(DeferredInference e) {
-        ArangoCollection events = getOrCreateDeferredInferenceCollection(DataStage.IN_PROGRESS);
-        events.insertDocument(jsonAdapter.toJson(e), new DocumentCreateOptions().overwrite(true));
-    }
-
-    List<DeferredInference> getDeferredInferences(SpaceName space, int pageSize) {
-        HashMap<String, Object> bindVars = new HashMap<>();
-        bindVars.put("@collection", getOrCreateDeferredInferenceCollection(DataStage.IN_PROGRESS).name());
-        bindVars.put("space", space.getName());
-        bindVars.put("pageSize", pageSize);
-        AQL aql = new AQL();
-        aql.addLine(AQL.trust("FOR doc IN @@collection FILTER doc.space.name == @space LIMIT @pageSize RETURN doc"));
-        return arangoDatabase.getOrCreate().query(aql.build().getValue(), bindVars, new AqlQueryOptions(), String.class).asListRemaining().stream().map(d -> jsonAdapter.fromJson(d, DeferredInference.class)).collect(Collectors.toList());
-    }
-
-    void removeDeferredInference(DeferredInference inference) {
-        getOrCreateDeferredInferenceCollection(DataStage.IN_PROGRESS).deleteDocument(inference.getKey());
-    }
-
     void insert(PersistedEvent e) {
         ArangoCollection events = getOrCreateCollection(e.getDataStage());
         events.insertDocument(jsonAdapter.toJson(e));
@@ -102,9 +79,6 @@ public class EventRepository {
         return getOrCreateCollection(new ArangoCollectionReference(getCollectionName(stage) + "_failures", false));
     }
 
-    private ArangoCollection getOrCreateDeferredInferenceCollection(DataStage stage) {
-        return getOrCreateCollection(new ArangoCollectionReference(getCollectionName(stage) + "_deferred", false));
-    }
 
     private ArangoCollection getOrCreateCollection(ArangoCollectionReference collectionReference) {
         ArangoCollection events = primaryStoreDBUtils.getOrCreateArangoCollection(arangoDatabase.getOrCreate(), collectionReference);

@@ -50,24 +50,13 @@ public class PrimaryStoreEventsAPI implements PrimaryStoreEvents.Client {
     }
 
     @Override
-    public Set<InstanceId> postEvent(Event event, boolean deferInference) {
-        return eventProcessor.postEvent(event, deferInference);
+    public Set<InstanceId> postEvent(Event event) {
+        return eventProcessor.postEvent(event);
     }
 
-    @Override
-    public void inferDeferred(String space, boolean sync) {
-        logger.info("Received request for deferred inference");
-        if(sync) {
-            eventProcessor.syncDeferredInference(new SpaceName(space));
-        }
-        else {
-            eventProcessor.asyncDeferredInference(new SpaceName(space));
-        }
-    }
 
     @Override
     public void infer(String space, UUID id) {
-        logger.info("Received request for deferred inference");
         eventProcessor.autoRelease(inferenceProcessor.triggerInference(new SpaceName(space), id));
     }
 

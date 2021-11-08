@@ -61,7 +61,6 @@ public class ConsistencyCheckTest {
 
     PaginationParam EMPTY_PAGINATION = new PaginationParam();
     ExtendedResponseConfiguration DEFAULT_RESPONSE_CONFIG = new ExtendedResponseConfiguration();
-    IngestConfiguration DEFAULT_INGEST_CONFIG = new IngestConfiguration();
 
     int createInstances = 10;
     String type = "http://schema.org/Test";
@@ -73,7 +72,7 @@ public class ConsistencyCheckTest {
             JsonLdDoc doc = new JsonLdDoc();
             doc.addTypes(type);
             doc.addProperty("http://schema.hbp.eu/foo", "instance" + i);
-            ResponseEntity<Result<NormalizedJsonLd>> document = instances.createNewInstance(doc, "foo", DEFAULT_RESPONSE_CONFIG, DEFAULT_INGEST_CONFIG);
+            ResponseEntity<Result<NormalizedJsonLd>> document = instances.createNewInstance(doc, "foo", DEFAULT_RESPONSE_CONFIG);
             JsonLdId id = document.getBody().getData().id();
             System.out.println(String.format("Created instance %s", id.getId()));
         }
@@ -99,7 +98,7 @@ public class ConsistencyCheckTest {
                 JsonLdDoc doc = new JsonLdDoc();
                 doc.addTypes(type);
                 doc.addProperty("http://schema.hbp.eu/foo", "updatedValue" + updated);
-                this.instances.contributeToInstancePartialReplacement(doc, idUtils.getUUID(instance.id()), DEFAULT_RESPONSE_CONFIG, DEFAULT_INGEST_CONFIG);
+                this.instances.contributeToInstancePartialReplacement(doc, idUtils.getUUID(instance.id()), DEFAULT_RESPONSE_CONFIG);
                 updated++;
             }
         }
@@ -146,7 +145,7 @@ public class ConsistencyCheckTest {
             if (updated < createInstances * updateRatio) {
                 JsonLdDoc doc = new JsonLdDoc();
                 doc.addProperty("http://schema.hbp.eu/foo", "valueWithoutType" + updated);
-                this.instances.contributeToInstancePartialReplacement(doc, idUtils.getUUID(instance.id()), DEFAULT_RESPONSE_CONFIG, DEFAULT_INGEST_CONFIG);
+                this.instances.contributeToInstancePartialReplacement(doc, idUtils.getUUID(instance.id()), DEFAULT_RESPONSE_CONFIG);
                 updated++;
             }
         }

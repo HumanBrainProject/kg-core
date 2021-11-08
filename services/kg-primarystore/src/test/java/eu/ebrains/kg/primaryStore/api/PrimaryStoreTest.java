@@ -50,7 +50,7 @@ public class PrimaryStoreTest {
         data.addProperty("name", "test");
         data.setId(new JsonLdId("https://kg.ebrains.eu/api/instances/foo/bar"));
         Event e = new Event(TestObjectFactory.SIMPSONS, UUID.randomUUID(), data, Event.Type.INSERT, new Date());
-        primaryStore.postEvent(e, false);
+        primaryStore.postEvent(e);
     }
 
 
