@@ -65,7 +65,6 @@ public class Types {
     private final GraphDBTypes.Client graphDBTypes;
     private final AuthContext authContext;
 
-
     public Types(GraphDBTypes.Client graphDBTypes, AuthContext authContext) {
         this.graphDBTypes = graphDBTypes;
         this.authContext = authContext;

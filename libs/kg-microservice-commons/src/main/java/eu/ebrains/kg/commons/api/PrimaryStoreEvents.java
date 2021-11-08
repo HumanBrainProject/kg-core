@@ -32,6 +32,8 @@ public interface PrimaryStoreEvents {
 
     interface Client extends PrimaryStoreEvents {}
 
+    void rerunEvents(String space);
+
     Set<InstanceId> postEvent(Event event);
 
     void infer(String space, UUID id);

@@ -28,6 +28,7 @@ import eu.ebrains.kg.commons.jsonld.NormalizedJsonLd;
 import eu.ebrains.kg.commons.model.DataStage;
 import eu.ebrains.kg.commons.model.Event;
 import eu.ebrains.kg.commons.model.PersistedEvent;
+import eu.ebrains.kg.commons.model.SpaceName;
 import eu.ebrains.kg.commons.semantics.vocabularies.EBRAINSVocabulary;
 import eu.ebrains.kg.primaryStore.model.FailedEvent;
 import org.slf4j.Logger;
@@ -59,6 +60,15 @@ public class EventProcessor {
         this.eventRepository = eventRepository;
         this.eventController = eventController;
         this.inferenceProcessor = inferenceProcessor;
+    }
+
+    public void rerunEvents(SpaceName spaceName){
+        eventController.checkPermissionsForRerunEvents();
+        final List<PersistedEvent> events = eventRepository.queryAllEvents(DataStage.NATIVE, spaceName);
+        events.forEach(e -> {
+            eventController.handleIds(DataStage.NATIVE, e);
+            processEvent(e);
+        });
     }
 
     public Set<InstanceId> postEvent(Event event) {

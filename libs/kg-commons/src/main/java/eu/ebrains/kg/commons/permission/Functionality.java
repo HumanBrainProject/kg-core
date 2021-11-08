@@ -36,10 +36,10 @@ public enum Functionality {
     MINIMAL_READ(Permission.Level.GLOBAL_AND_SPACE, FunctionalityGroup.PERMISSIONS, null, null, null),
     MINIMAL_READ_RELEASED(Permission.Level.GLOBAL_AND_SPACE, FunctionalityGroup.PERMISSIONS, null, null, null),
 
-
     //Space mgmt
     READ_SPACE(Permission.Level.GLOBAL_AND_SPACE, FunctionalityGroup.SPACES, null, null, null),
     MANAGE_SPACE(Permission.Level.GLOBAL_ONLY, FunctionalityGroup.SPACES, null, Event.Type.INSERT, EBRAINSVocabulary.META_SPACEDEFINITION_TYPE),
+    RERUN_EVENTS_FOR_SPACE(Permission.Level.GLOBAL_ONLY, FunctionalityGroup.SPACES, null, null, null),
 
     //Invitations
     INVITE_FOR_REVIEW(Permission.Level.ALL_LEVELS, FunctionalityGroup.INSTANCE, DataStage.IN_PROGRESS, null, null),

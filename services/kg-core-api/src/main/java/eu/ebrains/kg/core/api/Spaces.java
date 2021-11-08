@@ -22,6 +22,7 @@
 
 package eu.ebrains.kg.core.api;
 
+import eu.ebrains.kg.commons.AuthContext;
 import eu.ebrains.kg.commons.Version;
 import eu.ebrains.kg.commons.config.openApiGroups.Admin;
 import eu.ebrains.kg.commons.config.openApiGroups.Advanced;
@@ -36,11 +37,11 @@ import eu.ebrains.kg.commons.model.Result;
 import eu.ebrains.kg.commons.model.SpaceName;
 import eu.ebrains.kg.commons.model.external.spaces.SpaceInformation;
 import eu.ebrains.kg.commons.model.external.spaces.SpaceSpecification;
+import eu.ebrains.kg.core.controller.CoreInferenceController;
 import eu.ebrains.kg.core.controller.CoreSpaceController;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import org.springdoc.api.annotations.ParameterObject;
-import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 /**
@@ -50,9 +51,13 @@ import org.springframework.web.bind.annotation.*;
 @RequestMapping(Version.API + "/spaces")
 public class Spaces {
 
+    private final CoreInferenceController inferenceController;
+    private final AuthContext authContext;
     private final CoreSpaceController spaceController;
 
-    public Spaces(CoreSpaceController spaceController) {
+    public Spaces(CoreInferenceController inferenceController, AuthContext authContext, CoreSpaceController spaceController) {
+        this.inferenceController = inferenceController;
+        this.authContext = authContext;
         this.spaceController = spaceController;
     }
 
@@ -115,7 +120,26 @@ public class Spaces {
     @Admin
     @ExposesInputWithoutEnrichedSensitiveData
     public void removeSpaceDefinition(@PathVariable(value = "space") @Parameter(description = "The space the definition should be removed for. Please note that you can't do so for your private space (\"" + SpaceName.PRIVATE_SPACE + "\")") String space) {
-        spaceController.removeSpaceDefinition(new SpaceName(space));
+        spaceController.removeSpaceDefinition(SpaceName.fromString(space));
+    }
+
+    @Operation(summary = "Trigger a rerun of the events of this space")
+    @PutMapping("{space}/eventHistory")
+    @Admin
+    public void rerunEvents(@PathVariable(value = "space") @Parameter(description = "The space the event rerun shall be executed for.") String space) {
+        spaceController.rerunEvents(SpaceName.fromString(space));
+    }
+
+    @Operation(summary = "Triggers the inference of all documents of the given space")
+    @Admin
+    @PostMapping("/{space}/inference")
+    public void triggerInference(@PathVariable(value = "space") String space, @RequestParam(value = "identifier", required = false) String identifier, @RequestParam(value = "async", required = false, defaultValue = "false") boolean async) {
+        SpaceName spaceName = authContext.resolveSpaceName(space);
+        if (async) {
+            inferenceController.asyncTriggerInference(spaceName, identifier);
+        } else {
+            inferenceController.triggerInference(spaceName, identifier);
+        }
     }
 
 }

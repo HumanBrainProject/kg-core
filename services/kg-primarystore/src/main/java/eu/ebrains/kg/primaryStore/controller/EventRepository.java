@@ -24,11 +24,15 @@ package eu.ebrains.kg.primaryStore.controller;
 
 import com.arangodb.ArangoCollection;
 import com.arangodb.model.*;
+import eu.ebrains.kg.arango.commons.aqlBuilder.AQL;
+import eu.ebrains.kg.arango.commons.aqlBuilder.TrustedAqlValue;
 import eu.ebrains.kg.arango.commons.model.ArangoCollectionReference;
 import eu.ebrains.kg.arango.commons.model.ArangoDatabaseProxy;
 import eu.ebrains.kg.commons.JsonAdapter;
+import eu.ebrains.kg.commons.jsonld.DynamicJson;
 import eu.ebrains.kg.commons.model.DataStage;
 import eu.ebrains.kg.commons.model.PersistedEvent;
+import eu.ebrains.kg.commons.model.SpaceName;
 import eu.ebrains.kg.primaryStore.model.FailedEvent;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -36,6 +40,7 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Component;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 @Component
 public class EventRepository {
@@ -79,7 +84,6 @@ public class EventRepository {
         return getOrCreateCollection(new ArangoCollectionReference(getCollectionName(stage) + "_failures", false));
     }
 
-
     private ArangoCollection getOrCreateCollection(ArangoCollectionReference collectionReference) {
         ArangoCollection events = primaryStoreDBUtils.getOrCreateArangoCollection(arangoDatabase.getOrCreate(), collectionReference);
         events.ensurePersistentIndex(Arrays.asList("indexedTimestamp", "eventId"), new PersistentIndexOptions());
@@ -88,36 +92,20 @@ public class EventRepository {
         return events;
     }
 
-    public List<PersistedEvent> eventsByLastEventId(DataStage stage, String lastEventId) {
-        getOrCreateCollection(stage);
-        String query;
+   public List<PersistedEvent> queryAllEvents(DataStage stage, SpaceName spaceName) {
+        AQL aql = new AQL();
         Map<String, Object> bindVars = new HashMap<>();
-        if (lastEventId == null) {
-            query = queryAllEvents(stage);
-        } else {
-            query = queryEventsByLastEventId(stage);
-            bindVars.put("documentId", lastEventId);
+        aql.addLine(AQL.trust("FOR doc IN `" + stage.name().toLowerCase() + "_events`"));
+        if(spaceName!=null){
+            aql.addLine(AQL.trust(" FILTER doc.spaceName == @spaceName"));
+            bindVars.put("spaceName", spaceName.getName());
         }
-        return arangoDatabase.getOrCreate().query(query, bindVars, new AqlQueryOptions(), PersistedEvent.class).asListRemaining();
+        aql.addLine(AQL.trust(" SORT doc.`indexedTimestamp` ASC"));
+        aql.addLine(AQL.trust("RETURN doc"));
+        return arangoDatabase.get().query(aql.build().getValue(), bindVars, PersistedEvent.class).asListRemaining();
     }
-
-    private String queryAllEvents(DataStage stage) {
-        return "FOR doc IN `" + stage.name().toLowerCase() + "_events`\n" +
-                "    SORT doc.`indexedTimestamp` ASC\n" +
-                "    RETURN doc\n";
-    }
-
     private String getCollectionName(DataStage stage) {
         return stage.name().toLowerCase() + "_events";
-    }
-
-    private String queryEventsByLastEventId(DataStage stage) {
-        return "LET last_seen = DOCUMENT(\"" + getCollectionName(stage) + "\", @documentId)\n" +
-                "\n" +
-                "FOR doc IN `" + getCollectionName(stage) + "`\n" +
-                "    FILTER doc.`indexedTimestamp`>last_seen.`indexedTimestamp` OR (doc.`indexedTimestamp` == last_seen.`indexedTimestamp` AND doc.`_key`>last_seen.`_key`)\n" +
-                "    SORT doc.`indexedTimestamp` ASC\n" +
-                "    RETURN doc\n";
     }
 
 }

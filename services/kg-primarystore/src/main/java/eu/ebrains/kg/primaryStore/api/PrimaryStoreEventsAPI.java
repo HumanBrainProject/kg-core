@@ -50,6 +50,12 @@ public class PrimaryStoreEventsAPI implements PrimaryStoreEvents.Client {
     }
 
     @Override
+    public void rerunEvents(String space) {
+       logger.info(String.format("Received request for rerunning the events of space %s", space));
+       eventProcessor.rerunEvents(SpaceName.fromString(space));
+    }
+
+    @Override
     public Set<InstanceId> postEvent(Event event) {
         return eventProcessor.postEvent(event);
     }
@@ -57,6 +63,7 @@ public class PrimaryStoreEventsAPI implements PrimaryStoreEvents.Client {
 
     @Override
     public void infer(String space, UUID id) {
+        logger.info(String.format("Received request to re-infer the space %s", space));
         eventProcessor.autoRelease(inferenceProcessor.triggerInference(new SpaceName(space), id));
     }
 

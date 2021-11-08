@@ -48,15 +48,13 @@ import java.util.stream.Collectors;
 @Component
 public class CoreSpaceController {
 
-    private final CoreInstanceController instanceController;
-    private final GraphDBTypes.Client graphDBTypes;
     private final GraphDBSpaces.Client graphDBSpaces;
+    private final PrimaryStoreEvents.Client primaryStoreEvents;
     private final AuthContext authContext;
 
-    public CoreSpaceController(CoreInstanceController instanceController, GraphDBTypes.Client graphDBTypes, GraphDBSpaces.Client graphDBSpaces, AuthContext authContext) {
-        this.instanceController = instanceController;
-        this.graphDBTypes = graphDBTypes;
+    public CoreSpaceController(GraphDBSpaces.Client graphDBSpaces, PrimaryStoreEvents.Client primaryStoreEvents, AuthContext authContext) {
         this.graphDBSpaces = graphDBSpaces;
+        this.primaryStoreEvents = primaryStoreEvents;
         this.authContext = authContext;
     }
 
@@ -104,6 +102,10 @@ public class CoreSpaceController {
 
     public void removeTypeFromSpace(SpaceName space, String type){
         graphDBSpaces.removeTypeFromSpace(space, type);
+    }
+
+    public void rerunEvents(SpaceName space){
+        primaryStoreEvents.rerunEvents(space.getName());
     }
 
 }

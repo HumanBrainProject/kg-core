@@ -22,17 +22,17 @@
 
 package eu.ebrains.kg.core.api.instances.load;
 
+import eu.ebrains.kg.commons.api.Inference;
 import eu.ebrains.kg.commons.jsonld.NormalizedJsonLd;
 import eu.ebrains.kg.commons.model.Result;
-import eu.ebrains.kg.core.api.Inference;
 import eu.ebrains.kg.core.api.Instances;
+import eu.ebrains.kg.core.api.Spaces;
 import eu.ebrains.kg.core.model.ExposedStage;
 import eu.ebrains.kg.metrics.PerformanceTestUtils;
 import eu.ebrains.kg.testutils.AbstractLoadTest;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 
-import java.io.IOException;
 import java.util.List;
 import java.util.Objects;
 
@@ -41,12 +41,9 @@ public class AbstractInstancesLoadTest extends AbstractLoadTest {
     @Autowired
     protected Instances instances;
 
-    @Autowired
-    protected Inference inference;
-
 
     // INSERTION
-    protected void testInsert(int numberOfFields, int numberOfIterations, boolean parallelize, boolean normalize, PerformanceTestUtils.Link link) throws IOException {
+    protected void testInsert(int numberOfFields, int numberOfIterations, boolean parallelize, boolean normalize, PerformanceTestUtils.Link link) {
         StringBuilder title = new StringBuilder();
         switch(numberOfFields){
             case smallPayload:

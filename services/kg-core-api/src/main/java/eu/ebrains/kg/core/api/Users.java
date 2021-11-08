@@ -203,14 +203,4 @@ public class Users {
         return ResponseEntity.ok(Result.ok());
     }
 
-    //TODO check how this could be better protected in terms of access restrictions
-//    @Operation(summary = "Retrieve user information based on a keycloak attribute (excluding detailed information such as e-mail address)")
-//    @GetMapping("/byAttribute/{attribute}/{value}")
-//    @ExposesMinimalUserInfo
-//    @Advanced
-//    public ResponseEntity<List<User>> getUsersByAttribute(@PathVariable("attribute") String attribute, @PathVariable("value") String value) {
-//        List<User> users = authentication.getUsersByAttribute(attribute, value);
-//        return users != null ? ResponseEntity.ok(users) : ResponseEntity.notFound().build();
-//    }
-
 }

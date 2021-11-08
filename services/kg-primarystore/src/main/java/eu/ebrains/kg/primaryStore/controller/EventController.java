@@ -27,6 +27,8 @@ import eu.ebrains.kg.commons.IdUtils;
 import eu.ebrains.kg.commons.api.GraphDBSpaces;
 import eu.ebrains.kg.commons.api.Ids;
 import eu.ebrains.kg.commons.exception.ForbiddenException;
+import eu.ebrains.kg.commons.exception.UnauthorizedException;
+import eu.ebrains.kg.commons.jsonld.DynamicJson;
 import eu.ebrains.kg.commons.jsonld.IndexedJsonLdDoc;
 import eu.ebrains.kg.commons.jsonld.JsonLdId;
 import eu.ebrains.kg.commons.jsonld.JsonLdIdMapping;
@@ -68,6 +70,13 @@ public class EventController {
         this.userResolver = userResolver;
         this.authContext = authContext;
     }
+
+    public void checkPermissionsForRerunEvents(){
+        if(!permissions.hasGlobalPermission(authContext.getUserWithRolesWithoutTermsCheck(), Functionality.RERUN_EVENTS_FOR_SPACE)){
+            throw new UnauthorizedException("You are not allowed to rerun the events of a space!");
+        }
+    }
+
 
     private void checkPermission(PersistedEvent event) {
         boolean hasPermission = false;
@@ -117,6 +126,12 @@ public class EventController {
         PersistedEvent persistedEvent = new PersistedEvent(event, dataStage, user, graphDBSpaces.getSpace(event.getSpaceName()));
         ensureInternalIdInPayload(persistedEvent, userWithRoles);
         checkPermission(persistedEvent);
+        handleIds(dataStage, persistedEvent);
+        eventRepository.insert(persistedEvent);
+        return persistedEvent;
+    }
+
+    public void handleIds(DataStage dataStage, PersistedEvent persistedEvent) {
         if (persistedEvent.getType() == Event.Type.DELETE) {
             ids.removeId(DataStage.IN_PROGRESS, persistedEvent.getDocumentId());
         } else {
@@ -132,8 +147,6 @@ public class EventController {
             }
             addMetaInformationToData(dataStage, persistedEvent);
         }
-        eventRepository.insert(persistedEvent);
-        return persistedEvent;
     }
 
     private void ensureInternalIdInPayload(PersistedEvent persistedEvent, UserWithRoles userWithRoles) {
