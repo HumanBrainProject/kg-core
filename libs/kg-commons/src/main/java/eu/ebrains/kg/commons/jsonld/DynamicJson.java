@@ -29,9 +29,9 @@ import java.util.function.BiConsumer;
 import java.util.stream.Collectors;
 
 /**
- * A JSON-LD in any format (with / without context) / @graph annotations, etc.
+ * A JSON in any format (with / without context) / @graph annotations, etc.
  */
-public class DynamicJson extends TreeMap<String, Object> {
+public class DynamicJson extends LinkedHashMap<String, Object> {
 
     public DynamicJson() {
     }
