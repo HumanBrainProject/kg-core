@@ -23,6 +23,7 @@
 package eu.ebrains.kg.commons.jsonld;
 
 import eu.ebrains.kg.commons.exception.InvalidRequestException;
+import eu.ebrains.kg.commons.semantics.vocabularies.EBRAINSVocabulary;
 import eu.ebrains.kg.commons.semantics.vocabularies.HBPVocabulary;
 import eu.ebrains.kg.commons.semantics.vocabularies.SchemaOrgVocabulary;
 
@@ -199,12 +200,18 @@ public class JsonLdDoc extends DynamicJson {
                         if (!isValidIRI(key)) {
                             throw new InvalidRequestException(String.format("The property %s is not fully qualified", key));
                         }
+                        if(isKgMetaProperty(key)){
+                            throw new InvalidRequestException(String.format("The property %s is a meta property of the EBRAINS KG. You are not supposed to set this value yourself - this is handled internally.", key));
+                        }
                         validateEmbeddedInstances(key, value);
                     }
                     break;
             }
         });
+    }
 
+    private boolean isKgMetaProperty(String key){
+        return key!=null && key.startsWith(EBRAINSVocabulary.META);
     }
 
     private boolean isValidIRI(Object value) {

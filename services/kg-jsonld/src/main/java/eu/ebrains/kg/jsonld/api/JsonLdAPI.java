@@ -121,6 +121,7 @@ public class JsonLdAPI implements eu.ebrains.kg.commons.api.JsonLd.Client {
             if (keepNullValues) {
                 removeNullValuesPlaceholder(normalized);
             }
+            normalized.normalizeTypes();
             return flattenLists(normalized, null, null);
         } catch (JsonLdError ex) {
             logger.error("Was not able to handle payload", ex);
