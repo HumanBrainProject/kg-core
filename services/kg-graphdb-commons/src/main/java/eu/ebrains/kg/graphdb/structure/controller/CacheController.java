@@ -230,7 +230,7 @@ public class CacheController {
     private static final int DEFER_CACHE_EVICTION_DELAY_IN_S = 30;
     private static final int DEFER_CACHE_EVICTION_MAX_MAP_ENTRIES = 1000;
 
-    @Scheduled(fixedRate = 6000)
+    @Scheduled(fixedRate = 30000)
     public void checkDeferredCacheEviction() {
         logger.info("Checking for deferred cache eviction...");
         deferredSpaceTypesForCacheEviction.keySet().stream().filter(k ->
