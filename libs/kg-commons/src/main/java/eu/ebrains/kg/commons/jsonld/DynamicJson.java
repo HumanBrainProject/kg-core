@@ -106,8 +106,8 @@ public class DynamicJson extends LinkedHashMap<String, Object> {
     }
 
     private void doVisitKey(BiConsumer<Map<String, Object>, String> consumer, Map<String, Object> map){
-        for (String key : map.keySet()) {
-            consumer.accept(map, key);
+        final Set<String> keys = new HashSet<>(map.keySet());
+        for (String key : keys) {
             final Object value = map.get(key);
             if(value instanceof Collection<?>){
                 for (Object o : ((Collection<?>) value)) {
@@ -119,6 +119,7 @@ public class DynamicJson extends LinkedHashMap<String, Object> {
             else if(value instanceof Map){
                 doVisitKey(consumer, (Map<String, Object>)value);
             }
+            consumer.accept(map, key);
         }
     }
 

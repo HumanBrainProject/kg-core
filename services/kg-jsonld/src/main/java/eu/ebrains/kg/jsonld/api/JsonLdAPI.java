@@ -89,20 +89,11 @@ public class JsonLdAPI implements eu.ebrains.kg.commons.api.JsonLd.Client {
     }
 
     @Override
-    public List<JsonLdDoc> applyVocab(List<NormalizedJsonLd> documents, String vocab) {
+    public List<? extends JsonLdDoc> applyVocab(List<NormalizedJsonLd> documents, String vocab) {
         if (vocab != null) {
-            JsonDocument context = JsonDocument.of(Json.createObjectBuilder().add(JsonLdConsts.VOCAB, vocab).build());
-            return documents.stream().map(d -> {
-                JsonObject doc = Json.createObjectBuilder(applyLists(d)).build();
-                try{
-                    return flattenLists(jsonAdapter.fromJson(JsonLd.compact(JsonDocument.of(doc), context).get().toString(), JsonLdDoc.class), null, null);
-                } catch (JsonLdError ex) {
-                    logger.error("Was not able to handle payload", ex);
-                    throw new RuntimeException(ex);
-                }
-            }).collect(Collectors.toList());
+            documents.forEach(d -> d.applyVocab(vocab));
         }
-        return null;
+        return documents;
     }
 
     @Override

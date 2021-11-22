@@ -85,7 +85,7 @@ public class CoreQueryController {
                 Paginated<NormalizedJsonLd> result = paginatedQueryResult.getResult();
                 if(result!=null) {
                     List<NormalizedJsonLd> data = result.getData();
-                    List<JsonLdDoc> dataWithAppliedContext = jsonLd.applyVocab(data, paginatedQueryResult.getResponseVocab());
+                    List<? extends JsonLdDoc> dataWithAppliedContext = jsonLd.applyVocab(data, paginatedQueryResult.getResponseVocab());
                     return new Paginated<>(dataWithAppliedContext, result.getTotalResults(), result.getSize(), result.getFrom());
                 }
             }

@@ -90,4 +90,16 @@ public class NormalizedJsonLd extends JsonLdDoc {
         return newMap;
     }
 
+    public void applyVocab(String vocab){
+        JsonLdDoc context = new JsonLdDoc();
+        context.addProperty(JsonLdConsts.VOCAB, vocab);
+        addProperty(JsonLdConsts.CONTEXT, context);
+        visitKeys((map, key) ->{
+            if(key.startsWith(vocab)){
+                map.put(key.substring(vocab.length()), map.get(key));
+                map.remove(key);
+            }
+        });
+    }
+
 }
