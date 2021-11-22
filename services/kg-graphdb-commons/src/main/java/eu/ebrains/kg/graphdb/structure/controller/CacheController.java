@@ -28,6 +28,7 @@ import eu.ebrains.kg.graphdb.ingestion.model.CacheEvictionPlan;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.lang.NonNull;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 import org.springframework.util.CollectionUtils;
 
@@ -35,7 +36,6 @@ import javax.annotation.PostConstruct;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.*;
-import java.util.concurrent.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -47,7 +47,6 @@ public class CacheController {
     private final AuthContext authContext;
 
     private final Logger logger = LoggerFactory.getLogger(getClass());
-    private final ScheduledExecutorService scheduler = Executors.newSingleThreadScheduledExecutor();
 
     @PostConstruct
     public void setup() {
@@ -226,36 +225,32 @@ public class CacheController {
         final Set<Triple<SpaceName, String, String>> spaceTypePropertiesForTargetTypeEviction = findSpaceTypePropertiesForTargetTypeEviction(beforeTransactionById, afterTransactionById, createIds, deleteIds, updateIds, allRelevantEdges);
         spaceTypePropertiesForTargetTypeEviction.stream().filter(p -> !deferredCacheEvictionSpaces.contains(p.getA())).forEach(p -> structureRepository.evictTargetTypesCache(stage, p.getA(), p.getB(), p.getC()));
         spaceTypePropertiesForTargetTypeEviction.stream().filter(p -> deferredCacheEvictionSpaces.contains(p.getA())).forEach(p -> deferredSpaceTypePropertiesForTargetTypeEviction.put(new Tuple<>(p, stage), LocalDateTime.now()));
-
-
-        scheduler.schedule(this::checkDeferredCacheEviction, DEFER_CACHE_EVICTION_DELAY_IN_S + 1, TimeUnit.SECONDS);
-
     }
 
-    private static final int DEFER_CACHE_EVICTION_DELAY_IN_S = 10;
-    private static final int DEFER_CACHE_EVICTION_MAX_MAP_ENTRIES = 100000;
+    private static final int DEFER_CACHE_EVICTION_DELAY_IN_S = 30;
+    private static final int DEFER_CACHE_EVICTION_MAX_MAP_ENTRIES = 1000;
 
-    private void checkDeferredCacheEviction() {
+    @Scheduled(fixedRate = 6000)
+    public void checkDeferredCacheEviction() {
         logger.info("Checking for deferred cache eviction...");
         deferredSpaceTypesForCacheEviction.keySet().stream().filter(k ->
                 deferredSpaceTypesForCacheEviction.size()>DEFER_CACHE_EVICTION_MAX_MAP_ENTRIES ||
-                Duration.between(deferredSpaceTypesForCacheEviction.get(k), LocalDateTime.now()).toSeconds()
-                        > DEFER_CACHE_EVICTION_DELAY_IN_S).forEach(k -> {
-            structureRepository.evictTypesInSpaceCache(k.getB(), k.getA());
+                        Duration.between(deferredSpaceTypesForCacheEviction.get(k), LocalDateTime.now()).toSeconds()
+                                > DEFER_CACHE_EVICTION_DELAY_IN_S).forEach(k -> {
+            structureRepository.refreshTypesInSpaceCache(k.getB(), k.getA());
             deferredSpaceTypesForCacheEviction.remove(k);
         });
         deferredSpaceTypesForPropertyEviction.keySet().stream().filter(k ->
                 deferredSpaceTypesForPropertyEviction.size()>DEFER_CACHE_EVICTION_MAX_MAP_ENTRIES ||
-                Duration.between(deferredSpaceTypesForPropertyEviction.get(k), LocalDateTime.now()).toSeconds() > DEFER_CACHE_EVICTION_DELAY_IN_S).forEach(k -> {
-            structureRepository.evictPropertiesOfTypeInSpaceCache(k.getB(), k.getA().getA(), k.getA().getB());
+                        Duration.between(deferredSpaceTypesForPropertyEviction.get(k), LocalDateTime.now()).toSeconds() > DEFER_CACHE_EVICTION_DELAY_IN_S).forEach(k -> {
+            structureRepository.refreshPropertiesOfTypeInSpaceCache(k.getB(), k.getA().getA(), k.getA().getB());
             deferredSpaceTypesForPropertyEviction.remove(k);
         });
         deferredSpaceTypePropertiesForTargetTypeEviction.keySet().stream().filter(k ->
                 deferredSpaceTypePropertiesForTargetTypeEviction.size()>DEFER_CACHE_EVICTION_MAX_MAP_ENTRIES ||
-                Duration.between(deferredSpaceTypePropertiesForTargetTypeEviction.get(k), LocalDateTime.now()).toSeconds() > DEFER_CACHE_EVICTION_DELAY_IN_S).forEach(k -> {
-            structureRepository.evictTargetTypesCache(k.getB(), k.getA().getA(), k.getA().getB(), k.getA().getC());
+                        Duration.between(deferredSpaceTypePropertiesForTargetTypeEviction.get(k), LocalDateTime.now()).toSeconds() > DEFER_CACHE_EVICTION_DELAY_IN_S).forEach(k -> {
+            structureRepository.refreshTargetTypesCache(k.getB(), k.getA().getA(), k.getA().getB(), k.getA().getC());
             deferredSpaceTypePropertiesForTargetTypeEviction.remove(k);
         });
-
     }
 }
