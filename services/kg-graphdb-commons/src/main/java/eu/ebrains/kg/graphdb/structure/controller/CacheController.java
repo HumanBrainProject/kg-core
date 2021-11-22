@@ -231,26 +231,24 @@ public class CacheController {
     private static final int DEFER_CACHE_EVICTION_MAX_MAP_ENTRIES = 1000;
 
     @Scheduled(fixedRate = 30000)
-    public void checkDeferredCacheEviction() {
+    public synchronized void checkDeferredCacheEviction() {
         logger.info("Checking for deferred cache eviction...");
-        deferredSpaceTypesForCacheEviction.keySet().stream().filter(k ->
-                deferredSpaceTypesForCacheEviction.size()>DEFER_CACHE_EVICTION_MAX_MAP_ENTRIES ||
+        final Set<Tuple<SpaceName, DataStage>> handledSpaceTypes = deferredSpaceTypesForCacheEviction.keySet().stream().filter(k ->
+                deferredSpaceTypesForCacheEviction.size() > DEFER_CACHE_EVICTION_MAX_MAP_ENTRIES ||
                         Duration.between(deferredSpaceTypesForCacheEviction.get(k), LocalDateTime.now()).toSeconds()
-                                > DEFER_CACHE_EVICTION_DELAY_IN_S).forEach(k -> {
-            structureRepository.refreshTypesInSpaceCache(k.getB(), k.getA());
-            deferredSpaceTypesForCacheEviction.remove(k);
-        });
-        deferredSpaceTypesForPropertyEviction.keySet().stream().filter(k ->
-                deferredSpaceTypesForPropertyEviction.size()>DEFER_CACHE_EVICTION_MAX_MAP_ENTRIES ||
-                        Duration.between(deferredSpaceTypesForPropertyEviction.get(k), LocalDateTime.now()).toSeconds() > DEFER_CACHE_EVICTION_DELAY_IN_S).forEach(k -> {
-            structureRepository.refreshPropertiesOfTypeInSpaceCache(k.getB(), k.getA().getA(), k.getA().getB());
-            deferredSpaceTypesForPropertyEviction.remove(k);
-        });
-        deferredSpaceTypePropertiesForTargetTypeEviction.keySet().stream().filter(k ->
-                deferredSpaceTypePropertiesForTargetTypeEviction.size()>DEFER_CACHE_EVICTION_MAX_MAP_ENTRIES ||
-                        Duration.between(deferredSpaceTypePropertiesForTargetTypeEviction.get(k), LocalDateTime.now()).toSeconds() > DEFER_CACHE_EVICTION_DELAY_IN_S).forEach(k -> {
-            structureRepository.refreshTargetTypesCache(k.getB(), k.getA().getA(), k.getA().getB(), k.getA().getC());
-            deferredSpaceTypePropertiesForTargetTypeEviction.remove(k);
-        });
+                                > DEFER_CACHE_EVICTION_DELAY_IN_S).peek(k -> structureRepository.refreshTypesInSpaceCache(k.getB(), k.getA())).collect(Collectors.toSet());
+        handledSpaceTypes.forEach(deferredSpaceTypesForCacheEviction::remove);
+
+        final Set<Tuple<Tuple<SpaceName, String>, DataStage>> handledSpaceTypesForProperty = deferredSpaceTypesForPropertyEviction.keySet().stream().filter(k ->
+                deferredSpaceTypesForPropertyEviction.size() > DEFER_CACHE_EVICTION_MAX_MAP_ENTRIES ||
+                        Duration.between(deferredSpaceTypesForPropertyEviction.get(k), LocalDateTime.now()).toSeconds() > DEFER_CACHE_EVICTION_DELAY_IN_S).
+                peek(k -> structureRepository.refreshPropertiesOfTypeInSpaceCache(k.getB(), k.getA().getA(), k.getA().getB())).collect(Collectors.toSet());
+        handledSpaceTypesForProperty.forEach(deferredSpaceTypesForPropertyEviction::remove);
+
+        final Set<Tuple<Triple<SpaceName, String, String>, DataStage>> handledSpaceTypePropertiesForTargetType = deferredSpaceTypePropertiesForTargetTypeEviction.keySet().stream().filter(k ->
+                deferredSpaceTypePropertiesForTargetTypeEviction.size() > DEFER_CACHE_EVICTION_MAX_MAP_ENTRIES ||
+                        Duration.between(deferredSpaceTypePropertiesForTargetTypeEviction.get(k), LocalDateTime.now()).toSeconds() > DEFER_CACHE_EVICTION_DELAY_IN_S).
+                peek(k -> structureRepository.refreshTargetTypesCache(k.getB(), k.getA().getA(), k.getA().getB(), k.getA().getC())).collect(Collectors.toSet());
+        handledSpaceTypePropertiesForTargetType.forEach(deferredSpaceTypePropertiesForTargetTypeEviction::remove);
     }
 }
