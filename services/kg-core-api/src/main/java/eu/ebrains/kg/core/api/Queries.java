@@ -116,9 +116,12 @@ public class Queries {
     @ExposesQuery
     public ResponseEntity<Result<NormalizedJsonLd>> getQuerySpecification(@PathVariable("queryId") UUID queryId) {
         InstanceId instanceId = ids.resolveId(DataStage.IN_PROGRESS, queryId);
-        NormalizedJsonLd kgQuery = queryController.fetchQueryById(instanceId);
-        kgQuery.renamePrivateSpace(authContext.getUserWithRoles().getPrivateSpace());
-        return kgQuery != null ? ResponseEntity.ok(Result.ok(kgQuery)): ResponseEntity.notFound().build();
+        if(instanceId != null) {
+            NormalizedJsonLd kgQuery = queryController.fetchQueryById(instanceId);
+            kgQuery.renamePrivateSpace(authContext.getUserWithRoles().getPrivateSpace());
+            return kgQuery != null ? ResponseEntity.ok(Result.ok(kgQuery)): ResponseEntity.notFound().build();
+        }
+        return ResponseEntity.notFound().build();
     }
 
     @Operation(summary = "Remove a query specification")
