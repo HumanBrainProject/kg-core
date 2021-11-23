@@ -54,14 +54,6 @@ public class NormalizedJsonLd extends JsonLdDoc {
     }
 
 
-    public void resolvePrivateSpace(SpaceName privateSpace){
-        final String s = getAs(EBRAINSVocabulary.META_SPACE, String.class);
-        if(privateSpace.getName().equals(s)){
-            put(EBRAINSVocabulary.META_SPACE, SpaceName.PRIVATE_SPACE);
-        }
-    }
-
-
     public void defineFieldUpdateTimes(Map<String, ZonedDateTime> fieldUpdateTimes) {
         put(EBRAINSVocabulary.META_PROPERTYUPDATES, serializeUpdateTimes(fieldUpdateTimes));
     }
@@ -100,6 +92,17 @@ public class NormalizedJsonLd extends JsonLdDoc {
                 map.remove(key);
             }
         });
+    }
+
+    public NormalizedJsonLd renamePrivateSpace(SpaceName privateSpace){
+        if(privateSpace!=null) {
+            visitKeys((map, key) -> {
+                if (key.equals(EBRAINSVocabulary.META_SPACE) && privateSpace.getName().equals(map.get(key))) {
+                    map.put(key, SpaceName.PRIVATE_SPACE);
+                }
+            });
+        }
+        return this;
     }
 
 }

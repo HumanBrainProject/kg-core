@@ -135,6 +135,7 @@ public class CoreInstanceController {
         return handleIngestionResponse(responseConfiguration, ids);
     }
 
+
     public Set<InstanceId> deleteInstance(InstanceId instanceId) {
         Event deleteEvent = Event.createDeleteEvent(instanceId.getSpace(), instanceId.getUuid(), idUtils.buildAbsoluteUrl(instanceId.getUuid()));
         return primaryStoreEvents.postEvent(deleteEvent);
@@ -192,7 +193,11 @@ public class CoreInstanceController {
         List<InstanceId> idsAfterResolution = this.ids.resolveIdsByUUID(stage, validUUIDs, true);
         idsAfterResolution.stream().filter(InstanceId::isUnresolved).forEach(id -> result.put(id.getUuid().toString(), Result.nok(HttpStatus.NOT_FOUND.value(), HttpStatus.NOT_FOUND.getReasonPhrase())));
         Map<UUID, Result<NormalizedJsonLd>> instancesByIds = graphDBInstances.getInstancesByIds(idsAfterResolution.stream().filter(i -> !i.isUnresolved()).map(InstanceId::serialize).collect(Collectors.toList()), stage, responseConfiguration.isReturnEmbedded(), responseConfiguration.isReturnAlternatives(), responseConfiguration.isReturnIncomingLinks(), responseConfiguration.getIncomingLinksPageSize());
-        instancesByIds.forEach((k, v) -> result.put(k.toString(), v));
+        final SpaceName privateSpaceName = authContext.getUserWithRoles().getPrivateSpace();
+        instancesByIds.forEach((k, v) -> {
+            v.getData().renamePrivateSpace(privateSpaceName);
+            result.put(k.toString(), v);
+        });
         ids.stream().filter(Objects::nonNull).forEach(
                 id -> {
                     if (!result.containsKey(id)) {
@@ -217,6 +222,8 @@ public class CoreInstanceController {
         if (responseConfiguration.isReturnPermissions()) {
             enrichWithPermissionInformation(stage, instancesByType.getData().stream().map(Result::ok).collect(Collectors.toList()));
         }
+        final SpaceName privateSpaceName = authContext.getUserWithRoles().getPrivateSpace();
+        instancesByType.getData().forEach(d -> d.renamePrivateSpace(privateSpaceName));
         return instancesByType;
     }
 
@@ -234,7 +241,8 @@ public class CoreInstanceController {
             if (responseConfiguration.isReturnPermissions()) {
                 enrichWithPermissionInformation(DataStage.IN_PROGRESS, instancesByIds.values());
             }
-            result = AmbiguousResult.ok(instancesByIds.values().stream().map(Result::getData).collect(Collectors.toList()));
+            final SpaceName privateSpaceName = authContext.getUserWithRoles().getPrivateSpace();
+            result = AmbiguousResult.ok(instancesByIds.values().stream().map(Result::getData).map(r -> r.renamePrivateSpace(privateSpaceName)).collect(Collectors.toList()));
         } else {
             result = AmbiguousResult.ok(instanceIds.stream().map(id -> {
                 NormalizedJsonLd jsonLd = new NormalizedJsonLd();
@@ -250,7 +258,10 @@ public class CoreInstanceController {
         if(instanceId == null){
             return null;
         }
-        return graphDBInstances.getIncomingLinks(instanceId.getSpace().getName(), instanceId.getUuid(), stage, property, type.getName(), pagination);
+        final SpaceName privateSpaceName = authContext.getUserWithRoles().getPrivateSpace();
+        final Paginated<NormalizedJsonLd> incomingLinks = graphDBInstances.getIncomingLinks(instanceId.getSpace().getName(), instanceId.getUuid(), stage, property, type.getName(), pagination);
+        incomingLinks.getData().forEach(d -> d.renamePrivateSpace(privateSpaceName));
+        return incomingLinks;
     }
 
     public NormalizedJsonLd getInstanceById(UUID id, DataStage stage, ExtendedResponseConfiguration responseConfiguration) {
@@ -265,6 +276,9 @@ public class CoreInstanceController {
             }
             if (responseConfiguration.isReturnPermissions() && instance != null) {
                 enrichWithPermissionInformation(stage, Collections.singletonList(Result.ok(instance)));
+            }
+            if(instance!=null) {
+                instance.renamePrivateSpace(authContext.getUserWithRoles().getPrivateSpace());
             }
             return instance;
         } else {
