@@ -65,7 +65,9 @@ public class CoreSpaceController {
             String spaceIdentifier = spaceInformation.getIdentifier();
             if (spaceIdentifier != null) {
                 List<Functionality> applyingFunctionalities = userWithRoles.getPermissions().stream().
-                        filter(f -> f.getFunctionality().getFunctionalityGroup() == Functionality.FunctionalityGroup.INSTANCE
+                        filter(f -> (
+                                f.getFunctionality().getFunctionalityGroup() == Functionality.FunctionalityGroup.INSTANCE
+                                || f.getFunctionality().getFunctionalityGroup() == Functionality.FunctionalityGroup.QUERY)
                                 && f.appliesTo(new SpaceName(spaceIdentifier), null)
                         ).map(FunctionalityInstance::getFunctionality).distinct().collect(Collectors.toList());
                 spaceInformation.setPermissions(applyingFunctionalities);
