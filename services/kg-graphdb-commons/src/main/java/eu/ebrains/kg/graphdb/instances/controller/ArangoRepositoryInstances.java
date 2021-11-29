@@ -108,7 +108,7 @@ public class ArangoRepositoryInstances {
                 if (t instanceof Map) {
                     Object data = ((Map) t).get("data");
                     if (data instanceof List) {
-                        return new Paginated<>((List<NormalizedJsonLd>) data, (long) ((Map) t).get("total"), (long) ((Map) t).get("size"), (long) ((Map) t).get("from"));
+                        return new Paginated<>(((List<Map<? extends String, ?>>) data).stream().map(NormalizedJsonLd::new).collect(Collectors.toList()), (long) ((Map) t).get("total"), (long) ((Map) t).get("size"), (long) ((Map) t).get("from"));
                     }
                 }
             }
