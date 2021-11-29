@@ -630,6 +630,8 @@ public class ArangoRepositoryInstances {
                 switch (mode) {
                     case BY_ID:
                         aql.indent().addLine(AQL.trust("LET v = DOCUMENT(@documentById)"));
+                        aql.addLine(AQL.trust(String.format("FILTER @typeFilter IN v.`%s` AND v.`%s` == null", JsonLdConsts.TYPE, IndexedJsonLdDoc.EMBEDDED)));
+                        bindVars.put("typeFilter", typeWithLabelInfo.getName());
                         bindVars.put("documentById", search);
                         break;
                     case SIMPLE:
