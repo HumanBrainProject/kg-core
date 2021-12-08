@@ -1098,13 +1098,17 @@ public class ArangoRepositoryInstances {
     }
 
     private ScopeElement handleSubElement(NormalizedJsonLd data, Map<String, Set<ScopeElement>> typeToUUID) {
+        Boolean embedded = data.getAs("embedded", Boolean.class);
+        if(embedded!=null && embedded){
+            return null;
+        }
         String id = data.getAs("id", String.class);
         UUID uuid = idUtils.getUUID(new JsonLdId(id));
         List<ScopeElement> children = data.keySet().stream().filter(k -> k.startsWith("dependency_")).map(k ->
-                data.getAsListOf(k, NormalizedJsonLd.class).stream().map(d -> handleSubElement(d, typeToUUID)).collect(Collectors.toList())
+                data.getAsListOf(k, NormalizedJsonLd.class).stream().map(d -> handleSubElement(d, typeToUUID)).filter(Objects::nonNull).collect(Collectors.toList())
         ).flatMap(Collection::stream).collect(Collectors.toList());
         List<String> type = data.getAsListOf("type", String.class);
-        ScopeElement element = new ScopeElement(uuid, type, children.isEmpty() ? null : children, data.getAs("internalId", String.class), data.getAs("space", String.class));
+            ScopeElement element = new ScopeElement(uuid, type, children.isEmpty() ? null : children, data.getAs("internalId", String.class), data.getAs("space", String.class));
         type.forEach(t -> {
             typeToUUID.computeIfAbsent(t, x -> new HashSet<>()).add(element);
         });
@@ -1143,7 +1147,7 @@ public class ArangoRepositoryInstances {
         if (data == null || data.isEmpty()) {
             elements = Collections.singletonList(new ScopeElement(idUtils.getUUID(instance.id()), instance.types(), null, instance.getAs(ArangoVocabulary.ID, String.class), instance.getAs(EBRAINSVocabulary.META_SPACE, String.class)));
         } else {
-            elements = data.stream().map(d -> handleSubElement(d, typeToUUID)).collect(Collectors.toList());
+            elements = data.stream().map(d -> handleSubElement(d, typeToUUID)).filter(Objects::nonNull).collect(Collectors.toList());
         }
         for(ScopeElement el : elements) {
             instance.types().forEach(t -> typeToUUID.computeIfAbsent(t, x -> new HashSet<>()).add(el));
