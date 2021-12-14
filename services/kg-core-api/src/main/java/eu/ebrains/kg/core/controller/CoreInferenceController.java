@@ -81,7 +81,7 @@ public class CoreInferenceController {
                 if (uuid != null) {
                     InstanceId instanceId = ids.resolveId(DataStage.IN_PROGRESS, uuid);
                     if (instanceId != null) {
-                        NormalizedJsonLd instance = graphDBInstances.getInstanceById(instanceId.getSpace().getName(), instanceId.getUuid(), DataStage.IN_PROGRESS,  false, false, false, null, true);
+                        NormalizedJsonLd instance = graphDBInstances.getInstanceById(instanceId.getSpace().getName(), instanceId.getUuid(), DataStage.IN_PROGRESS,  false, false, false, null, false);
                         List<JsonLdId> inferenceOf = InferredJsonLdDoc.from(instance).getInferenceOf();
                         //To be sure, we re-infer all of the previous sources...
                         uuids = inferenceOf.stream().map(idUtils::getUUID).filter(Objects::nonNull).collect(Collectors.toList());

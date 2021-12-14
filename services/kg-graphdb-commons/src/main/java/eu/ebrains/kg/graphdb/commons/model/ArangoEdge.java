@@ -56,6 +56,9 @@ public class ArangoEdge implements ArangoInstance {
     @JsonProperty(ArangoVocabulary.ID)
     private String id;
 
+    @JsonProperty(ArangoVocabulary.COLLECTION)
+    private String collection;
+
     private transient JsonLdId resolvedTargetId;
 
     public JsonLdId getResolvedTargetId() {
@@ -108,6 +111,7 @@ public class ArangoEdge implements ArangoInstance {
     public void redefineId(ArangoDocumentReference reference){
         this.id = reference.getId();
         setKey(reference.getDocumentId());
+        defineCollectionById();
     }
 
     public String getOriginalLabel() {
@@ -141,6 +145,15 @@ public class ArangoEdge implements ArangoInstance {
 
     @Override
     public Object getPayload() {
+        return this;
+    }
+
+    public String getCollection() {
+        return collection;
+    }
+
+    public ArangoEdge defineCollectionById() {
+        this.collection = getId()!=null ? getId().getArangoCollectionReference().getCollectionName() : null;
         return this;
     }
 }

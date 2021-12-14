@@ -267,10 +267,10 @@ public class ArangoRepositoryCommons {
             removedDocuments.add(edgeResolution.getUnresolvedEdgeRef());
 
             //... create the new edge ...
-            insertedDocuments.computeIfAbsent(edgeReference.getArangoCollectionReference(), x -> new ArrayList<>()).add(jsonAdapter.toJson(edgeResolution.getUpdatedEdge()));
+            insertedDocuments.computeIfAbsent(edgeReference.getArangoCollectionReference(), x -> new ArrayList<>()).add(jsonAdapter.toJson(edgeResolution.getUpdatedEdge().defineCollectionById()));
 
             //... and attach it to the document id
-            insertedDocuments.computeIfAbsent(InternalSpace.DOCUMENT_ID_EDGE_COLLECTION, x -> new ArrayList<>()).add(jsonAdapter.toJson(entryHookDocuments.createEdgeFromHookDocument(InternalSpace.DOCUMENT_ID_EDGE_COLLECTION, edgeReference, edgeResolution.getUpdatedEdge().getOriginalDocument(), null)));
+            insertedDocuments.computeIfAbsent(InternalSpace.DOCUMENT_ID_EDGE_COLLECTION, x -> new ArrayList<>()).add(jsonAdapter.toJson(entryHookDocuments.createEdgeFromHookDocument(InternalSpace.DOCUMENT_ID_EDGE_COLLECTION, edgeReference, edgeResolution.getUpdatedEdge().getOriginalDocument(), null).defineCollectionById()));
 
             //... finally, update the payload of the related document to the resolved id
             ArangoDocument originalDocument = edgeResolutionDependencies.get(edgeResolution.getUpdatedEdge().getOriginalDocument());
@@ -300,9 +300,10 @@ public class ArangoRepositoryCommons {
                     documentIdHook = entryHookDocuments.getOrCreateDocumentIdHookDocument(upsert.getLifecycleDocumentId(), db);
                     documentIdHooks.put(upsert.getLifecycleDocumentId(), documentIdHook);
                 }
-                insertedDocuments.computeIfAbsent(InternalSpace.DOCUMENT_ID_EDGE_COLLECTION, x->new ArrayList<>()).add(jsonAdapter.toJson(entryHookDocuments.createEdgeFromHookDocument(InternalSpace.DOCUMENT_ID_EDGE_COLLECTION, upsert.getDocumentReference(), documentIdHook, null)));
+                insertedDocuments.computeIfAbsent(InternalSpace.DOCUMENT_ID_EDGE_COLLECTION, x->new ArrayList<>()).add(jsonAdapter.toJson(entryHookDocuments.createEdgeFromHookDocument(InternalSpace.DOCUMENT_ID_EDGE_COLLECTION, upsert.getDocumentReference(), documentIdHook, null).defineCollectionById()));
             }
         });
+
 
         collections.addAll(removedDocuments.stream().map(ArangoDocumentReference::getArangoCollectionReference).collect(Collectors.toSet()));
         collections.addAll(edgeResolutionDependencies.values().stream().map(d -> d.getOriginalDocument().getArangoCollectionReference()).collect(Collectors.toSet()));
