@@ -80,6 +80,9 @@ public class ArangoRepositoryInstances {
     private final GraphDBTypesAPI graphDBTypesAPI;
 
     public final static int DEFAULT_INCOMING_PAGESIZE = 10;
+    //TODO make this configurable
+    private final static List<String> SPACES_FOR_SCOPE = Collections.singletonList("kg-search");
+
 
     public ArangoRepositoryInstances(ArangoRepositoryCommons arangoRepositoryCommons, PermissionsController permissionsController, Permissions permissions, AuthContext authContext, GraphDBArangoUtils graphDBArangoUtils, QueryController queryController, ArangoDatabases databases, IdUtils idUtils, JsonAdapter jsonAdapter, GraphDBTypesAPI graphDBTypesAPI) {
         this.arangoRepositoryCommons = arangoRepositoryCommons;
@@ -1088,7 +1091,7 @@ public class ArangoRepositoryInstances {
         //get scope relevant queries
         //TODO filter user defined queries (only take client queries into account)
         Stream<NormalizedJsonLd> typeQueries = instance.types().stream().map(type -> getQueriesByRootType(stage, null, null, false, false, type).getData()).flatMap(Collection::stream);
-        List<NormalizedJsonLd> results = typeQueries.map(q -> {
+        List<NormalizedJsonLd> results = typeQueries.filter(q -> SPACES_FOR_SCOPE.contains(q.getAs(EBRAINSVocabulary.META_SPACE, String.class))).map(q -> {
             QueryResult queryResult = queryController.query(authContext.getUserWithRoles(),
                     new KgQuery(q, stage).setIdRestrictions(
                             Collections.singletonList(id)), null, null, true);
