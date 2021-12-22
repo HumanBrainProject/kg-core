@@ -270,7 +270,8 @@ public class ArangoRepositoryCommons {
             insertedDocuments.computeIfAbsent(edgeReference.getArangoCollectionReference(), x -> new ArrayList<>()).add(jsonAdapter.toJson(edgeResolution.getUpdatedEdge().defineCollectionById()));
 
             //... and attach it to the document id
-            insertedDocuments.computeIfAbsent(InternalSpace.DOCUMENT_ID_EDGE_COLLECTION, x -> new ArrayList<>()).add(jsonAdapter.toJson(entryHookDocuments.createEdgeFromHookDocument(InternalSpace.DOCUMENT_ID_EDGE_COLLECTION, edgeReference, edgeResolution.getUpdatedEdge().getOriginalDocument(), null).defineCollectionById()));
+            ArangoDocumentReference internalDocReference = new ArangoDocumentReference(ArangoCollectionReference.fromSpace(InternalSpace.DOCUMENT_ID_SPACE), edgeResolution.getUpdatedEdge().getOriginalDocument().getDocumentId());
+            insertedDocuments.computeIfAbsent(InternalSpace.DOCUMENT_ID_EDGE_COLLECTION, x -> new ArrayList<>()).add(jsonAdapter.toJson(entryHookDocuments.createEdgeFromHookDocument(InternalSpace.DOCUMENT_ID_EDGE_COLLECTION, edgeReference, internalDocReference, null).defineCollectionById()));
 
             //... finally, update the payload of the related document to the resolved id
             ArangoDocument originalDocument = edgeResolutionDependencies.get(edgeResolution.getUpdatedEdge().getOriginalDocument());
