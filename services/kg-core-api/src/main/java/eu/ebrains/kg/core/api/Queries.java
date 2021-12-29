@@ -46,10 +46,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.Collections;
-import java.util.Map;
-import java.util.Set;
-import java.util.UUID;
+import java.util.*;
 
 /**
  * The query API allows to execute and manage queries on top of the EBRAINS KG. This is the main interface for reading clients.
@@ -107,7 +104,10 @@ public class Queries {
         if(instanceId!=null){
             q.setIdRestrictions(Collections.singletonList(instanceId));
         }
-        return PaginatedResult.ok(queryController.executeQuery(q, allRequestParams, paginationParam));
+        Date startTime = new Date();
+        PaginatedResult<? extends JsonLdDoc> result = PaginatedResult.ok(queryController.executeQuery(q, allRequestParams, paginationParam));
+        result.setExecutionDetails(startTime, new Date());
+        return result;
     }
 
 
@@ -188,7 +188,10 @@ public class Queries {
         if(instanceId!=null){
             query.setIdRestrictions(Collections.singletonList(instanceId));
         }
-        return PaginatedResult.ok(queryController.executeQuery(query, allRequestParams, paginationParam));
+        Date startTime = new Date();
+        PaginatedResult<? extends JsonLdDoc> result = PaginatedResult.ok(queryController.executeQuery(query, allRequestParams, paginationParam));
+        result.setExecutionDetails(startTime, new Date());
+        return result;
     }
 
 }
