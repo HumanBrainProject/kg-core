@@ -807,11 +807,12 @@ public class ArangoRepositoryInstances {
             bindVars.put("typeRestriction", restrictToType);
         }
         aql.addLine(AQL.trust("FILTER inbnd != NULL"));
+        aql.addLine(AQL.trust("LET inbndRoot = inbnd.`_embedded` ? DOCUMENT(inbnd.`_originalDocument`) : inbnd"));
         aql.addLine(AQL.trust("RETURN {"));
         aql.indent().addLine(AQL.trust("\"" + SchemaOrgVocabulary.IDENTIFIER + "\": e.`_originalLabel`,"));
-        aql.addLine(AQL.trust("\"" + JsonLdConsts.ID + "\": inbnd.`@id`,"));
-        aql.addLine(AQL.trust("\"" + JsonLdConsts.TYPE + "\": inbnd.`@type`,"));
-        aql.addLine(AQL.trust("\"" + EBRAINSVocabulary.META_SPACE + "\": inbnd.`" + EBRAINSVocabulary.META_SPACE + "`"));
+        aql.addLine(AQL.trust("\"" + JsonLdConsts.ID + "\": inbndRoot.`@id`,"));
+        aql.addLine(AQL.trust("\"" + JsonLdConsts.TYPE + "\": inbndRoot.`@type`,"));
+        aql.addLine(AQL.trust("\"" + EBRAINSVocabulary.META_SPACE + "\": inbndRoot.`" + EBRAINSVocabulary.META_SPACE + "`"));
         aql.outdent().outdent().addLine(AQL.trust("})"));
 
         aql.addLine(AQL.trust("LET groupedByInstances = (FOR i IN inbnd"));
