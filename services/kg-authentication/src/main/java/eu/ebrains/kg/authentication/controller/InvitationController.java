@@ -50,7 +50,7 @@ public class InvitationController {
         final List<JsonLdIdMapping> result = this.ids.resolveId(Collections.singletonList(new IdWithAlternatives(id, null, null)), DataStage.IN_PROGRESS);
         if(!result.isEmpty()) {
             InstanceId invited = new InstanceId(id, result.get(0).getSpace());
-            final ScopeElement scopeForInstance = graphDBScopes.getScopeForInstance(invited.getSpace().getName(), id, DataStage.IN_PROGRESS, false);
+            final ScopeElement scopeForInstance = graphDBScopes.getScopeForInstance(invited.getSpace().getName(), id, DataStage.IN_PROGRESS);
             final Set<UUID> uuids = collectIds(scopeForInstance, new HashSet<>());
             authenticationRepository.createOrUpdateInstanceScope(new InstanceScope(id.toString(), new ArrayList<>(uuids)));
         }

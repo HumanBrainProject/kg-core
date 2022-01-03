@@ -33,5 +33,5 @@ public interface GraphDBScopes {
     interface Client extends GraphDBScopes {}
 
     @ExposesMinimalData
-    ScopeElement getScopeForInstance(String space, UUID id, DataStage stage, boolean fetchLabels);
+    ScopeElement getScopeForInstance(String space, UUID id, DataStage stage);
 }

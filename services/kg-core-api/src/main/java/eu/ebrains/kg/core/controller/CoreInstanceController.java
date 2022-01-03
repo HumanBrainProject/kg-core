@@ -389,7 +389,7 @@ public class CoreInstanceController {
     public ScopeElement getScopeForInstance(UUID id, DataStage stage, boolean returnPermissions) {
         InstanceId instanceId = ids.resolveId(stage, id);
         if (instanceId != null) {
-            ScopeElement scope = graphDBScopes.getScopeForInstance(instanceId.getSpace().getName(), instanceId.getUuid(), stage, true);
+            ScopeElement scope = graphDBScopes.getScopeForInstance(instanceId.getSpace().getName(), instanceId.getUuid(), stage);
             if (returnPermissions) {
                 enrichWithPermissionInformation(stage, scope, authContext.getUserWithRoles().getPermissions());
             }

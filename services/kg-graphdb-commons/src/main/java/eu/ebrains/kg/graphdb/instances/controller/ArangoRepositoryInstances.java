@@ -930,7 +930,7 @@ public class ArangoRepositoryInstances {
                 return getTopInstanceReleaseStatus(space, id);
             case CHILDREN_ONLY:
                 //FIXME restrict exposed release status based on permissions.
-                ScopeElement scopeForInstance = getScopeForInstance(space, id, DataStage.IN_PROGRESS, false);
+                ScopeElement scopeForInstance = getScopeForInstance(space, id, DataStage.IN_PROGRESS);
                 if (scopeForInstance.getChildren() == null || scopeForInstance.getChildren().isEmpty()) {
                     return null;
                 }
@@ -1086,7 +1086,7 @@ public class ArangoRepositoryInstances {
 
     @ExposesMinimalData
     //FIXME reduce to minimal data permission
-    public ScopeElement getScopeForInstance(SpaceName space, UUID id, DataStage stage, boolean fetchLabels) {
+    public ScopeElement getScopeForInstance(SpaceName space, UUID id, DataStage stage) {
         //get instance
         NormalizedJsonLd instance = getInstance(stage, space, id, false, false, false, false, null);
         //get scope relevant queries
@@ -1098,7 +1098,7 @@ public class ArangoRepositoryInstances {
                             Collections.singletonList(id)), null, null, true);
             return queryResult != null && queryResult.getResult() != null ? queryResult.getResult().getData() : null;
         }).filter(Objects::nonNull).flatMap(Collection::stream).collect(Collectors.toList());
-        return translateResultToScope(results, stage, fetchLabels, instance);
+        return translateResultToScope(results, instance);
     }
 
     private ScopeElement handleSubElement(NormalizedJsonLd data, Map<String, Set<ScopeElement>> typeToUUID) {
@@ -1112,7 +1112,7 @@ public class ArangoRepositoryInstances {
                 data.getAsListOf(k, NormalizedJsonLd.class).stream().map(d -> handleSubElement(d, typeToUUID)).filter(Objects::nonNull).collect(Collectors.toList())
         ).flatMap(Collection::stream).collect(Collectors.toList());
         List<String> type = data.getAsListOf("type", String.class);
-            ScopeElement element = new ScopeElement(uuid, type, children.isEmpty() ? null : children, data.getAs("internalId", String.class), data.getAs("space", String.class));
+            ScopeElement element = new ScopeElement(uuid, type, children.isEmpty() ? null : children, data.getAs("internalId", String.class), data.getAs("space", String.class), data.getAs("label", String.class));
         type.forEach(t -> {
             typeToUUID.computeIfAbsent(t, x -> new HashSet<>()).add(element);
         });
@@ -1145,28 +1145,16 @@ public class ArangoRepositoryInstances {
     }
 
 
-    private ScopeElement translateResultToScope(List<NormalizedJsonLd> data, DataStage stage, boolean fetchLabels, NormalizedJsonLd instance) {
+    private ScopeElement translateResultToScope(List<NormalizedJsonLd> data, NormalizedJsonLd instance) {
         final Map<String, Set<ScopeElement>> typeToUUID = new HashMap<>();
         List<ScopeElement> elements;
         if (data == null || data.isEmpty()) {
-            elements = Collections.singletonList(new ScopeElement(idUtils.getUUID(instance.id()), instance.types(), null, instance.getAs(ArangoVocabulary.ID, String.class), instance.getAs(EBRAINSVocabulary.META_SPACE, String.class)));
+            elements = Collections.singletonList(new ScopeElement(idUtils.getUUID(instance.id()), instance.types(), null, instance.getAs(ArangoVocabulary.ID, String.class), instance.getAs(EBRAINSVocabulary.META_SPACE, String.class), instance.getAs(IndexedJsonLdDoc.LABEL, String.class)));
         } else {
             elements = data.stream().map(d -> handleSubElement(d, typeToUUID)).filter(Objects::nonNull).collect(Collectors.toList());
         }
         for(ScopeElement el : elements) {
             instance.types().forEach(t -> typeToUUID.computeIfAbsent(t, x -> new HashSet<>()).add(el));
-        }
-        if (fetchLabels) {
-            Set<InstanceId> instances = typeToUUID.values().stream().flatMap(Collection::stream).map(s -> InstanceId.deserialize(s.getInternalId())).collect(Collectors.toSet());
-            Map<UUID, String> labelsForInstances = getLabelsForInstances(stage, instances);
-            typeToUUID.values().stream().distinct().parallel().flatMap(Collection::stream).forEach(e -> {
-                if (e.getLabel() == null) {
-                    String label = labelsForInstances.get(e.getId());
-                    if (label != null) {
-                        e.setLabel(label);
-                    }
-                }
-            });
         }
         return mergeInstancesOnSameLevel(elements).get(0);
     }

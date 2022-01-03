@@ -56,6 +56,7 @@ public class SpecificationToScopeQueryAdapter {
                     traversalProperty.property.add(internalIdProperty());
                     traversalProperty.property.add(spaceProperty());
                     traversalProperty.property.add(embeddedProperty());
+                    traversalProperty.property.add(labelProperty());
                     traversalSubProperties.add(traversalProperty);
                     traversalSubProperties = traversalProperty.property;
                 }
@@ -77,6 +78,7 @@ public class SpecificationToScopeQueryAdapter {
         root.add(internalIdProperty());
         root.add(spaceProperty());
         root.add(embeddedProperty());
+        root.add(labelProperty());
         originalSpec.getProperties().stream().map(this::handleProperty).forEach(root::addAll);
         return new Specification(root, originalSpec.getDocumentFilter(), originalSpec.getRootType(), originalSpec.getResponseVocab());
     }
@@ -87,6 +89,9 @@ public class SpecificationToScopeQueryAdapter {
     }
     private SpecProperty internalIdProperty(){
         return new SpecProperty("internalId", null, Collections.singletonList(new SpecTraverse(ArangoVocabulary.ID, false, null)), null, false, false, false, false, false, null, SpecProperty.SingleItemStrategy.FIRST);
+    }
+    private SpecProperty labelProperty(){
+        return new SpecProperty("label", null, Collections.singletonList(new SpecTraverse(IndexedJsonLdDoc.LABEL, false, null)), null, false, false, false, false, false, null, SpecProperty.SingleItemStrategy.FIRST);
     }
     private SpecProperty embeddedProperty(){
         return new SpecProperty("embedded", null, Collections.singletonList(new SpecTraverse(IndexedJsonLdDoc.EMBEDDED, false, null)), null, false, false, false, false, false, null, SpecProperty.SingleItemStrategy.FIRST);

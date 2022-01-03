@@ -43,12 +43,13 @@ public class ScopeElement {
     public ScopeElement() {
     }
 
-    public ScopeElement(UUID id, List<String> types, List<ScopeElement> children, String internalId, String space) {
+    public ScopeElement(UUID id, List<String> types, List<ScopeElement> children, String internalId, String space, String label) {
         this.id = id;
         this.children = children;
         this.types = types;
         this.internalId = internalId;
         this.space = space;
+        this.label = label;
     }
 
     public String getInternalId() {
