@@ -811,7 +811,7 @@ public class ArangoRepositoryInstances {
         aql.addLine(AQL.trust("RETURN {"));
         aql.indent().addLine(AQL.trust("\"" + SchemaOrgVocabulary.IDENTIFIER + "\": e.`_originalLabel`,"));
         aql.addLine(AQL.trust("\"" + JsonLdConsts.ID + "\": inbndRoot.`@id`,"));
-        aql.addLine(AQL.trust("\"" + JsonLdConsts.TYPE + "\": inbndRoot.`@type`,"));
+        aql.addLine(AQL.trust("\"" + JsonLdConsts.TYPE + "\": inbnd.`@type`,"));
         aql.addLine(AQL.trust("\"" + EBRAINSVocabulary.META_SPACE + "\": inbndRoot.`" + EBRAINSVocabulary.META_SPACE + "`"));
         aql.outdent().outdent().addLine(AQL.trust("})"));
 
