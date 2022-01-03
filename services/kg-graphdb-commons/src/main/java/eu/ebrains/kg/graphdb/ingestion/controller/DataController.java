@@ -65,6 +65,9 @@ public class DataController {
     private final ReleasingController releasingController;
     private final TypeUtils typeUtils;
 
+    public static final ArangoDocumentReference UNKNOWN_TARGET = ArangoDocumentReference.fromArangoId("unknown/" + UUID.nameUUIDFromBytes("unknown".getBytes(StandardCharsets.UTF_8)).toString(), false);
+
+
     public DataController(IdUtils idUtils, ArangoRepositoryCommons repository, EntryHookDocuments entryHookDocuments, GraphDBArangoUtils graphDBArangoUtils, Ids.Client ids, ReleasingController releasingController, TypeUtils typeUtils) {
         this.idUtils = idUtils;
         this.repository = repository;
@@ -184,11 +187,10 @@ public class DataController {
         Set<JsonLdId> resolvedJsonLdIds = new HashSet<>();
 
         for (ArangoEdge edge : edges) {
-            ArangoDocumentReference unknownTarget = ArangoDocumentReference.fromArangoId("unknown/" + UUID.nameUUIDFromBytes("unknown".getBytes(StandardCharsets.UTF_8)).toString(), false);
             if (stage == DataStage.NATIVE || isEdgeOf(edge.getId(), InternalSpace.INFERENCE_OF_SPACE, new SpaceName(EBRAINSVocabulary.META_USER))) {
                 //We are either in NATIVE stage or have a relation to inference of or user - we already know that we won't be able to resolve it (since the target instance is in a different database), so we shortcut the process.
                 logger.trace(String.format("Not resolving edge pointing to %s", edge.getOriginalTo()));
-                edge.setTo(unknownTarget);
+                edge.setTo(UNKNOWN_TARGET);
             } else {
                 JsonLdIdMapping jsonLdIdMapping = resolvedIds.stream().filter(resolved -> resolved.getRequestedId().equals(edgeToRequestId.get(edge.getOriginalTo()))).findFirst().orElse(null);
                 if (jsonLdIdMapping != null && jsonLdIdMapping.getResolvedIds() != null && jsonLdIdMapping.getResolvedIds().size() == 1) {
@@ -210,7 +212,7 @@ public class DataController {
                     logger.info("Was not able to resolve link -> we postpone it.");
                     ArangoDocumentReference unresolvedEdge = ArangoCollectionReference.fromSpace(InternalSpace.UNRESOLVED_SPACE, true).doc(edge.getId().getDocumentId());
                     edge.redefineId(unresolvedEdge);
-                    edge.setTo(unknownTarget);
+                    edge.setTo(UNKNOWN_TARGET);
                 }
             }
         }

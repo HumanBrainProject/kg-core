@@ -26,11 +26,11 @@ import eu.ebrains.kg.arango.commons.model.ArangoDocumentReference;
 
 import java.util.Objects;
 
-public class DeleteInstanceOperation implements DBOperation {
+public class RemoveReleaseStateOperation implements DBOperation {
 
     private final ArangoDocumentReference documentReference;
 
-    public DeleteInstanceOperation(ArangoDocumentReference documentReference) {
+    public RemoveReleaseStateOperation(ArangoDocumentReference documentReference) {
         this.documentReference = documentReference;
     }
 
@@ -42,7 +42,7 @@ public class DeleteInstanceOperation implements DBOperation {
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
-        DeleteInstanceOperation that = (DeleteInstanceOperation) o;
+        RemoveReleaseStateOperation that = (RemoveReleaseStateOperation) o;
         return Objects.equals(documentReference, that.documentReference);
     }
 

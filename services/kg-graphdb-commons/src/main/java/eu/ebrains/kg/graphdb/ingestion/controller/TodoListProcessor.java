@@ -35,7 +35,7 @@ import eu.ebrains.kg.graphdb.commons.controller.ArangoRepositoryCommons;
 import eu.ebrains.kg.graphdb.commons.model.ArangoDocument;
 import eu.ebrains.kg.graphdb.commons.model.ArangoInstance;
 import eu.ebrains.kg.graphdb.ingestion.model.DBOperation;
-import eu.ebrains.kg.graphdb.ingestion.model.DeleteInstanceOperation;
+import eu.ebrains.kg.graphdb.ingestion.model.RemoveReleaseStateOperation;
 import eu.ebrains.kg.graphdb.ingestion.model.EdgeResolutionOperation;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -156,7 +156,7 @@ public class TodoListProcessor {
 
     private void unreleaseDocument(ArangoDocumentReference rootDocumentReference) {
         deleteDocument(DataStage.RELEASED, rootDocumentReference);
-        repository.executeTransactional(DataStage.IN_PROGRESS, Collections.singletonList(new DeleteInstanceOperation(releasingController.getReleaseStatusEdgeId(rootDocumentReference))));
+        repository.executeTransactional(DataStage.IN_PROGRESS, Collections.singletonList(new RemoveReleaseStateOperation(releasingController.getReleaseStatusEdgeId(rootDocumentReference))));
     }
 
     private void releaseDocument(ArangoDocumentReference rootDocumentReference, NormalizedJsonLd payload) {
@@ -190,7 +190,8 @@ public class TodoListProcessor {
 
     public void deleteDocument(DataStage stage, ArangoDocumentReference documentReference) {
         if (repository.doesDocumentExist(stage, documentReference)) {
-            repository.executeTransactional(stage, dataController.createDeleteOperations(stage, Collections.singletonList(documentReference)));
+            final List<DBOperation> deleteOperations = dataController.createDeleteOperations(stage, Collections.singletonList(documentReference));
+            repository.executeTransactional(stage, deleteOperations);
         } else {
             logger.warn(String.format("Tried to remove non-existent document with id %s in stage %s", documentReference.getId(), stage.name()));
         }

@@ -44,6 +44,7 @@ import eu.ebrains.kg.commons.model.Paginated;
 import eu.ebrains.kg.commons.semantics.vocabularies.EBRAINSVocabulary;
 import eu.ebrains.kg.graphdb.commons.model.ArangoDocument;
 import eu.ebrains.kg.graphdb.commons.model.ArangoEdge;
+import eu.ebrains.kg.graphdb.ingestion.controller.DataController;
 import eu.ebrains.kg.graphdb.ingestion.model.*;
 import eu.ebrains.kg.graphdb.structure.controller.CacheController;
 import org.apache.commons.lang3.StringUtils;
@@ -93,12 +94,12 @@ public class ArangoRepositoryCommons {
         bindVars.put("@collection", collectionReference.getCollectionName());
         bindVars.put("origin", origin.getId());
         bindVars.put("target", target.getId());
-        if(logger.isTraceEnabled()){
+        if (logger.isTraceEnabled()) {
             logger.trace(aql.buildSimpleDebugQuery(bindVars));
         }
         long start = new Date().getTime();
         List<ArangoDocumentReference> result = query(db, aql.build().getValue(), bindVars, new AqlQueryOptions(), String.class).stream().map(s -> ArangoDocumentReference.fromArangoId(s, true)).collect(Collectors.toList());
-        logger.debug(String.format("Resolved %d edges between document %s and %s in %dms", result.size(), origin.getId(), target.getId(), new Date().getTime()-start));
+        logger.debug(String.format("Resolved %d edges between document %s and %s in %dms", result.size(), origin.getId(), target.getId(), new Date().getTime() - start));
         return result;
     }
 
@@ -113,12 +114,12 @@ public class ArangoRepositoryCommons {
             Map<String, Object> bindVars = new HashMap<>();
             bindVars.put("@unresolvedEdges", unresolvedEdges.getCollectionName());
             bindVars.put("ids", ids);
-            if(logger.isTraceEnabled()){
+            if (logger.isTraceEnabled()) {
                 logger.trace(aql.buildSimpleDebugQuery(bindVars));
             }
             long start = new Date().getTime();
             List<ArangoEdge> result = query(db, aql.build().getValue(), bindVars, new AqlQueryOptions(), ArangoEdge.class);
-            logger.debug(String.format("Found %d unresolved edges for ids %s in %dms", result.size(), StringUtils.join(ids, ", "), new Date().getTime()-start));
+            logger.debug(String.format("Found %d unresolved edges for ids %s in %dms", result.size(), StringUtils.join(ids, ", "), new Date().getTime() - start));
             return result;
         }
         return Collections.emptyList();
@@ -147,12 +148,12 @@ public class ArangoRepositoryCommons {
         aql.addLine(AQL.trust("FOR edge IN edges"));
         aql.addLine(AQL.trust("RETURN edge"));
         bindVars.put("document", documentReference.getId());
-        if(logger.isTraceEnabled()){
+        if (logger.isTraceEnabled()) {
             logger.trace(aql.buildSimpleDebugQuery(bindVars));
         }
         long start = new Date().getTime();
         List<ArangoEdge> result = query(db, aql.build().getValue(), bindVars, new AqlQueryOptions(), ArangoEdge.class);
-        logger.debug(String.format("Found %d incoming relations for ids %s in %dms", result.size(), documentReference.getId(), new Date().getTime()-start));
+        logger.debug(String.format("Found %d incoming relations for ids %s in %dms", result.size(), documentReference.getId(), new Date().getTime() - start));
         return result;
     }
 
@@ -177,19 +178,19 @@ public class ArangoRepositoryCommons {
             aql.addLine(AQL.trust("LET doc = DOCUMENT(@@collection, @documentId)"));
             aql.addLine(AQL.trust("LET docs = (FOR v,e IN 1..1 OUTBOUND doc @@relation"));
             aql.indent().addLine(AQL.trust("RETURN [v._id, e._id])")).outdent();
-            aql.addLine(AQL.trust( "LET flattened = FLATTEN(docs)"));
-            aql.addLine(AQL.trust( "FOR d IN flattened"));
-            aql.addLine(AQL.trust( "RETURN d"));
+            aql.addLine(AQL.trust("LET flattened = FLATTEN(docs)"));
+            aql.addLine(AQL.trust("FOR d IN flattened"));
+            aql.addLine(AQL.trust("RETURN d"));
             Map<String, Object> bindVars = new HashMap<>();
             bindVars.put("@collection", documentIdSpace.getCollectionName());
             bindVars.put("documentId", documentId.toString());
             bindVars.put("@relation", InternalSpace.DOCUMENT_ID_EDGE_COLLECTION.getCollectionName());
-            if(logger.isTraceEnabled()){
+            if (logger.isTraceEnabled()) {
                 logger.trace(aql.buildSimpleDebugQuery(bindVars));
             }
             long start = new Date().getTime();
             List<String> ids = db.query(aql.build().getValue(), bindVars, new AqlQueryOptions(), String.class).asListRemaining();
-            logger.debug(String.format("Resolved %d references for document id %s in %dms", ids.size(), documentId, new Date().getTime()-start));
+            logger.debug(String.format("Resolved %d references for document id %s in %dms", ids.size(), documentId, new Date().getTime() - start));
             return ids.stream().filter(Objects::nonNull).map(id -> ArangoDocumentReference.fromArangoId(id, null)).collect(Collectors.toSet());
         }
         return Collections.emptySet();
@@ -204,7 +205,7 @@ public class ArangoRepositoryCommons {
     }
 
 
-    private List<CacheEvictionPlan> fetchCacheEvictionPlans(DataStage stage, List<String> ids){
+    private List<CacheEvictionPlan> fetchCacheEvictionPlans(DataStage stage, List<String> ids) {
         AQL aql = new AQL();
         Map<String, Object> bindVars = new HashMap<>();
         aql.addLine(AQL.trust("FOR id IN @ids"));
@@ -228,11 +229,12 @@ public class ArangoRepositoryCommons {
         collections.add(InternalSpace.DOCUMENT_ID_EDGE_COLLECTION);
         ArangoCollectionReference documentIdSpaceRef = ArangoCollectionReference.fromSpace(InternalSpace.DOCUMENT_ID_SPACE);
         collections.add(documentIdSpaceRef);
-        collections.add(ArangoCollectionReference.fromSpace(InternalSpace.UNRESOLVED_SPACE, true));
+        final ArangoCollectionReference unresolvedSpace = ArangoCollectionReference.fromSpace(InternalSpace.UNRESOLVED_SPACE, true);
+        collections.add(unresolvedSpace);
 
         List<DBOperation> distinctOperations = operations.stream().distinct().collect(Collectors.toList());
         Set<ArangoDocumentReference> deleteIds = distinctOperations.stream().filter(o -> o instanceof DeleteOperation).map(o -> ((DeleteOperation) o).getLifecycleDocumentRef()).collect(Collectors.toSet());
-        Set<DeleteInstanceOperation> deleteInstanceOperations = distinctOperations.stream().filter(o -> o instanceof DeleteInstanceOperation).map(o -> (DeleteInstanceOperation) o).collect(Collectors.toSet());
+        Set<RemoveReleaseStateOperation> removeReleaseStateOperations = distinctOperations.stream().filter(o -> o instanceof RemoveReleaseStateOperation).map(o -> (RemoveReleaseStateOperation) o).collect(Collectors.toSet());
         List<UpsertOperation> upserts = distinctOperations.stream().filter(o -> o instanceof UpsertOperation).map(o -> (UpsertOperation) o).filter(u -> u.getDocumentReference() != null).filter(u -> u.isOverrideIfExists() || !doesDocumentExist(stage, u.getDocumentReference())).collect(Collectors.toList());
         List<EdgeResolutionOperation> edgeResolutionOperations = distinctOperations.stream().filter(o -> o instanceof EdgeResolutionOperation).map(o -> (EdgeResolutionOperation) o).collect(Collectors.toList());
 
@@ -247,11 +249,21 @@ public class ArangoRepositoryCommons {
             removedDocuments.addAll(findRemovalOfAllDependenciesForDocumentId(db, delete, removedDocuments));
             //When actually deleting something, we also get rid of the document-id hook-document.
             ArangoDocumentReference documentReference = documentIdSpaceRef.doc(delete.getDocumentId());
+            if (stage != DataStage.NATIVE) {
+                //Since we remove an instance, this also means that incoming links are detached...
+                getIncomingRelationsForDocument(stage, delete).stream().filter(incomingRelation -> incomingRelation.getOriginalTo() != null).forEach(edge -> {
+                    removedDocuments.add(edge.getId());
+                    edge.redefineId(new ArangoDocumentReference(ArangoCollectionReference.fromSpace(InternalSpace.UNRESOLVED_SPACE), edge.getKey()));
+                    edge.defineCollectionById();
+                    edge.setTo(DataController.UNKNOWN_TARGET);
+                    insertedDocuments.computeIfAbsent(unresolvedSpace, x -> new ArrayList<>()).add(jsonAdapter.toJson(edge));
+                });
+            }
             removedDocuments.add(documentReference);
         });
-        deleteInstanceOperations.forEach(delete -> {
-            if (delete.getDocumentReference() != null) {
-                removedDocuments.add(delete.getDocumentReference());
+        removeReleaseStateOperations.forEach(removeReleaseState -> {
+            if (removeReleaseState.getDocumentReference() != null) {
+                removedDocuments.add(removeReleaseState.getDocumentReference());
             }
         });
         Map<ArangoDocumentReference, ArangoDocument> edgeResolutionDependencies = new HashMap<>();
@@ -275,11 +287,11 @@ public class ArangoRepositoryCommons {
 
             //... finally, update the payload of the related document to the resolved id
             ArangoDocument originalDocument = edgeResolutionDependencies.get(edgeResolution.getUpdatedEdge().getOriginalDocument());
-            if(originalDocument==null){
+            if (originalDocument == null) {
                 originalDocument = getDocument(stage, edgeResolution.getUpdatedEdge().getOriginalDocument());
                 edgeResolutionDependencies.put(edgeResolution.getUpdatedEdge().getOriginalDocument(), originalDocument);
             }
-            if(originalDocument!=null){
+            if (originalDocument != null) {
                 originalDocument.applyResolvedEdges(Collections.singleton(edgeResolution.getUpdatedEdge()));
             }
 //            removedDocuments.add(edgeResolution.getUpdatedEdge().getOriginalDocument());
@@ -293,7 +305,7 @@ public class ArangoRepositoryCommons {
             arangoDocument.asIndexedDoc().setCollection(arangoDocument.getId().getArangoCollectionReference().getCollectionName());
             arangoDocument.asIndexedDoc().updateIdentifiers();
             arangoDocument.setKeyBasedOnId();
-            insertedDocuments.computeIfAbsent(collection, x->new ArrayList<>()).add(jsonAdapter.toJson(upsert.getPayload()));
+            insertedDocuments.computeIfAbsent(collection, x -> new ArrayList<>()).add(jsonAdapter.toJson(upsert.getPayload()));
             if (upsert.isAttachToOriginalDocument()) {
                 //Attention: The following method is non-transactional. It's just the hook-document though and therefore acceptable
                 ArangoDocumentReference documentIdHook = documentIdHooks.get(upsert.getLifecycleDocumentId());
@@ -301,7 +313,7 @@ public class ArangoRepositoryCommons {
                     documentIdHook = entryHookDocuments.getOrCreateDocumentIdHookDocument(upsert.getLifecycleDocumentId(), db);
                     documentIdHooks.put(upsert.getLifecycleDocumentId(), documentIdHook);
                 }
-                insertedDocuments.computeIfAbsent(InternalSpace.DOCUMENT_ID_EDGE_COLLECTION, x->new ArrayList<>()).add(jsonAdapter.toJson(entryHookDocuments.createEdgeFromHookDocument(InternalSpace.DOCUMENT_ID_EDGE_COLLECTION, upsert.getDocumentReference(), documentIdHook, null).defineCollectionById()));
+                insertedDocuments.computeIfAbsent(InternalSpace.DOCUMENT_ID_EDGE_COLLECTION, x -> new ArrayList<>()).add(jsonAdapter.toJson(entryHookDocuments.createEdgeFromHookDocument(InternalSpace.DOCUMENT_ID_EDGE_COLLECTION, upsert.getDocumentReference(), documentIdHook, null).defineCollectionById()));
             }
         });
 
@@ -324,21 +336,21 @@ public class ArangoRepositoryCommons {
         DocumentUpdateOptions updateOptions = new DocumentUpdateOptions().streamTransactionId(tx.getId());
         List<String> allIds = null;
         List<CacheEvictionPlan> cacheEvictionPlansBeforeTransaction = null;
-        if(stage == DataStage.IN_PROGRESS || stage == DataStage.RELEASED) {
+        if (stage == DataStage.IN_PROGRESS || stage == DataStage.RELEASED) {
             allIds = Stream.concat(Stream.concat(removedDocuments.stream().map(ArangoDocumentReference::getId), edgeResolutionDependencies.keySet().stream().map(ArangoDocumentReference::getId)), insertedDocuments.values().stream().flatMap(Collection::stream).map(i -> jsonAdapter.fromJson(i, DynamicJson.class).getAs(ArangoVocabulary.ID, String.class))).distinct().collect(Collectors.toList());
             cacheEvictionPlansBeforeTransaction = fetchCacheEvictionPlans(stage, allIds);
         }
         try {
-            removedDocuments.stream().collect(Collectors.groupingBy(ArangoDocumentReference::getArangoCollectionReference)).forEach((c,v)->db.collection(c.getCollectionName()).deleteDocuments(v.stream().map(r -> r.getDocumentId().toString()).collect(Collectors.toSet()), String.class, deleteOptions));
+            removedDocuments.stream().collect(Collectors.groupingBy(ArangoDocumentReference::getArangoCollectionReference)).forEach((c, v) -> db.collection(c.getCollectionName()).deleteDocuments(v.stream().map(r -> r.getDocumentId().toString()).collect(Collectors.toSet()), String.class, deleteOptions));
             edgeResolutionDependencies.values().stream().collect(Collectors.groupingBy(i -> i.getId().getArangoCollectionReference())).forEach((c, v) -> db.collection(c.getCollectionName()).updateDocuments(v.stream().map(doc -> jsonAdapter.toJson(doc.getDoc())).collect(Collectors.toList()), updateOptions));
-            insertedDocuments.forEach((c,v)->db.collection(c.getCollectionName()).insertDocuments(v, insertOptions.overwrite(true)));
+            insertedDocuments.forEach((c, v) -> db.collection(c.getCollectionName()).insertDocuments(v, insertOptions.overwrite(true)));
             db.commitStreamTransaction(tx.getId());
-            logger.debug(String.format("Committing transaction %s after %dms", tx.getId(), new Date().getTime()-startTransactionDate));
+            logger.debug(String.format("Committing transaction %s after %dms", tx.getId(), new Date().getTime() - startTransactionDate));
         } catch (Exception e) {
-            logger.debug(String.format("Execution of transaction has failed after %dms. \n\n TRANSACTION: %s\n\n", new Date().getTime()-startTransactionDate, tx.getId()));
+            logger.debug(String.format("Execution of transaction has failed after %dms. \n\n TRANSACTION: %s\n\n", new Date().getTime() - startTransactionDate, tx.getId()));
             db.abortStreamTransaction(tx.getId());
         }
-        if(stage == DataStage.IN_PROGRESS || stage == DataStage.RELEASED) {
+        if (stage == DataStage.IN_PROGRESS || stage == DataStage.RELEASED) {
             cacheController.evictCacheByPlan(stage, cacheEvictionPlansBeforeTransaction, fetchCacheEvictionPlans(stage, allIds));
         }
     }
@@ -358,7 +370,7 @@ public class ArangoRepositoryCommons {
 
     public <T> Paginated<T> queryDocuments(ArangoDatabase db, AQLQuery aqlQuery, Function<NormalizedJsonLd, T> mapper) {
         AQL aql = aqlQuery.getAql();
-        if(logger.isTraceEnabled()){
+        if (logger.isTraceEnabled()) {
             logger.trace(aql.buildSimpleDebugQuery(aqlQuery.getBindVars()));
         }
         String value = aql.build().getValue();

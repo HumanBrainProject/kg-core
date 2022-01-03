@@ -283,6 +283,26 @@ public class Instances {
         return Result.ok(result);
     }
 
+    @Operation(summary = "Move an instance to another space")
+    @PutMapping("/instances/{id}/spaces/{space}")
+    @WritesData
+    @ExposesIds
+    @Simple
+    public ResponseEntity<Result<NormalizedJsonLd>> moveInstance(@PathVariable("id") UUID id, @PathVariable("space") String targetSpace, @ParameterObject ExtendedResponseConfiguration responseConfiguration) {
+        Date startTime = new Date();
+        InstanceId instanceId = idsController.resolveId(DataStage.IN_PROGRESS, id);
+        if (instanceId == null) {
+            return ResponseEntity.notFound().build();
+        } else {
+            ReleaseStatus releaseStatus = release.getReleaseStatus(instanceId.getSpace().getName(), instanceId.getUuid(), ReleaseTreeScope.TOP_INSTANCE_ONLY);
+            if (releaseStatus != null && releaseStatus != ReleaseStatus.UNRELEASED) {
+                return ResponseEntity.status(HttpStatus.CONFLICT).body(Result.nok(HttpStatus.CONFLICT.value(), "Was not able to move an instance because it is released still"));
+            }
+            return instanceController.moveInstance(instanceId, authContext.resolveSpaceName(targetSpace), responseConfiguration);
+        }
+    }
+
+
     @Operation(summary = "Delete an instance")
     @DeleteMapping("/instances/{id}")
     @WritesData

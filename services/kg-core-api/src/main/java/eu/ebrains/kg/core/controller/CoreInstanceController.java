@@ -25,6 +25,8 @@ package eu.ebrains.kg.core.controller;
 import eu.ebrains.kg.commons.AuthContext;
 import eu.ebrains.kg.commons.IdUtils;
 import eu.ebrains.kg.commons.api.*;
+import eu.ebrains.kg.commons.exception.ForbiddenException;
+import eu.ebrains.kg.commons.exception.InstanceNotFoundException;
 import eu.ebrains.kg.commons.exception.UnauthorizedException;
 import eu.ebrains.kg.commons.jsonld.*;
 import eu.ebrains.kg.commons.model.*;
@@ -139,6 +141,23 @@ public class CoreInstanceController {
     public Set<InstanceId> deleteInstance(InstanceId instanceId) {
         Event deleteEvent = Event.createDeleteEvent(instanceId.getSpace(), instanceId.getUuid(), idUtils.buildAbsoluteUrl(instanceId.getUuid()));
         return primaryStoreEvents.postEvent(deleteEvent);
+    }
+
+    public ResponseEntity<Result<NormalizedJsonLd>> moveInstance(InstanceId instanceId, SpaceName targetSpace, ExtendedResponseConfiguration responseConfiguration) {
+        NormalizedJsonLd instance = graphDBInstances.getInstanceById(instanceId.getSpace().getName(), instanceId.getUuid(), DataStage.IN_PROGRESS, true, false, false, null, true);
+        if(instance == null){
+            throw new InstanceNotFoundException(String.format("Instance %s not found", instanceId.getUuid()));
+        }
+        else{
+            if(permissions.hasPermission(authContext.getUserWithRoles(), Functionality.CREATE_PERMISSION, targetSpace)) {
+                //FIXME make this transactional.
+                deleteInstance(instanceId);
+                return createNewInstance(instance, instanceId.getUuid(), targetSpace, responseConfiguration);
+            }
+            else{
+                throw new ForbiddenException(String.format("You are not allowed to move an instance to the space %s", targetSpace));
+            }
+        }
     }
 
 
