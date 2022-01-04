@@ -53,6 +53,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
 import java.util.*;
+import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -367,6 +368,21 @@ public class ArangoRepositoryCommons {
         return queryDocuments(db, aqlQuery, null);
     }
 
+    public <T> void visitDocuments(ArangoDatabase db, AQLQuery aqlQuery, Consumer<T> consumer, Class<T> clazz) {
+        AQL aql = aqlQuery.getAql();
+        if (logger.isTraceEnabled()) {
+            logger.trace(aql.buildSimpleDebugQuery(aqlQuery.getBindVars()));
+        }
+        String value = aql.build().getValue();
+        long launch = new Date().getTime();
+        ArangoCursor<T> result = db.query(value, aqlQuery.getBindVars(), aql.getQueryOptions(), clazz);
+        logger.debug(String.format("Received %d results from Arango in %dms", result.getCount(), new Date().getTime() - launch));
+        while(result.hasNext()){
+            consumer.accept(result.next());
+        }
+        logger.debug(String.format("Done visiting the results after %dms", new Date().getTime() - launch));
+    }
+
 
     public <T> Paginated<T> queryDocuments(ArangoDatabase db, AQLQuery aqlQuery, Function<NormalizedJsonLd, T> mapper) {
         AQL aql = aqlQuery.getAql();
@@ -375,7 +391,9 @@ public class ArangoRepositoryCommons {
         }
         String value = aql.build().getValue();
         long launch = new Date().getTime();
-        ArangoCursor<NormalizedJsonLd> result = db.query(value, aqlQuery.getBindVars(), aql.getQueryOptions(), NormalizedJsonLd.class);
+        //The direct parsing into NormalizedJsonLd is not optimal - we achieve better performance when doing the parsing
+        //afterwards (with jackson). this is why we take this extra step
+        ArangoCursor<String> result = db.query(value, aqlQuery.getBindVars(), aql.getQueryOptions(), String.class);
         logger.debug(String.format("Received %d results from Arango in %dms", result.getCount(), new Date().getTime() - launch));
         Long totalCount;
         if (aql.getPaginationParam() != null && aql.getPaginationParam().getSize() != null) {
@@ -383,13 +401,17 @@ public class ArangoRepositoryCommons {
         } else {
             totalCount = result.getCount() != null ? result.getCount().longValue() : null;
         }
-        List<T> mappedResult;
-        List<NormalizedJsonLd> normalizedJsonLds = result.asListRemaining();
-        logger.debug(String.format("Done parsing the results after %dms", new Date().getTime() - launch));
-        if (mapper != null) {
-            mappedResult = normalizedJsonLds.stream().map(mapper).collect(Collectors.toList());
-        } else {
-            mappedResult = (List<T>) normalizedJsonLds;
+
+        logger.debug(String.format("Start parsing the results after %dms", new Date().getTime() - launch));
+        List<T> mappedResult = new ArrayList<>();
+        while (result.hasNext()) {
+            final NormalizedJsonLd normalizedJsonLd = jsonAdapter.fromJson(result.next(), NormalizedJsonLd.class);
+            if(mapper!=null){
+                mappedResult.add(mapper.apply(normalizedJsonLd));
+            }
+            else{
+                mappedResult.add((T)normalizedJsonLd);
+            }
         }
         logger.debug(String.format("Done processing the Arango result - received %d results in %dms total", mappedResult.size(), new Date().getTime() - launch));
         if (aql.getPaginationParam() != null && aql.getPaginationParam().getSize() == null && (int) aql.getPaginationParam().getFrom() > 0 && (int) aql.getPaginationParam().getFrom() < mappedResult.size()) {

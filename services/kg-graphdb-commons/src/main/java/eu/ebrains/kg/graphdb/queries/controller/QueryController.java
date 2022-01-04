@@ -29,6 +29,8 @@ import com.arangodb.model.AqlQueryOptions;
 import eu.ebrains.kg.arango.commons.model.AQLQuery;
 import eu.ebrains.kg.arango.commons.model.ArangoCollectionReference;
 import eu.ebrains.kg.arango.commons.model.InternalSpace;
+import eu.ebrains.kg.commons.Tuple;
+import eu.ebrains.kg.commons.jsonld.NormalizedJsonLd;
 import eu.ebrains.kg.commons.model.PaginationParam;
 import eu.ebrains.kg.commons.model.QueryResult;
 import eu.ebrains.kg.commons.models.UserWithRoles;
@@ -48,6 +50,8 @@ import java.util.Collections;
 import java.util.Map;
 import java.util.Objects;
 import java.util.UUID;
+import java.util.function.Consumer;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 @Component
@@ -74,9 +78,31 @@ public class QueryController {
         this.permissionsController = permissionsController;
     }
 
+    public <T> void visit(UserWithRoles userWithRoles, KgQuery query, Map<String, String> filterValues, boolean scopeMode, Consumer<T> consumer, Class<T> clazz){
+        ArangoDatabase database = arangoDatabases.getByStage(query.getStage());
+        final Tuple<AQLQuery, Specification> q = query(database, userWithRoles, query, null, filterValues, scopeMode);
+        try {
+            arangoRepositoryCommons.visitDocuments(database, q.getA(), consumer, clazz);
+        } catch (ArangoDBException ex) {
+            logger.error(String.format("Was not able to execute query: %s", q.getA()));
+            throw ex;
+        }
+
+    }
 
     public QueryResult query(UserWithRoles userWithRoles, KgQuery query, PaginationParam paginationParam, Map<String, String> filterValues, boolean scopeMode) {
         ArangoDatabase database = arangoDatabases.getByStage(query.getStage());
+        final Tuple<AQLQuery, Specification> q = query(database, userWithRoles, query, paginationParam, filterValues, scopeMode);
+        try {
+            return new QueryResult(arangoRepositoryCommons.queryDocuments(database, q.getA()), q.getB().getResponseVocab());
+        } catch (ArangoDBException ex) {
+            logger.error(String.format("Was not able to execute query: %s", q.getA()));
+            throw ex;
+        }
+    }
+
+
+    private Tuple<AQLQuery, Specification> query(ArangoDatabase database, UserWithRoles userWithRoles, KgQuery query, PaginationParam paginationParam, Map<String, String> filterValues, boolean scopeMode) {
         Specification specification = specificationInterpreter.readSpecification(query.getPayload(), null);
         Map<String, Object> whitelistFilter;
         if(scopeMode){
@@ -92,12 +118,9 @@ public class QueryController {
         graphDBArangoUtils.getOrCreateArangoCollection(database, InternalSpace.TYPE_EDGE_COLLECTION);
         AQLQuery aql = new DataQueryBuilder(specification, paginationParam, whitelistFilter, filterValues, database.getCollections().stream().map(c -> new ArangoCollectionReference(c.getName(), c.getType() == CollectionType.EDGES)).collect(Collectors.toList())).build();
         aql.addBindVar("idRestriction", query.getIdRestrictions() == null ? Collections.emptyList() : query.getIdRestrictions().stream().filter(Objects::nonNull).map(UUID::toString).collect(Collectors.toList()));
-        try {
-            return new QueryResult(arangoRepositoryCommons.queryDocuments(database, aql), specification.getResponseVocab());
-        } catch (ArangoDBException ex) {
-            logger.error(String.format("Was not able to execute query: %s", aql));
-            throw ex;
-        }
+        return new Tuple<>(aql, specification);
     }
+
+
 
 }
