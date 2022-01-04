@@ -22,6 +22,7 @@
 
 package eu.ebrains.kg.commons;
 
+import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
@@ -33,6 +34,7 @@ public class JsonAdapter {
 
     public JsonAdapter(ObjectMapper objectMapper) {
         this.objectMapper = objectMapper;
+        this.objectMapper.configure(JsonParser.Feature.ALLOW_UNQUOTED_CONTROL_CHARS, true);
     }
 
     public String toJson(Object object) {
