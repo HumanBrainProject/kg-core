@@ -209,7 +209,7 @@ public class IdRepository {
         remainingIds.forEach(id -> {
             PersistedId foundId = persistedIdsByAlternative.get(idUtils.buildAbsoluteUrl(id.getId()).getId());
             if(foundId==null){
-                foundId = id.getAlternatives().stream().map(persistedIdsByAlternative::get).findFirst().orElse(null);
+                foundId = id.getAlternatives().stream().map(persistedIdsByAlternative::get).filter(Objects::nonNull).findFirst().orElse(null);
             }
             result.put(id.getId(), foundId != null ? new InstanceId(foundId.getUUID(), foundId.getSpace()) : null);
         });
