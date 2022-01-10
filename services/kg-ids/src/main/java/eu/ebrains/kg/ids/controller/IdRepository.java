@@ -152,6 +152,7 @@ public class IdRepository {
         AQL aql = new AQL();
         Map<String, Object> bindVars = new HashMap<>();
         aql.addLine(AQL.trust("FOR i in @@collectionName FILTER"));
+        bindVars.put("@collectionName", collectionName);
         for (int i = 0; i < identifiers.size(); i++) {
             aql.addLine(AQL.trust("@identifier"+i+" IN i.alternativeIds"));
             bindVars.put("identifier"+i, identifiers.get(i));
