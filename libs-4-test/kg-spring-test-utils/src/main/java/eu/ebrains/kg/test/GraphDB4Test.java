@@ -46,7 +46,7 @@ public class GraphDB4Test {
     }
 
     public void upsert(NormalizedJsonLd jsonLd, DataStage stage, UUID documentId, SpaceName space) {
-        graphDBTodoLists.processTodoList(Collections.singletonList(new TodoItem(null, documentId, space, Event.Type.INSERT, jsonLd, null, null)), stage);
+        graphDBTodoLists.processTodoList(Collections.singletonList(new TodoItem(null, documentId, space, Event.Type.INSERT, jsonLd, null)), stage);
     }
 
     public IndexedJsonLdDoc get(DataStage stage, SpaceName space, UUID id) {

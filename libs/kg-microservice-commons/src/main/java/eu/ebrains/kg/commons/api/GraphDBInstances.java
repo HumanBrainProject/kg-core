@@ -22,6 +22,7 @@
 
 package eu.ebrains.kg.commons.api;
 
+import eu.ebrains.kg.commons.jsonld.InstanceId;
 import eu.ebrains.kg.commons.jsonld.NormalizedJsonLd;
 import eu.ebrains.kg.commons.markers.ExposesData;
 import eu.ebrains.kg.commons.markers.ExposesMinimalData;
@@ -76,6 +77,9 @@ public interface GraphDBInstances {
 
     @ExposesReleaseStatus
     ReleaseStatus getReleaseStatus(String space, UUID id, ReleaseTreeScope treeScope);
+
+    @ExposesReleaseStatus
+    Map<UUID, ReleaseStatus> getIndividualReleaseStatus(List<InstanceId> instanceIds);
 
     @ExposesMinimalData
     SuggestionResult getSuggestedLinksForProperty(NormalizedJsonLd payload, DataStage stage, String space, UUID id, String propertyName, String sourceType, String targetType, String search, PaginationParam paginationParam);

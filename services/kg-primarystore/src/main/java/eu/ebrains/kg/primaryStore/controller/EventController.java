@@ -28,10 +28,8 @@ import eu.ebrains.kg.commons.api.GraphDBSpaces;
 import eu.ebrains.kg.commons.api.Ids;
 import eu.ebrains.kg.commons.exception.ForbiddenException;
 import eu.ebrains.kg.commons.exception.UnauthorizedException;
-import eu.ebrains.kg.commons.jsonld.DynamicJson;
 import eu.ebrains.kg.commons.jsonld.IndexedJsonLdDoc;
 import eu.ebrains.kg.commons.jsonld.JsonLdId;
-import eu.ebrains.kg.commons.jsonld.JsonLdIdMapping;
 import eu.ebrains.kg.commons.model.*;
 import eu.ebrains.kg.commons.models.UserWithRoles;
 import eu.ebrains.kg.commons.permission.Functionality;
@@ -45,7 +43,6 @@ import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Collections;
 import java.util.List;
-import java.util.Set;
 import java.util.UUID;
 
 @Component
@@ -138,11 +135,7 @@ public class EventController {
             switch (dataStage){
                 case IN_PROGRESS:
                 case RELEASED:
-                    ensureMergeOfIdentifiers(persistedEvent, dataStage);
-                    List<JsonLdId> mergedIds = ids.createOrUpdateId(new IdWithAlternatives(persistedEvent.getDocumentId(), persistedEvent.getSpaceName(), persistedEvent.getData().identifiers()), dataStage);
-                    if (mergedIds != null) {
-                        persistedEvent.setMergedIds(mergedIds);
-                    }
+                    ids.createOrUpdateId(new IdWithAlternatives(persistedEvent.getDocumentId(), persistedEvent.getSpaceName(), persistedEvent.getData().identifiers()), dataStage);
                     break;
             }
             addMetaInformationToData(dataStage, persistedEvent);
@@ -165,18 +158,6 @@ public class EventController {
         }
     }
 
-    private void ensureMergeOfIdentifiers(PersistedEvent persistedEvent, DataStage dataStage) {
-        //If we're in the inProgress stage, we look up if there are merges needed
-        Set<JsonLdId> resolvedIds = resolveIds(dataStage, persistedEvent.getDocumentId(), persistedEvent.getData().identifiers(), persistedEvent.getSpaceName());
-        if (resolvedIds != null && !resolvedIds.isEmpty()) {
-            if (resolvedIds.size() > 1) {
-                logger.debug("Found an ambiguous id - this means a new instance id will be created and the ids will be merged...");
-                persistedEvent.getData().addIdentifiers(idUtils.buildAbsoluteUrl(persistedEvent.getDocumentId()).getId());
-                persistedEvent.getData().addIdentifiers(resolvedIds.stream().map(JsonLdId::getId).distinct().toArray(String[]::new));
-                persistedEvent.setInstance(persistedEvent.getSpaceName(), UUID.randomUUID());
-            }
-        }
-    }
 
     private void addMetaInformationToData(DataStage dataStage, PersistedEvent event) {
         IndexedJsonLdDoc data = IndexedJsonLdDoc.from(event.getData());
@@ -186,31 +167,6 @@ public class EventController {
         data.setIndexTimestamp(event.getIndexedTimestamp());
         if (dataStage == DataStage.RELEASED) {
             data.getDoc().put(EBRAINSVocabulary.META_LAST_RELEASED_AT, ZonedDateTime.now().format(DateTimeFormatter.ISO_INSTANT));
-        }
-    }
-
-
-    private Set<JsonLdId> resolveIds(DataStage stage, UUID id, Set<String> alternativeIds, SpaceName space) {
-        IdWithAlternatives idWithAlternatives = new IdWithAlternatives();
-        idWithAlternatives.setId(id);
-        idWithAlternatives.setSpace(space.getName());
-        idWithAlternatives.setAlternatives(alternativeIds);
-        List<JsonLdIdMapping> result = ids.resolveId(Collections.singletonList(idWithAlternatives), stage);
-        if (result == null || result.size() == 0) {
-            return null;
-        }
-        if (result.size() > 1) {
-            throw new RuntimeException("Received multiple responses although I was only asking for a single id. There is something totally wrong!");
-        }
-        JsonLdIdMapping jsonLdIdMapping = result.get(0);
-        String absoluteId = idUtils.buildAbsoluteUrl(id).getId();
-        if (jsonLdIdMapping.getRequestedId() == null || !jsonLdIdMapping.getRequestedId().equals(id)) {
-            throw new RuntimeException(String.format("Did receive a result - but instead of id %s, I received a value for %s", absoluteId, jsonLdIdMapping.getRequestedId()));
-        } else {
-            if (jsonLdIdMapping.getResolvedIds() == null || jsonLdIdMapping.getResolvedIds().isEmpty()) {
-                return null;
-            }
-            return jsonLdIdMapping.getResolvedIds();
         }
     }
 

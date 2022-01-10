@@ -22,23 +22,25 @@
 
 package eu.ebrains.kg.commons.api;
 
+import eu.ebrains.kg.commons.exception.AmbiguousException;
 import eu.ebrains.kg.commons.exception.AmbiguousIdException;
-import eu.ebrains.kg.commons.jsonld.JsonLdId;
-import eu.ebrains.kg.commons.jsonld.JsonLdIdMapping;
+import eu.ebrains.kg.commons.jsonld.InstanceId;
 import eu.ebrains.kg.commons.model.DataStage;
 import eu.ebrains.kg.commons.model.IdWithAlternatives;
 
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 public interface Ids {
 
     interface Client extends Ids {}
 
-    List<JsonLdId> createOrUpdateId(IdWithAlternatives idWithAlternatives, DataStage stage);
+    void createOrUpdateId(IdWithAlternatives idWithAlternatives, DataStage stage);
 
     void removeId(DataStage stage, UUID id);
 
-    List<JsonLdIdMapping> resolveId(List<IdWithAlternatives> idWithAlternatives, DataStage stage) throws AmbiguousIdException;
+    Map<UUID, InstanceId> resolveId(List<IdWithAlternatives> idWithAlternatives, DataStage stage) throws AmbiguousIdException;
 
+    InstanceId findInstanceByIdentifiers(UUID uuid, List<String> identifiers, DataStage stage) throws AmbiguousException;
 }

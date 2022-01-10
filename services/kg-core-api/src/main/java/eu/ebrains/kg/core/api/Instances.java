@@ -91,17 +91,7 @@ public class Instances {
     @ExposesData
     @Simple
     public ResponseEntity<Result<NormalizedJsonLd>> createNewInstance(@RequestBody JsonLdDoc jsonLdDoc, @RequestParam(value = "space") @Parameter(description = "The space name the instance shall be stored in or \""+SpaceName.PRIVATE_SPACE+"\" if you want to store it to your private space") String space, @ParameterObject ExtendedResponseConfiguration responseConfiguration) {
-        Date startTime = new Date();
-        UUID id = UUID.randomUUID();
-        logger.debug(String.format("Creating new instance with id %s", id));
-        SpaceName spaceName = authContext.resolveSpaceName(space);
-        final NormalizedJsonLd normalizedJsonLd = normalizePayload(jsonLdDoc, true);
-        ResponseEntity<Result<NormalizedJsonLd>> newInstance = instanceController.createNewInstance(normalizedJsonLd, id, spaceName, responseConfiguration);
-        logger.debug(String.format("Done creating new instance with id %s", id));
-        if (newInstance.getBody() != null) {
-            newInstance.getBody().setExecutionDetails(startTime, new Date());
-        }
-        return newInstance;
+        return createNewInstance(jsonLdDoc, UUID.randomUUID(), space, responseConfiguration);
     }
 
   
@@ -112,15 +102,9 @@ public class Instances {
     @Simple
     public ResponseEntity<Result<NormalizedJsonLd>> createNewInstance(@RequestBody JsonLdDoc jsonLdDoc, @PathVariable("id") UUID id, @RequestParam(value = "space") @Parameter(description = "The space name the instance shall be stored in or \""+SpaceName.PRIVATE_SPACE+"\" if you want to store it to your private space") String space,  @ParameterObject ExtendedResponseConfiguration responseConfiguration) {
 	    Date startTime = new Date();
-        //We want to prevent the UUID to be used twice...
-        InstanceId instanceId = idsController.resolveId(DataStage.IN_PROGRESS, id);
-        if (instanceId != null) {
-            return ResponseEntity.status(HttpStatus.CONFLICT).body(Result.nok(HttpStatus.CONFLICT.value(), String.format("The uuid you're providing (%s) is already in use. Please use a different one or do a PATCH instead", id)));
-        }
         SpaceName spaceName = authContext.resolveSpaceName(space);
         logger.debug(String.format("Creating new instance with id %s", id));
-        final NormalizedJsonLd normalizedJsonLd = normalizePayload(jsonLdDoc, true);
-        ResponseEntity<Result<NormalizedJsonLd>> newInstance = instanceController.createNewInstance(normalizedJsonLd, id, spaceName, responseConfiguration);
+        ResponseEntity<Result<NormalizedJsonLd>> newInstance = instanceController.createNewInstance(normalizePayload(jsonLdDoc, true), id, spaceName, responseConfiguration);
         logger.debug(String.format("Done creating new instance with id %s", id));
         if(newInstance.getBody()!=null){
             newInstance.getBody().setExecutionDetails(startTime, new Date());
@@ -146,7 +130,7 @@ public class Instances {
     private ResponseEntity<Result<NormalizedJsonLd>> contributeToInstance(NormalizedJsonLd normalizedJsonLd, UUID id, ExtendedResponseConfiguration responseConfiguration, boolean removeNonDeclaredFields) {
         Date startTime = new Date();
         logger.debug(String.format("Contributing to instance with id %s", id));
-        InstanceId instanceId = idsController.resolveId(DataStage.IN_PROGRESS, id);
+        final InstanceId instanceId = idsController.findId(id, normalizedJsonLd.identifiers());
         if (instanceId == null) {
             return ResponseEntity.notFound().build();
         }
@@ -165,8 +149,7 @@ public class Instances {
     @WritesData
     @Simple
     public ResponseEntity<Result<NormalizedJsonLd>> contributeToInstanceFullReplacement(@RequestBody JsonLdDoc jsonLdDoc, @PathVariable("id") UUID id, @ParameterObject ExtendedResponseConfiguration responseConfiguration) {
-        final NormalizedJsonLd normalizedJsonLd = normalizePayload(jsonLdDoc, true);
-        return contributeToInstance(normalizedJsonLd, id, responseConfiguration,  true);
+        return contributeToInstance(normalizePayload(jsonLdDoc, true), id, responseConfiguration,  true);
     }
 
     @Operation(summary = "Partially update contribution to an existing instance")
@@ -175,8 +158,7 @@ public class Instances {
     @WritesData
     @Simple
     public ResponseEntity<Result<NormalizedJsonLd>> contributeToInstancePartialReplacement(@RequestBody JsonLdDoc jsonLdDoc, @PathVariable("id") UUID id, @ParameterObject ExtendedResponseConfiguration responseConfiguration) {
-        final NormalizedJsonLd normalizedJsonLd = normalizePayload(jsonLdDoc, false);
-        return contributeToInstance(normalizedJsonLd, id, responseConfiguration, false);
+        return contributeToInstance(normalizePayload(jsonLdDoc, false), id, responseConfiguration, false);
     }
 
     @Operation(summary = "Get the instance")
@@ -260,15 +242,9 @@ public class Instances {
     public Result<Map<String, Result<NormalizedJsonLd>>> getInstancesByIdentifiers(@RequestBody List<String> identifiers, @RequestParam("stage") ExposedStage stage, @ParameterObject ExtendedResponseConfiguration responseConfiguration) {
         List<IdWithAlternatives> idWithAlternatives = identifiers.stream().filter(Objects::nonNull).map(identifier -> new IdWithAlternatives(UUID.randomUUID(), null, Collections.singleton(identifier))).collect(Collectors.toList());
         Map<UUID, String> uuidToIdentifier = idWithAlternatives.stream().collect(Collectors.toMap(IdWithAlternatives::getId, v -> v.getAlternatives().iterator().next()));
-        List<JsonLdIdMapping> jsonLdIdMappings = idsController.resolveIds(stage.getStage(), idWithAlternatives);
+        Map<UUID, InstanceId> resolvedIds = idsController.resolveIds(stage.getStage(), idWithAlternatives);
         Map<String, InstanceId> identifierToInstanceIdLookup = new HashMap<>();
-        jsonLdIdMappings.forEach(jsonLdIdMapping -> {
-            if(jsonLdIdMapping.getResolvedIds() != null && jsonLdIdMapping.getResolvedIds().size()==1){
-                String identifier = uuidToIdentifier.get(jsonLdIdMapping.getRequestedId());
-                JsonLdId resolvedId = jsonLdIdMapping.getResolvedIds().iterator().next();
-                identifierToInstanceIdLookup.put(identifier, new InstanceId(idUtils.getUUID(resolvedId), jsonLdIdMapping.getSpace()));
-            }
-        });
+        resolvedIds.keySet().forEach(uuid -> identifierToInstanceIdLookup.put(uuidToIdentifier.get(uuid), resolvedIds.get(uuid)));
         Map<String, Result<NormalizedJsonLd>> instancesByIds = instanceController.getInstancesByIds(identifierToInstanceIdLookup.values().stream().map(id -> id.getUuid().toString()).collect(Collectors.toList()), stage.getStage(), responseConfiguration);
         Map<String, Result<NormalizedJsonLd>> result = new HashMap<>();
         identifiers.forEach(identifier -> {
@@ -388,15 +364,10 @@ public class Instances {
     @Advanced
     public Result<Map<UUID, Result<ReleaseStatus>>> getReleaseStatusByIds(@RequestBody List<UUID> listOfIds, @RequestParam("releaseTreeScope") ReleaseTreeScope releaseTreeScope) {
         List<InstanceId> instanceIds = idsController.resolveIdsByUUID(DataStage.IN_PROGRESS, listOfIds, false);
-        return Result.ok(instanceIds.stream().filter(instanceId -> instanceId.getUuid()!=null).collect(Collectors.toMap(InstanceId::getUuid, instanceId -> {
-                    try {
-                        return Result.ok(release.getReleaseStatus(instanceId.getSpace().getName(), instanceId.getUuid(), releaseTreeScope));
-                    }
-                    catch (ForbiddenException ex){
-                        return Result.nok(HttpStatus.FORBIDDEN.value(), HttpStatus.FORBIDDEN.getReasonPhrase());
-                    }
-                }
-        )));
+        Map<UUID, Result<ReleaseStatus>> result = new HashMap<>();
+        final Map<UUID, ReleaseStatus> releaseStatus = release.getIndividualReleaseStatus(instanceIds);
+        releaseStatus.keySet().forEach(id -> result.put(id, Result.ok(releaseStatus.get(id))));
+        return Result.ok(result);
     }
 
 

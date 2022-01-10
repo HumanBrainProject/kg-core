@@ -29,15 +29,14 @@ import eu.ebrains.kg.arango.commons.model.InternalSpace;
 import eu.ebrains.kg.commons.IdUtils;
 import eu.ebrains.kg.commons.TypeUtils;
 import eu.ebrains.kg.commons.api.Ids;
+import eu.ebrains.kg.commons.jsonld.InstanceId;
 import eu.ebrains.kg.commons.jsonld.JsonLdId;
-import eu.ebrains.kg.commons.jsonld.JsonLdIdMapping;
 import eu.ebrains.kg.commons.jsonld.NormalizedJsonLd;
 import eu.ebrains.kg.commons.model.DataStage;
 import eu.ebrains.kg.commons.model.IdWithAlternatives;
 import eu.ebrains.kg.commons.model.SpaceName;
 import eu.ebrains.kg.commons.semantics.vocabularies.EBRAINSVocabulary;
 import eu.ebrains.kg.graphdb.commons.controller.ArangoRepositoryCommons;
-import eu.ebrains.kg.graphdb.commons.controller.GraphDBArangoUtils;
 import eu.ebrains.kg.graphdb.commons.controller.EntryHookDocuments;
 import eu.ebrains.kg.graphdb.commons.model.ArangoDocument;
 import eu.ebrains.kg.graphdb.commons.model.ArangoEdge;
@@ -60,7 +59,6 @@ public class DataController {
     private final IdUtils idUtils;
     private final ArangoRepositoryCommons repository;
     private final EntryHookDocuments entryHookDocuments;
-    private final GraphDBArangoUtils graphDBArangoUtils;
     private final Ids.Client ids;
     private final ReleasingController releasingController;
     private final TypeUtils typeUtils;
@@ -68,11 +66,10 @@ public class DataController {
     public static final ArangoDocumentReference UNKNOWN_TARGET = ArangoDocumentReference.fromArangoId("unknown/" + UUID.nameUUIDFromBytes("unknown".getBytes(StandardCharsets.UTF_8)).toString(), false);
 
 
-    public DataController(IdUtils idUtils, ArangoRepositoryCommons repository, EntryHookDocuments entryHookDocuments, GraphDBArangoUtils graphDBArangoUtils, Ids.Client ids, ReleasingController releasingController, TypeUtils typeUtils) {
+    public DataController(IdUtils idUtils, ArangoRepositoryCommons repository, EntryHookDocuments entryHookDocuments, Ids.Client ids, ReleasingController releasingController, TypeUtils typeUtils) {
         this.idUtils = idUtils;
         this.repository = repository;
         this.entryHookDocuments = entryHookDocuments;
-        this.graphDBArangoUtils = graphDBArangoUtils;
         this.ids = ids;
         this.releasingController = releasingController;
         this.typeUtils = typeUtils;
@@ -80,11 +77,10 @@ public class DataController {
 
     private final Logger logger = LoggerFactory.getLogger(getClass());
 
-    public List<DBOperation> createUpsertOperations(ArangoDocumentReference rootDocumentRef, NormalizedJsonLd payload, DataStage stage, List<ArangoInstance> arangoInstances, List<UUID> mergedIds, boolean changedReleaseStatus) {
+    public List<DBOperation> createUpsertOperations(ArangoDocumentReference rootDocumentRef, NormalizedJsonLd payload, DataStage stage, List<ArangoInstance> arangoInstances, boolean changedReleaseStatus) {
         logger.trace("Finding upsert operations for document");
         List<DBOperation> operations = new ArrayList<>();
         operations.addAll(createTypeOperations(rootDocumentRef, stage, arangoInstances));
-        operations.addAll(createIdMergeOperations(stage, rootDocumentRef, mergedIds));
         arangoInstances.stream().filter(i -> i instanceof ArangoDocument).forEach(i -> ((ArangoDocument) i).setKeyBasedOnId());
         if (changedReleaseStatus) {
             defineChangedReleaseStatusIfApplicable(rootDocumentRef, operations);
@@ -134,36 +130,6 @@ public class DataController {
         return operations;
     }
 
-
-    private List<DBOperation> createIdMergeOperations(DataStage stage, ArangoDocumentReference targetDocumentRef, List<UUID> mergedIds) {
-        logger.trace("Handle merges");
-        if (mergedIds == null || mergedIds.isEmpty()) {
-            logger.trace("No merges");
-            return Collections.emptyList();
-        } else {
-            logger.trace("Merges available");
-            List<DBOperation> result = new ArrayList<>();
-            //Find all relations pointing to any of the merged ids...
-            for (UUID mergedDocumentId : mergedIds) {
-                //Because merges can only happen in the same space, we can reuse the collection of the target document.
-                ArangoDocumentReference mergedDocumentRef = targetDocumentRef.getArangoCollectionReference().doc(mergedDocumentId);
-                List<ArangoEdge> incomingRelationsForDocument = repository.getIncomingRelationsForDocument(stage, mergedDocumentRef);
-                for (ArangoEdge arangoEdge : incomingRelationsForDocument) {
-                    if (!graphDBArangoUtils.isInternalCollection(arangoEdge.getId().getArangoCollectionReference())) {
-                        //redirect them to the new targetId
-                        logger.debug(String.format("I'm redirecting the link from %s to %s due to a merge", arangoEdge.getTo().getId(), targetDocumentRef.getId()));
-                        arangoEdge.setTo(targetDocumentRef);
-                        result.add(new UpsertOperation(targetDocumentRef, typeUtils.translate(arangoEdge.getPayload(), NormalizedJsonLd.class), arangoEdge.getId()));
-                    }
-                }
-                //We're going to merge the instance - therefore we also need to remove the previous documents and all their dependent documents.
-                result.add(new DeleteOperation(mergedDocumentRef));
-            }
-            return result;
-        }
-    }
-
-
     private void defineChangedReleaseStatusIfApplicable(ArangoDocumentReference documentReference, List<DBOperation> operations) {
         logger.trace("set release status");
         UpsertOperation releaseStatusOperation = releasingController.getReleaseStatusUpdateOperation(documentReference, false);
@@ -173,7 +139,6 @@ public class DataController {
         }
     }
 
-
     private Set<ArangoEdge> resolveEdges(DataStage stage, Set<ArangoEdge> edges) {
         logger.trace("Resolve edges");
         Map<JsonLdId, UUID> edgeToRequestId = new HashMap<>();
@@ -182,7 +147,7 @@ public class DataController {
             edgeToRequestId.put(e.getOriginalTo(), requestId);
             return new IdWithAlternatives().setId(requestId).setAlternatives(Collections.singleton(e.getOriginalTo().getId()));
         }).collect(Collectors.toList());
-        List<JsonLdIdMapping> resolvedIds = this.ids.resolveId(ids, stage);
+        Map<UUID, InstanceId> resolvedIds = this.ids.resolveId(ids, stage);
         Set<ArangoEdge> resolvedEdges = new HashSet<>();
         Set<JsonLdId> resolvedJsonLdIds = new HashSet<>();
 
@@ -192,19 +157,19 @@ public class DataController {
                 logger.trace(String.format("Not resolving edge pointing to %s", edge.getOriginalTo()));
                 edge.setTo(UNKNOWN_TARGET);
             } else {
-                JsonLdIdMapping jsonLdIdMapping = resolvedIds.stream().filter(resolved -> resolved.getRequestedId().equals(edgeToRequestId.get(edge.getOriginalTo()))).findFirst().orElse(null);
-                if (jsonLdIdMapping != null && jsonLdIdMapping.getResolvedIds() != null && jsonLdIdMapping.getResolvedIds().size() == 1) {
-                    JsonLdId resolvedId = jsonLdIdMapping.getResolvedIds().iterator().next();
-                    UUID uuid = idUtils.getUUID(resolvedId);
+                final InstanceId resolvedId = resolvedIds.get(edgeToRequestId.get(edge.getOriginalTo()));
+                if (resolvedId != null) {
+                    UUID uuid = resolvedId.getUuid();
                     if (uuid == null) {
-                        throw new IllegalArgumentException(String.format("Resolved %s to a non-internal documentId: %s", edge.getOriginalTo().getId(), resolvedId.getId()));
-                    } else if (jsonLdIdMapping.getSpace() == null) {
-                        throw new IllegalArgumentException(String.format("The resolution for the id %s didn't provide the according space", resolvedId.getId()));
+                        throw new IllegalArgumentException(String.format("Resolved %s to a non-internal documentId: %s", edge.getOriginalTo().getId(), resolvedId.getUuid()));
+                    } else if (resolvedId.getSpace() == null) {
+                        throw new IllegalArgumentException(String.format("The resolution for the id %s didn't provide the according space", resolvedId.getUuid()));
                     } else {
-                        logger.debug(String.format("I have resolved the id %s to %s - redirecting the edge", edge.getOriginalTo().getId(), resolvedId.getId()));
-                        edge.setTo(ArangoCollectionReference.fromSpace(jsonLdIdMapping.getSpace()).doc(uuid));
-                        edge.setResolvedTargetId(resolvedId);
-                        if(resolvedJsonLdIds.add(resolvedId)) {
+                        logger.debug(String.format("I have resolved the id %s to %s - redirecting the edge", edge.getOriginalTo().getId(), resolvedId.getUuid()));
+                        edge.setTo(ArangoCollectionReference.fromSpace(resolvedId.getSpace()).doc(uuid));
+                        final JsonLdId absoluteId = idUtils.buildAbsoluteUrl(resolvedId.getUuid());
+                        edge.setResolvedTargetId(absoluteId);
+                        if(resolvedJsonLdIds.add(absoluteId)) {
                             resolvedEdges.add(edge);
                         }
                     }

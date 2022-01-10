@@ -72,7 +72,7 @@ public class QueryControllerTest {
     @Test
     public void querySimple() {
         //Given
-        todoListProcessor.upsertDocument(simpsons.doc(UUID.randomUUID()), TestObjectFactory.createJsonLd("simpsons/homer.json"), stage, null);
+        todoListProcessor.upsertDocument(simpsons.doc(UUID.randomUUID()), TestObjectFactory.createJsonLd("simpsons/homer.json"), stage);
 
         //When
         KgQuery kgQuery = new KgQuery(TestObjectFactory.createJsonLd(space, "normalizedQueries/simpsonsFamilyNames.json"), stage);
@@ -89,8 +89,8 @@ public class QueryControllerTest {
     @Test
     public void querySimpleWithPagination() {
         //Given
-        todoListProcessor.upsertDocument(simpsons.doc(UUID.randomUUID()), TestObjectFactory.createJsonLd("simpsons/homer.json"), stage, null);
-        todoListProcessor.upsertDocument(simpsons.doc(UUID.randomUUID()), TestObjectFactory.createJsonLd("simpsons/maggie.json"), stage, null);
+        todoListProcessor.upsertDocument(simpsons.doc(UUID.randomUUID()), TestObjectFactory.createJsonLd("simpsons/homer.json"), stage);
+        todoListProcessor.upsertDocument(simpsons.doc(UUID.randomUUID()), TestObjectFactory.createJsonLd("simpsons/maggie.json"), stage);
         KgQuery kgQuery = new KgQuery(TestObjectFactory.createJsonLd(space, "normalizedQueries/simpsonsFamilyNames.json"), stage);
 
         //When
@@ -118,7 +118,7 @@ public class QueryControllerTest {
     @Test
     public void queryEmbedded() {
         //Given
-        todoListProcessor.upsertDocument(simpsons.doc(UUID.randomUUID()), TestObjectFactory.createJsonLd("simpsons/homer.json"), stage, null);
+        todoListProcessor.upsertDocument(simpsons.doc(UUID.randomUUID()), TestObjectFactory.createJsonLd("simpsons/homer.json"), stage);
         KgQuery kgQuery = new KgQuery(TestObjectFactory.createJsonLd(space, "normalizedQueries/homerWithEmbeddedTraversal.json"), stage);
 
         //When
@@ -148,13 +148,13 @@ public class QueryControllerTest {
 
     private void prepareHomerMargeAndMaggie() {
         NormalizedJsonLd homer = TestObjectFactory.createJsonLd("simpsons/homer.json");
-        ArangoDocumentReference homerDocumentId = todoListProcessor.upsertDocument(simpsons.doc(UUID.randomUUID()), homer, stage, null);
+        ArangoDocumentReference homerDocumentId = todoListProcessor.upsertDocument(simpsons.doc(UUID.randomUUID()), homer, stage);
         ids.createOrUpdateId(new IdWithAlternatives().setId(homerDocumentId.getDocumentId()).setSpace(TestObjectFactory.SIMPSONS.getName()).setAlternatives(homer.identifiers()), stage);
         NormalizedJsonLd maggie = TestObjectFactory.createJsonLd("simpsons/maggie.json");
-        ArangoDocumentReference maggieDocumentId = todoListProcessor.upsertDocument(simpsons.doc(UUID.randomUUID()), maggie, stage, null);
+        ArangoDocumentReference maggieDocumentId = todoListProcessor.upsertDocument(simpsons.doc(UUID.randomUUID()), maggie, stage);
         ids.createOrUpdateId(new IdWithAlternatives().setId(maggieDocumentId.getDocumentId()).setSpace(TestObjectFactory.SIMPSONS.getName()).setAlternatives(maggie.identifiers()), stage);
         NormalizedJsonLd marge = TestObjectFactory.createJsonLd("simpsons/marge.json");
-        ArangoDocumentReference margeDocumentId = todoListProcessor.upsertDocument(simpsons.doc(UUID.randomUUID()), marge, stage, null);
+        ArangoDocumentReference margeDocumentId = todoListProcessor.upsertDocument(simpsons.doc(UUID.randomUUID()), marge, stage);
         ids.createOrUpdateId(new IdWithAlternatives().setId(margeDocumentId.getDocumentId()).setSpace(TestObjectFactory.SIMPSONS.getName()).setAlternatives(marge.identifiers()), stage);
     }
 

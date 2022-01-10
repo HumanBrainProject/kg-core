@@ -23,7 +23,7 @@
 package eu.ebrains.kg.ids.api;
 
 import eu.ebrains.kg.commons.IdUtils;
-import eu.ebrains.kg.commons.jsonld.JsonLdIdMapping;
+import eu.ebrains.kg.commons.jsonld.InstanceId;
 import eu.ebrains.kg.commons.model.DataStage;
 import eu.ebrains.kg.commons.model.IdWithAlternatives;
 import eu.ebrains.kg.commons.model.SpaceName;
@@ -36,6 +36,7 @@ import org.springframework.test.context.junit4.SpringRunner;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 import static org.junit.Assert.*;
@@ -46,13 +47,11 @@ import static org.junit.Assert.*;
 @TestPropertySource(properties = {"eu.ebrains.kg.arango.pwd = changeMe"})
 public class IdsTest {
 
-
     @Autowired
     IdsAPI ids;
 
     @Autowired
     IdUtils idUtils;
-
 
     @Test
     public void resolveId() {
@@ -66,14 +65,13 @@ public class IdsTest {
         //when
         IdWithAlternatives lookupId = new IdWithAlternatives();
         lookupId.setAlternatives(Collections.singleton("http://simpsons.com/homer"));
-        List<JsonLdIdMapping> mappings = ids.resolveId(Collections.singletonList(lookupId), DataStage.NATIVE);
+        Map<UUID, InstanceId> result = ids.resolveId(Collections.singletonList(lookupId), DataStage.NATIVE);
 
         //then
-        assertEquals(1, mappings.size());
-        assertEquals(new SpaceName("simpsons"), mappings.get(0).getSpace());
-        assertEquals(id.getId(), mappings.get(0).getRequestedId());
-        assertEquals(1, mappings.get(0).getResolvedIds().size());
-        assertEquals(idUtils.buildAbsoluteUrl(id.getId()).getId(), mappings.get(0).getResolvedIds().iterator().next().getId());
-
+        assertEquals(1, result.size());
+        assertNotNull(result.get(lookupId.getId()));
+        assertEquals(new SpaceName("simpsons"), result.get(lookupId.getId()).getSpace());
+        assertEquals(idUtils.buildAbsoluteUrl(id.getId()).getId(), result.get(lookupId.getId()).serialize());
     }
+
 }

@@ -27,7 +27,6 @@ import java.util.UUID;
 
 public class IdWithAlternatives {
 
-    private String requestKey;
     private UUID id;
     private String space;
     private Set<String> alternatives;
@@ -48,7 +47,6 @@ public class IdWithAlternatives {
         this.id = id;
         this.space = space != null ? space.getName() : null;
         this.alternatives = alternatives;
-        this.requestKey = requestKey;
     }
 
     public String getSpace() {

@@ -23,12 +23,15 @@
 package eu.ebrains.kg.release.api;
 
 
+import eu.ebrains.kg.commons.jsonld.InstanceId;
 import eu.ebrains.kg.commons.model.ReleaseStatus;
 import eu.ebrains.kg.commons.model.SpaceName;
 import eu.ebrains.kg.commons.params.ReleaseTreeScope;
 import eu.ebrains.kg.release.controller.Release;
 import org.springframework.stereotype.Component;
 
+import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 
@@ -54,6 +57,11 @@ public class ReleaseAPI implements eu.ebrains.kg.commons.api.Release.Client {
     @Override
     public ReleaseStatus getReleaseStatus(String space, UUID id, ReleaseTreeScope releaseTreeScope){
         return release.getStatus(new SpaceName(space), id, releaseTreeScope);
+    }
+
+    @Override
+    public Map<UUID, ReleaseStatus> getIndividualReleaseStatus(List<InstanceId> instanceIds){
+        return release.getIndividualInstanceStatuses(instanceIds);
     }
 
 }

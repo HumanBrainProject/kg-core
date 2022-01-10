@@ -24,16 +24,18 @@ package eu.ebrains.kg.core.controller;
 
 import eu.ebrains.kg.commons.IdUtils;
 import eu.ebrains.kg.commons.api.Ids;
+import eu.ebrains.kg.commons.exception.AmbiguousException;
+import eu.ebrains.kg.commons.exception.CancelProcessException;
 import eu.ebrains.kg.commons.jsonld.InstanceId;
-import eu.ebrains.kg.commons.jsonld.JsonLdIdMapping;
+import eu.ebrains.kg.commons.jsonld.JsonLdConsts;
 import eu.ebrains.kg.commons.model.DataStage;
 import eu.ebrains.kg.commons.model.IdWithAlternatives;
+import eu.ebrains.kg.commons.model.Result;
+import eu.ebrains.kg.commons.semantics.vocabularies.SchemaOrgVocabulary;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.UUID;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Component
@@ -56,8 +58,21 @@ public class IdsController {
         return null;
     }
 
-    public List<InstanceId> resolveIds(DataStage stage, IdWithAlternatives id, boolean returnUnresolved) {
-        return resolveIds(stage, Collections.singletonList(id), returnUnresolved);
+    public void checkIdForExistence(UUID uuid, Set<String> identifiers){
+        final InstanceId id = findId(uuid, identifiers);
+        if(id!=null){
+            final Result<?> nok = Result.nok(HttpStatus.CONFLICT.value(), String.format("The payload you're providing is pointing to the instance %s (either by the %s or the %s field it contains). Please do a PUT or a PATCH to the mentioned id instead.", id.serialize(), JsonLdConsts.ID, SchemaOrgVocabulary.IDENTIFIER));
+            throw new CancelProcessException(nok, HttpStatus.CONFLICT.value());
+        }
+    }
+
+    public InstanceId findId(UUID uuid, Set<String> identifiers) {
+        try {
+            return this.api.findInstanceByIdentifiers(uuid, new ArrayList<>(identifiers), DataStage.IN_PROGRESS);
+        } catch (AmbiguousException e) {
+            final Result<?> nok = Result.nok(HttpStatus.CONFLICT.value(), String.format("The payload you're providing contains a shared identifier of the instances %s. Please merge those instances if they are reflecting the same entity.", e.getMessage()));
+            throw new CancelProcessException(nok, HttpStatus.CONFLICT.value());
+        }
     }
 
     public List<InstanceId> resolveIdsByUUID(DataStage stage, List<UUID> ids, boolean returnUnresolved) {
@@ -65,21 +80,22 @@ public class IdsController {
         return resolveIds(stage, idWithAlternatives, returnUnresolved);
     }
 
-    public List<JsonLdIdMapping> resolveIds(DataStage stage, List<IdWithAlternatives> idWithAlternatives){
+    public Map<UUID, InstanceId> resolveIds(DataStage stage, List<IdWithAlternatives> idWithAlternatives) {
         return api.resolveId(idWithAlternatives, stage);
     }
 
+
     private List<InstanceId> resolveIds(DataStage stage, List<IdWithAlternatives> idWithAlternatives, boolean returnUnresolved) {
-        List<InstanceId> resultList = new ArrayList<>();
-        List<JsonLdIdMapping> result = resolveIds(stage, idWithAlternatives);
+        List<InstanceId> resultList;
+        Map<UUID, InstanceId> result = resolveIds(stage, idWithAlternatives);
         if (result != null) {
-            resultList.addAll(result.stream().
-                    filter(id -> id.getResolvedIds() != null && id.getResolvedIds().size() == 1).
-                    map(id -> {
-                        idWithAlternatives.stream().filter(idWithAlternative -> id.getRequestedId().equals(idWithAlternative.getId())).forEach(idWithAlternative -> idWithAlternative.setFound(true));
-                        return new InstanceId(idUtils.getUUID(id.getResolvedIds().iterator().next()), id.getSpace());
-                    }).
-                    collect(Collectors.toList()));
+            resultList = idWithAlternatives.stream().map(idWithAlternative -> {
+                idWithAlternative.setFound(result.containsKey(idWithAlternative.getId()));
+                return result.get(idWithAlternative.getId());
+            }).filter(Objects::nonNull).collect(Collectors.toList());
+        }
+        else{
+             resultList = new ArrayList<>();
         }
         if (returnUnresolved) {
             List<InstanceId> unresolvedIds = idWithAlternatives.stream().filter(idWithAlternative -> !idWithAlternative.isFound()).map(idWithAlternative ->

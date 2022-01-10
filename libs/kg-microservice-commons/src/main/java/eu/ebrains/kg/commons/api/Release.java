@@ -22,9 +22,12 @@
 
 package eu.ebrains.kg.commons.api;
 
+import eu.ebrains.kg.commons.jsonld.InstanceId;
 import eu.ebrains.kg.commons.model.ReleaseStatus;
 import eu.ebrains.kg.commons.params.ReleaseTreeScope;
 
+import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 public interface Release {
@@ -36,4 +39,6 @@ public interface Release {
     void unreleaseInstance(String space, UUID id);
 
     ReleaseStatus getReleaseStatus(String space, UUID id, ReleaseTreeScope releaseTreeScope);
+
+    Map<UUID, ReleaseStatus> getIndividualReleaseStatus(List<InstanceId> instanceIds);
 }

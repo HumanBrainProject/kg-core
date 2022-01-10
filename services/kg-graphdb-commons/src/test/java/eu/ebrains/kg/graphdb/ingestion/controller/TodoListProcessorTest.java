@@ -78,7 +78,7 @@ public class TodoListProcessorTest {
         NormalizedJsonLd homer = TestObjectFactory.createJsonLd("simpsons/homer.json");
 
         //When
-        ArangoDocumentReference homerId = todoListProcessor.upsertDocument(simpsons.doc(UUID.randomUUID()), homer, DataStage.NATIVE, null);
+        ArangoDocumentReference homerId = todoListProcessor.upsertDocument(simpsons.doc(UUID.randomUUID()), homer, DataStage.NATIVE);
 
         //Then
         Assert.assertNotNull(homerId);
@@ -93,11 +93,11 @@ public class TodoListProcessorTest {
     public void insertDocumentWithResolution() {
         //Given
         NormalizedJsonLd homer = TestObjectFactory.createJsonLd("simpsons/homer.json");
-        ArangoDocumentReference homerId = todoListProcessor.upsertDocument(simpsons.doc(UUID.randomUUID()), homer, DataStage.NATIVE, null);
+        ArangoDocumentReference homerId = todoListProcessor.upsertDocument(simpsons.doc(UUID.randomUUID()), homer, DataStage.NATIVE);
         NormalizedJsonLd marge = TestObjectFactory.createJsonLd("simpsons/marge.json");
 
         //When
-        todoListProcessor.upsertDocument(simpsons.doc(UUID.randomUUID()), marge, DataStage.NATIVE, null);
+        todoListProcessor.upsertDocument(simpsons.doc(UUID.randomUUID()), marge, DataStage.NATIVE);
 
         //Then
         //TODO assertions
@@ -109,11 +109,11 @@ public class TodoListProcessorTest {
         //Given
 
         NormalizedJsonLd bart = TestObjectFactory.createJsonLd("simpsons/bart.json");
-        ArangoDocumentReference bartId = todoListProcessor.upsertDocument(simpsons.doc(UUID.randomUUID()), bart, DataStage.NATIVE, null);
+        ArangoDocumentReference bartId = todoListProcessor.upsertDocument(simpsons.doc(UUID.randomUUID()), bart, DataStage.NATIVE);
         NormalizedJsonLd bartUpdate = TestObjectFactory.createJsonLd("simpsons/bartUpdate.json");
 
         //When
-        todoListProcessor.upsertDocument(bartId, bartUpdate, DataStage.NATIVE, null);
+        todoListProcessor.upsertDocument(bartId, bartUpdate, DataStage.NATIVE);
 
         //Then
         Assert.assertNotNull(bartId);
@@ -126,7 +126,7 @@ public class TodoListProcessorTest {
     public void deleteDocument() {
         //Given
         NormalizedJsonLd marge = TestObjectFactory.createJsonLd("simpsons/marge.json");
-        ArangoDocumentReference margeId = todoListProcessor.upsertDocument(simpsons.doc(UUID.randomUUID()), marge, DataStage.NATIVE, null);
+        ArangoDocumentReference margeId = todoListProcessor.upsertDocument(simpsons.doc(UUID.randomUUID()), marge, DataStage.NATIVE);
         Assert.assertNotNull(margeId);
         ArangoDocument margeDoc = repository.getDocument(DataStage.NATIVE, margeId);
         Assert.assertNotNull(margeDoc);
@@ -144,7 +144,7 @@ public class TodoListProcessorTest {
     public void deleteComplexDocument() {
         //Given
         NormalizedJsonLd homer = TestObjectFactory.createJsonLd("simpsons/homer.json");
-        ArangoDocumentReference homerId = todoListProcessor.upsertDocument(simpsons.doc(UUID.randomUUID()), homer, DataStage.NATIVE, null);
+        ArangoDocumentReference homerId = todoListProcessor.upsertDocument(simpsons.doc(UUID.randomUUID()), homer, DataStage.NATIVE);
         Assert.assertNotNull(homerId);
         ArangoDocument homerDoc = repository.getDocument(DataStage.NATIVE, homerId);
         Assert.assertNotNull(homerDoc);
@@ -159,39 +159,16 @@ public class TodoListProcessorTest {
 
 
     @Test
-    public void updateDocumentWithMerge() {
-        //Given
-        NormalizedJsonLd milhouse1 = TestObjectFactory.createJsonLd("simpsons/milhouse1.json");
-        ArangoDocumentReference milhouse1Id = todoListProcessor.upsertDocument(simpsons.doc(UUID.randomUUID()), milhouse1, DataStage.IN_PROGRESS, null);
-        Assert.assertNotNull(milhouse1Id);
-
-        NormalizedJsonLd milhouse2 = TestObjectFactory.createJsonLd("simpsons/milhouse2.json");
-        ArangoDocumentReference milhouse2Id = todoListProcessor.upsertDocument(simpsons.doc(UUID.randomUUID()), milhouse2, DataStage.IN_PROGRESS, null);
-        Assert.assertNotNull(milhouse2Id);
-
-        NormalizedJsonLd milhouseMerge = TestObjectFactory.createJsonLd("simpsons/milhouseMerge.json");
-
-        //When
-        ArangoDocumentReference milhouseMergeId = todoListProcessor.upsertDocument(simpsons.doc(UUID.randomUUID()), milhouseMerge, DataStage.IN_PROGRESS, Collections.singletonList(milhouse2Id.getDocumentId()));
-
-        //Then
-        ArangoDocument milhouseMerged = repository.getDocument(DataStage.IN_PROGRESS, milhouseMergeId);
-        System.out.println(milhouseMerged);
-
-    }
-
-
-    @Test
     public void upsertTypeDefinitionForClient() {
         //Given
         NormalizedJsonLd bart = TestObjectFactory.createJsonLd("simpsons/bart.json");
-        todoListProcessor.upsertDocument(simpsons.doc(UUID.randomUUID()), bart, DataStage.IN_PROGRESS, null);
+        todoListProcessor.upsertDocument(simpsons.doc(UUID.randomUUID()), bart, DataStage.IN_PROGRESS);
         NormalizedJsonLd editorClient = TestObjectFactory.createJsonLd("admin/kgeditorClient.json");
-        todoListProcessor.upsertDocument(admin.doc(UUID.randomUUID()), editorClient, DataStage.IN_PROGRESS, null);
+        todoListProcessor.upsertDocument(admin.doc(UUID.randomUUID()), editorClient, DataStage.IN_PROGRESS);
         NormalizedJsonLd typeDefinition = TestObjectFactory.createJsonLd("kgeditor/personTypeDefinition.json");
 
         //When
-        ArangoDocumentReference typeDocId = todoListProcessor.upsertDocument(kgeditor.doc(UUID.randomUUID()), typeDefinition, DataStage.NATIVE, null);
+        ArangoDocumentReference typeDocId = todoListProcessor.upsertDocument(kgeditor.doc(UUID.randomUUID()), typeDefinition, DataStage.NATIVE);
 
         //Then
         ArangoDocument typeDoc = repository.getDocument(DataStage.IN_PROGRESS, typeDocId);
@@ -203,13 +180,13 @@ public class TodoListProcessorTest {
     public void upsertPropertyDefinitionForClient() {
         //Given
         NormalizedJsonLd bart = TestObjectFactory.createJsonLd("simpsons/bart.json");
-        todoListProcessor.upsertDocument(simpsons.doc(UUID.randomUUID()), bart, DataStage.NATIVE, null);
+        todoListProcessor.upsertDocument(simpsons.doc(UUID.randomUUID()), bart, DataStage.NATIVE);
         NormalizedJsonLd editorClient = TestObjectFactory.createJsonLd("admin/kgeditorClient.json");
-        ArangoDocumentReference clientId = todoListProcessor.upsertDocument(admin.doc(UUID.randomUUID()), editorClient, DataStage.NATIVE, null);
+        ArangoDocumentReference clientId = todoListProcessor.upsertDocument(admin.doc(UUID.randomUUID()), editorClient, DataStage.NATIVE);
         NormalizedJsonLd typeDefinition = TestObjectFactory.createJsonLd("kgeditor/givenNamePropertyDefinition.json");
 
         //When
-        ArangoDocumentReference typeDocId = todoListProcessor.upsertDocument(kgeditor.doc(UUID.randomUUID()), typeDefinition, DataStage.IN_PROGRESS, null);
+        ArangoDocumentReference typeDocId = todoListProcessor.upsertDocument(kgeditor.doc(UUID.randomUUID()), typeDefinition, DataStage.IN_PROGRESS);
 
         //Then
         ArangoDocument typeDoc = repository.getDocument(DataStage.IN_PROGRESS, typeDocId);
@@ -219,13 +196,13 @@ public class TodoListProcessorTest {
     public void upsertPropertyDefinitionInTypeForClient() {
         //Given
         NormalizedJsonLd bart = TestObjectFactory.createJsonLd("simpsons/bart.json");
-        todoListProcessor.upsertDocument(simpsons.doc(UUID.randomUUID()), bart, DataStage.NATIVE, null);
+        todoListProcessor.upsertDocument(simpsons.doc(UUID.randomUUID()), bart, DataStage.NATIVE);
         NormalizedJsonLd editorClient = TestObjectFactory.createJsonLd("admin/kgeditorClient.json");
-        ArangoDocumentReference clientId = todoListProcessor.upsertDocument(admin.doc(UUID.randomUUID()), editorClient, DataStage.IN_PROGRESS, null);
+        ArangoDocumentReference clientId = todoListProcessor.upsertDocument(admin.doc(UUID.randomUUID()), editorClient, DataStage.IN_PROGRESS);
         NormalizedJsonLd typeDefinition = TestObjectFactory.createJsonLd("kgeditor/givenNameInPersonPropertyDefinition.json");
 
         //When
-        ArangoDocumentReference typeDocId = todoListProcessor.upsertDocument(kgeditor.doc(UUID.randomUUID()), typeDefinition, DataStage.IN_PROGRESS, null);
+        ArangoDocumentReference typeDocId = todoListProcessor.upsertDocument(kgeditor.doc(UUID.randomUUID()), typeDefinition, DataStage.IN_PROGRESS);
 
         //Then
         ArangoDocument typeDoc = repository.getDocument(DataStage.IN_PROGRESS, typeDocId);
@@ -238,16 +215,16 @@ public class TodoListProcessorTest {
         DataStage stage = DataStage.IN_PROGRESS;
 
         NormalizedJsonLd bart = TestObjectFactory.createJsonLd("simpsons/bart.json");
-        ArangoDocumentReference bartId = todoListProcessor.upsertDocument(simpsons.doc(UUID.randomUUID()), bart, stage, null);
+        ArangoDocumentReference bartId = todoListProcessor.upsertDocument(simpsons.doc(UUID.randomUUID()), bart, stage);
         ids.createOrUpdateId(new IdWithAlternatives().setId(bartId.getDocumentId()).setSpace(TestObjectFactory.SIMPSONS.getName()).setAlternatives(bart.identifiers()), stage);
 
         NormalizedJsonLd homer = TestObjectFactory.createJsonLd("simpsons/homer.json");
-        ArangoDocumentReference homerId = todoListProcessor.upsertDocument(simpsons.doc(UUID.randomUUID()), homer, stage, null);
+        ArangoDocumentReference homerId = todoListProcessor.upsertDocument(simpsons.doc(UUID.randomUUID()), homer, stage);
         ids.createOrUpdateId(new IdWithAlternatives().setId(homerId.getDocumentId()).setSpace(TestObjectFactory.SIMPSONS.getName()).setAlternatives(homer.identifiers()), stage);
 
         //When
         NormalizedJsonLd bartUpdate = TestObjectFactory.createJsonLd("simpsons/bartUpdate.json");
-        todoListProcessor.upsertDocument(bartId, bartUpdate, stage, null);
+        todoListProcessor.upsertDocument(bartId, bartUpdate, stage);
 
         //Then
 
@@ -259,16 +236,16 @@ public class TodoListProcessorTest {
         DataStage stage = DataStage.IN_PROGRESS;
 
         NormalizedJsonLd bart = TestObjectFactory.createJsonLd("simpsons/bartUpdate.json");
-        ArangoDocumentReference bartId = todoListProcessor.upsertDocument(simpsons.doc(UUID.randomUUID()), bart, stage, null);
+        ArangoDocumentReference bartId = todoListProcessor.upsertDocument(simpsons.doc(UUID.randomUUID()), bart, stage);
         ids.createOrUpdateId(new IdWithAlternatives().setId(bartId.getDocumentId()).setSpace(TestObjectFactory.SIMPSONS.getName()).setAlternatives(bart.identifiers()), stage);
 
         NormalizedJsonLd homer = TestObjectFactory.createJsonLd("simpsons/homer.json");
-        ArangoDocumentReference homerId = todoListProcessor.upsertDocument(simpsons.doc(UUID.randomUUID()), homer, stage, null);
+        ArangoDocumentReference homerId = todoListProcessor.upsertDocument(simpsons.doc(UUID.randomUUID()), homer, stage);
         ids.createOrUpdateId(new IdWithAlternatives().setId(homerId.getDocumentId()).setSpace(TestObjectFactory.SIMPSONS.getName()).setAlternatives(homer.identifiers()), stage);
 
         //When
         NormalizedJsonLd bartUpdate = TestObjectFactory.createJsonLd("simpsons/bart.json");
-        todoListProcessor.upsertDocument(bartId, bartUpdate, stage, null);
+        todoListProcessor.upsertDocument(bartId, bartUpdate, stage);
 
         //Then
 
@@ -280,12 +257,12 @@ public class TodoListProcessorTest {
         DataStage stage = DataStage.IN_PROGRESS;
 
         NormalizedJsonLd homer = TestObjectFactory.createJsonLd("simpsons/homer.json");
-        ArangoDocumentReference homerId = todoListProcessor.upsertDocument(simpsons.doc(UUID.randomUUID()), homer, stage, null);
+        ArangoDocumentReference homerId = todoListProcessor.upsertDocument(simpsons.doc(UUID.randomUUID()), homer, stage);
         ids.createOrUpdateId(new IdWithAlternatives().setId(homerId.getDocumentId()).setSpace(TestObjectFactory.SIMPSONS.getName()).setAlternatives(homer.identifiers()), stage);
 
         //When
         NormalizedJsonLd bart = TestObjectFactory.createJsonLd("simpsons/bart.json");
-        ArangoDocumentReference bartId = todoListProcessor.upsertDocument(simpsons.doc(UUID.randomUUID()), bart, stage, null);
+        ArangoDocumentReference bartId = todoListProcessor.upsertDocument(simpsons.doc(UUID.randomUUID()), bart, stage);
         ids.createOrUpdateId(new IdWithAlternatives().setId(bartId.getDocumentId()).setSpace(TestObjectFactory.SIMPSONS.getName()).setAlternatives(bart.identifiers()), stage);
 
         //Then
@@ -297,7 +274,7 @@ public class TodoListProcessorTest {
         NormalizedJsonLd payload = TestObjectFactory.createJsonLd(json);
         UUID uuid = UUID.randomUUID();
         payload.setId(idUtils.buildAbsoluteUrl(uuid));
-        ArangoDocumentReference id = todoListProcessor.upsertDocument(ArangoCollectionReference.fromSpace(space).doc(uuid), payload, stage, null);
+        ArangoDocumentReference id = todoListProcessor.upsertDocument(ArangoCollectionReference.fromSpace(space).doc(uuid), payload, stage);
         ids.createOrUpdateId(new IdWithAlternatives().setId(id.getDocumentId()).setSpace(space.getName()).setAlternatives(payload.identifiers()), stage);
         return id;
     }
@@ -314,19 +291,19 @@ public class TodoListProcessorTest {
         ArangoDocumentReference margeId = uploadToDatabase(stage, TestObjectFactory.SIMPSONS, "simpsons/marge.json");
 
         NormalizedJsonLd editorClient = TestObjectFactory.createJsonLd("admin/kgeditorClient.json");
-        ArangoDocumentReference clientId = todoListProcessor.upsertDocument(admin.doc(UUID.randomUUID()), editorClient, stage, null);
+        ArangoDocumentReference clientId = todoListProcessor.upsertDocument(admin.doc(UUID.randomUUID()), editorClient, stage);
 
         //When
-        todoListProcessor.upsertDocument(admin.doc(UUID.randomUUID()), TestObjectFactory.createJsonLd("admin/personTypeDefinition.json"), stage, null);
-        todoListProcessor.upsertDocument(admin.doc(UUID.randomUUID()), TestObjectFactory.createJsonLd("admin/givenNamePropertyDefinition.json"), stage, null);
-        todoListProcessor.upsertDocument(admin.doc(UUID.randomUUID()), TestObjectFactory.createJsonLd("admin/familyNamePropertyDefinition.json"), stage, null);
-        todoListProcessor.upsertDocument(admin.doc(UUID.randomUUID()), TestObjectFactory.createJsonLd("admin/schemaOrgNamePropertyDefinition.json"), stage, null);
-        todoListProcessor.upsertDocument(admin.doc(UUID.randomUUID()), TestObjectFactory.createJsonLd("admin/givenNameInPersonPropertyDefinition.json"), stage, null);
-        todoListProcessor.upsertDocument(admin.doc(UUID.randomUUID()), TestObjectFactory.createJsonLd("admin/childrenPropertyDefinition.json"), stage, null);
+        todoListProcessor.upsertDocument(admin.doc(UUID.randomUUID()), TestObjectFactory.createJsonLd("admin/personTypeDefinition.json"), stage);
+        todoListProcessor.upsertDocument(admin.doc(UUID.randomUUID()), TestObjectFactory.createJsonLd("admin/givenNamePropertyDefinition.json"), stage);
+        todoListProcessor.upsertDocument(admin.doc(UUID.randomUUID()), TestObjectFactory.createJsonLd("admin/familyNamePropertyDefinition.json"), stage);
+        todoListProcessor.upsertDocument(admin.doc(UUID.randomUUID()), TestObjectFactory.createJsonLd("admin/schemaOrgNamePropertyDefinition.json"), stage);
+        todoListProcessor.upsertDocument(admin.doc(UUID.randomUUID()), TestObjectFactory.createJsonLd("admin/givenNameInPersonPropertyDefinition.json"), stage);
+        todoListProcessor.upsertDocument(admin.doc(UUID.randomUUID()), TestObjectFactory.createJsonLd("admin/childrenPropertyDefinition.json"), stage);
 
-        todoListProcessor.upsertDocument(kgeditor.doc(UUID.randomUUID()), TestObjectFactory.createJsonLd("kg-editor/personTypeDefinition.json"), stage, null);
-        todoListProcessor.upsertDocument(kgeditor.doc(UUID.randomUUID()), TestObjectFactory.createJsonLd("kg-editor/givenNamePropertyDefinition.json"), stage, null);
-        todoListProcessor.upsertDocument(kgeditor.doc(UUID.randomUUID()), TestObjectFactory.createJsonLd("kg-editor/givenNameInPersonPropertyDefinition.json"), stage, null);
+        todoListProcessor.upsertDocument(kgeditor.doc(UUID.randomUUID()), TestObjectFactory.createJsonLd("kg-editor/personTypeDefinition.json"), stage);
+        todoListProcessor.upsertDocument(kgeditor.doc(UUID.randomUUID()), TestObjectFactory.createJsonLd("kg-editor/givenNamePropertyDefinition.json"), stage);
+        todoListProcessor.upsertDocument(kgeditor.doc(UUID.randomUUID()), TestObjectFactory.createJsonLd("kg-editor/givenNameInPersonPropertyDefinition.json"), stage);
 
         //Then
 
@@ -334,7 +311,7 @@ public class TodoListProcessorTest {
 
     private void uploadToDatabase(DataStage stage) {
         NormalizedJsonLd bart = TestObjectFactory.createJsonLd("simpsons/bart.json");
-        ArangoDocumentReference bartId = todoListProcessor.upsertDocument(simpsons.doc(UUID.randomUUID()), bart, stage, null);
+        ArangoDocumentReference bartId = todoListProcessor.upsertDocument(simpsons.doc(UUID.randomUUID()), bart, stage);
         ids.createOrUpdateId(new IdWithAlternatives().setId(bartId.getDocumentId()).setSpace(TestObjectFactory.SIMPSONS.getName()).setAlternatives(bart.identifiers()), stage);
     }
 

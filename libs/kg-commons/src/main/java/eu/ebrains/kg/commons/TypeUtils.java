@@ -22,6 +22,9 @@
 
 package eu.ebrains.kg.commons;
 
+import java.util.ArrayList;
+import java.util.List;
+
 public class TypeUtils {
 
     private final JsonAdapter jsonAdapter;
@@ -32,6 +35,15 @@ public class TypeUtils {
 
     public <T> T translate(Object o, Class<T> clazz){
         return jsonAdapter.fromJson(jsonAdapter.toJson(o), clazz);
+    }
+
+    public static <T> List<List<T>> splitList(List<T> list, int chunkSize) {
+        int numberOfChunks = (list.size() / chunkSize) + 1;
+        List<List<T>> result = new ArrayList<>(numberOfChunks);
+        for (int i = 0; i < numberOfChunks; i++) {
+            result.add(list.subList(i * chunkSize, Math.min((i + 1) * chunkSize, list.size())));
+        }
+        return result;
     }
 
 }

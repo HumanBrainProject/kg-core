@@ -109,8 +109,7 @@ public class TodoListProcessor {
                 case UPDATE:
                 case INSERT:
                     logger.info("Upserting a document");
-                    List<JsonLdId> mergeIds = todoItem.getMergeIds();
-                    upsertDocument(rootDocumentReference, todoItem.getPayload(), stage, mergeIds != null ? mergeIds.stream().map(idUtils::getUUID).filter(Objects::nonNull).collect(Collectors.toList()) : null);
+                    upsertDocument(rootDocumentReference, todoItem.getPayload(), stage);
                     break;
                 case DELETE:
                     logger.info("Removing an instance");
@@ -150,7 +149,7 @@ public class TodoListProcessor {
         if (userDocument == null || !new User(userDocument.getDoc()).isEqual(user)) {
             logger.info(String.format("Creating / updating user profile for %s", user.getNativeId()));
             user.setId(idUtils.buildAbsoluteUrl(instanceId.getUuid()));
-            upsertDocument(userRef, user, DataStage.NATIVE, null);
+            upsertDocument(userRef, user, DataStage.NATIVE);
         }
     }
 
@@ -161,7 +160,7 @@ public class TodoListProcessor {
 
     private void releaseDocument(ArangoDocumentReference rootDocumentReference, NormalizedJsonLd payload) {
         // Releasing a specific revision
-        upsertDocument(rootDocumentReference, payload, DataStage.RELEASED, null);
+        upsertDocument(rootDocumentReference, payload, DataStage.RELEASED);
         repository.executeTransactional(DataStage.IN_PROGRESS, Collections.singletonList(releasingController.getReleaseStatusUpdateOperation(rootDocumentReference, true)));
     }
 
@@ -174,9 +173,9 @@ public class TodoListProcessor {
         return false;
     }
 
-    public ArangoDocumentReference upsertDocument(ArangoDocumentReference rootDocumentRef, NormalizedJsonLd payload, DataStage stage, List<UUID> mergeIds) {
+    public ArangoDocumentReference upsertDocument(ArangoDocumentReference rootDocumentRef, NormalizedJsonLd payload, DataStage stage) {
         List<ArangoInstance> arangoInstances = splitter.extractRelations(rootDocumentRef, payload);
-        List<DBOperation> upsertOperationsForDocument = dataController.createUpsertOperations(rootDocumentRef, payload, stage, arangoInstances, mergeIds, hasChangedReleaseStatus(stage, rootDocumentRef, payload));
+        List<DBOperation> upsertOperationsForDocument = dataController.createUpsertOperations(rootDocumentRef, payload, stage, arangoInstances, hasChangedReleaseStatus(stage, rootDocumentRef, payload));
         repository.executeTransactional(stage, upsertOperationsForDocument);
         List<EdgeResolutionOperation> lazyIdResolutionOperations;
         if (stage != DataStage.NATIVE) {

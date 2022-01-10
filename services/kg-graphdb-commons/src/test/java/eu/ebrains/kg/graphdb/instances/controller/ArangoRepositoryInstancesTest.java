@@ -58,8 +58,8 @@ public class ArangoRepositoryInstancesTest {
     @Test
     public void getDocumentsByType() {
         //Given
-        todoListProcessor.upsertDocument(simpsons.doc(UUID.randomUUID()), TestObjectFactory.createJsonLd( "simpsons/homer.json"), stage, null);
-        todoListProcessor.upsertDocument(simpsons.doc(UUID.randomUUID()), TestObjectFactory.createJsonLd( "simpsons/maggie.json"), stage, null);
+        todoListProcessor.upsertDocument(simpsons.doc(UUID.randomUUID()), TestObjectFactory.createJsonLd( "simpsons/homer.json"), stage);
+        todoListProcessor.upsertDocument(simpsons.doc(UUID.randomUUID()), TestObjectFactory.createJsonLd( "simpsons/maggie.json"), stage);
 
         //When
         Paginated<NormalizedJsonLd> kids = arangoRepository.getDocumentsByTypes(stage, new Type("http://schema.org/Kid"), null, null, null, null, null, false, false,  null);
@@ -82,8 +82,8 @@ public class ArangoRepositoryInstancesTest {
     @Test
     public void getDocumentsByTypePaginated() {
         //Given
-        todoListProcessor.upsertDocument(simpsons.doc(UUID.randomUUID()), TestObjectFactory.createJsonLd( "simpsons/homer.json"), stage, null);
-        todoListProcessor.upsertDocument(simpsons.doc(UUID.randomUUID()), TestObjectFactory.createJsonLd( "simpsons/maggie.json"), stage, null);
+        todoListProcessor.upsertDocument(simpsons.doc(UUID.randomUUID()), TestObjectFactory.createJsonLd( "simpsons/homer.json"), stage);
+        todoListProcessor.upsertDocument(simpsons.doc(UUID.randomUUID()), TestObjectFactory.createJsonLd( "simpsons/maggie.json"), stage);
         PaginationParam pagination = new PaginationParam();
         pagination.setSize(1L);
         pagination.setFrom(1L);

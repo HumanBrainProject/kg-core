@@ -29,6 +29,7 @@ import eu.ebrains.kg.commons.permission.FunctionalityInstance;
 import eu.ebrains.kg.commons.permission.roles.RoleMapping;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.util.CollectionUtils;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -81,16 +82,28 @@ public class UserWithRoles {
      */
     public List<FunctionalityInstance> getPermissions() {
         //Invitation permissions are added after permission evaluation (of global and space)
-        return Stream.concat(evaluatePermissions(userRoles, clientRoles).stream(),
-                invitations.stream().map(i -> new FunctionalityInstance(Functionality.READ, null, i)))
-                .distinct().collect(Collectors.toList());
+        final List<FunctionalityInstance> functionalityInstances = evaluatePermissions(userRoles, clientRoles);
+        if(!CollectionUtils.isEmpty(invitations)){
+            return Stream.concat(functionalityInstances.stream(),
+                    invitations.stream().map(i -> new FunctionalityInstance(Functionality.READ, null, i)))
+                    .distinct().collect(Collectors.toList());
+        }
+        else {
+            return functionalityInstances;
+        }
     }
 
     public List<FunctionalityInstance> getPermissionsOfEitherUserOrClient() {
         //Invitation permissions are added after permission evaluation (of global and space)
-        return Stream.concat(evaluatePermissionCombinations(userRoles, clientRoles).stream(),
-                invitations.stream().map(i -> new FunctionalityInstance(Functionality.READ, null, i)))
-                .distinct().collect(Collectors.toList());
+        final List<FunctionalityInstance> functionalityInstances = evaluatePermissionCombinations(userRoles, clientRoles);
+        if(!CollectionUtils.isEmpty(invitations)){
+            return Stream.concat(functionalityInstances.stream(),
+                    invitations.stream().map(i -> new FunctionalityInstance(Functionality.READ, null, i)))
+                    .distinct().collect(Collectors.toList());
+        }
+        else {
+            return functionalityInstances;
+        }
     }
 
     public SpaceName getPrivateSpace(){

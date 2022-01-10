@@ -37,7 +37,6 @@ public class PersistedEvent extends Event implements EventId {
     private Long indexedTimestamp;
     private String eventId;
     private DataStage dataStage;
-    private List<JsonLdId> mergedIds;
     private boolean suggestion;
     private Space space;
 
@@ -81,14 +80,6 @@ public class PersistedEvent extends Event implements EventId {
 
     public DataStage getDataStage() {
         return dataStage;
-    }
-
-    public List<JsonLdId> getMergedIds() {
-        return mergedIds;
-    }
-
-    public void setMergedIds(List<JsonLdId> mergedIds) {
-        this.mergedIds = mergedIds;
     }
 
     public User getUser() {

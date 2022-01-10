@@ -31,10 +31,7 @@ import com.arangodb.model.CollectionsReadOptions;
 import eu.ebrains.kg.arango.commons.aqlBuilder.AQL;
 import eu.ebrains.kg.arango.commons.aqlBuilder.ArangoVocabulary;
 import eu.ebrains.kg.arango.commons.model.*;
-import eu.ebrains.kg.commons.AuthContext;
-import eu.ebrains.kg.commons.IdUtils;
-import eu.ebrains.kg.commons.JsonAdapter;
-import eu.ebrains.kg.commons.Tuple;
+import eu.ebrains.kg.commons.*;
 import eu.ebrains.kg.commons.exception.AmbiguousException;
 import eu.ebrains.kg.commons.exception.ForbiddenException;
 import eu.ebrains.kg.commons.jsonld.*;
@@ -309,7 +306,7 @@ public class ArangoRepositoryInstances {
                                     }
                                     NormalizedJsonLd user = userResult != null && userResult.getData() != null ? userResult.getData() : null;
                                     //We only expose the necessary subset of user information.
-                                    return new ReducedUserInformation(user != null ? user.getAs(SchemaOrgVocabulary.NAME, String.class) : null, user!=null ? user.getAs(SchemaOrgVocabulary.ALTERNATE_NAME, String.class) : null, user != null ? user.getAsListOf(SchemaOrgVocabulary.IDENTIFIER, String.class) : null, id);
+                                    return new ReducedUserInformation(user != null ? user.getAs(SchemaOrgVocabulary.NAME, String.class) : null, user != null ? user.getAs(SchemaOrgVocabulary.ALTERNATE_NAME, String.class) : null, user != null ? user.getAsListOf(SchemaOrgVocabulary.IDENTIFIER, String.class) : null, id);
                                 }).collect(Collectors.toList());
                                 alternative.put(EBRAINSVocabulary.META_USER, users);
                                 //A special case: if the value has alternatives but the last value is null, we need to set the value explicitly, since it won't be properly stored in the alternatives payload.
@@ -421,7 +418,7 @@ public class ArangoRepositoryInstances {
             NormalizedJsonLd result = getInstance(stage, instanceId.getSpace(), instanceId.getUuid(), false, false, false, false, null);
             if (result != null) {
                 final List<String> types = result.types();
-                if(!types.isEmpty()) {
+                if (!types.isEmpty()) {
                     SuggestedLink l = new SuggestedLink();
                     UUID uuid = idUtils.getUUID(result.id());
                     l.setId(uuid);
@@ -442,7 +439,7 @@ public class ArangoRepositoryInstances {
         // Suggestions are special in terms of permissions: We even allow instances to show up which are in spaces the
         // user doesn't have read access for. This is only acceptable because we're returning a restricted result with
         // minimal information.
-         if (search != null) {
+        if (search != null) {
             InstanceId instanceId = InstanceId.deserialize(search);
             if (instanceId != null) {
                 //This is a shortcut: If the search term is an instance id, we can directly
@@ -563,7 +560,7 @@ public class ArangoRepositoryInstances {
 
     private Tuple<DocumentsByTypeMode, Set<SpaceName>> restrictToSpaces(Type typeWithLabelInfo, DataStage stage, SpaceName spaceFilter) {
         Set<SpaceName> spaces = typeWithLabelInfo.getSpaces();
-        if(spaceFilter!=null){
+        if (spaceFilter != null) {
             spaces = spaces.stream().filter(s -> spaceFilter.getName().equals(s.getName())).collect(Collectors.toSet());
         }
         UserWithRoles userWithRoles = authContext.getUserWithRoles();
@@ -588,15 +585,14 @@ public class ArangoRepositoryInstances {
         EMPTY, BY_ID, SIMPLE, DYNAMIC
     }
 
-    private Object getParsedFilterValue(String filterValue){
+    private Object getParsedFilterValue(String filterValue) {
 
-        try{
+        try {
             return jsonAdapter.fromJson(filterValue, Map.class);
-        } catch(RuntimeException runtimeException1){
+        } catch (RuntimeException runtimeException1) {
             try {
                 return jsonAdapter.fromJson(filterValue, List.class);
-            }
-            catch(RuntimeException runtimeException2){
+            } catch (RuntimeException runtimeException2) {
                 return filterValue;
             }
         }
@@ -616,16 +612,16 @@ public class ArangoRepositoryInstances {
                     mode = DocumentsByTypeMode.BY_ID;
                 }
                 Map<String, Object> whitelistFilter = null;
-                switch(mode){
+                switch (mode) {
                     case BY_ID:
                     case DYNAMIC:
-                        whitelistFilter =  permissionsController.whitelistFilterForReadInstances(authContext.getUserWithRoles(), stage);
+                        whitelistFilter = permissionsController.whitelistFilterForReadInstances(authContext.getUserWithRoles(), stage);
                         if (whitelistFilter != null) {
                             aql.specifyWhitelist();
                             bindVars.putAll(whitelistFilter);
                         }
                 }
-                switch(mode){
+                switch (mode) {
                     case SIMPLE:
                     case DYNAMIC:
                         iterateThroughTypeList(Collections.singletonList(typeWithLabelInfo), searchableProperties, bindVars, aql);
@@ -642,7 +638,7 @@ public class ArangoRepositoryInstances {
                         aql.addLine(AQL.trust(String.format("FILTER @typeFilter IN v.`%s` AND v.`%s` == null", JsonLdConsts.TYPE, IndexedJsonLdDoc.EMBEDDED)));
                         bindVars.put("typeFilter", typeWithLabelInfo.getName());
                         bindVars.put("@singleSpace", ArangoCollectionReference.fromSpace(restrictToSpaces.getB().iterator().next()).getCollectionName());
-                        if(filterProperty != null && filterValue!=null){
+                        if (filterProperty != null && filterValue != null) {
                             aql.addLine(AQL.trust("AND v.@property == @value"));
                             bindVars.put("property", filterProperty);
                             bindVars.put("value", getParsedFilterValue(filterValue));
@@ -664,7 +660,7 @@ public class ArangoRepositoryInstances {
                             aql.addLine(AQL.trust("FILTER v." + ArangoVocabulary.COLLECTION + " == @spaceFilter"));
                             bindVars.put("spaceFilter", ArangoCollectionReference.fromSpace(space).getCollectionName());
                         }
-                        if(filterProperty != null && filterValue!=null){
+                        if (filterProperty != null && filterValue != null) {
                             aql.addLine(AQL.trust("FILTER v.@property == @value"));
                             bindVars.put("property", filterProperty);
                             bindVars.put("value", getParsedFilterValue(filterValue));
@@ -674,8 +670,8 @@ public class ArangoRepositoryInstances {
                 switch (mode) {
                     case SIMPLE:
                     case DYNAMIC:
-                        addSearchFilter(bindVars, aql, search, searchableProperties!=null && !searchableProperties.isEmpty());
-                        if(paginationParam.getSize()!=null) {
+                        addSearchFilter(bindVars, aql, search, searchableProperties != null && !searchableProperties.isEmpty());
+                        if (paginationParam.getSize() != null) {
                             //We only sort if there is pagination involved.
                             aql.addLine(AQL.trust(String.format("SORT v.%s, v.%s ASC", IndexedJsonLdDoc.LABEL, ArangoVocabulary.KEY)));
                         }
@@ -690,7 +686,7 @@ public class ArangoRepositoryInstances {
                 normalizedJsonLdPaginated.getData().forEach(r -> {
                     r.removeAllInternalProperties();
                     final String s = r.getAs(EBRAINSVocabulary.META_SPACE, String.class);
-                    if(privateSpace.getName().equals(s)){
+                    if (privateSpace.getName().equals(s)) {
                         r.put(EBRAINSVocabulary.META_SPACE, SpaceName.PRIVATE_SPACE);
                     }
                 });
@@ -921,13 +917,35 @@ public class ArangoRepositoryInstances {
     }
 
     @ExposesReleaseStatus
+    public Map<UUID, ReleaseStatus> getIndividualReleaseStatus(List<InstanceId> instanceIds) {
+        final UserWithRoles userWithRoles = authContext.getUserWithRoles();
+        // Depending on the number of i nstance ids, the permission check can take a while. To make things faster,
+        // we memorize if there are space permissions available and only do explicit checks for individual instances if needed.
+        Set<SpaceName> permissionsForSpace = new HashSet<>();
+        instanceIds.forEach(id -> {
+            if (!permissionsForSpace.contains(id.getSpace())){
+                if(!permissions.hasPermission(userWithRoles, Functionality.RELEASE_STATUS, id.getSpace())){
+                    if(!permissions.hasPermission(userWithRoles, Functionality.RELEASE_STATUS, id.getSpace(), id.getUuid())){
+                        throw new ForbiddenException();
+                    }
+                }
+                else if(id.getSpace()!=null){
+                    permissionsForSpace.add(id.getSpace());
+                }
+            }
+        });
+        return TypeUtils.splitList(instanceIds, 2000).stream().map(chunk -> getTopInstanceReleaseStatus(chunk).entrySet()).flatMap(Collection::stream).collect(Collectors.toMap(Map.Entry::getKey,  Map.Entry::getValue));
+    }
+
+
+    @ExposesReleaseStatus
     public ReleaseStatus getReleaseStatus(SpaceName space, UUID id, ReleaseTreeScope treeScope) {
         if (!permissions.hasPermission(authContext.getUserWithRoles(), Functionality.RELEASE_STATUS, space, id)) {
             throw new ForbiddenException();
         }
         switch (treeScope) {
             case TOP_INSTANCE_ONLY:
-                return getTopInstanceReleaseStatus(space, id);
+                return getTopInstanceReleaseStatus(Collections.singletonList(new InstanceId(id, space))).get(id);
             case CHILDREN_ONLY:
                 //FIXME restrict exposed release status based on permissions.
                 ScopeElement scopeForInstance = getScopeForInstance(space, id, DataStage.IN_PROGRESS);
@@ -960,34 +978,26 @@ public class ArangoRepositoryInstances {
         }
     }
 
-    private ReleaseStatus getTopInstanceReleaseStatus(SpaceName space, UUID id) {
+    private Map<UUID, ReleaseStatus> getTopInstanceReleaseStatus(List<InstanceId> instanceId) {
         ArangoDatabase db = databases.getByStage(DataStage.IN_PROGRESS);
-        ArangoCollectionReference collectionReference = ArangoCollectionReference.fromSpace(space);
         ArangoCollectionReference releaseStatusCollection = InternalSpace.RELEASE_STATUS_EDGE_COLLECTION;
-        ArangoCollection collection = db.collection(collectionReference.getCollectionName());
-        if (!collection.exists() || !collection.documentExists(id.toString())) {
-            return null;
-        }
         if (!db.collection(releaseStatusCollection.getCollectionName()).exists()) {
             db.createCollection(releaseStatusCollection.getCollectionName(), new CollectionCreateOptions().type(CollectionType.EDGES));
         }
-        String aql = "LET doc = DOCUMENT(@@space, @id) " +
-                "FOR v  IN 1..1 INBOUND  doc @@releaseStatusCollection " +
-                "RETURN v.`" + SchemaOrgVocabulary.NAME + "`";
+        AQL aql = new AQL();
         Map<String, Object> bindVars = new HashMap<>();
-        bindVars.put("@space", collectionReference.getCollectionName());
+        aql.addLine(AQL.trust("FOR id in @ids"));
+        bindVars.put("ids", instanceId.stream().map(InstanceId::serialize).collect(Collectors.toList()));
+        aql.addLine(AQL.trust("LET doc = DOCUMENT(id)"));
+        aql.addLine(AQL.trust("RETURN {\"id\": doc._key, \"status\": NOT_NULL(FIRST(FOR v IN 1..1 INBOUND doc @@releaseStatusCollection"));
+        aql.addLine(AQL.trust("RETURN v.`"+SchemaOrgVocabulary.NAME+"`), \""+ReleaseStatus.UNRELEASED.name()+"\")}"));
         bindVars.put("@releaseStatusCollection", releaseStatusCollection.getCollectionName());
-        bindVars.put("id", id);
-        List<String> data = db.query(aql, bindVars, new AqlQueryOptions(), String.class).asListRemaining();
-        if (data.isEmpty()) {
-            return ReleaseStatus.UNRELEASED;
-        } else {
-            try {
-                return ReleaseStatus.valueOf(data.get(0));
-            } catch (IllegalArgumentException e) {
-                return ReleaseStatus.UNRELEASED;
-            }
-        }
+        List<String> data = db.query(aql.build().getValue(), bindVars, new AqlQueryOptions(), String.class).asListRemaining();
+        Map<UUID, ReleaseStatus> result = new HashMap<>();
+        data.stream().map(d -> jsonAdapter.fromJson(d, DynamicJson.class)).forEach(d -> {
+            result.put(UUID.fromString(d.getAs("id", String.class)), ReleaseStatus.valueOf(d.getAs("status", String.class)));
+        });
+        return result;
     }
 
 
@@ -1103,7 +1113,7 @@ public class ArangoRepositoryInstances {
 
     private ScopeElement handleSubElement(NormalizedJsonLd data, Map<String, Set<ScopeElement>> typeToUUID) {
         Boolean embedded = data.getAs("embedded", Boolean.class);
-        if(embedded!=null && embedded){
+        if (embedded != null && embedded) {
             return null;
         }
         String id = data.getAs("id", String.class);
@@ -1112,7 +1122,7 @@ public class ArangoRepositoryInstances {
                 data.getAsListOf(k, NormalizedJsonLd.class).stream().map(d -> handleSubElement(d, typeToUUID)).filter(Objects::nonNull).collect(Collectors.toList())
         ).flatMap(Collection::stream).collect(Collectors.toList());
         List<String> type = data.getAsListOf("type", String.class);
-            ScopeElement element = new ScopeElement(uuid, type, children.isEmpty() ? null : children, data.getAs("internalId", String.class), data.getAs("space", String.class), data.getAs("label", String.class));
+        ScopeElement element = new ScopeElement(uuid, type, children.isEmpty() ? null : children, data.getAs("internalId", String.class), data.getAs("space", String.class), data.getAs("label", String.class));
         type.forEach(t -> {
             typeToUUID.computeIfAbsent(t, x -> new HashSet<>()).add(element);
         });
@@ -1125,7 +1135,7 @@ public class ArangoRepositoryInstances {
             List<ScopeElement> result = new ArrayList<>();
             groupedById.values().forEach(c -> {
                 if (!c.isEmpty()) {
-                    ScopeElement current = null;
+                    ScopeElement current;
                     if (c.size() == 1) {
                         current = c.get(0);
                     } else {
@@ -1153,7 +1163,7 @@ public class ArangoRepositoryInstances {
         } else {
             elements = data.stream().map(d -> handleSubElement(d, typeToUUID)).filter(Objects::nonNull).collect(Collectors.toList());
         }
-        for(ScopeElement el : elements) {
+        for (ScopeElement el : elements) {
             instance.types().forEach(t -> typeToUUID.computeIfAbsent(t, x -> new HashSet<>()).add(el));
         }
         return mergeInstancesOnSameLevel(elements).get(0);

@@ -98,4 +98,10 @@ public class RestControllerAdvice {
     protected ResponseEntity<?> handleIllegalState(RuntimeException ex, WebRequest request) {
         return ResponseEntity.status(HttpStatus.CONFLICT).body(Result.nok(HttpStatus.CONFLICT.value(), ex.getMessage()));
     }
+
+    @ExceptionHandler({CancelProcessException.class})
+    protected ResponseEntity<?> handleCancelProcess(RuntimeException ex, WebRequest request) {
+        CancelProcessException e = (CancelProcessException) ex;
+        return ResponseEntity.status(e.getStatus()).body(e.getResult());
+    }
 }

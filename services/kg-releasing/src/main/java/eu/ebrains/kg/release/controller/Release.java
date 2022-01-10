@@ -25,6 +25,7 @@ package eu.ebrains.kg.release.controller;
 import eu.ebrains.kg.commons.api.GraphDBInstances;
 import eu.ebrains.kg.commons.api.PrimaryStoreEvents;
 import eu.ebrains.kg.commons.jsonld.IndexedJsonLdDoc;
+import eu.ebrains.kg.commons.jsonld.InstanceId;
 import eu.ebrains.kg.commons.model.DataStage;
 import eu.ebrains.kg.commons.model.Event;
 import eu.ebrains.kg.commons.model.ReleaseStatus;
@@ -33,6 +34,8 @@ import eu.ebrains.kg.commons.params.ReleaseTreeScope;
 import org.springframework.stereotype.Component;
 
 import java.util.Date;
+import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 @Component
@@ -67,6 +70,10 @@ public class Release {
 
     public ReleaseStatus getStatus(SpaceName space, UUID id, ReleaseTreeScope treeScope) {
         return graphDBInstances.getReleaseStatus(space!=null ? space.getName() : null, id, treeScope);
+    }
+
+    public Map<UUID, ReleaseStatus> getIndividualInstanceStatuses(List<InstanceId> instanceIds) {
+        return graphDBInstances.getIndividualReleaseStatus(instanceIds);
     }
 
     private IndexedJsonLdDoc getInstance(DataStage stage, SpaceName space, UUID id) {

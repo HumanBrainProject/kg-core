@@ -163,11 +163,18 @@ public class GraphDBInstancesAPI implements GraphDBInstances.Client {
     }
 
     @Override
+    @ExposesReleaseStatus
+    public Map<UUID, ReleaseStatus> getIndividualReleaseStatus(List<InstanceId> instanceIds) {
+        return repository.getIndividualReleaseStatus(instanceIds);
+    }
+
+
+    @Override
     @ExposesMinimalData
     public SuggestionResult getSuggestedLinksForProperty(NormalizedJsonLd payload, DataStage stage, String space, UUID id, String propertyName, String sourceType, String targetType, String search, PaginationParam paginationParam) {
         List<Type> sourceTypes = null;
         List<UUID> existingLinks = Collections.emptyList();
-        ;
+
         if (StringUtils.isNotBlank(sourceType)) {
             sourceTypes = Collections.singletonList(new Type(URLDecoder.decode(sourceType, StandardCharsets.UTF_8)));
         } else {

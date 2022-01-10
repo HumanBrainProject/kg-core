@@ -57,7 +57,6 @@ public class CoreInstanceController {
     private final IdsController ids;
     private final AuthContext authContext;
     private final IdUtils idUtils;
-    private final JsonLd.Client jsonLd;
     private final PrimaryStoreEvents.Client primaryStoreEvents;
     private final Invitation.Client invitation;
     private final Permissions permissions;
@@ -65,70 +64,56 @@ public class CoreInstanceController {
 
     private final Logger logger = LoggerFactory.getLogger(getClass());
 
-    public CoreInstanceController(GraphDBInstances.Client graphDBInstances, GraphDBScopes.Client graphDBScopes, IdsController ids, AuthContext authContext, IdUtils idUtils, JsonLd.Client jsonLd, PrimaryStoreEvents.Client primaryStoreEvents, Invitation.Client invitation, Permissions permissions) {
+    public CoreInstanceController(GraphDBInstances.Client graphDBInstances, GraphDBScopes.Client graphDBScopes, IdsController ids, AuthContext authContext, IdUtils idUtils, PrimaryStoreEvents.Client primaryStoreEvents, Invitation.Client invitation, Permissions permissions) {
         this.graphDBInstances = graphDBInstances;
         this.graphDBScopes = graphDBScopes;
         this.ids = ids;
         this.authContext = authContext;
         this.idUtils = idUtils;
-        this.jsonLd = jsonLd;
         this.primaryStoreEvents = primaryStoreEvents;
         this.invitation = invitation;
         this.permissions = permissions;
     }
 
-    public void createInvitation(UUID instanceId, UUID userId){
+    public void createInvitation(UUID instanceId, UUID userId) {
         //TODO move permission check to authentication module
         final InstanceId resolvedInstanceId = ids.resolveId(DataStage.IN_PROGRESS, instanceId);
-        if(!permissions.hasPermission(authContext.getUserWithRoles(), Functionality.INVITE_FOR_REVIEW, resolvedInstanceId.getSpace(), instanceId)){
+        if (!permissions.hasPermission(authContext.getUserWithRoles(), Functionality.INVITE_FOR_REVIEW, resolvedInstanceId.getSpace(), instanceId)) {
             throw new UnauthorizedException("You don't have the right to invite somebody to this instance.");
         }
         this.invitation.inviteUserForInstance(instanceId, userId);
     }
 
-    public void revokeInvitation(UUID instanceId, UUID userId){
+    public void revokeInvitation(UUID instanceId, UUID userId) {
         //TODO move permission check to authentication module
         final InstanceId resolvedInstanceId = ids.resolveId(DataStage.IN_PROGRESS, instanceId);
-        if(!permissions.hasPermission(authContext.getUserWithRoles(), Functionality.INVITE_FOR_REVIEW, resolvedInstanceId.getSpace(), instanceId)){
+        if (!permissions.hasPermission(authContext.getUserWithRoles(), Functionality.INVITE_FOR_REVIEW, resolvedInstanceId.getSpace(), instanceId)) {
             throw new UnauthorizedException("You don't have the right to invite somebody to this instance.");
         }
         this.invitation.revokeUserInvitation(instanceId, userId);
     }
 
-    public List<ReducedUserInformation> listInvitations(UUID instanceId){
+    public List<ReducedUserInformation> listInvitations(UUID instanceId) {
         //TODO move permission check to authentication module
         final InstanceId resolvedInstanceId = ids.resolveId(DataStage.IN_PROGRESS, instanceId);
-        if(!permissions.hasPermission(authContext.getUserWithRoles(), Functionality.INVITE_FOR_REVIEW, resolvedInstanceId.getSpace(), instanceId)){
+        if (!permissions.hasPermission(authContext.getUserWithRoles(), Functionality.INVITE_FOR_REVIEW, resolvedInstanceId.getSpace(), instanceId)) {
             throw new UnauthorizedException("You don't have the right to list the invitations for this instance");
         }
         return this.invitation.listInvitations(instanceId);
     }
 
-    public void calculateInstanceInvitationScope(UUID instanceId){
+    public void calculateInstanceInvitationScope(UUID instanceId) {
         this.invitation.calculateInstanceScope(instanceId);
     }
 
     public ResponseEntity<Result<NormalizedJsonLd>> createNewInstance(NormalizedJsonLd normalizedJsonLd, UUID id, SpaceName s, ExtendedResponseConfiguration responseConfiguration) {
-        long startIdResolution = new Date().getTime();
-        List<InstanceId> instanceIdsInSameSpace = ids.resolveIds(DataStage.IN_PROGRESS, new IdWithAlternatives(id, s, normalizedJsonLd.allIdentifiersIncludingId()), false).stream().filter(i -> s.equals(i.getSpace())).collect(Collectors.toList());
-        logger.debug(String.format("Resolved %d instances for ids in %d ms", instanceIdsInSameSpace.size(), new Date().getTime()-startIdResolution));
-
-        //Were only interested in those instance ids in the same space. Since merging is not done cross-space, we want to allow instances being created with the same identifiers across spaces.
-        if (!instanceIdsInSameSpace.isEmpty()) {
-            if (instanceIdsInSameSpace.size() == 1) {
-                InstanceId instanceId = instanceIdsInSameSpace.get(0);
-                Result<NormalizedJsonLd> conflictResult = Result.nok(HttpStatus.CONFLICT.value(), String.format("The payload you're providing is pointing to the instance %s (either by the " + JsonLdConsts.ID + " or the " + SchemaOrgVocabulary.IDENTIFIER + " field it contains). Please do a PUT or a PATCH to the mentioned id instead.", instanceId.getUuid()));
-                conflictResult.getError().setInstanceId(instanceId.getUuid());
-                return ResponseEntity.status(HttpStatus.CONFLICT).body(conflictResult);
-            } else {
-                return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Result.nok(HttpStatus.INTERNAL_SERVER_ERROR.value(), String.format("The id and/or the payload you're providing is pointing to multiple instances (%s). This is an invalid state and should be reported to kg@ebrains.eu", instanceIdsInSameSpace.stream().map(i -> i.getUuid().toString()).distinct().collect(Collectors.joining(", ")))));
-            }
-        }
+        ids.checkIdForExistence(id, normalizedJsonLd.identifiers());
         normalizedJsonLd.defineFieldUpdateTimes(normalizedJsonLd.keySet().stream().collect(Collectors.toMap(k -> k, k -> ZonedDateTime.now())));
         Event upsertEvent = createUpsertEvent(id, normalizedJsonLd, s);
         Set<InstanceId> ids = primaryStoreEvents.postEvent(upsertEvent);
         return handleIngestionResponse(responseConfiguration, ids);
     }
+
 
     public ResponseEntity<Result<NormalizedJsonLd>> contributeToInstance(NormalizedJsonLd normalizedJsonLd, InstanceId instanceId, boolean removeNonDeclaredProperties, ResponseConfiguration responseConfiguration) {
         normalizedJsonLd = patchInstance(instanceId, normalizedJsonLd, removeNonDeclaredProperties);
@@ -145,16 +130,14 @@ public class CoreInstanceController {
 
     public ResponseEntity<Result<NormalizedJsonLd>> moveInstance(InstanceId instanceId, SpaceName targetSpace, ExtendedResponseConfiguration responseConfiguration) {
         NormalizedJsonLd instance = graphDBInstances.getInstanceById(instanceId.getSpace().getName(), instanceId.getUuid(), DataStage.IN_PROGRESS, true, false, false, null, true);
-        if(instance == null){
+        if (instance == null) {
             throw new InstanceNotFoundException(String.format("Instance %s not found", instanceId.getUuid()));
-        }
-        else{
-            if(permissions.hasPermission(authContext.getUserWithRoles(), Functionality.CREATE_PERMISSION, targetSpace)) {
+        } else {
+            if (permissions.hasPermission(authContext.getUserWithRoles(), Functionality.CREATE_PERMISSION, targetSpace)) {
                 //FIXME make this transactional.
                 deleteInstance(instanceId);
                 return createNewInstance(instance, instanceId.getUuid(), targetSpace, responseConfiguration);
-            }
-            else{
+            } else {
                 throw new ForbiddenException(String.format("You are not allowed to move an instance to the space %s", targetSpace));
             }
         }
@@ -253,7 +236,7 @@ public class CoreInstanceController {
                     DataStage.IN_PROGRESS,
                     responseConfiguration.isReturnEmbedded(),
                     responseConfiguration.isReturnAlternatives(),
-                    responseConfiguration instanceof ExtendedResponseConfiguration && ((ExtendedResponseConfiguration) responseConfiguration).isReturnIncomingLinks(), responseConfiguration instanceof ExtendedResponseConfiguration ? ((ExtendedResponseConfiguration)responseConfiguration).getIncomingLinksPageSize(): null);
+                    responseConfiguration instanceof ExtendedResponseConfiguration && ((ExtendedResponseConfiguration) responseConfiguration).isReturnIncomingLinks(), responseConfiguration instanceof ExtendedResponseConfiguration ? ((ExtendedResponseConfiguration) responseConfiguration).getIncomingLinksPageSize() : null);
             if (responseConfiguration.isReturnAlternatives()) {
                 resolveAlternatives(DataStage.IN_PROGRESS, instancesByIds.values().stream().map(Result::getData).collect(Collectors.toList()));
             }
@@ -272,9 +255,9 @@ public class CoreInstanceController {
         return result instanceof AmbiguousResult ? ResponseEntity.status(HttpStatus.CONFLICT).body(result) : ResponseEntity.ok(result);
     }
 
-    public Paginated<NormalizedJsonLd> getIncomingLinks(UUID id, DataStage stage, String property, Type type, PaginationParam pagination){
+    public Paginated<NormalizedJsonLd> getIncomingLinks(UUID id, DataStage stage, String property, Type type, PaginationParam pagination) {
         InstanceId instanceId = ids.resolveId(stage, id);
-        if(instanceId == null){
+        if (instanceId == null) {
             return null;
         }
         final SpaceName privateSpaceName = authContext.getUserWithRoles().getPrivateSpace();
@@ -296,7 +279,7 @@ public class CoreInstanceController {
             if (responseConfiguration.isReturnPermissions() && instance != null) {
                 enrichWithPermissionInformation(stage, Collections.singletonList(Result.ok(instance)));
             }
-            if(instance!=null) {
+            if (instance != null) {
                 instance.renamePrivateSpace(authContext.getUserWithRoles().getPrivateSpace());
             }
             return instance;
@@ -329,22 +312,19 @@ public class CoreInstanceController {
         List<IdWithAlternatives> idWithAlternatives = requestToIdentifier.keySet().stream()
                 .map(k -> new IdWithAlternatives(k, null, Collections.singleton(requestToIdentifier.get(k))))
                 .collect(Collectors.toList());
-        List<JsonLdIdMapping> mappings = ids.resolveIds(stage, idWithAlternatives);
-
+        Map<UUID, InstanceId> resolvedIds = ids.resolveIds(stage, idWithAlternatives);
         Map<UUID, Set<Map<String, Object>>> updatedObjects = new HashMap<>();
         Set<InstanceId> instanceIds = new HashSet<>();
-        mappings.stream().forEach(mapping -> {
-            if (mapping.getResolvedIds() != null && mapping.getResolvedIds().size() == 1) {
-                JsonLdId resolvedId = mapping.getResolvedIds().iterator().next();
-                String requestedIdentifier = requestToIdentifier.get(mapping.getRequestedId());
-                List<Map<String, Object>> objectsToBeUpdated = idsForResolution.get(requestedIdentifier);
-                objectsToBeUpdated.forEach(o -> {
-                    o.put(JsonLdConsts.ID, resolvedId.getId());
-                    UUID uuid = idUtils.getUUID(resolvedId);
-                    instanceIds.add(new InstanceId(uuid, mapping.getSpace()));
-                    updatedObjects.computeIfAbsent(uuid, x -> new HashSet<>()).add(o);
-                });
-            }
+        Map<String, InstanceId> instanceIdByIdentifier = new HashMap<>();
+        resolvedIds.keySet().forEach(uuid -> instanceIdByIdentifier.put(requestToIdentifier.get(uuid), resolvedIds.get(uuid)));
+        instanceIdByIdentifier.keySet().forEach(requestedIdentifier -> {
+            List<Map<String, Object>> objectsToBeUpdated = idsForResolution.get(requestedIdentifier);
+            objectsToBeUpdated.forEach(o -> {
+                final InstanceId instanceId = instanceIdByIdentifier.get(requestedIdentifier);
+                o.put(JsonLdConsts.ID, idUtils.buildAbsoluteUrl(instanceId.getUuid()));
+                instanceIds.add(instanceId);
+                updatedObjects.computeIfAbsent(instanceId.getUuid(), x -> new HashSet<>()).add(o);
+            });
         });
         Map<UUID, String> labels = graphDBInstances.getLabels(instanceIds.stream().map(InstanceId::serialize).collect(Collectors.toList()), stage);
         for (UUID uuid : labels.keySet()) {
@@ -368,7 +348,7 @@ public class CoreInstanceController {
         List<FunctionalityInstance> permissions = userWithRoles.getPermissions();
         documents.forEach(result -> {
                     NormalizedJsonLd doc = result.getData();
-                    if(doc!=null) {
+                    if (doc != null) {
                         String space = doc.getAs(EBRAINSVocabulary.META_SPACE, String.class);
                         SpaceName sp = space != null ? new SpaceName(space) : null;
                         Set<Functionality> functionalities = permissions.stream().filter(p -> Functionality.FunctionalityGroup.INSTANCE == p.getFunctionality().getFunctionalityGroup() && stage != null && stage == p.getFunctionality().getStage()).filter(p -> p.appliesTo(sp, idUtils.getUUID(doc.id()))).map(FunctionalityInstance::getFunctionality).collect(Collectors.toSet());

@@ -380,16 +380,6 @@ public class Reconcile {
         return null;
     }
 
-    private Set<Object> collectTypesForMerge(String key, List<IndexedJsonLdDoc> documentsForKey) {
-        return documentsForKey.stream().map(d -> {
-            Object value = d.getDoc().get(key);
-            if (!(value instanceof Collection)) {
-                return Collections.singleton(value);
-            }
-            return (Collection<?>) value;
-        }).flatMap(Collection::stream).collect(Collectors.toSet());
-    }
-
     private void sortByFieldChangeDate(String key, List<IndexedJsonLdDoc> documentsForKey) {
         documentsForKey.sort((o1, o2) -> {
             ZonedDateTime dateTime1 = o1 != null && o1.getDoc().fieldUpdateTimes() != null ? o1.getDoc().fieldUpdateTimes().get(key) : null;

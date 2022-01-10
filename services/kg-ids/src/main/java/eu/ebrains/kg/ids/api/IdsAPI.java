@@ -22,9 +22,9 @@
 
 package eu.ebrains.kg.ids.api;
 import eu.ebrains.kg.commons.api.Ids;
+import eu.ebrains.kg.commons.exception.AmbiguousException;
 import eu.ebrains.kg.commons.exception.AmbiguousIdException;
-import eu.ebrains.kg.commons.jsonld.JsonLdId;
-import eu.ebrains.kg.commons.jsonld.JsonLdIdMapping;
+import eu.ebrains.kg.commons.jsonld.InstanceId;
 import eu.ebrains.kg.commons.model.DataStage;
 import eu.ebrains.kg.commons.model.IdWithAlternatives;
 import eu.ebrains.kg.commons.model.SpaceName;
@@ -36,6 +36,7 @@ import org.springframework.stereotype.Component;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 @Component
@@ -50,14 +51,14 @@ public class IdsAPI implements Ids.Client {
     }
 
     @Override
-    public List<JsonLdId> createOrUpdateId(IdWithAlternatives idWithAlternatives,  DataStage stage) {
+    public void createOrUpdateId(IdWithAlternatives idWithAlternatives,  DataStage stage) {
         if (idWithAlternatives != null && idWithAlternatives.getId() != null) {
             logger.debug(String.format("Updating id %s%s", idWithAlternatives.getId(), idWithAlternatives.getAlternatives() != null ? "with alternatives " + String.join(", ", idWithAlternatives.getAlternatives()) : ""));
             PersistedId persistedId = new PersistedId();
             persistedId.setUUID(idWithAlternatives.getId());
             persistedId.setSpace(new SpaceName(idWithAlternatives.getSpace()));
             persistedId.setAlternativeIds(idWithAlternatives.getAlternatives());
-            return idRepository.upsert(stage, persistedId);
+            idRepository.upsert(stage, persistedId);
         }
         throw new IllegalArgumentException("Invalid payload");
     }
@@ -71,10 +72,16 @@ public class IdsAPI implements Ids.Client {
     }
 
     @Override
-    public List<JsonLdIdMapping> resolveId(List<IdWithAlternatives> idWithAlternatives, DataStage stage) throws AmbiguousIdException {
+    public Map<UUID, InstanceId> resolveId(List<IdWithAlternatives> idWithAlternatives, DataStage stage) throws AmbiguousIdException {
         if (idWithAlternatives == null || idWithAlternatives.isEmpty()) {
-            return Collections.emptyList();
+            return Collections.emptyMap();
         }
         return idRepository.resolveIds(stage, idWithAlternatives);
     }
+
+    @Override
+    public InstanceId findInstanceByIdentifiers(UUID uuid, List<String> identifiers, DataStage stage) throws AmbiguousException {
+        return idRepository.findInstanceByIdentifiers(stage, uuid, identifiers);
+    }
+
 }

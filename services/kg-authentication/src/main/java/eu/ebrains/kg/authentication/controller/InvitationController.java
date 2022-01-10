@@ -26,9 +26,7 @@ import eu.ebrains.kg.authentication.model.InstanceScope;
 import eu.ebrains.kg.commons.api.GraphDBScopes;
 import eu.ebrains.kg.commons.api.Ids;
 import eu.ebrains.kg.commons.jsonld.InstanceId;
-import eu.ebrains.kg.commons.jsonld.JsonLdIdMapping;
 import eu.ebrains.kg.commons.model.DataStage;
-import eu.ebrains.kg.commons.model.IdWithAlternatives;
 import eu.ebrains.kg.commons.model.ScopeElement;
 import org.springframework.stereotype.Component;
 
@@ -47,18 +45,17 @@ public class InvitationController {
     }
 
     public void calculateInstanceScope(UUID id) {
-        final List<JsonLdIdMapping> result = this.ids.resolveId(Collections.singletonList(new IdWithAlternatives(id, null, null)), DataStage.IN_PROGRESS);
-        if(!result.isEmpty()) {
-            InstanceId invited = new InstanceId(id, result.get(0).getSpace());
-            final ScopeElement scopeForInstance = graphDBScopes.getScopeForInstance(invited.getSpace().getName(), id, DataStage.IN_PROGRESS);
+        final InstanceId instance = this.ids.findInstanceByIdentifiers(id, null, DataStage.IN_PROGRESS);
+        if(instance!=null) {
+            final ScopeElement scopeForInstance = graphDBScopes.getScopeForInstance(instance.getSpace().getName(), id, DataStage.IN_PROGRESS);
             final Set<UUID> uuids = collectIds(scopeForInstance, new HashSet<>());
             authenticationRepository.createOrUpdateInstanceScope(new InstanceScope(id.toString(), new ArrayList<>(uuids)));
         }
     }
 
-    private Set<UUID> collectIds(ScopeElement s, Set<UUID> collector){
+    private Set<UUID> collectIds(ScopeElement s, Set<UUID> collector) {
         collector.add(s.getId());
-        if(s.getChildren()!=null){
+        if (s.getChildren() != null) {
             for (ScopeElement c : s.getChildren()) {
                 collectIds(c, collector);
             }

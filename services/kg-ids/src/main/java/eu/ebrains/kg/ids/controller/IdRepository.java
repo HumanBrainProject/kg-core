@@ -27,20 +27,25 @@ import com.arangodb.ArangoDatabase;
 import com.arangodb.model.AqlQueryOptions;
 import com.arangodb.model.DocumentCreateOptions;
 import com.arangodb.model.SkiplistIndexOptions;
+import eu.ebrains.kg.arango.commons.aqlBuilder.AQL;
 import eu.ebrains.kg.arango.commons.model.ArangoCollectionReference;
 import eu.ebrains.kg.arango.commons.model.ArangoDatabaseProxy;
 import eu.ebrains.kg.commons.IdUtils;
 import eu.ebrains.kg.commons.JsonAdapter;
 import eu.ebrains.kg.commons.Tuple;
+import eu.ebrains.kg.commons.TypeUtils;
+import eu.ebrains.kg.commons.exception.AmbiguousException;
+import eu.ebrains.kg.commons.jsonld.InstanceId;
 import eu.ebrains.kg.commons.jsonld.JsonLdConsts;
 import eu.ebrains.kg.commons.jsonld.JsonLdId;
-import eu.ebrains.kg.commons.jsonld.JsonLdIdMapping;
 import eu.ebrains.kg.commons.model.DataStage;
 import eu.ebrains.kg.commons.model.IdWithAlternatives;
 import eu.ebrains.kg.commons.model.SpaceName;
 import eu.ebrains.kg.ids.model.PersistedId;
+import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Component;
+import org.springframework.util.CollectionUtils;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -72,18 +77,14 @@ public class IdRepository {
         this.idsDBUtils = idsDBUtils;
     }
 
-    public void remove(DataStage stage, PersistedId id){
+    public void remove(DataStage stage, PersistedId id) {
         ArangoCollection coll = getOrCreateCollection(stage);
-        if(coll.documentExists(id.getKey())){
+        if (coll.documentExists(id.getKey())) {
             coll.deleteDocument(id.getKey());
         }
     }
 
-    /**
-     * @return ids which have been merged newly into the persisted id
-     */
-    public synchronized List<JsonLdId> upsert(DataStage stage, PersistedId id) {
-        Set<UUID> mergedIds = Collections.emptySet();
+    public synchronized void upsert(DataStage stage, PersistedId id) {
         ArangoCollection coll = getOrCreateCollection(stage);
         //TODO make this transactional
         if (stage == DataStage.IN_PROGRESS) {
@@ -95,83 +96,124 @@ public class IdRepository {
                 alternativeIds.addAll(document.getAlternativeIds());
                 id.setAlternativeIds(alternativeIds.stream().filter(a -> !a.equals(instanceId.getId())).distinct().collect(Collectors.toSet()));
             }
-            //It also could be that what has been an id before is now an alternative... we need to clean them up
-            mergedIds = id.getAlternativeIds().stream()
-                    //Only instance ids are of interest (we skip external ids)
-                    .map(i -> idUtils.getUUID(JsonLdId.cast(i, null))).filter(Objects::nonNull)
-                    .filter(i -> coll.documentExists(i.toString()))
-                    .collect(Collectors.toSet());
-            mergedIds.forEach(i -> coll.deleteDocument(i.toString()));
         }
         //Add the id in its fully qualified form as an alternative
         id.setAlternativeIds(new HashSet<>(id.getAlternativeIds() != null ? id.getAlternativeIds() : Collections.emptySet()));
         id.getAlternativeIds().add(idUtils.buildAbsoluteUrl(id.getUUID()).getId());
         coll.insertDocument(jsonAdapter.toJson(id), new DocumentCreateOptions().waitForSync(true).overwrite(true));
-        return mergedIds.stream().map(idUtils::buildAbsoluteUrl).collect(Collectors.toList());
     }
 
-    public List<JsonLdIdMapping> resolveIds(DataStage stage, List<IdWithAlternatives> ids) {
-        Set<Tuple<String, SpaceName>> idsWithAlternatives = ids.stream().filter(Objects::nonNull).filter(id -> id.getAlternatives() != null).map(id -> id.getAlternatives().stream().map(alternative -> new Tuple<>(alternative, id.getSpace() != null ? new SpaceName(id.getSpace()) : null)).collect(Collectors.toSet())).flatMap(Collection::stream).filter(Objects::nonNull).collect(Collectors.toSet());
-        idsWithAlternatives.addAll(ids.stream().map(id -> id != null ? new Tuple<>(idUtils.buildAbsoluteUrl(id.getId()).getId(), id.getSpace() != null ? new SpaceName(id.getSpace()) : null) : null).filter(Objects::nonNull).collect(Collectors.toSet()));
-        String collectionName = getCollectionName(stage);
-        ArangoDatabase database = arangoDatabase.getOrCreate();
-        if (!database.collection(collectionName).exists() || idsWithAlternatives.isEmpty()) {
-            return Collections.emptyList();
-        }
-        StringBuilder sb = new StringBuilder("FOR doc IN `").append(collectionName).append("` FILTER \n");
+    private List<PersistedId> fetchPersistedIdsByUUID(ArangoDatabase database, List<UUID> uuid, String collectionName){
+        AQL aql = new AQL();
         Map<String, Object> bindVars = new HashMap<>();
-        int counter = 0;
+        aql.addLine(AQL.trust("FOR id IN @ids"));
+        bindVars.put("ids", uuid);
+        aql.addLine(AQL.trust("LET d = DOCUMENT(@@collection, id)"));
+        bindVars.put("@collection", collectionName);
+        aql.addLine(AQL.trust("FILTER d != NULL"));
+        aql.addLine(AQL.trust("RETURN d"));
+        return database.query(aql.build().getValue(), bindVars, new AqlQueryOptions(), String.class).asListRemaining().stream().map(s->jsonAdapter.fromJson(s, PersistedId.class)).collect(Collectors.toList());
+    }
 
-        for (Tuple<String, SpaceName> searchKey : idsWithAlternatives) {
+    private List<PersistedId> fetchPersistedIdsByAlternativeId(ArangoDatabase database, List<Tuple<String, SpaceName>> ids, String collectionName){
+        AQL aql = new AQL();
+        Map<String, Object> bindVars = new HashMap<>();
+        aql.addLine(AQL.trust("FOR doc IN @@collection FILTER"));
+        bindVars.put("@collection", collectionName);
+        int counter = 0;
+        for (Tuple<String, SpaceName> searchKey : ids) {
             if (counter > 0) {
-                sb.append(" OR ");
+                aql.addLine(AQL.trust(" OR "));
             }
             if (searchKey.getB() != null) {
-                sb.append("(");
+                aql.addLine(AQL.trust("("));
             }
-            sb.append("@identifier" + counter + " IN doc.alternativeIds");
+            aql.addLine(AQL.trust("@identifier" + counter + " IN doc.alternativeIds"));
             bindVars.put("identifier" + counter, searchKey.getA());
             if (searchKey.getB() != null) {
-                sb.append(" AND doc._space==@space" + counter + ")");
+                aql.addLine(AQL.trust(" AND doc._space==@space" + counter + ")"));
                 bindVars.put("space" + counter, searchKey.getB().getName());
             }
             counter++;
         }
-        sb.append("    RETURN doc\n");
-        List<PersistedId> persistedIds = database.query(sb.toString(), bindVars, new AqlQueryOptions(), String.class).asListRemaining().stream().map(s -> jsonAdapter.fromJson(s, PersistedId.class)).collect(Collectors.toList());
-        Map<String, SpaceName> resultingSpaceByIdentifier = new HashMap<>();
-        Map<String, Set<JsonLdId>> resultingIdsByIdentifier = new HashMap<>();
-        persistedIds.forEach(id -> {
-            JsonLdId absoluteId = idUtils.buildAbsoluteUrl(id.getUUID());
-            resultingSpaceByIdentifier.put(absoluteId.getId(), id.getSpace());
-            //List<JsonLdId> jsonLdIds = resultingIdsByIdentifier.computeIfAbsent(absoluteId.getId(), k -> new ArrayList<>());
-            //jsonLdIds.add(absoluteId);
-            if (id.getAlternativeIds() != null) {
-                id.getAlternativeIds().forEach(alternativeId -> {
-                    resultingSpaceByIdentifier.put(alternativeId, id.getSpace());
-                    Set<JsonLdId> jsonLdIds2 = resultingIdsByIdentifier.computeIfAbsent(alternativeId, k -> new HashSet<>());
-                    jsonLdIds2.add(absoluteId);
-                });
+        aql.addLine(AQL.trust("RETURN doc"));
+        return database.query(aql.build().getValue(), bindVars, new AqlQueryOptions(), String.class).asListRemaining().stream().map(s -> jsonAdapter.fromJson(s, PersistedId.class)).collect(Collectors.toList());
+    }
+
+    public InstanceId findInstanceByIdentifiers(DataStage stage, UUID uuid, List<String> identifiers) throws AmbiguousException{
+        if(uuid!=null){
+            identifiers.add(idUtils.buildAbsoluteUrl(uuid).getId());
+        }
+        ArangoDatabase database = arangoDatabase.getOrCreate();
+        String collectionName = getCollectionName(stage);
+        if (!database.collection(collectionName).exists() || CollectionUtils.isEmpty(identifiers)) {
+            return null;
+        }
+        AQL aql = new AQL();
+        Map<String, Object> bindVars = new HashMap<>();
+        aql.addLine(AQL.trust("FOR i in @@collectionName FILTER"));
+        for (int i = 0; i < identifiers.size(); i++) {
+            aql.addLine(AQL.trust("@identifier"+i+" IN i.alternativeIds"));
+            bindVars.put("identifier"+i, identifiers.get(i));
+            if(i<identifiers.size()-1){
+                aql.addLine(AQL.trust("OR"));
             }
-        });
-        List<JsonLdIdMapping> mappings = new ArrayList<>();
-        ids.forEach(id -> {
-            JsonLdId absoluteId = idUtils.buildAbsoluteUrl(id.getId());
-            if (absoluteId != null) {
-                if (resultingIdsByIdentifier.containsKey(absoluteId.getId())) {
-                    mappings.add(new JsonLdIdMapping(id.getId(), resultingIdsByIdentifier.get(absoluteId.getId()), resultingSpaceByIdentifier.get(absoluteId.getId())));
-                } else if (id.getAlternatives() != null) {
-                    for (String alternative : id.getAlternatives()) {
-                        if (resultingIdsByIdentifier.containsKey(alternative)) {
-                            Set<JsonLdId> resolvedIds = resultingIdsByIdentifier.get(alternative);
-                            mappings.add(new JsonLdIdMapping(id.getId(), resolvedIds, resultingSpaceByIdentifier.get(alternative)));
-                            break;
-                        }
-                    }
-                }
+        }
+        aql.addLine(AQL.trust("RETURN i"));
+        final List<PersistedId> persistedIds = database.query(aql.build().getValue(), bindVars, PersistedId.class).asListRemaining();
+        switch(persistedIds.size()) {
+            case 0:
+                return null;
+            case 1:
+                final PersistedId persistedId = persistedIds.get(0);
+                return new InstanceId(persistedId.getUUID(), persistedId.getSpace());
+        }
+        throw new AmbiguousException(StringUtils.joinWith(", ", persistedIds.stream().map(p -> new InstanceId(p.getUUID(), p.getSpace()).serialize()).collect(Collectors.toList())));
+    }
+
+
+    public Map<UUID, InstanceId> resolveIds(DataStage stage, List<IdWithAlternatives> ids) {
+        ArangoDatabase database = arangoDatabase.getOrCreate();
+        String collectionName = getCollectionName(stage);
+        Map<UUID, InstanceId> result = new HashMap<>();
+        if (!database.collection(collectionName).exists() || CollectionUtils.isEmpty(ids)) {
+            if(ids!=null){
+                ids.forEach(id -> result.put(id.getId(), null));
             }
+            return result;
+        }
+        //We first try to resolve by UUID since this can be done with way better performance...
+        List<PersistedId> persistedIdsByUUID = fetchPersistedIdsByUUID(database, ids.stream().filter(Objects::nonNull).map(IdWithAlternatives::getId).filter(Objects::nonNull).collect(Collectors.toList()), collectionName);
+        final Set<UUID> handledUUIDs = persistedIdsByUUID.stream().map(id -> {
+            result.put(id.getUUID(), new InstanceId(id.getUUID(), id.getSpace()));
+            return id.getUUID();
+        }).collect(Collectors.toSet());
+
+        //For those ids that weren't resolved via UUID, we go for the "by alternative" approach.
+        final Set<IdWithAlternatives> remainingIds = ids.stream().filter(Objects::nonNull).filter(id -> id.getId() != null && !handledUUIDs.contains(id.getId()) && !CollectionUtils.isEmpty(id.getAlternatives())).collect(Collectors.toSet());
+        if(remainingIds.isEmpty()){
+            //We're done - don't do the extra steps.
+            return result;
+        }
+        //Let's build one entry for each to find all possible combinations of the remaining ids...
+        Set<Tuple<String, SpaceName>> idsWithAlternatives = remainingIds.stream().map(id -> id.getAlternatives().stream().map(alternative -> new Tuple<>(alternative, id.getSpace() != null ? new SpaceName(id.getSpace()) : null)).collect(Collectors.toSet())).flatMap(Collection::stream).filter(Objects::nonNull).collect(Collectors.toSet());
+        idsWithAlternatives.addAll(remainingIds.stream().map(id -> new Tuple<>(idUtils.buildAbsoluteUrl(id.getId()).getId(), id.getSpace() != null ? new SpaceName(id.getSpace()) : null)).collect(Collectors.toSet()));
+
+        //Depending on the size of the list, this can be overwhelming for the DB. Accordingly, we are going to run this in multiple steps...
+        final List<PersistedId> persistedIdsByAlternativeIds = TypeUtils.splitList(new ArrayList<>(idsWithAlternatives), 2000).stream().map(i -> fetchPersistedIdsByAlternativeId(database, i, collectionName)).flatMap(Collection::stream).collect(Collectors.toList());
+        Map<String, PersistedId> persistedIdsByAlternative = new HashMap<>();
+        persistedIdsByAlternativeIds.forEach(p -> {
+            persistedIdsByAlternative.put(idUtils.buildAbsoluteUrl(p.getUUID()).getId(), p);
+            p.getAlternativeIds().forEach(a -> persistedIdsByAlternative.put(a, p));
         });
-        return mappings;
+        remainingIds.forEach(id -> {
+            PersistedId foundId = persistedIdsByAlternative.get(idUtils.buildAbsoluteUrl(id.getId()).getId());
+            if(foundId==null){
+                foundId = id.getAlternatives().stream().map(persistedIdsByAlternative::get).findFirst().orElse(null);
+            }
+            result.put(id.getId(), foundId != null ? new InstanceId(foundId.getUUID(), foundId.getSpace()) : null);
+        });
+        return result;
     }
 
     private String getCollectionName(DataStage stage) {

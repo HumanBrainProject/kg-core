@@ -20,38 +20,25 @@
  * (Human Brain Project SGA1, SGA2 and SGA3).
  */
 
-package eu.ebrains.kg.commons.jsonld;
+package eu.ebrains.kg.commons.exception;
 
-import eu.ebrains.kg.commons.model.SpaceName;
+import eu.ebrains.kg.commons.model.Result;
 
-import java.util.Set;
-import java.util.UUID;
+public class CancelProcessException extends RuntimeException {
 
-public class JsonLdIdMapping {
-    private String space;
-    private UUID requestedId;
-    private Set<JsonLdId> resolvedIds;
+    private final Result<?> result;
+    private final int status;
 
-    public JsonLdIdMapping() {
+    public CancelProcessException(Result<?> result, int status) {
+        this.result = result;
+        this.status = status;
     }
 
-    public JsonLdIdMapping(UUID requestedId, Set<JsonLdId> resolvedIds, SpaceName space) {
-        this.requestedId = requestedId;
-        this.resolvedIds = resolvedIds;
-        this.space = space != null ? space.getName() : null;
+    public Result<?> getResult() {
+        return result;
     }
 
-    public SpaceName getSpace(){
-        return space!=null ? new SpaceName(space) : null;
+    public int getStatus() {
+        return status;
     }
-
-    public UUID getRequestedId() {
-        return requestedId;
-    }
-
-    public Set<JsonLdId> getResolvedIds() {
-        return resolvedIds;
-    }
-
 }
-
