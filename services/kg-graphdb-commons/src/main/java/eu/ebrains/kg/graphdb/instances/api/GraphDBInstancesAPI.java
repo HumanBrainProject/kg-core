@@ -211,7 +211,12 @@ public class GraphDBInstancesAPI implements GraphDBInstances.Client {
         final List<Type> targetTypes = suggestionResult.getTypes().values().stream().map(Type::fromPayload).collect(Collectors.toList());
         Paginated<SuggestedLink> documentsByTypes = repository.getSuggestionsByTypes(stage, paginationParam, targetTypes, searchablePropertiesByType, search, existingLinks);
         suggestionResult.setSuggestions(documentsByTypes);
-        suggestionResult.getTypes().values().forEach(TypeInformation::clearProperties);
+        suggestionResult.getTypes().values().forEach( t -> {
+            t.clearProperties();
+            if(t.getSpaces()!=null) {
+                t.getSpaces().forEach(s -> s.setProperties(null));
+            }
+        });
         return suggestionResult;
     }
 
