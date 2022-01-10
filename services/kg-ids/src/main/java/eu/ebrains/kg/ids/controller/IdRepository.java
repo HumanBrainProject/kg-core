@@ -161,7 +161,7 @@ public class IdRepository {
             }
         }
         aql.addLine(AQL.trust("RETURN i"));
-        final List<PersistedId> persistedIds = database.query(aql.build().getValue(), bindVars, PersistedId.class).asListRemaining();
+        final List<PersistedId> persistedIds = database.query(aql.build().getValue(), bindVars, String.class).asListRemaining().stream().map(s -> jsonAdapter.fromJson(s, PersistedId.class)).collect(Collectors.toList());
         switch(persistedIds.size()) {
             case 0:
                 return null;

@@ -60,7 +60,9 @@ public class IdsAPI implements Ids.Client {
             persistedId.setAlternativeIds(idWithAlternatives.getAlternatives());
             idRepository.upsert(stage, persistedId);
         }
-        throw new IllegalArgumentException("Invalid payload");
+        else {
+            throw new IllegalArgumentException("Invalid payload");
+        }
     }
 
     @Override
