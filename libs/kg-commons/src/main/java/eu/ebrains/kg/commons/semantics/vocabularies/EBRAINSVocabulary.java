@@ -47,6 +47,8 @@ public class EBRAINSVocabulary {
 
     public static final String RESET_VALUE = NAMESPACE+"resetValue";
 
+    public static final String ADDITIONAL_INFO = NAMESPACE+"additionalInformation";
+
     public static final String META = NAMESPACE+"meta/";
     public static final String META_SPACES = META + "spaces";
     public static final String META_USER = META+"user";

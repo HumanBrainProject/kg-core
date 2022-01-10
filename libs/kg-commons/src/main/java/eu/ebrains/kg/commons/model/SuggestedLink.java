@@ -29,6 +29,7 @@ public class SuggestedLink {
     private String label;
     private String type;
     private String space;
+    private String additionalInformation;
 
     public UUID getId() {
         return id;
@@ -60,5 +61,13 @@ public class SuggestedLink {
 
     public void setSpace(String space) {
         this.space = space;
+    }
+
+    public String getAdditionalInformation() {
+        return additionalInformation;
+    }
+
+    public void setAdditionalInformation(String additionalInformation) {
+        this.additionalInformation = additionalInformation;
     }
 }

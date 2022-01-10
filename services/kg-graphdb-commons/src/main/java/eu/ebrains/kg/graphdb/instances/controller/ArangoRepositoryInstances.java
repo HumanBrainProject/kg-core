@@ -435,7 +435,7 @@ public class ArangoRepositoryInstances {
 
     @ExposesData
     //FIXME: Do we want to return suggested links for RELEASED stage?
-    public Paginated<SuggestedLink> getSuggestionsByTypes(DataStage stage, PaginationParam paginationParam, List<Type> type, String search, List<UUID> excludeIds) {
+    public Paginated<SuggestedLink> getSuggestionsByTypes(DataStage stage, PaginationParam paginationParam, List<Type> type, Map<String, List<String>> searchablePropertiesByType, String search, List<UUID> excludeIds) {
         // Suggestions are special in terms of permissions: We even allow instances to show up which are in spaces the
         // user doesn't have read access for. This is only acceptable because we're returning a restricted result with
         // minimal information.
@@ -451,6 +451,18 @@ public class ArangoRepositoryInstances {
         // ATTENTION: We are only allowed to search by "label" fields but not by "searchable" fields if the user has no read rights
         // for those instances since otherwise, information could be extracted by doing searches. We therefore don't provide additional search fields.
         iterateThroughTypeList(type, null, bindVars, aql);
+        if(searchablePropertiesByType == null){
+            searchablePropertiesByType = Collections.emptyMap();
+        }
+
+        //For suggestions, we're a little more strict. We only show additional information if the user has read rights for the space - individual instance permissions are not reflected.
+        final Map<String, Object> whitelistFilter = permissionsController.whitelistFilterForReadInstances(authContext.getUserWithRoles(), stage);
+        if(whitelistFilter!=null){
+            aql.addLine(AQL.trust("LET restrictedSpaces = @restrictedSpaces"));
+            bindVars.put("restrictedSpaces", new ArrayList<>((Set<SpaceName>)whitelistFilter.get(AQL.READ_ACCESS_BY_SPACE)));
+        }
+        aql.addLine(AQL.trust("LET searchableProperties = @searchableProperties"));
+        bindVars.put("searchableProperties", searchablePropertiesByType);
         if (type.size() == 1 && type.get(0).getSpaces().size() == 1) {
             // If there is only one type and one space for this type, we have the chance to optimize the query... Please
             // note that we're not restricting the spaces to the ones the user can read because the suggestions are
@@ -470,7 +482,13 @@ public class ArangoRepositoryInstances {
         addSearchFilter(bindVars, aql, search, false);
         aql.addLine(AQL.trust(String.format("SORT v.%s", IndexedJsonLdDoc.LABEL)));
         aql.addPagination(paginationParam);
-        aql.addLine(AQL.trust("LET attWithMeta = [{name: \"" + JsonLdConsts.ID + "\", value: v.`" + JsonLdConsts.ID + "`}, {name: \"" + EBRAINSVocabulary.LABEL + "\", value: v." + IndexedJsonLdDoc.LABEL + "},  {name: \"" + EBRAINSVocabulary.META_TYPE + "\", value: typeDefinition.typeName}, {name: \"" + EBRAINSVocabulary.META_SPACE + "\", value: v.`" + EBRAINSVocabulary.META_SPACE + "`}]"));
+
+        aql.addLine(AQL.trust("LET additionalInfo = "));
+        if(whitelistFilter!=null){
+            aql.addLine(AQL.trust("v.`"+EBRAINSVocabulary.META_SPACE+"` NOT IN restrictedSpaces ? null : "));
+        }
+        aql.addLine(AQL.trust("CONCAT_SEPARATOR(\", \", (FOR s IN NOT_NULL(searchableProperties[typeDefinition.typeName], []) RETURN v[s]))"));
+        aql.addLine(AQL.trust("LET attWithMeta = [{name: \"" + JsonLdConsts.ID + "\", value: v.`" + JsonLdConsts.ID + "`}, {name: \"" + EBRAINSVocabulary.LABEL + "\", value: v." + IndexedJsonLdDoc.LABEL + "},  {name: \""+EBRAINSVocabulary.ADDITIONAL_INFO+"\", value: additionalInfo}, {name: \"" + EBRAINSVocabulary.META_TYPE + "\", value: typeDefinition.typeName}, {name: \"" + EBRAINSVocabulary.META_SPACE + "\", value: v.`" + EBRAINSVocabulary.META_SPACE + "`}]"));
         aql.addLine(AQL.trust("RETURN ZIP(attWithMeta[*].name, attWithMeta[*].value)"));
         Paginated<NormalizedJsonLd> normalizedJsonLdPaginated = arangoRepositoryCommons.queryDocuments(databases.getByStage(stage), new AQLQuery(aql, bindVars));
         List<SuggestedLink> links = normalizedJsonLdPaginated.getData().stream().map(payload -> {
@@ -480,6 +498,7 @@ public class ArangoRepositoryInstances {
             link.setLabel(payload.getAs(EBRAINSVocabulary.LABEL, String.class, uuid != null ? uuid.toString() : null));
             link.setType(payload.getAs(EBRAINSVocabulary.META_TYPE, String.class, null));
             link.setSpace(payload.getAs(EBRAINSVocabulary.META_SPACE, String.class, null));
+            link.setAdditionalInformation(payload.getAs(EBRAINSVocabulary.ADDITIONAL_INFO, String.class, null));
             return link;
         }).collect(Collectors.toList());
         return new Paginated<>(links, normalizedJsonLdPaginated.getTotalResults(), normalizedJsonLdPaginated.getSize(), normalizedJsonLdPaginated.getFrom());

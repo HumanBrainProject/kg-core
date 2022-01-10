@@ -195,11 +195,23 @@ public class GraphDBInstancesAPI implements GraphDBInstances.Client {
         final Map<String, Result<TypeInformation>> sourceTypeInformation = types.getTypesByName(sourceTypes.stream().map(Type::getName).collect(Collectors.toList()), stage, space, true, false);
         final List<String> targetTypesOfProperty = sourceTypeInformation.values().stream().map(s -> s.getData().getProperties()).flatMap(Collection::stream).filter(p -> propertyName.equals(p.getIdentifier()))
                 .map(Property::getTargetTypes).flatMap(Collection::stream).map(TargetType::getType).filter(t -> targetType == null || t.equals(targetType)).distinct().collect(Collectors.toList());
-        final Map<String, Result<TypeInformation>> targetTypeInformation = types.getTypesByName(targetTypesOfProperty, stage, null, false, false);
+        final Map<String, Result<TypeInformation>> targetTypeInformation = types.getTypesByName(targetTypesOfProperty, stage, null, true, false);
         suggestionResult.setTypes(targetTypeInformation.values().stream().collect(Collectors.toMap(k -> k.getData().getIdentifier(), Result::getData)));
+        final Map<String, List<String>> searchablePropertiesByType = new HashMap<>();
+        targetTypeInformation.keySet().forEach(t -> {
+            final Result<TypeInformation> typeInformation = targetTypeInformation.get(t);
+            if(typeInformation!=null && typeInformation.getData()!=null){
+                final List<String> searchableProperties = typeInformation.getData().getProperties().stream().filter(p -> {
+                    final Boolean searchable = p.getAs(EBRAINSVocabulary.META_PROPERTY_SEARCHABLE, Boolean.class);
+                    return searchable != null && searchable;
+                }).map(Property::getIdentifier).distinct().collect(Collectors.toList());
+                searchablePropertiesByType.put(t, searchableProperties);
+            }
+        });
         final List<Type> targetTypes = suggestionResult.getTypes().values().stream().map(Type::fromPayload).collect(Collectors.toList());
-        Paginated<SuggestedLink> documentsByTypes = repository.getSuggestionsByTypes(stage, paginationParam, targetTypes, search, existingLinks);
+        Paginated<SuggestedLink> documentsByTypes = repository.getSuggestionsByTypes(stage, paginationParam, targetTypes, searchablePropertiesByType, search, existingLinks);
         suggestionResult.setSuggestions(documentsByTypes);
+        suggestionResult.getTypes().values().forEach(TypeInformation::clearProperties);
         return suggestionResult;
     }
 
