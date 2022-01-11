@@ -245,7 +245,7 @@ public class Instances {
         Map<UUID, InstanceId> resolvedIds = idsController.resolveIds(stage.getStage(), idWithAlternatives);
         Map<String, InstanceId> identifierToInstanceIdLookup = new HashMap<>();
         resolvedIds.keySet().forEach(uuid -> identifierToInstanceIdLookup.put(uuidToIdentifier.get(uuid), resolvedIds.get(uuid)));
-        Map<String, Result<NormalizedJsonLd>> instancesByIds = instanceController.getInstancesByIds(identifierToInstanceIdLookup.values().stream().map(id -> id.getUuid().toString()).collect(Collectors.toList()), stage.getStage(), responseConfiguration);
+        Map<String, Result<NormalizedJsonLd>> instancesByIds = instanceController.getInstancesByIds(identifierToInstanceIdLookup.values().stream().filter(Objects::nonNull).map(id -> id.getUuid().toString()).collect(Collectors.toList()), stage.getStage(), responseConfiguration);
         Map<String, Result<NormalizedJsonLd>> result = new HashMap<>();
         identifiers.forEach(identifier -> {
             InstanceId instanceId = identifierToInstanceIdLookup.get(identifier);
