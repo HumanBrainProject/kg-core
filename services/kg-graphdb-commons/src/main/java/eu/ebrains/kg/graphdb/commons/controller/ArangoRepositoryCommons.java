@@ -393,7 +393,8 @@ public class ArangoRepositoryCommons {
         long launch = new Date().getTime();
         //The direct parsing into NormalizedJsonLd is not optimal - we achieve better performance when doing the parsing
         //afterwards (with jackson). this is why we take this extra step
-        ArangoCursor<String> result = db.query(value, aqlQuery.getBindVars(), aql.getQueryOptions(), String.class);
+        //FIXME rolled back because of serialization issue when using string in between.
+        ArangoCursor<NormalizedJsonLd> result = db.query(value, aqlQuery.getBindVars(), aql.getQueryOptions(), NormalizedJsonLd.class);
         logger.debug(String.format("Received %d results from Arango in %dms", result.getCount(), new Date().getTime() - launch));
         Long totalCount;
         if (aql.getPaginationParam() != null && aql.getPaginationParam().getSize() != null) {
@@ -405,7 +406,7 @@ public class ArangoRepositoryCommons {
         logger.debug(String.format("Start parsing the results after %dms", new Date().getTime() - launch));
         List<T> mappedResult = new ArrayList<>();
         while (result.hasNext()) {
-            final NormalizedJsonLd normalizedJsonLd = jsonAdapter.fromJson(result.next(), NormalizedJsonLd.class);
+            final NormalizedJsonLd normalizedJsonLd = result.next();
             if(mapper!=null){
                 mappedResult.add(mapper.apply(normalizedJsonLd));
             }
