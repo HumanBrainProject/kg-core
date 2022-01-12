@@ -461,7 +461,7 @@ public class ArangoRepositoryInstances {
         final Map<String, Object> whitelistFilter = permissionsController.whitelistFilterForReadInstances(authContext.getUserWithRoles(), stage);
         if(whitelistFilter!=null){
             aql.addLine(AQL.trust("LET restrictedSpaces = @restrictedSpaces"));
-            bindVars.put("restrictedSpaces", new ArrayList<>((Set<SpaceName>)whitelistFilter.get(AQL.READ_ACCESS_BY_SPACE)));
+            bindVars.put("restrictedSpaces", whitelistFilter.get(AQL.READ_ACCESS_BY_SPACE));
         }
         aql.addLine(AQL.trust("LET searchableProperties = @searchableProperties"));
         bindVars.put("searchableProperties", searchablePropertiesByType);
