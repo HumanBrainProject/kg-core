@@ -391,9 +391,6 @@ public class ArangoRepositoryCommons {
         }
         String value = aql.build().getValue();
         long launch = new Date().getTime();
-        //The direct parsing into NormalizedJsonLd is not optimal - we achieve better performance when doing the parsing
-        //afterwards (with jackson). this is why we take this extra step
-        //FIXME rolled back because of serialization issue when using string in between.
         ArangoCursor<NormalizedJsonLd> result = db.query(value, aqlQuery.getBindVars(), aql.getQueryOptions(), NormalizedJsonLd.class);
         logger.debug(String.format("Received %d results from Arango in %dms", result.getCount(), new Date().getTime() - launch));
         Long totalCount;

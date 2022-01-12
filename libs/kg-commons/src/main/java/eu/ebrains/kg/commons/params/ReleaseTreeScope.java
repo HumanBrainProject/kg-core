@@ -23,5 +23,5 @@
 package eu.ebrains.kg.commons.params;
 
 public enum ReleaseTreeScope {
-    TOP_INSTANCE_ONLY, CHILDREN_ONLY
+    TOP_INSTANCE_ONLY, CHILDREN_ONLY, CHILDREN_ONLY_RESTRICTED
 }

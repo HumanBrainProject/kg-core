@@ -45,8 +45,8 @@ public class GraphDBScopesAPI implements GraphDBScopes.Client {
 
     @Override
     @ExposesMinimalData
-    public ScopeElement getScopeForInstance(String space, UUID id, DataStage stage){
-       return this.repository.getScopeForInstance(new SpaceName(space), id, stage);
+    public ScopeElement getScopeForInstance(String space, UUID id, DataStage stage, boolean applyRestrictions){
+       return this.repository.getScopeForInstance(new SpaceName(space), id, stage, applyRestrictions);
     }
 
 }

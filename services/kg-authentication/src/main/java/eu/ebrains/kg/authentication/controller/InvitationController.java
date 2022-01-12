@@ -47,7 +47,7 @@ public class InvitationController {
     public void calculateInstanceScope(UUID id) {
         final InstanceId instance = this.ids.findInstanceByIdentifiers(id, null, DataStage.IN_PROGRESS);
         if(instance!=null) {
-            final ScopeElement scopeForInstance = graphDBScopes.getScopeForInstance(instance.getSpace().getName(), id, DataStage.IN_PROGRESS);
+            final ScopeElement scopeForInstance = graphDBScopes.getScopeForInstance(instance.getSpace().getName(), id, DataStage.IN_PROGRESS, false);
             final Set<UUID> uuids = collectIds(scopeForInstance, new HashSet<>());
             authenticationRepository.createOrUpdateInstanceScope(new InstanceScope(id.toString(), new ArrayList<>(uuids)));
         }

@@ -22,7 +22,6 @@
 
 package eu.ebrains.kg.graphdb.instances.controller;
 
-import com.arangodb.ArangoCollection;
 import com.arangodb.ArangoDatabase;
 import com.arangodb.entity.CollectionType;
 import com.arangodb.model.AqlQueryOptions;
@@ -54,6 +53,7 @@ import eu.ebrains.kg.graphdb.instances.model.ArangoRelation;
 import eu.ebrains.kg.graphdb.queries.controller.QueryController;
 import eu.ebrains.kg.graphdb.queries.model.spec.GraphQueryKeys;
 import eu.ebrains.kg.graphdb.structure.api.GraphDBTypesAPI;
+import eu.ebrains.kg.graphdb.structure.controller.StructureRepository;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
 import org.springframework.util.CollectionUtils;
@@ -75,13 +75,14 @@ public class ArangoRepositoryInstances {
     private final IdUtils idUtils;
     private final JsonAdapter jsonAdapter;
     private final GraphDBTypesAPI graphDBTypesAPI;
+    private final StructureRepository structureRepository;
 
     public final static int DEFAULT_INCOMING_PAGESIZE = 10;
     //TODO make this configurable
     private final static List<String> SPACES_FOR_SCOPE = Collections.singletonList("kg-search");
 
 
-    public ArangoRepositoryInstances(ArangoRepositoryCommons arangoRepositoryCommons, PermissionsController permissionsController, Permissions permissions, AuthContext authContext, GraphDBArangoUtils graphDBArangoUtils, QueryController queryController, ArangoDatabases databases, IdUtils idUtils, JsonAdapter jsonAdapter, GraphDBTypesAPI graphDBTypesAPI) {
+    public ArangoRepositoryInstances(ArangoRepositoryCommons arangoRepositoryCommons, PermissionsController permissionsController, Permissions permissions, AuthContext authContext, GraphDBArangoUtils graphDBArangoUtils, QueryController queryController, ArangoDatabases databases, IdUtils idUtils, JsonAdapter jsonAdapter, GraphDBTypesAPI graphDBTypesAPI, StructureRepository structureRepository) {
         this.arangoRepositoryCommons = arangoRepositoryCommons;
         this.permissionsController = permissionsController;
         this.permissions = permissions;
@@ -92,6 +93,7 @@ public class ArangoRepositoryInstances {
         this.idUtils = idUtils;
         this.jsonAdapter = jsonAdapter;
         this.graphDBTypesAPI = graphDBTypesAPI;
+        this.structureRepository = structureRepository;
     }
 
     @ExposesMinimalData
@@ -966,8 +968,9 @@ public class ArangoRepositoryInstances {
             case TOP_INSTANCE_ONLY:
                 return getTopInstanceReleaseStatus(Collections.singletonList(new InstanceId(id, space))).get(id);
             case CHILDREN_ONLY:
+            case CHILDREN_ONLY_RESTRICTED:
                 //FIXME restrict exposed release status based on permissions.
-                ScopeElement scopeForInstance = getScopeForInstance(space, id, DataStage.IN_PROGRESS);
+                ScopeElement scopeForInstance = getScopeForInstance(space, id, DataStage.IN_PROGRESS, treeScope == ReleaseTreeScope.CHILDREN_ONLY_RESTRICTED);
                 if (scopeForInstance.getChildren() == null || scopeForInstance.getChildren().isEmpty()) {
                     return null;
                 }
@@ -1113,13 +1116,14 @@ public class ArangoRepositoryInstances {
 
     }
 
+
     @ExposesMinimalData
     //FIXME reduce to minimal data permission
-    public ScopeElement getScopeForInstance(SpaceName space, UUID id, DataStage stage) {
+    public ScopeElement getScopeForInstance(SpaceName space, UUID id, DataStage stage, boolean applyRestrictions) {
         //get instance
         NormalizedJsonLd instance = getInstance(stage, space, id, false, false, false, false, null);
         //get scope relevant queries
-        //TODO filter user defined queries (only take client queries into account)
+        //TODO as a performance optimization, we could try to apply the restrictions already to the queries instead of excluding the instances in a post processing step.
         Stream<NormalizedJsonLd> typeQueries = instance.types().stream().map(type -> getQueriesByRootType(stage, null, null, false, false, type).getData()).flatMap(Collection::stream);
         List<NormalizedJsonLd> results = typeQueries.filter(q -> SPACES_FOR_SCOPE.contains(q.getAs(EBRAINSVocabulary.META_SPACE, String.class))).map(q -> {
             QueryResult queryResult = queryController.query(authContext.getUserWithRoles(),
@@ -1127,20 +1131,23 @@ public class ArangoRepositoryInstances {
                             Collections.singletonList(id)), null, null, true);
             return queryResult != null && queryResult.getResult() != null ? queryResult.getResult().getData() : null;
         }).filter(Objects::nonNull).flatMap(Collection::stream).collect(Collectors.toList());
-        return translateResultToScope(results, instance);
+        return translateResultToScope(results, instance, applyRestrictions);
     }
 
-    private ScopeElement handleSubElement(NormalizedJsonLd data, Map<String, Set<ScopeElement>> typeToUUID) {
+    private ScopeElement handleSubElement(NormalizedJsonLd data, Map<String, Set<ScopeElement>> typeToUUID, boolean applyRestrictions) {
         Boolean embedded = data.getAs("embedded", Boolean.class);
         if (embedded != null && embedded) {
+            return null;
+        }
+        List<String> type = data.getAsListOf("type", String.class);
+        if(applyRestrictions && type.stream().anyMatch(t -> structureRepository.getTypeSpecification(t).getAs(EBRAINSVocabulary.META_CAN_BE_EXCLUDED_FROM_SCOPE, Boolean.class, Boolean.FALSE))){
             return null;
         }
         String id = data.getAs("id", String.class);
         UUID uuid = idUtils.getUUID(new JsonLdId(id));
         List<ScopeElement> children = data.keySet().stream().filter(k -> k.startsWith("dependency_")).map(k ->
-                data.getAsListOf(k, NormalizedJsonLd.class).stream().map(d -> handleSubElement(d, typeToUUID)).filter(Objects::nonNull).collect(Collectors.toList())
+                data.getAsListOf(k, NormalizedJsonLd.class).stream().map(d -> handleSubElement(d, typeToUUID, applyRestrictions)).filter(Objects::nonNull).collect(Collectors.toList())
         ).flatMap(Collection::stream).collect(Collectors.toList());
-        List<String> type = data.getAsListOf("type", String.class);
         ScopeElement element = new ScopeElement(uuid, type, children.isEmpty() ? null : children, data.getAs("internalId", String.class), data.getAs("space", String.class), data.getAs("label", String.class));
         type.forEach(t -> {
             typeToUUID.computeIfAbsent(t, x -> new HashSet<>()).add(element);
@@ -1174,13 +1181,13 @@ public class ArangoRepositoryInstances {
     }
 
 
-    private ScopeElement translateResultToScope(List<NormalizedJsonLd> data, NormalizedJsonLd instance) {
+    private ScopeElement translateResultToScope(List<NormalizedJsonLd> data, NormalizedJsonLd instance, boolean applyRestrictions) {
         final Map<String, Set<ScopeElement>> typeToUUID = new HashMap<>();
         List<ScopeElement> elements;
         if (data == null || data.isEmpty()) {
             elements = Collections.singletonList(new ScopeElement(idUtils.getUUID(instance.id()), instance.types(), null, instance.getAs(ArangoVocabulary.ID, String.class), instance.getAs(EBRAINSVocabulary.META_SPACE, String.class), instance.getAs(IndexedJsonLdDoc.LABEL, String.class)));
         } else {
-            elements = data.stream().map(d -> handleSubElement(d, typeToUUID)).filter(Objects::nonNull).collect(Collectors.toList());
+            elements = data.stream().map(d -> handleSubElement(d, typeToUUID, applyRestrictions)).filter(Objects::nonNull).collect(Collectors.toList());
         }
         for (ScopeElement el : elements) {
             instance.types().forEach(t -> typeToUUID.computeIfAbsent(t, x -> new HashSet<>()).add(el));

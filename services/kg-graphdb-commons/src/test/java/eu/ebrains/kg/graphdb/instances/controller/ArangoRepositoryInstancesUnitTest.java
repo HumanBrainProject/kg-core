@@ -33,6 +33,7 @@ import eu.ebrains.kg.graphdb.commons.controller.GraphDBArangoUtils;
 import eu.ebrains.kg.graphdb.commons.controller.PermissionsController;
 import eu.ebrains.kg.graphdb.queries.controller.QueryController;
 import eu.ebrains.kg.graphdb.structure.api.GraphDBTypesAPI;
+import eu.ebrains.kg.graphdb.structure.controller.StructureRepository;
 import eu.ebrains.kg.test.JsonAdapter4Test;
 import org.junit.Assert;
 import org.junit.Test;
@@ -46,7 +47,7 @@ public class ArangoRepositoryInstancesUnitTest {
     @Test
     public void mergeEmbeddedDocuments() {
         //Given
-        ArangoRepositoryInstances repository = new ArangoRepositoryInstances(Mockito.mock(ArangoRepositoryCommons.class), Mockito.mock(PermissionsController.class), Mockito.mock(Permissions.class), Mockito.mock(AuthContext.class), Mockito.mock(GraphDBArangoUtils.class), Mockito.mock(QueryController.class), Mockito.mock(ArangoDatabases.class), Mockito.mock(IdUtils.class), Mockito.mock(JsonAdapter.class), Mockito.mock(GraphDBTypesAPI.class));
+        ArangoRepositoryInstances repository = new ArangoRepositoryInstances(Mockito.mock(ArangoRepositoryCommons.class), Mockito.mock(PermissionsController.class), Mockito.mock(Permissions.class), Mockito.mock(AuthContext.class), Mockito.mock(GraphDBArangoUtils.class), Mockito.mock(QueryController.class), Mockito.mock(ArangoDatabases.class), Mockito.mock(IdUtils.class), Mockito.mock(JsonAdapter.class), Mockito.mock(GraphDBTypesAPI.class), Mockito.mock(StructureRepository.class));
         JsonAdapter jsonAdapter = new JsonAdapter4Test();
         String originalDoc = "{\"helloWorld\": {\"@id\": \"http://foobar\"}, \"@id\": \"http://foo\"}";
         NormalizedJsonLd original = jsonAdapter.fromJson(originalDoc, NormalizedJsonLd.class);

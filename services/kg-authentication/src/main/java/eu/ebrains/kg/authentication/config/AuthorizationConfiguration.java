@@ -23,6 +23,7 @@
 package eu.ebrains.kg.authentication.config;
 
 import com.arangodb.ArangoDB;
+import com.arangodb.mapping.ArangoJack;
 import eu.ebrains.kg.arango.commons.model.ArangoDatabaseProxy;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
@@ -55,6 +56,7 @@ public class AuthorizationConfiguration {
         if (maxConnections != null) {
             builder.maxConnections(maxConnections);
         }
+        builder.serializer(new ArangoJack());
         return builder;
     }
 

@@ -184,9 +184,9 @@ public class Instances {
     @GetMapping("/instances/{id}/scope")
     @ExposesMinimalData
     @Advanced
-    public ResponseEntity<Result<ScopeElement>> getInstanceScope(@PathVariable("id") UUID id, @RequestParam("stage") ExposedStage stage, @RequestParam(value = "returnPermissions", required = false, defaultValue = "false") boolean returnPermissions) {
+    public ResponseEntity<Result<ScopeElement>> getInstanceScope(@PathVariable("id") UUID id, @RequestParam("stage") ExposedStage stage, @RequestParam(value = "returnPermissions", required = false, defaultValue = "false") boolean returnPermissions, @RequestParam(value = "applyRestrictions", required = false, defaultValue = "false") boolean applyRestrictions) {
         Date startTime = new Date();
-        ScopeElement scope = instanceController.getScopeForInstance(id, stage.getStage(), returnPermissions);
+        ScopeElement scope = instanceController.getScopeForInstance(id, stage.getStage(), returnPermissions, applyRestrictions);
         return scope != null ? ResponseEntity.ok(Result.ok(scope).setExecutionDetails(startTime, new Date())) : ResponseEntity.notFound().build();
     }
 
