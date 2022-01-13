@@ -321,7 +321,7 @@ public class CoreInstanceController {
             List<Map<String, Object>> objectsToBeUpdated = idsForResolution.get(requestedIdentifier);
             objectsToBeUpdated.forEach(o -> {
                 final InstanceId instanceId = instanceIdByIdentifier.get(requestedIdentifier);
-                o.put(JsonLdConsts.ID, idUtils.buildAbsoluteUrl(instanceId.getUuid()));
+                o.put(JsonLdConsts.ID, idUtils.buildAbsoluteUrl(instanceId.getUuid()).getId());
                 instanceIds.add(instanceId);
                 updatedObjects.computeIfAbsent(instanceId.getUuid(), x -> new HashSet<>()).add(o);
             });
