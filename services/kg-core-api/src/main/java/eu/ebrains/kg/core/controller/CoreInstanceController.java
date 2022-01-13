@@ -321,9 +321,11 @@ public class CoreInstanceController {
             List<Map<String, Object>> objectsToBeUpdated = idsForResolution.get(requestedIdentifier);
             objectsToBeUpdated.forEach(o -> {
                 final InstanceId instanceId = instanceIdByIdentifier.get(requestedIdentifier);
-                o.put(JsonLdConsts.ID, idUtils.buildAbsoluteUrl(instanceId.getUuid()).getId());
-                instanceIds.add(instanceId);
-                updatedObjects.computeIfAbsent(instanceId.getUuid(), x -> new HashSet<>()).add(o);
+                if(instanceId!=null) {
+                    o.put(JsonLdConsts.ID, idUtils.buildAbsoluteUrl(instanceId.getUuid()).getId());
+                    instanceIds.add(instanceId);
+                    updatedObjects.computeIfAbsent(instanceId.getUuid(), x -> new HashSet<>()).add(o);
+                }
             });
         });
         Map<UUID, String> labels = graphDBInstances.getLabels(instanceIds.stream().map(InstanceId::serialize).collect(Collectors.toList()), stage);
