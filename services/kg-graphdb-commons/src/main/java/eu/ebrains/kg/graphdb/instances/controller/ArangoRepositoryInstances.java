@@ -102,16 +102,13 @@ public class ArangoRepositoryInstances {
         if (!CollectionUtils.isEmpty(instanceIncomingLinks)) {
             resolveIncomingLinks(stage, instanceIncomingLinks);
         }
-        Object i = instanceIncomingLinks.get(id.toString());
-        if (i instanceof Map) {
-            Object p = ((Map) i).get(property);
-            if (p instanceof Map) {
-                Object t = ((Map) p).get(type);
-                if (t instanceof Map) {
-                    Object data = ((Map) t).get("data");
-                    if (data instanceof List) {
-                        return new Paginated<>(((List<Map<? extends String, ?>>) data).stream().map(NormalizedJsonLd::new).collect(Collectors.toList()), (long) ((Map) t).get("total"), (long) ((Map) t).get("size"), (long) ((Map) t).get("from"));
-                    }
+        final NormalizedJsonLd byInstanceId = instanceIncomingLinks.getAs(id.toString(), NormalizedJsonLd.class);
+        if(byInstanceId!=null){
+            final NormalizedJsonLd byProperty = byInstanceId.getAs(property, NormalizedJsonLd.class);
+            if(byProperty!=null){
+                final NormalizedJsonLd document = byProperty.getAs(type, NormalizedJsonLd.class);
+                if(document!=null){
+                    return new Paginated<>(document.getAsListOf("data", NormalizedJsonLd.class), document.getAs("total", Long.class, 0L),document.getAs("size", Long.class, 0L), document.getAs("from", Long.class, 0L));
                 }
             }
         }

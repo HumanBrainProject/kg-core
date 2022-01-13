@@ -24,6 +24,7 @@ package eu.ebrains.kg.commons.jsonld;
 
 import eu.ebrains.kg.commons.model.SpaceName;
 
+import java.math.BigInteger;
 import java.util.*;
 import java.util.function.BiConsumer;
 import java.util.stream.Collectors;
@@ -164,6 +165,17 @@ public class DynamicJson extends LinkedHashMap<String, Object> {
             }
             else if(((Collection<?>)o).size()==1) {
                 return castType(clazz, ((Collection<?>) o).iterator().next(), throwException);
+            }
+        }
+        if(clazz == Long.class){
+            if(o instanceof String){
+                return (T)Long.valueOf((String)o);
+            }
+            if(o instanceof BigInteger){
+                return (T)(Long)((BigInteger)o).longValue();
+            }
+            if(o instanceof Integer){
+                return (T)(Long)((Integer)o).longValue();
             }
         }
         if(clazz == UUID.class && o instanceof String){
