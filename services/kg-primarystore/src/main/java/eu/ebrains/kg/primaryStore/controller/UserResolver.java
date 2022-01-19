@@ -41,21 +41,18 @@ public class UserResolver {
         this.authContext = authContext;
     }
 
-    public User resolveUser(Event event){
-         //The user information is only relevant for the native space -> for any later stage, it will be represented as part of the alternatives.
-        if (event.getType().getStage() == DataStage.NATIVE) {
-            if (event.getUserId() != null) {
-                //The caller defines a user id - we try to resolve it and take the user information from the submitted one (happens e.g. if a technical client acts "in-behalf-of".
-                User usr = authentication.getOtherUserInfo(event.getUserId());
-                if (usr == null) {
-                    usr = new User(String.format("unresolved-%s", event.getUserId()), String.format("Unresolved %s", event.getUserId()), null, null, null, event.getUserId());
-                }
-                return usr;
-            } else {
-                UserWithRoles userWithRoles = authContext.getUserWithRoles();
-                if(userWithRoles!=null) {
-                    return userWithRoles.getUser();
-                }
+    public User resolveUser(Event event) {
+        if (event.getUserId() != null) {
+            //The caller defines a user id - we try to resolve it and take the user information from the submitted one (happens e.g. if a technical client acts "in-behalf-of".
+            User usr = authentication.getOtherUserInfo(event.getUserId());
+            if (usr == null) {
+                usr = new User(String.format("unresolved-%s", event.getUserId()), String.format("Unresolved %s", event.getUserId()), null, null, null, event.getUserId());
+            }
+            return usr;
+        } else {
+            UserWithRoles userWithRoles = authContext.getUserWithRoles();
+            if (userWithRoles != null) {
+                return userWithRoles.getUser();
             }
         }
         return null;
