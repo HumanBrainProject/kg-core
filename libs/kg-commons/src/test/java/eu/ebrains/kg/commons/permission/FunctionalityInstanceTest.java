@@ -23,19 +23,20 @@
 package eu.ebrains.kg.commons.permission;
 
 import eu.ebrains.kg.commons.model.SpaceName;
-import org.junit.Assert;
-import org.junit.Test;
+
+import static org.junit.jupiter.api.Assertions.*;
+import org.junit.jupiter.api.Test;
 
 public class FunctionalityInstanceTest {
 
     @Test
     public void getRolePatternForSpace() {
         SpaceName space = new SpaceName("bar");
-        Assert.assertTrue("bar:foo".matches(FunctionalityInstance.getRolePatternForSpace(space)));
-        Assert.assertTrue("bar:foobar:foo".matches(FunctionalityInstance.getRolePatternForSpace(space)));
-        Assert.assertFalse(":foo".matches(FunctionalityInstance.getRolePatternForSpace(space)));
-        Assert.assertFalse(":bar".matches(FunctionalityInstance.getRolePatternForSpace(space)));
-        Assert.assertFalse("foo:bar".matches(FunctionalityInstance.getRolePatternForSpace(space)));
-        Assert.assertFalse("foo:foobar:bar".matches(FunctionalityInstance.getRolePatternForSpace(space)));
+        assertTrue("bar:foo".matches(FunctionalityInstance.getRolePatternForSpace(space)));
+        assertTrue("bar:foobar:foo".matches(FunctionalityInstance.getRolePatternForSpace(space)));
+        assertFalse(":foo".matches(FunctionalityInstance.getRolePatternForSpace(space)));
+        assertFalse(":bar".matches(FunctionalityInstance.getRolePatternForSpace(space)));
+        assertFalse("foo:bar".matches(FunctionalityInstance.getRolePatternForSpace(space)));
+        assertFalse("foo:foobar:bar".matches(FunctionalityInstance.getRolePatternForSpace(space)));
     }
 }
