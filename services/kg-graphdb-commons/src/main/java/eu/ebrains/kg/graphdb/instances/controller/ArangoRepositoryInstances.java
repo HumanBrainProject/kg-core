@@ -1131,19 +1131,22 @@ public class ArangoRepositoryInstances {
         return translateResultToScope(results, instance, applyRestrictions);
     }
 
-    private ScopeElement handleSubElement(NormalizedJsonLd data, Map<String, Set<ScopeElement>> typeToUUID, boolean applyRestrictions) {
+    private ScopeElement handleSubElement(NormalizedJsonLd data, Map<String, Set<ScopeElement>> typeToUUID, boolean applyRestrictions, NormalizedJsonLd root) {
         Boolean embedded = data.getAs("embedded", Boolean.class);
         if (embedded != null && embedded) {
             return null;
         }
         List<String> type = data.getAsListOf("type", String.class);
-        if(applyRestrictions && type.stream().anyMatch(t -> structureRepository.getTypeSpecification(t).getAs(EBRAINSVocabulary.META_CAN_BE_EXCLUDED_FROM_SCOPE, Boolean.class, Boolean.FALSE))){
+        boolean isRoot = data.equals(root);
+        boolean isNotRootButSameType = !isRoot && root.getAsListOf("type", String.class).stream().anyMatch(type::contains);
+        //If the subelement has the same type as root, we stop. Also, if this is the root instance, we don't apply restrictions.
+        if(isNotRootButSameType || (!isRoot && applyRestrictions && type.stream().anyMatch(t -> structureRepository.getTypeSpecification(t).getAs(EBRAINSVocabulary.META_CAN_BE_EXCLUDED_FROM_SCOPE, Boolean.class, Boolean.FALSE)))){
             return null;
         }
         String id = data.getAs("id", String.class);
         UUID uuid = idUtils.getUUID(new JsonLdId(id));
         List<ScopeElement> children = data.keySet().stream().filter(k -> k.startsWith("dependency_")).map(k ->
-                data.getAsListOf(k, NormalizedJsonLd.class).stream().map(d -> handleSubElement(d, typeToUUID, applyRestrictions)).filter(Objects::nonNull).collect(Collectors.toList())
+                data.getAsListOf(k, NormalizedJsonLd.class).stream().map(d -> handleSubElement(d, typeToUUID, applyRestrictions, root)).filter(Objects::nonNull).collect(Collectors.toList())
         ).flatMap(Collection::stream).collect(Collectors.toList());
         ScopeElement element = new ScopeElement(uuid, type, children.isEmpty() ? null : children, data.getAs("internalId", String.class), data.getAs("space", String.class), data.getAs("label", String.class));
         type.forEach(t -> {
@@ -1184,7 +1187,7 @@ public class ArangoRepositoryInstances {
         if (data == null || data.isEmpty()) {
             elements = Collections.singletonList(new ScopeElement(idUtils.getUUID(instance.id()), instance.types(), null, instance.getAs(ArangoVocabulary.ID, String.class), instance.getAs(EBRAINSVocabulary.META_SPACE, String.class), instance.getAs(IndexedJsonLdDoc.LABEL, String.class)));
         } else {
-            elements = data.stream().map(d -> handleSubElement(d, typeToUUID, applyRestrictions)).filter(Objects::nonNull).collect(Collectors.toList());
+            elements = data.stream().map(d -> handleSubElement(d, typeToUUID, applyRestrictions, d)).filter(Objects::nonNull).collect(Collectors.toList());
         }
         for (ScopeElement el : elements) {
             instance.types().forEach(t -> typeToUUID.computeIfAbsent(t, x -> new HashSet<>()).add(el));
