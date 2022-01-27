@@ -70,6 +70,10 @@ public class Type {
         return spaces;
     }
 
+    public Set<SpaceName> getSpacesForInternalUse(SpaceName privateSpaceName){
+        return spaces!=null ? spaces.stream().map(s -> SpaceName.getInternalSpaceName(s, privateSpaceName)).collect(Collectors.toSet()) : null ;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;

@@ -469,7 +469,7 @@ public class ArangoRepositoryInstances {
             aql.indent().addLine(AQL.trust(String.format("FOR v IN @@singleSpace OPTIONS {indexHint: \"%s\"}", ArangoDatabaseProxy.BROWSE_AND_SEARCH_INDEX)));
             aql.addLine(AQL.trust(String.format("FILTER @typeFilter IN v.`%s` AND v.`%s` == null", JsonLdConsts.TYPE, IndexedJsonLdDoc.EMBEDDED)));
             bindVars.put("typeFilter", type.get(0).getName());
-            bindVars.put("@singleSpace", ArangoCollectionReference.fromSpace(type.get(0).getSpaces().iterator().next()).getCollectionName());
+            bindVars.put("@singleSpace", ArangoCollectionReference.fromSpace(type.get(0).getSpacesForInternalUse(authContext.getUserWithRoles().getPrivateSpace()).iterator().next()).getCollectionName());
         } else {
             aql.indent().addLine(AQL.trust("FOR v IN 1..1 OUTBOUND typeDefinition.type @@typeRelationCollection"));
             bindVars.put("@typeRelationCollection", InternalSpace.TYPE_EDGE_COLLECTION.getCollectionName());
@@ -577,7 +577,7 @@ public class ArangoRepositoryInstances {
 
 
     private Tuple<DocumentsByTypeMode, Set<SpaceName>> restrictToSpaces(Type typeWithLabelInfo, DataStage stage, SpaceName spaceFilter) {
-        Set<SpaceName> spaces = typeWithLabelInfo.getSpaces();
+        Set<SpaceName> spaces = typeWithLabelInfo.getSpacesForInternalUse(authContext.getUserWithRoles().getPrivateSpace());
         if (spaceFilter != null) {
             spaces = spaces.stream().filter(s -> spaceFilter.getName().equals(s.getName())).collect(Collectors.toSet());
         }
