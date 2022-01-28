@@ -88,4 +88,15 @@ public class SpaceName {
         }
         return spaceName;
     }
+
+    public static SpaceName getInternalSpaceName(String originalSpace, SpaceName privateUserSpace) {
+        return getInternalSpaceName(SpaceName.fromString(originalSpace), privateUserSpace);
+    }
+
+    public static SpaceName getInternalSpaceName(SpaceName originalSpace, SpaceName privateUserSpace){
+        if(originalSpace!=null && originalSpace.getName()!=null && originalSpace.getName().equals(SpaceName.PRIVATE_SPACE)){
+            return privateUserSpace;
+        }
+        return originalSpace;
+    }
 }

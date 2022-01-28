@@ -52,7 +52,7 @@ public class DataQueryBuilderTest {
         Specification specification = new SpecificationInterpreter().readSpecification(query, null);
 
         //When
-        AQLQuery aqlQuery = new DataQueryBuilder(specification, null, new HashMap<>(), null, Collections.singletonList(ArangoCollectionReference.fromSpace(TestObjectFactory.SIMPSONS))).build();
+        AQLQuery aqlQuery = new DataQueryBuilder(specification, null, new HashMap<>(), null, null, Collections.singletonList(ArangoCollectionReference.fromSpace(TestObjectFactory.SIMPSONS))).build();
 
         //Then
 
@@ -82,7 +82,7 @@ public class DataQueryBuilderTest {
 
         //When
         List<ArangoCollectionReference> existingCollections = Arrays.asList(ArangoCollectionReference.fromSpace(TestObjectFactory.SIMPSONS), new ArangoCollectionReference(new ArangoKey("http://schema.org/address").getValue(), true));
-        AQLQuery aqlQuery = new DataQueryBuilder(specification, null,null,  null, existingCollections).build();
+        AQLQuery aqlQuery = new DataQueryBuilder(specification, null,null,  null, null, existingCollections).build();
 
         //Then
 
@@ -125,7 +125,7 @@ public class DataQueryBuilderTest {
 
         //When
         List<ArangoCollectionReference> existingCollections = Arrays.asList(ArangoCollectionReference.fromSpace(TestObjectFactory.SIMPSONS), new ArangoCollectionReference(new ArangoKey("http://schema.org/children").getValue(), true));
-        AQLQuery aqlQuery = new DataQueryBuilder(specification, null, null, null, existingCollections).build();
+        AQLQuery aqlQuery = new DataQueryBuilder(specification, null, null, null, null, existingCollections).build();
 
         //Then
         String expected = "\n" +
@@ -153,7 +153,7 @@ public class DataQueryBuilderTest {
 
         //When
         List<ArangoCollectionReference> existingCollections = Collections.singletonList(ArangoCollectionReference.fromSpace(TestObjectFactory.SIMPSONS));
-        AQLQuery aqlQuery = new DataQueryBuilder(specification, null,null,  null, existingCollections).build();
+        AQLQuery aqlQuery = new DataQueryBuilder(specification, null,null,  null, null, existingCollections).build();
 
         //Then
 
@@ -200,7 +200,7 @@ public class DataQueryBuilderTest {
         Pagination pagination = new Pagination();
         pagination.setSize(10);
 
-        DataQueryBuilder builder = new DataQueryBuilder(specification, null, null, null, existingCollections);
+        DataQueryBuilder builder = new DataQueryBuilder(specification, null, null, null, null, existingCollections);
 
         AQLQuery aql = builder.build();
 

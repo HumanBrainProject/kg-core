@@ -51,6 +51,7 @@ public class DataQueryBuilder {
 
     private final List<ArangoCollectionReference> existingCollections;
     private final Map<String, Object> whiteListFilter;
+    private final List<String> spaceRestriction;
 
     public static ArangoAlias fromSpecField(SpecProperty specField) {
         return new ArangoAlias(String.format("%s_%d", specField.propertyName, specField.getAliasPostfix()));
@@ -68,9 +69,11 @@ public class DataQueryBuilder {
         //Setup the root instance
         defineRootInstance();
 
-        if (whiteListFilter != null) {
-            q.addDocumentFilterWithWhitelistFilter(rootAlias.getArangoDocName());
+        if(spaceRestriction!=null){
+            bindVars.put("spaceRestriction", spaceRestriction);
         }
+
+        addDocumentFilterWithWhitelistFilter(q, rootAlias.getArangoDocName(), whiteListFilter, spaceRestriction);
 
         q.addLine(trust("FILTER TO_ARRAY(@idRestriction) == [] OR ${rootFieldName}_doc._key IN TO_ARRAY(@idRestriction)"));
 
@@ -94,13 +97,14 @@ public class DataQueryBuilder {
         return new AQLQuery(q, bindVars);
     }
 
-    public DataQueryBuilder(Specification specification, PaginationParam pagination, Map<String, Object> whitelistFilter, Map<String, String> filterValues, List<ArangoCollectionReference> existingCollections) {
+    public DataQueryBuilder(Specification specification, PaginationParam pagination, Map<String, Object> whitelistFilter, List<String> spaceRestriction, Map<String, String> filterValues, List<ArangoCollectionReference> existingCollections) {
         this.q = new AQL();
         this.specification = specification;
         this.pagination = pagination;
         this.filterValues = filterValues == null ? Collections.emptyMap() : new HashMap<>(filterValues);
         this.existingCollections = existingCollections;
         this.whiteListFilter = whitelistFilter;
+        this.spaceRestriction = spaceRestriction;
     }
 
     public void defineRootInstance() {
@@ -220,6 +224,17 @@ public class DataQueryBuilder {
     }
 
 
+    private static AQL addDocumentFilterWithWhitelistFilter(AQL aql, TrustedAqlValue documentAlias, Map<String, Object> whitelistFilter, List<String> spaceRestriction) {
+        if(whitelistFilter!=null){
+            aql.addDocumentFilterWithWhitelistFilter(documentAlias);
+        }
+        if(spaceRestriction!=null) {
+            aql.addLine(trust("FILTER " + documentAlias.getValue() + "." + ArangoVocabulary.COLLECTION + " IN @spaceRestriction"));
+        }
+        return aql;
+    }
+
+
     private class TraverseBuilder {
 
         private final List<SpecProperty> fields;
@@ -264,9 +279,7 @@ public class DataQueryBuilder {
                 //TODO if the collection doesn't exist, the query could be simplified a lot - so there is quite some potential for optimization.
                 aql.addLine(trust(" IN [] "));
             }
-            if (whiteListFilter != null) {
-                aql.indent().addDocumentFilterWithWhitelistFilter(alias.getArangoDocName());
-            }
+            addDocumentFilterWithWhitelistFilter(aql, alias.getArangoDocName(), whiteListFilter, spaceRestriction);
             if (traverse.typeRestrictions != null) {
                 aql.addLine(trust(" FILTER "));
                 for (int i = 0; i < traverse.typeRestrictions.size(); i++) {

@@ -58,17 +58,18 @@ public class CoreSpaceController {
         this.authContext = authContext;
     }
 
-    private SpaceInformation translateSpaceToSpaceInformation(Space space, boolean permissions) {
+    SpaceInformation translateSpaceToSpaceInformation(Space space, boolean permissions) {
         final SpaceInformation spaceInformation = space.toSpaceInformation();
         if (permissions) {
             UserWithRoles userWithRoles = authContext.getUserWithRoles();
             String spaceIdentifier = spaceInformation.getIdentifier();
             if (spaceIdentifier != null) {
+                final SpaceName internalSpaceName = SpaceName.getInternalSpaceName(spaceIdentifier, userWithRoles.getPrivateSpace());
                 List<Functionality> applyingFunctionalities = userWithRoles.getPermissions().stream().
                         filter(f -> (
                                 f.getFunctionality().getFunctionalityGroup() == Functionality.FunctionalityGroup.INSTANCE
                                 || f.getFunctionality().getFunctionalityGroup() == Functionality.FunctionalityGroup.QUERY)
-                                && f.appliesTo(new SpaceName(spaceIdentifier), null)
+                                && f.appliesTo(internalSpaceName, null)
                         ).map(FunctionalityInstance::getFunctionality).distinct().collect(Collectors.toList());
                 spaceInformation.setPermissions(applyingFunctionalities);
             }

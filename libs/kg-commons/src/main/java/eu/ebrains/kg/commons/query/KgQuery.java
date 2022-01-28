@@ -24,6 +24,7 @@ package eu.ebrains.kg.commons.query;
 
 import eu.ebrains.kg.commons.jsonld.NormalizedJsonLd;
 import eu.ebrains.kg.commons.model.DataStage;
+import eu.ebrains.kg.commons.model.SpaceName;
 
 import java.util.List;
 import java.util.UUID;
@@ -33,6 +34,7 @@ public class KgQuery {
     private NormalizedJsonLd payload;
     private DataStage stage;
     private List<UUID> idRestrictions;
+    private List<SpaceName> restrictToSpaces;
 
     public KgQuery() {
     }
@@ -66,6 +68,15 @@ public class KgQuery {
 
     public KgQuery setIdRestrictions(List<UUID> idRestrictions) {
         this.idRestrictions = idRestrictions;
+        return this;
+    }
+
+    public List<SpaceName> getRestrictToSpaces() {
+        return restrictToSpaces;
+    }
+
+    public KgQuery setRestrictToSpaces(List<SpaceName> restrictToSpaces) {
+        this.restrictToSpaces = restrictToSpaces;
         return this;
     }
 }

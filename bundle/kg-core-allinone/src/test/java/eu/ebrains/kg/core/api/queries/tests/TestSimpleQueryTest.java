@@ -139,6 +139,6 @@ public class TestSimpleQueryTest extends AbstractTest {
 
     @Override
     protected void run() {
-        response = queries.testQuery(this.query, defaultPaginationParam, stage, null, new HashMap<>());
+        response = queries.testQuery(this.query, defaultPaginationParam, stage, null, null, new HashMap<>());
     }
 }
