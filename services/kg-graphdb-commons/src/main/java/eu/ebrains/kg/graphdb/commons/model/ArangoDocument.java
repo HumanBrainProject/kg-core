@@ -103,13 +103,14 @@ public class ArangoDocument implements ArangoInstance {
         Map<String, JsonLdId> oldToNew = resolvedEdges.stream().collect(Collectors.toMap(k -> k.getOriginalTo().getId(), ArangoEdge::getResolvedTargetId));
         NormalizedJsonLd doc = indexedDoc.getDoc();
         for (String key : doc.keySet()) {
+            boolean isList = doc.get(key) instanceof List;
             List<JsonLdId> jsonldIds = doc.getAsListOf(key, JsonLdId.class, true);
             if (!jsonldIds.isEmpty()) {
                 List<JsonLdId> newJsonLds = jsonldIds.stream().map(jsonLdId -> {
                     JsonLdId newValue = oldToNew.get(jsonLdId.getId());
                     return newValue != null ? newValue : jsonLdId;
                 }).collect(Collectors.toList());
-                if(doc.getAs(key, JsonLdId.class, null) != null){
+                if(!isList && doc.getAs(key, JsonLdId.class, null) != null) {
                     //The original value was a single JsonLdId - we want to maintain this, so we return the first (and only) result of the new jsonLds
                     doc.put(key, newJsonLds.get(0));
                 }
