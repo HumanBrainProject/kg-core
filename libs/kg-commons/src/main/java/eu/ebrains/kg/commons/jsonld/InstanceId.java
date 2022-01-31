@@ -64,14 +64,14 @@ public class InstanceId {
     }
 
     public String serialize(){
-        return (space != null ? space.getName().replaceAll("-","_") : "")+"/"+uuid;
+        return (space != null ? space.getName() : "")+"/"+uuid;
     }
 
     public static InstanceId deserialize(String instanceId){
         if(instanceId!=null && !instanceId.trim().isEmpty()) {
             int i = instanceId.lastIndexOf("/");
             if (i != -1) {
-                String space = instanceId.substring(0, i).trim().replaceAll("_", "-");
+                String space = instanceId.substring(0, i).trim();
                 String uuid = instanceId.substring(i + 1).trim();
                 try {
                     return new InstanceId(UUID.fromString(uuid), new SpaceName(space));

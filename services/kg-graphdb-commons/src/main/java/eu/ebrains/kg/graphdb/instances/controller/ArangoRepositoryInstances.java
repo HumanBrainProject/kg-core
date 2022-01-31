@@ -977,7 +977,7 @@ public class ArangoRepositoryInstances {
                 AQL aql = new AQL();
                 aql.addLine(AQL.trust("FOR id IN @ids"));
                 Map<String, Object> bindVars = new HashMap<>();
-                bindVars.put("ids", instanceIds.stream().map(InstanceId::serialize).collect(Collectors.toList()));
+                bindVars.put("ids", instanceIds.stream().map(instanceId -> ArangoDocumentReference.fromInstanceId(instanceId).getId()).collect(Collectors.toList()));
                 aql.addLine(AQL.trust("LET doc = DOCUMENT(id)"));
                 aql.addLine(AQL.trust("LET status = FIRST((FOR v IN 1..1 INBOUND  doc @@releaseStatusCollection"));
                 bindVars.put("@releaseStatusCollection", InternalSpace.RELEASE_STATUS_EDGE_COLLECTION.getCollectionName());
@@ -1006,7 +1006,7 @@ public class ArangoRepositoryInstances {
         AQL aql = new AQL();
         Map<String, Object> bindVars = new HashMap<>();
         aql.addLine(AQL.trust("FOR id in @ids"));
-        bindVars.put("ids", instanceId.stream().map(InstanceId::serialize).collect(Collectors.toList()));
+        bindVars.put("ids", instanceId.stream().map(id -> ArangoDocumentReference.fromInstanceId(id).getId()).collect(Collectors.toList()));
         aql.addLine(AQL.trust("LET doc = DOCUMENT(id)"));
         aql.addLine(AQL.trust("RETURN {\"id\": doc._key, \"status\": NOT_NULL(FIRST(FOR v IN 1..1 INBOUND doc @@releaseStatusCollection"));
         aql.addLine(AQL.trust("RETURN v.`"+SchemaOrgVocabulary.NAME+"`), \""+ReleaseStatus.UNRELEASED.name()+"\")}"));
