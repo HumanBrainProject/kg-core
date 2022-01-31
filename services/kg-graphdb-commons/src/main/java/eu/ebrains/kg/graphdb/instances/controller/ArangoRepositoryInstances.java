@@ -1097,8 +1097,8 @@ public class ArangoRepositoryInstances {
     public Map<UUID, String> getLabelsForInstances(DataStage stage, Set<InstanceId> ids) {
         AQL aql = new AQL();
         Map<String, Object> bindVars = new HashMap<>();
-        aql.addLine(AQL.trust(String.format("RETURN MERGE(FOR id IN @ids RETURN { [ id ] : DOCUMENT(id).%s })", IndexedJsonLdDoc.LABEL)));
-        bindVars.put("ids", ids != null ? ids.stream().filter(Objects::nonNull).map(InstanceId::serialize).collect(Collectors.toSet()) : null);
+        aql.addLine(AQL.trust(String.format("RETURN MERGE(FOR id IN ATTRIBUTES(@ids) RETURN { [ id ] : DOCUMENT(@ids[id]).%s })", IndexedJsonLdDoc.LABEL)));
+        bindVars.put("ids", ids != null ? ids.stream().filter(Objects::nonNull).collect(Collectors.toMap(InstanceId::serialize, v -> ArangoDocumentReference.fromInstanceId(v).getId())) : null);
         List<JsonLdDoc> results = databases.getByStage(stage).query(aql.build().getValue(), bindVars, new AqlQueryOptions(), JsonLdDoc.class).asListRemaining();
         if (results.size() == 1) {
             JsonLdDoc map = results.get(0);
