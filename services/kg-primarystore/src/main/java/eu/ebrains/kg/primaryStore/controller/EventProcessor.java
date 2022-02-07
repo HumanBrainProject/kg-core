@@ -22,6 +22,7 @@
 
 package eu.ebrains.kg.primaryStore.controller;
 
+import eu.ebrains.kg.commons.JsonAdapter;
 import eu.ebrains.kg.commons.api.Indexing;
 import eu.ebrains.kg.commons.jsonld.InstanceId;
 import eu.ebrains.kg.commons.jsonld.NormalizedJsonLd;
@@ -52,14 +53,16 @@ public class EventProcessor {
 
     private final InferenceProcessor inferenceProcessor;
 
+    private final JsonAdapter jsonAdapter;
 
     private final Logger logger = LoggerFactory.getLogger(getClass());
 
-    public EventProcessor(Indexing.Client indexing, EventRepository eventRepository, EventController eventController, InferenceProcessor inferenceProcessor) {
+    public EventProcessor(Indexing.Client indexing, EventRepository eventRepository, EventController eventController, InferenceProcessor inferenceProcessor, JsonAdapter jsonAdapter) {
         this.indexing = indexing;
         this.eventRepository = eventRepository;
         this.eventController = eventController;
         this.inferenceProcessor = inferenceProcessor;
+        this.jsonAdapter = jsonAdapter;
     }
 
     public void rerunEvents(SpaceName spaceName){
@@ -93,7 +96,10 @@ public class EventProcessor {
     public List<PersistedEvent> autoRelease(List<PersistedEvent> events) {
         events.forEach(e -> {
             if (e.getSpace() != null && e.getSpace().isAutoRelease()) {
-                final NormalizedJsonLd normalizedJsonLd = new NormalizedJsonLd(e.getData());
+                //This serialization and deserialization is important because the event processing logic depends on the
+                //fact that it is a "simple" NormalizedJsonLd without any already casted objects. If we wouldn't do so,
+                //it could be that pieces are e.g. already wrapped as JsonLdIds, etc.
+                final NormalizedJsonLd normalizedJsonLd = jsonAdapter.fromJson(jsonAdapter.toJson(e.getData()), NormalizedJsonLd.class);
                 normalizedJsonLd.removeAllInternalProperties();
                 normalizedJsonLd.removeAllFieldsFromNamespace(EBRAINSVocabulary.META);
                 postEvent(new Event(e.getSpaceName(), e.getDocumentId(), normalizedJsonLd, Event.Type.RELEASE, new Date()));
