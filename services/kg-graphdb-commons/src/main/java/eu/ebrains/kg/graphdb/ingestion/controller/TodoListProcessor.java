@@ -165,7 +165,7 @@ public class TodoListProcessor {
     }
 
 
-    private boolean hasChangedReleaseStatus(DataStage stage, ArangoDocumentReference documentReference, NormalizedJsonLd payload) {
+    private boolean hasChangedReleaseStatus(DataStage stage, ArangoDocumentReference documentReference) {
         if (stage == DataStage.IN_PROGRESS) {
             //TODO analyze payload for change by comparison with current instance - ignore alternatives
             return true;
@@ -175,7 +175,7 @@ public class TodoListProcessor {
 
     public ArangoDocumentReference upsertDocument(ArangoDocumentReference rootDocumentRef, NormalizedJsonLd payload, DataStage stage) {
         List<ArangoInstance> arangoInstances = splitter.extractRelations(rootDocumentRef, payload);
-        List<DBOperation> upsertOperationsForDocument = dataController.createUpsertOperations(rootDocumentRef, payload, stage, arangoInstances, hasChangedReleaseStatus(stage, rootDocumentRef, payload));
+        List<DBOperation> upsertOperationsForDocument = dataController.createUpsertOperations(rootDocumentRef, stage, arangoInstances, hasChangedReleaseStatus(stage, rootDocumentRef));
         repository.executeTransactional(stage, upsertOperationsForDocument);
         List<EdgeResolutionOperation> lazyIdResolutionOperations;
         if (stage != DataStage.NATIVE) {

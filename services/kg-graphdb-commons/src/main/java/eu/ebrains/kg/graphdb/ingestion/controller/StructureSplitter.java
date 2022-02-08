@@ -55,7 +55,9 @@ public class StructureSplitter {
     }
 
     public List<ArangoInstance> extractRelations(ArangoDocumentReference documentReference, NormalizedJsonLd payload) {
-        ArangoDocument arangoDocument = ArangoDocument.from(payload);
+        //The extraction of relations manipulates the payload - to avoid
+        //any side-effects, we operate on a copy of it.
+        ArangoDocument arangoDocument = ArangoDocument.from(new NormalizedJsonLd(payload));
         arangoDocument.setReference(documentReference);
         // if is query, we just return the document as we do not split it
         if(payload.types().contains(EBRAINSVocabulary.META_QUERY_TYPE)){

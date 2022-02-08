@@ -77,7 +77,7 @@ public class DataController {
 
     private final Logger logger = LoggerFactory.getLogger(getClass());
 
-    public List<DBOperation> createUpsertOperations(ArangoDocumentReference rootDocumentRef, NormalizedJsonLd payload, DataStage stage, List<ArangoInstance> arangoInstances, boolean changedReleaseStatus) {
+    public List<DBOperation> createUpsertOperations(ArangoDocumentReference rootDocumentRef, DataStage stage, List<ArangoInstance> arangoInstances, boolean changedReleaseStatus) {
         logger.trace("Finding upsert operations for document");
         List<DBOperation> operations = new ArrayList<>();
         operations.addAll(createTypeOperations(rootDocumentRef, stage, arangoInstances));
