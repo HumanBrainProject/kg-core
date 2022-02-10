@@ -25,6 +25,7 @@ package eu.ebrains.kg.commons.model;
 import eu.ebrains.kg.commons.permission.Functionality;
 
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -113,5 +114,17 @@ public class ScopeElement {
         this.children = children;
     }
 
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        ScopeElement that = (ScopeElement) o;
+        return Objects.equals(id, that.id) && Objects.equals(label, that.label) && Objects.equals(space, that.space) && Objects.equals(internalId, that.internalId) && Objects.equals(types, that.types) && Objects.equals(children, that.children);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(id, label, space, internalId, types, children);
+    }
 }
 
