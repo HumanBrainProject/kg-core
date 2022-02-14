@@ -194,24 +194,33 @@ public class CoreInstanceController {
         }).filter(Objects::nonNull).collect(Collectors.toList());
         List<InstanceId> idsAfterResolution = this.ids.resolveIdsByUUID(stage, validUUIDs, true);
         idsAfterResolution.stream().filter(InstanceId::isUnresolved).forEach(id -> result.put(id.getUuid().toString(), Result.nok(HttpStatus.NOT_FOUND.value(), HttpStatus.NOT_FOUND.getReasonPhrase())));
-        Map<UUID, Result<NormalizedJsonLd>> instancesByIds = graphDBInstances.getInstancesByIds(idsAfterResolution.stream().filter(i -> !i.isUnresolved()).map(InstanceId::serialize).collect(Collectors.toList()), stage, responseConfiguration.isReturnEmbedded(), responseConfiguration.isReturnAlternatives(), responseConfiguration.isReturnIncomingLinks(), responseConfiguration.getIncomingLinksPageSize());
-        final SpaceName privateSpaceName = authContext.getUserWithRoles().getPrivateSpace();
-        instancesByIds.forEach((k, v) -> {
-            v.getData().renamePrivateSpace(privateSpaceName);
-            result.put(k.toString(), v);
-        });
-        ids.stream().filter(Objects::nonNull).forEach(
-                id -> {
-                    if (!result.containsKey(id)) {
-                        result.put(id, Result.nok(HttpStatus.NOT_FOUND.value(), id));
+        if(responseConfiguration.isReturnPayload()) {
+            Map<UUID, Result<NormalizedJsonLd>> instancesByIds = graphDBInstances.getInstancesByIds(idsAfterResolution.stream().filter(i -> !i.isUnresolved()).map(InstanceId::serialize).collect(Collectors.toList()), stage, responseConfiguration.isReturnEmbedded(), responseConfiguration.isReturnAlternatives(), responseConfiguration.isReturnIncomingLinks(), responseConfiguration.getIncomingLinksPageSize());
+            final SpaceName privateSpaceName = authContext.getUserWithRoles().getPrivateSpace();
+            instancesByIds.forEach((k, v) -> {
+                v.getData().renamePrivateSpace(privateSpaceName);
+                result.put(k.toString(), v);
+            });
+            ids.stream().filter(Objects::nonNull).forEach(
+                    id -> {
+                        if (!result.containsKey(id)) {
+                            result.put(id, Result.nok(HttpStatus.NOT_FOUND.value(), id));
+                        }
                     }
-                }
-        );
-        if (responseConfiguration.isReturnAlternatives()) {
-            resolveAlternatives(stage, instancesByIds.values().stream().map(Result::getData).filter(Objects::nonNull).collect(Collectors.toList()));
-        }
-        if (responseConfiguration.isReturnPermissions()) {
-            enrichWithPermissionInformation(stage, instancesByIds.values());
+            );
+            if (responseConfiguration.isReturnAlternatives()) {
+                resolveAlternatives(stage, instancesByIds.values().stream().map(Result::getData).filter(Objects::nonNull).collect(Collectors.toList()));
+            }
+            if (responseConfiguration.isReturnPermissions()) {
+                enrichWithPermissionInformation(stage, instancesByIds.values());
+            }
+        } else {
+            idsAfterResolution.forEach(idAfterResolution -> {
+                NormalizedJsonLd idPayload = new NormalizedJsonLd();
+                UUID uuid = idAfterResolution.getUuid();
+                idPayload.setId(idUtils.buildAbsoluteUrl(uuid));
+                result.put(uuid.toString(), Result.ok(idPayload));
+            });
         }
         return result;
     }
