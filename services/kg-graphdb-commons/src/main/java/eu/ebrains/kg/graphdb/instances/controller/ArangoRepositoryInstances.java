@@ -156,7 +156,7 @@ public class ArangoRepositoryInstances {
             document.getDoc().removeAllInternalProperties();
         }
         NormalizedJsonLd doc = document.getDoc();
-        if (doc != null && !permissions.hasPermission(authContext.getUserWithRoles(), Functionality.READ, space, id)) {
+        if (doc != null && !permissions.hasPermission(authContext.getUserWithRoles(), stage==DataStage.RELEASED ? Functionality.READ_RELEASED : Functionality.READ, space, id)) {
             //The user doesn't have read rights - we need to restrict the information to minimal data
             doc.keepPropertiesOnly(getMinimalFields(stage, doc.types()));
         }
