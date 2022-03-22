@@ -133,7 +133,7 @@ public class CoreInstanceController {
         if (instance == null) {
             throw new InstanceNotFoundException(String.format("Instance %s not found", instanceId.getUuid()));
         } else {
-            if (permissions.hasPermission(authContext.getUserWithRoles(), Functionality.CREATE_PERMISSION, targetSpace)) {
+            if (permissions.hasPermission(authContext.getUserWithRoles(), Functionality.CREATE, targetSpace)) {
                 //FIXME make this transactional.
                 deleteInstance(instanceId);
                 return createNewInstance(instance, instanceId.getUuid(), targetSpace, responseConfiguration);
