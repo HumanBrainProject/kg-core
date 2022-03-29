@@ -20,16 +20,43 @@
  * (Human Brain Project SGA1, SGA2 and SGA3).
  */
 
-package eu.ebrains.kg.commons.api;
+package eu.ebrains.kg.commons.model;
 
-import eu.ebrains.kg.commons.model.PaginationParam;
-import eu.ebrains.kg.commons.model.StreamedQueryResult;
-import eu.ebrains.kg.commons.query.KgQuery;
+import java.util.stream.Stream;
 
-import java.util.Map;
+public class PaginatedStream<T> {
 
-public interface GraphDBQueries {
-    interface Client extends GraphDBQueries {}
+    private Stream<T> stream;
+    private long totalResults;
+    private long size;
+    private long from;
 
-    StreamedQueryResult executeQuery(KgQuery query, Map<String, String> params, PaginationParam paginationParam);
+
+    public PaginatedStream() {
+    }
+
+    public PaginatedStream(Stream<T> stream, long totalResults, long size, long from) {
+        this.stream = stream;
+        this.totalResults = totalResults;
+        this.size = size;
+        this.from = from;
+    }
+
+    public Stream<T> getStream() {
+        return stream;
+    }
+
+    public long getTotalResults() {
+        return totalResults;
+    }
+
+    public long getSize() {
+        return size;
+    }
+
+    public long getFrom() {
+        return from;
+    }
+
 }
+

@@ -26,6 +26,7 @@ import eu.ebrains.kg.commons.AuthContext;
 import eu.ebrains.kg.commons.Version;
 import eu.ebrains.kg.commons.api.JsonLd;
 import eu.ebrains.kg.commons.config.openApiGroups.Simple;
+import eu.ebrains.kg.commons.exception.InstanceNotFoundException;
 import eu.ebrains.kg.commons.jsonld.InstanceId;
 import eu.ebrains.kg.commons.jsonld.JsonLdDoc;
 import eu.ebrains.kg.commons.jsonld.NormalizedJsonLd;
@@ -45,6 +46,7 @@ import org.springdoc.api.annotations.ParameterObject;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -94,7 +96,7 @@ public class Queries {
     @Operation(summary = "Execute the query in the payload in test mode (e.g. for execution before saving with the KG QueryBuilder)")
     @PostMapping
     @ExposesData
-    public PaginatedResult<? extends JsonLdDoc> testQuery(@RequestBody JsonLdDoc query, @ParameterObject PaginationParam paginationParam, @RequestParam("stage") ExposedStage stage, @RequestParam(value = "instanceId", required = false) UUID instanceId, @RequestParam(value = "restrictToSpaces", required = false) List<String> restrictToSpaces, @RequestParam(defaultValue = "{}") Map<String, String> allRequestParams) {
+    public PaginatedStreamResult<? extends JsonLdDoc> testQuery(@RequestBody JsonLdDoc query, @ParameterObject PaginationParam paginationParam, @RequestParam("stage") ExposedStage stage, @RequestParam(value = "instanceId", required = false) UUID instanceId, @RequestParam(value = "restrictToSpaces", required = false) List<String> restrictToSpaces, @RequestParam(defaultValue = "{}") Map<String, String> allRequestParams) {
         //Remove the non-dynamic parameters from the map
         allRequestParams.remove("stage");
         allRequestParams.remove("instanceId");
@@ -109,7 +111,8 @@ public class Queries {
             q.setRestrictToSpaces(restrictToSpaces.stream().filter(Objects::nonNull).map(r -> SpaceName.getInternalSpaceName(r, authContext.getUserWithRoles().getPrivateSpace())).collect(Collectors.toList()));
         }
         Date startTime = new Date();
-        PaginatedResult<? extends JsonLdDoc> result = PaginatedResult.ok(queryController.executeQuery(q, allRequestParams, paginationParam));
+        final PaginatedStream<? extends JsonLdDoc> data = queryController.executeQuery(q, allRequestParams, paginationParam);
+        PaginatedStreamResult<? extends JsonLdDoc> result = PaginatedStreamResult.ok(data);
         result.setExecutionDetails(startTime, new Date());
         return result;
     }
@@ -177,7 +180,7 @@ public class Queries {
     @Operation(summary = "Execute a stored query to receive the instances")
     @GetMapping("/{queryId}/instances")
     @ExposesData
-    public PaginatedResult<? extends JsonLdDoc> executeQueryById(@PathVariable("queryId") UUID queryId, @ParameterObject PaginationParam paginationParam, @RequestParam("stage") ExposedStage stage, @RequestParam(value = "instanceId", required = false) UUID instanceId,  @RequestParam(value = "restrictToSpaces", required = false) List<String> restrictToSpaces, @RequestParam(defaultValue = "{}") Map<String, String> allRequestParams) {
+    public PaginatedStreamResult<? extends JsonLdDoc> executeQueryById(@PathVariable("queryId") UUID queryId, @ParameterObject PaginationParam paginationParam, @RequestParam("stage") ExposedStage stage, @RequestParam(value = "instanceId", required = false) UUID instanceId, @RequestParam(value = "restrictToSpaces", required = false) List<String> restrictToSpaces, @RequestParam(defaultValue = "{}") Map<String, String> allRequestParams) {
         //Remove the non-dynamic parameters from the map
         allRequestParams.remove("stage");
         allRequestParams.remove("instanceId");
@@ -186,7 +189,7 @@ public class Queries {
         InstanceId queryInstance = ids.resolveId(DataStage.IN_PROGRESS, queryId);
         final NormalizedJsonLd queryPayload = queryController.fetchQueryById(queryInstance);
         if(queryPayload==null){
-            return null;
+            throw new InstanceNotFoundException(String.format("Query with id %s not found", queryId));
         }
         KgQuery query = new KgQuery(queryPayload, stage.getStage());
         if(instanceId!=null){
@@ -196,7 +199,8 @@ public class Queries {
             query.setRestrictToSpaces(restrictToSpaces.stream().filter(Objects::nonNull).map(r -> SpaceName.getInternalSpaceName(r, authContext.getUserWithRoles().getPrivateSpace())).collect(Collectors.toList()));
         }
         Date startTime = new Date();
-        PaginatedResult<? extends JsonLdDoc> result = PaginatedResult.ok(queryController.executeQuery(query, allRequestParams, paginationParam));
+        final PaginatedStream<? extends JsonLdDoc> data = queryController.executeQuery(query, allRequestParams, paginationParam);
+        PaginatedStreamResult<? extends JsonLdDoc> result = PaginatedStreamResult.ok(data);
         result.setExecutionDetails(startTime, new Date());
         return result;
     }

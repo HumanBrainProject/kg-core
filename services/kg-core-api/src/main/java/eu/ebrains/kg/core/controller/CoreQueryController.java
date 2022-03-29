@@ -24,7 +24,6 @@ package eu.ebrains.kg.core.controller;
 
 import eu.ebrains.kg.commons.api.GraphDBInstances;
 import eu.ebrains.kg.commons.api.GraphDBQueries;
-import eu.ebrains.kg.commons.api.JsonLd;
 import eu.ebrains.kg.commons.jsonld.InstanceId;
 import eu.ebrains.kg.commons.jsonld.JsonLdDoc;
 import eu.ebrains.kg.commons.jsonld.NormalizedJsonLd;
@@ -33,10 +32,11 @@ import eu.ebrains.kg.commons.query.KgQuery;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
 
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
+import java.util.stream.Stream;
+
 /**
  * The query controller contains the orchestration logic for the query operations
  */
@@ -46,55 +46,50 @@ public class CoreQueryController {
     private final GraphDBInstances.Client graphDBInstances;
     private final GraphDBQueries.Client graphDBQueries;
     private final CoreInstanceController instanceController;
-    private final JsonLd.Client jsonLd;
 
-    public CoreQueryController(GraphDBInstances.Client graphDBInstances, GraphDBQueries.Client graphDBQueries, CoreInstanceController instanceController, JsonLd.Client jsonLd) {
+    public CoreQueryController(GraphDBInstances.Client graphDBInstances, GraphDBQueries.Client graphDBQueries, CoreInstanceController instanceController) {
         this.graphDBInstances = graphDBInstances;
         this.graphDBQueries = graphDBQueries;
         this.instanceController = instanceController;
-        this.jsonLd = jsonLd;
     }
 
-    public ResponseEntity<Result<NormalizedJsonLd>> createNewQuery(NormalizedJsonLd query, UUID queryId, SpaceName space){
+    public ResponseEntity<Result<NormalizedJsonLd>> createNewQuery(NormalizedJsonLd query, UUID queryId, SpaceName space) {
         return instanceController.createNewInstance(query, queryId, space, new ExtendedResponseConfiguration());
     }
 
-    public ResponseEntity<Result<NormalizedJsonLd>> updateQuery(NormalizedJsonLd query, InstanceId instanceId){
+    public ResponseEntity<Result<NormalizedJsonLd>> updateQuery(NormalizedJsonLd query, InstanceId instanceId) {
         return instanceController.contributeToInstance(query, instanceId, false, new ExtendedResponseConfiguration());
     }
 
-    public Paginated<NormalizedJsonLd> listQueries(String search, PaginationParam paginationParam){
-        return graphDBInstances.getQueriesByType(DataStage.IN_PROGRESS, search, false, false, paginationParam,null);
+    public Paginated<NormalizedJsonLd> listQueries(String search, PaginationParam paginationParam) {
+        return graphDBInstances.getQueriesByType(DataStage.IN_PROGRESS, search, false, false, paginationParam, null);
     }
 
-    public Paginated<NormalizedJsonLd> listQueriesPerRootType(String search, Type type, PaginationParam paginationParam){
+    public Paginated<NormalizedJsonLd> listQueriesPerRootType(String search, Type type, PaginationParam paginationParam) {
         return graphDBInstances.getQueriesByType(DataStage.IN_PROGRESS, search, false, false, paginationParam, type.getName());
     }
 
-    public NormalizedJsonLd fetchQueryById(InstanceId instanceId){
-        if(instanceId!=null) {
+    public NormalizedJsonLd fetchQueryById(InstanceId instanceId) {
+        if (instanceId != null) {
             return graphDBInstances.getQueryById(instanceId.getSpace().getName(), instanceId.getUuid());
         }
         return null;
     }
 
-    public Paginated<? extends JsonLdDoc> executeQuery(KgQuery query, Map<String, String> params, PaginationParam paginationParam){
-        QueryResult paginatedQueryResult = graphDBQueries.executeQuery(query, params, paginationParam);
-        if(paginatedQueryResult!=null){
-            if(paginatedQueryResult.getResponseVocab() != null){
-                Paginated<NormalizedJsonLd> result = paginatedQueryResult.getResult();
-                if(result!=null) {
-                    List<NormalizedJsonLd> data = result.getData();
-                    List<? extends JsonLdDoc> dataWithAppliedContext = jsonLd.applyVocab(data, paginatedQueryResult.getResponseVocab());
-                    return new Paginated<>(dataWithAppliedContext, result.getTotalResults(), result.getSize(), result.getFrom());
-                }
+    public PaginatedStream<? extends JsonLdDoc> executeQuery(KgQuery query, Map<String, String> params, PaginationParam paginationParam) {
+        StreamedQueryResult paginatedQueryResult = graphDBQueries.executeQuery(query, params, paginationParam);
+        if (paginatedQueryResult != null) {
+            if (paginatedQueryResult.getResponseVocab() != null) {
+                final String responseVocab = paginatedQueryResult.getResponseVocab();
+                final Stream<NormalizedJsonLd> stream = paginatedQueryResult.getStream().getStream().peek(s -> s.applyVocab(responseVocab));
+                return new PaginatedStream<>(stream, paginatedQueryResult.getStream().getTotalResults(), paginatedQueryResult.getStream().getSize(), paginatedQueryResult.getStream().getFrom());
             }
-            return paginatedQueryResult.getResult();
+            return paginatedQueryResult.getStream();
         }
         return null;
     }
 
-    public Set<InstanceId> deleteQuery(InstanceId instanceId){
+    public Set<InstanceId> deleteQuery(InstanceId instanceId) {
         return instanceController.deleteInstance(instanceId);
     }
 }

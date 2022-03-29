@@ -25,7 +25,7 @@ package eu.ebrains.kg.graphdb.queries.api;
 import eu.ebrains.kg.commons.AuthContext;
 import eu.ebrains.kg.commons.api.GraphDBQueries;
 import eu.ebrains.kg.commons.model.PaginationParam;
-import eu.ebrains.kg.commons.model.QueryResult;
+import eu.ebrains.kg.commons.model.StreamedQueryResult;
 import eu.ebrains.kg.commons.models.UserWithRoles;
 import eu.ebrains.kg.commons.query.KgQuery;
 import eu.ebrains.kg.graphdb.queries.controller.QueryController;
@@ -48,10 +48,10 @@ public class GraphDBQueriesAPI implements GraphDBQueries.Client {
     }
 
     @Override
-    public QueryResult executeQuery(KgQuery query, Map<String, String> params, PaginationParam paginationParam){
+    public StreamedQueryResult executeQuery(KgQuery query, Map<String, String> params, PaginationParam paginationParam){
         UserWithRoles userWithRoles = authContext.getUserWithRoles();
         checkPermissionForQueryExecution(userWithRoles);
-        return queryController.query(userWithRoles, query, paginationParam, params, false);
+        return queryController.queryToStream(userWithRoles, query, paginationParam, params, false);
     }
 
     private void checkPermissionForQueryExecution(UserWithRoles userWithRoles){

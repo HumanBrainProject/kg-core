@@ -32,6 +32,7 @@ import eu.ebrains.kg.arango.commons.model.InternalSpace;
 import eu.ebrains.kg.commons.Tuple;
 import eu.ebrains.kg.commons.model.PaginationParam;
 import eu.ebrains.kg.commons.model.QueryResult;
+import eu.ebrains.kg.commons.model.StreamedQueryResult;
 import eu.ebrains.kg.commons.models.UserWithRoles;
 import eu.ebrains.kg.commons.query.KgQuery;
 import eu.ebrains.kg.graphdb.commons.controller.ArangoDatabases;
@@ -90,6 +91,17 @@ public class QueryController {
         final Tuple<AQLQuery, Specification> q = query(database, userWithRoles, query, paginationParam, filterValues, scopeMode);
         try {
             return new QueryResult(arangoRepositoryCommons.queryDocuments(database, q.getA()), q.getB().getResponseVocab());
+        } catch (ArangoDBException ex) {
+            logger.error(String.format("Was not able to execute query: %s", q.getA()));
+            throw ex;
+        }
+    }
+
+    public StreamedQueryResult queryToStream(UserWithRoles userWithRoles, KgQuery query, PaginationParam paginationParam, Map<String, String> filterValues, boolean scopeMode) {
+        ArangoDatabase database = arangoDatabases.getByStage(query.getStage());
+        final Tuple<AQLQuery, Specification> q = query(database, userWithRoles, query, paginationParam, filterValues, scopeMode);
+        try {
+            return new StreamedQueryResult(arangoRepositoryCommons.queryDocumentsAsStream(database, q.getA()), q.getB().getResponseVocab());
         } catch (ArangoDBException ex) {
             logger.error(String.format("Was not able to execute query: %s", q.getA()));
             throw ex;

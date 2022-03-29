@@ -16,7 +16,9 @@
 
 package eu.ebrains.kg.graphdb.structure.model;
 
-public class TypeWithInstanceCountReflection {
+import java.io.Serializable;
+
+public class TypeWithInstanceCountReflection implements Serializable {
 
     private String name;
     private int occurrences;

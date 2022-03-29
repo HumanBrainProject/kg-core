@@ -16,7 +16,9 @@
 
 package eu.ebrains.kg.graphdb.structure.model;
 
-public class PropertyOfTypeInSpaceReflection {
+import java.io.Serializable;
+
+public class PropertyOfTypeInSpaceReflection implements Serializable {
 
     private String name;
     private int occurrences;

@@ -28,7 +28,7 @@ import eu.ebrains.kg.authentication.api.AuthenticationAPI;
 import eu.ebrains.kg.commons.IdUtils;
 import eu.ebrains.kg.commons.jsonld.JsonLdDoc;
 import eu.ebrains.kg.commons.jsonld.NormalizedJsonLd;
-import eu.ebrains.kg.commons.model.PaginatedResult;
+import eu.ebrains.kg.commons.model.PaginatedStreamResult;
 import eu.ebrains.kg.commons.permission.roles.Role;
 import eu.ebrains.kg.core.api.AbstractTest;
 import eu.ebrains.kg.core.api.Instances;
@@ -55,7 +55,7 @@ public class TestSimpleQueryTest extends AbstractTest {
 
     public JsonLdDoc query;
 
-    public PaginatedResult<? extends Map<?,?>> response;
+    public PaginatedStreamResult<? extends Map<?,?>> response;
     public final String nameOfRoot = "http://test/nameOfRoot";
     public final String nameOfARel = "http://test/nameOfArelated";
     public final String nameOfB = "http://test/nameOfB";
@@ -139,6 +139,6 @@ public class TestSimpleQueryTest extends AbstractTest {
 
     @Override
     protected void run() {
-        response = queries.testQuery(this.query, defaultPaginationParam, stage, null, null, new HashMap<>());
+         response = queries.testQuery(this.query, defaultPaginationParam, stage, null, null, new HashMap<>());
     }
 }

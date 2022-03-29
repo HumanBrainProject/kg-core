@@ -22,39 +22,34 @@
 
 package eu.ebrains.kg.commons.model;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
-public class Paginated<T> {
-
-    private List<T> data;
-    private long totalResults;
+public class PaginatedStreamResult<T> extends Result<Stream<T>> {
+    private long total;
     private long size;
     private long from;
 
-
-    public Paginated() {
-        this.data = new ArrayList<>();
+    public static <T> PaginatedStreamResult<T> ok(PaginatedStream<T> data) {
+        return ok(data, null);
     }
 
-    public Paginated(PaginatedStream<T> stream) {
-        this(stream.getStream().collect(Collectors.toList()), stream.getTotalResults(), stream.getSize(), stream.getFrom());
+    public static <T> PaginatedStreamResult<T> ok(PaginatedStream<T> data, String message) {
+        PaginatedStreamResult<T> result = new PaginatedStreamResult<>();
+        if (data == null) {
+            data = new PaginatedStream<>();
+            result.data = Stream.of();
+        }
+        else {
+            result.data = data.getStream();
+        }
+        result.total = data.getTotalResults();
+        result.from = data.getFrom();
+        result.size = data.getSize();
+        return result;
     }
 
-    public Paginated(List<T> data, long totalResults, long size, long from) {
-        this.data = data;
-        this.totalResults = totalResults;
-        this.size = size;
-        this.from = from;
-    }
-
-    public List<T> getData() {
-        return data;
-    }
-
-    public long getTotalResults() {
-        return totalResults;
+    public long getTotal() {
+        return total;
     }
 
     public long getSize() {
@@ -64,6 +59,4 @@ public class Paginated<T> {
     public long getFrom() {
         return from;
     }
-
 }
-

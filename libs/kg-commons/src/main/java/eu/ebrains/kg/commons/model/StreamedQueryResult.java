@@ -20,16 +20,24 @@
  * (Human Brain Project SGA1, SGA2 and SGA3).
  */
 
-package eu.ebrains.kg.commons.api;
+package eu.ebrains.kg.commons.model;
 
-import eu.ebrains.kg.commons.model.PaginationParam;
-import eu.ebrains.kg.commons.model.StreamedQueryResult;
-import eu.ebrains.kg.commons.query.KgQuery;
+import eu.ebrains.kg.commons.jsonld.NormalizedJsonLd;
 
-import java.util.Map;
+public class StreamedQueryResult {
+    private final PaginatedStream<NormalizedJsonLd> stream;
+    private final String responseVocab;
 
-public interface GraphDBQueries {
-    interface Client extends GraphDBQueries {}
+    public StreamedQueryResult(PaginatedStream<NormalizedJsonLd> stream, String responseVocab) {
+        this.stream = stream;
+        this.responseVocab = responseVocab;
+    }
 
-    StreamedQueryResult executeQuery(KgQuery query, Map<String, String> params, PaginationParam paginationParam);
+    public PaginatedStream<NormalizedJsonLd> getStream() {
+        return stream;
+    }
+
+    public String getResponseVocab() {
+        return responseVocab;
+    }
 }

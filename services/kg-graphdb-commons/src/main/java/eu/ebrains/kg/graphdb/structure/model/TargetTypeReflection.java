@@ -16,7 +16,9 @@
 
 package eu.ebrains.kg.graphdb.structure.model;
 
-public class TargetTypeReflection {
+import java.io.Serializable;
+
+public class TargetTypeReflection implements Serializable {
 
     private String name;
     private String space;
