@@ -93,23 +93,9 @@ public class UserWithRoles {
         }
     }
 
-    public List<FunctionalityInstance> getPermissionsOfEitherUserOrClient() {
-        //Invitation permissions are added after permission evaluation (of global and space)
-        final List<FunctionalityInstance> functionalityInstances = evaluatePermissionCombinations(userRoles, clientRoles);
-        if(!CollectionUtils.isEmpty(invitations)){
-            return Stream.concat(functionalityInstances.stream(),
-                    invitations.stream().map(i -> new FunctionalityInstance(Functionality.READ, null, i)))
-                    .distinct().collect(Collectors.toList());
-        }
-        else {
-            return functionalityInstances;
-        }
-    }
-
     public SpaceName getPrivateSpace(){
         return new SpaceName("private-"+user.getNativeId());
     }
-
 
     private List<FunctionalityInstance> reduceFunctionalities(Map<Functionality, List<FunctionalityInstance>> functionalityMap){
         List<FunctionalityInstance> reducedList = new ArrayList<>();

@@ -86,7 +86,7 @@ public class GraphDBSpacesAPI implements GraphDBSpaces.Client {
 
     @Override
     public void specifySpace(SpaceSpecification spaceSpecification) {
-        if(permissionsController.canManageSpaces(authContext.getUserWithRoles())) {
+        if(permissionsController.canManageSpaces(authContext.getUserWithRoles(), SpaceName.fromString(spaceSpecification.getName()))) {
             switch(spaceSpecification.getName()){
                 case SpaceName.PRIVATE_SPACE:
                     throw new InvalidRequestException("You can't provide a definition for your private space");
@@ -103,7 +103,7 @@ public class GraphDBSpacesAPI implements GraphDBSpaces.Client {
 
     @Override
     public void removeSpaceSpecification(SpaceName spaceName) {
-        if(permissionsController.canManageSpaces(authContext.getUserWithRoles())) {
+        if(permissionsController.canManageSpaces(authContext.getUserWithRoles(), spaceName)) {
             switch(spaceName.getName()){
                 case SpaceName.PRIVATE_SPACE:
                     throw new InvalidRequestException("You can't remove your private space");
@@ -120,7 +120,7 @@ public class GraphDBSpacesAPI implements GraphDBSpaces.Client {
 
     @Override
     public void addTypeToSpace(SpaceName spaceName, String typeName) {
-        if(permissionsController.canManageSpaces(authContext.getUserWithRoles())) {
+        if(permissionsController.canManageSpaces(authContext.getUserWithRoles(), spaceName)) {
             structureRepository.addLinkBetweenSpaceAndType(spaceName, typeName);
             structureRepository.evictTypesInSpaceBySpecification(spaceName);
         }
@@ -131,7 +131,7 @@ public class GraphDBSpacesAPI implements GraphDBSpaces.Client {
 
     @Override
     public void removeTypeFromSpace(SpaceName spaceName, String typeName) {
-        if(permissionsController.canManageSpaces(authContext.getUserWithRoles())) {
+        if(permissionsController.canManageSpaces(authContext.getUserWithRoles(), spaceName)) {
             structureRepository.removeLinkBetweenSpaceAndType(spaceName, typeName);
             structureRepository.evictTypesInSpaceBySpecification(spaceName);
         }

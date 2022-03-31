@@ -38,7 +38,7 @@ public enum Functionality {
 
     //Space mgmt
     READ_SPACE(Permission.Level.GLOBAL_AND_SPACE, FunctionalityGroup.SPACES, null, null, null),
-    MANAGE_SPACE(Permission.Level.GLOBAL_ONLY, FunctionalityGroup.SPACES, null, Event.Type.INSERT, EBRAINSVocabulary.META_SPACEDEFINITION_TYPE),
+    MANAGE_SPACE(Permission.Level.GLOBAL_AND_SPACE, FunctionalityGroup.SPACES, null, Event.Type.INSERT, EBRAINSVocabulary.META_SPACEDEFINITION_TYPE),
     RERUN_EVENTS_FOR_SPACE(Permission.Level.GLOBAL_ONLY, FunctionalityGroup.SPACES, null, null, null),
 
     //Invitations

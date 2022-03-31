@@ -38,7 +38,7 @@ public enum RoleMapping {
     CONSUMER(false, true,false, null, Functionality.READ_RELEASED, Functionality.CREATE_QUERY, Functionality.WRITE_QUERY, Functionality.READ_QUERY, Functionality.DELETE_QUERY, Functionality.READ_SPACE),
     REVIEWER(true, false, true, CONSUMER, Functionality.READ, Functionality.SUGGEST, Functionality.INVITE_FOR_REVIEW, Functionality.MINIMAL_READ, Functionality.RELEASE_STATUS),
     EDITOR(true, false, true, REVIEWER, Functionality.WRITE, Functionality.CREATE, Functionality.INVITE_FOR_SUGGESTION, Functionality.DELETE),
-    OWNER(true, false, true, EDITOR, Functionality.RELEASE, Functionality.UNRELEASE),
+    OWNER(true, false, true, EDITOR, Functionality.RELEASE, Functionality.UNRELEASE, Functionality.MANAGE_SPACE, Functionality.READ_SPACE),
     ADMIN(true, false, true, null, Functionality.values());
 
     private final RoleMapping childRole;

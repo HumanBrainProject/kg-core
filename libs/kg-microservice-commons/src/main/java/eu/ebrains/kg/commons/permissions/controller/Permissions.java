@@ -81,31 +81,11 @@ public class Permissions {
         return null;
     }
 
-    public boolean hasEitherUserOrClientPermissionFor(UserWithRoles userWithRoles, Functionality functionality, SpaceName space, UUID id){
-        return userWithRoles != null && hasPermission(userWithRoles, functionality, space, id, userWithRoles.getPermissionsOfEitherUserOrClient());
-    }
-
-    public boolean hasPermission(UserWithRoles userWithRoles, Functionality functionality, SpaceName space, UUID id) {
-        return userWithRoles != null && hasPermission(userWithRoles, functionality, space, id, userWithRoles.getPermissions());
-    }
-
-    private boolean hasPermission(UserWithRoles userWithRoles, Functionality functionality, SpaceName space, UUID id, List<FunctionalityInstance> functionalityInstances) {
-        if (functionality == null) {
+     public boolean hasPermission(UserWithRoles userWithRoles, Functionality functionality, SpaceName space, UUID id) {
+        if (userWithRoles == null || functionality == null) {
             return false;
         }
-        switch (functionality) {
-            case MANAGE_SPACE:
-                if (space != null && userWithRoles != null) {
-                    boolean clientOwnedSpace = isServiceAccountForClientSpace(userWithRoles, space);
-                    boolean privateUserSpace = space.equals(userWithRoles.getPrivateSpace());
-                    //A special case is, that a client service account can create its own space even if there are no explicitly declared rights. The same is true for a user and the private space
-                    if (clientOwnedSpace || privateUserSpace) {
-                        return true;
-                    }
-                    break;
-                }
-        }
-        return checkFunctionalities(functionality, space, id, functionalityInstances);
+        return checkFunctionalities(functionality, space, id, userWithRoles.getPermissions());
     }
 
     public boolean hasGlobalPermission(UserWithRoles userWithRoles, Functionality functionality) {
