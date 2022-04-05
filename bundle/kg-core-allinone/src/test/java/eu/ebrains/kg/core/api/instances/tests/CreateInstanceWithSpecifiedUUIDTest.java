@@ -29,6 +29,7 @@ import eu.ebrains.kg.commons.jsonld.NormalizedJsonLd;
 import eu.ebrains.kg.commons.model.Result;
 import eu.ebrains.kg.commons.permission.roles.RoleMapping;
 import eu.ebrains.kg.core.api.Instances;
+import eu.ebrains.kg.core.api.instances.TestContext;
 import eu.ebrains.kg.testutils.TestDataFactory;
 import org.springframework.http.ResponseEntity;
 
@@ -40,8 +41,8 @@ public class CreateInstanceWithSpecifiedUUIDTest extends AbstractInstanceTest {
     public ResponseEntity<Result<NormalizedJsonLd>> response;
     public UUID clientSpecifiedUUID = UUID.randomUUID();
 
-    public CreateInstanceWithSpecifiedUUIDTest(ArangoDB.Builder database, AuthenticationAPI authenticationAPI, Instances instances, RoleMapping[] roles) {
-        super(database, authenticationAPI,  instances, roles);
+    public CreateInstanceWithSpecifiedUUIDTest(TestContext testContext, Instances instances) {
+        super(testContext, instances);
     }
 
     @Override

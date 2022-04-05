@@ -31,17 +31,16 @@ import eu.ebrains.kg.commons.model.Result;
 import eu.ebrains.kg.commons.model.SuggestionResult;
 import eu.ebrains.kg.commons.permission.roles.RoleMapping;
 import eu.ebrains.kg.core.api.Instances;
+import eu.ebrains.kg.core.api.instances.TestContext;
 import eu.ebrains.kg.core.model.ExposedStage;
 
 public class GetSuggestionsTest extends AbstractInstanceTest {
 
     public Result<SuggestionResult> response;
     public NormalizedJsonLd originalInstance;
-    public IdUtils idUtils;
 
-    public GetSuggestionsTest(ArangoDB.Builder database, AuthenticationAPI authenticationAPI, IdUtils idUtils, Instances instances, RoleMapping[] roles) {
-        super(database, authenticationAPI,  instances, roles);
-        this.idUtils = idUtils;
+    public GetSuggestionsTest(TestContext testContext, Instances instances) {
+        super(testContext, instances);
     }
 
     @Override
@@ -51,7 +50,7 @@ public class GetSuggestionsTest extends AbstractInstanceTest {
 
     protected void run(){
         String key = originalInstance.keySet().stream().filter(k -> !k.startsWith("@")).findFirst().orElse(null);
-        response = instances.getSuggestedLinksForProperty(originalInstance, ExposedStage.IN_PROGRESS, key, idUtils.getUUID(originalInstance.id()), null, null, null, new PaginationParam());
+        response = instances.getSuggestedLinksForProperty(originalInstance, ExposedStage.IN_PROGRESS, key, testContext.getIdUtils().getUUID(originalInstance.id()), null, null, null, new PaginationParam());
     }
 
 }

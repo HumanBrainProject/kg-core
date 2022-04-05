@@ -23,7 +23,6 @@
 package eu.ebrains.kg.core.api.spaces;
 
 import eu.ebrains.kg.commons.exception.ForbiddenException;
-import eu.ebrains.kg.commons.jsonld.NormalizedJsonLd;
 import eu.ebrains.kg.commons.model.external.spaces.SpaceInformation;
 import eu.ebrains.kg.commons.permission.roles.RoleMapping;
 import eu.ebrains.kg.commons.semantics.vocabularies.SchemaOrgVocabulary;
@@ -55,7 +54,7 @@ public class SpacesTest extends AbstractFunctionalityTest {
     @Test
     public void getSpaceWithPermissionsOk() {
         //Given
-        GetSpaceWithPermissionsTest test = new GetSpaceWithPermissionsTest(database, authenticationAPI, READ_SPACE_ROLES, instances, spaces);
+        GetSpaceWithPermissionsTest test = new GetSpaceWithPermissionsTest(ctx(READ_SPACE_ROLES), instances, spaces);
 
         //When
         test.execute(() -> {
@@ -68,7 +67,7 @@ public class SpacesTest extends AbstractFunctionalityTest {
     @Test
     public void getSpaceWithPermissionsForbidden() {
         //Given
-        GetSpaceWithPermissionsTest test = new GetSpaceWithPermissionsTest(database, authenticationAPI, NON_READ_SPACE_ROLES, instances, spaces);
+        GetSpaceWithPermissionsTest test = new GetSpaceWithPermissionsTest(ctx(NON_READ_SPACE_ROLES), instances, spaces);
 
         //When
         test.execute(ForbiddenException.class);
@@ -78,7 +77,7 @@ public class SpacesTest extends AbstractFunctionalityTest {
     @Test
     public void getSpacesWithPermissionsOk() {
         //Given
-        GetSpacesWithPermissionsTest test = new GetSpacesWithPermissionsTest(database, authenticationAPI, READ_SPACE_ROLES, instances, spaces);
+        GetSpacesWithPermissionsTest test = new GetSpacesWithPermissionsTest(ctx(READ_SPACE_ROLES), instances, spaces);
 
         //When
         test.execute(() -> {
@@ -93,7 +92,7 @@ public class SpacesTest extends AbstractFunctionalityTest {
     @Test
     public void getSpacesWithPermissionsForbidden() {
         //Given
-        GetSpacesWithPermissionsTest test = new GetSpacesWithPermissionsTest(database, authenticationAPI, NON_READ_SPACE_ROLES, instances, spaces);
+        GetSpacesWithPermissionsTest test = new GetSpacesWithPermissionsTest(ctx(NON_READ_SPACE_ROLES), instances, spaces);
 
         //When
         test.execute(()->{

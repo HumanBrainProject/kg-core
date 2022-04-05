@@ -29,6 +29,7 @@ import eu.ebrains.kg.commons.jsonld.NormalizedJsonLd;
 import eu.ebrains.kg.commons.model.Result;
 import eu.ebrains.kg.commons.permission.roles.RoleMapping;
 import eu.ebrains.kg.core.api.Instances;
+import eu.ebrains.kg.core.api.instances.TestContext;
 import eu.ebrains.kg.core.model.ExposedStage;
 import org.springframework.http.ResponseEntity;
 
@@ -36,11 +37,9 @@ public class DeleteInstanceTest extends AbstractInstanceTest {
 
     public ResponseEntity<Result<Void>> response;
     public NormalizedJsonLd originalInstance;
-    public IdUtils idUtils;
 
-    public DeleteInstanceTest(ArangoDB.Builder database, AuthenticationAPI authenticationAPI, IdUtils idUtils, Instances instances, RoleMapping[] roles) {
-        super(database, authenticationAPI,  instances, roles);
-        this.idUtils = idUtils;
+    public DeleteInstanceTest(TestContext testContext, Instances instances) {
+        super(testContext, instances);
     }
 
     @Override
@@ -50,10 +49,10 @@ public class DeleteInstanceTest extends AbstractInstanceTest {
 
     @Override
     protected void run() {
-        response = instances.deleteInstance(idUtils.getUUID(originalInstance.id()));
+        response = instances.deleteInstance(testContext.getIdUtils().getUUID(originalInstance.id()));
     }
 
     public ResponseEntity<Result<NormalizedJsonLd>> fetchInstance(){
-        return instances.getInstanceById(idUtils.getUUID(originalInstance.id()), ExposedStage.IN_PROGRESS, defaultResponseConfiguration);
+        return instances.getInstanceById(testContext.getIdUtils().getUUID(originalInstance.id()), ExposedStage.IN_PROGRESS, defaultResponseConfiguration);
     }
 }

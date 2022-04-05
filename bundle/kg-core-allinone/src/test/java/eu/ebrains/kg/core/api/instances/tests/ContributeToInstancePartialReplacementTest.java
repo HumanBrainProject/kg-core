@@ -30,19 +30,18 @@ import eu.ebrains.kg.commons.jsonld.NormalizedJsonLd;
 import eu.ebrains.kg.commons.model.Result;
 import eu.ebrains.kg.commons.permission.roles.RoleMapping;
 import eu.ebrains.kg.core.api.Instances;
+import eu.ebrains.kg.core.api.instances.TestContext;
 import eu.ebrains.kg.testutils.TestDataFactory;
 import org.springframework.http.ResponseEntity;
 
 public class ContributeToInstancePartialReplacementTest extends AbstractInstanceTest {
-    private final IdUtils idUtils;
 
     public NormalizedJsonLd originalInstance;
     public JsonLdDoc update;
     public ResponseEntity<Result<NormalizedJsonLd>> response;
 
-    public ContributeToInstancePartialReplacementTest(ArangoDB.Builder database, AuthenticationAPI authenticationAPI, IdUtils idUtils, Instances instances, RoleMapping[] roles) {
-        super(database, authenticationAPI, instances, roles);
-        this.idUtils = idUtils;
+    public ContributeToInstancePartialReplacementTest(TestContext testContext, Instances instances) {
+        super(testContext, instances);
     }
 
     @Override
@@ -54,7 +53,7 @@ public class ContributeToInstancePartialReplacementTest extends AbstractInstance
 
     @Override
     protected void run(){
-       response = instances.contributeToInstancePartialReplacement(update, idUtils.getUUID(originalInstance.id()), defaultResponseConfiguration);
+       response = instances.contributeToInstancePartialReplacement(update, testContext.getIdUtils().getUUID(originalInstance.id()), defaultResponseConfiguration);
     }
 
 }

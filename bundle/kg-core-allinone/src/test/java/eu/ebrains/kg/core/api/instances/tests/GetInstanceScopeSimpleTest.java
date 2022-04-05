@@ -30,6 +30,7 @@ import eu.ebrains.kg.commons.model.Result;
 import eu.ebrains.kg.commons.model.ScopeElement;
 import eu.ebrains.kg.commons.permission.roles.RoleMapping;
 import eu.ebrains.kg.core.api.Instances;
+import eu.ebrains.kg.core.api.instances.TestContext;
 import eu.ebrains.kg.core.model.ExposedStage;
 import org.springframework.http.ResponseEntity;
 
@@ -37,11 +38,9 @@ public class GetInstanceScopeSimpleTest extends AbstractInstanceTest {
 
     public ResponseEntity<Result<ScopeElement>> response;
     public NormalizedJsonLd originalInstance;
-    public IdUtils idUtils;
 
-    public GetInstanceScopeSimpleTest(ArangoDB.Builder database, AuthenticationAPI authenticationAPI, IdUtils idUtils, Instances instances, RoleMapping[] roles) {
-        super(database, authenticationAPI,  instances, roles);
-        this.idUtils = idUtils;
+    public GetInstanceScopeSimpleTest(TestContext testContext, Instances instances) {
+        super(testContext,  instances);
     }
 
     @Override
@@ -51,6 +50,6 @@ public class GetInstanceScopeSimpleTest extends AbstractInstanceTest {
 
     @Override
     protected void run(){
-        response = instances.getInstanceScope(idUtils.getUUID(originalInstance.id()), ExposedStage.IN_PROGRESS, false, false);
+        response = instances.getInstanceScope(testContext.getIdUtils().getUUID(originalInstance.id()), ExposedStage.IN_PROGRESS, false, false);
     }
 }

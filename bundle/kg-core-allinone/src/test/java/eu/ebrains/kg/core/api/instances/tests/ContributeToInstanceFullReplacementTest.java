@@ -30,18 +30,17 @@ import eu.ebrains.kg.commons.jsonld.NormalizedJsonLd;
 import eu.ebrains.kg.commons.model.Result;
 import eu.ebrains.kg.commons.permission.roles.RoleMapping;
 import eu.ebrains.kg.core.api.Instances;
+import eu.ebrains.kg.core.api.instances.TestContext;
 import eu.ebrains.kg.testutils.TestDataFactory;
 import org.springframework.http.ResponseEntity;
 
 public class ContributeToInstanceFullReplacementTest extends AbstractInstanceTest {
-    private final IdUtils idUtils;
     public NormalizedJsonLd originalInstance;
     public JsonLdDoc update;
     public ResponseEntity<Result<NormalizedJsonLd>> response;
 
-    public ContributeToInstanceFullReplacementTest(ArangoDB.Builder database, AuthenticationAPI authenticationAPI, IdUtils idUtils, Instances instances, RoleMapping[] roles) {
-        super(database, authenticationAPI, instances, roles);
-        this.idUtils = idUtils;
+    public ContributeToInstanceFullReplacementTest(TestContext testContext, Instances instances) {
+        super(testContext, instances);
     }
 
     @Override
@@ -52,7 +51,7 @@ public class ContributeToInstanceFullReplacementTest extends AbstractInstanceTes
 
     @Override
     protected void run(){
-       response = instances.contributeToInstanceFullReplacement(update, idUtils.getUUID(originalInstance.id()), defaultResponseConfiguration);
+       response = instances.contributeToInstanceFullReplacement(update, testContext.getIdUtils().getUUID(originalInstance.id()), defaultResponseConfiguration);
     }
 
 }

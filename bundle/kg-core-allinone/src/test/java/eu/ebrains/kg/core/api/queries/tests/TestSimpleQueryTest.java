@@ -33,6 +33,7 @@ import eu.ebrains.kg.commons.permission.roles.Role;
 import eu.ebrains.kg.core.api.AbstractTest;
 import eu.ebrains.kg.core.api.Instances;
 import eu.ebrains.kg.core.api.Queries;
+import eu.ebrains.kg.core.api.instances.TestContext;
 import eu.ebrains.kg.core.model.ExposedStage;
 import eu.ebrains.kg.testutils.TestDataFactory;
 
@@ -43,7 +44,6 @@ public class TestSimpleQueryTest extends AbstractTest {
 
     private final Queries queries;
     private final Instances instances;
-    private final IdUtils idUtils;
     private final boolean release;
     public NormalizedJsonLd instanceA;
     public NormalizedJsonLd instanceArelated;
@@ -105,14 +105,13 @@ public class TestSimpleQueryTest extends AbstractTest {
             "}";
 
 
-    public TestSimpleQueryTest(ArangoDB.Builder database, AuthenticationAPI authenticationAPI, Collection<List<Role>> roles, Queries queries, Instances instances, ExposedStage stage, IdUtils idUtils, boolean release)  throws IOException
+    public TestSimpleQueryTest(TestContext testContext, Queries queries, Instances instances, ExposedStage stage, boolean release)  throws IOException
     {
-        super(database, authenticationAPI,  roles);
+        super(testContext);
         this.instances = instances;
         this.queries = queries;
         this.query = new JsonLdDoc(new ObjectMapper().readValue(this.testQuery, LinkedHashMap.class));
         this.stage = stage;
-        this.idUtils = idUtils;
         this.release = release;
     }
 
@@ -131,9 +130,9 @@ public class TestSimpleQueryTest extends AbstractTest {
         docA.put(relationToB, instanceB.id());
         instanceA = createTestInstance(docA, "a");
         if(release) {
-            instances.releaseInstance(idUtils.getUUID(instanceA.id()), null);
-            instances.releaseInstance(idUtils.getUUID(instanceB.id()), null);
-            instances.releaseInstance(idUtils.getUUID(instanceArelated.id()), null);
+            instances.releaseInstance(testContext.getIdUtils().getUUID(instanceA.id()), null);
+            instances.releaseInstance(testContext.getIdUtils().getUUID(instanceB.id()), null);
+            instances.releaseInstance(testContext.getIdUtils().getUUID(instanceArelated.id()), null);
         }
     }
 

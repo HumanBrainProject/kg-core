@@ -22,30 +22,36 @@
 
 package eu.ebrains.kg.testutils;
 
-import com.arangodb.ArangoDB;
 import eu.ebrains.kg.KgCoreAllInOne;
+import eu.ebrains.kg.arango.commons.model.ArangoDatabaseProxy;
 import eu.ebrains.kg.authentication.api.AuthenticationAPI;
+import eu.ebrains.kg.authentication.keycloak.KeycloakClient;
 import eu.ebrains.kg.authentication.keycloak.KeycloakController;
 import eu.ebrains.kg.commons.AuthTokenContext;
 import eu.ebrains.kg.commons.IdUtils;
 import eu.ebrains.kg.commons.model.ExtendedResponseConfiguration;
 import eu.ebrains.kg.commons.model.PaginationParam;
+import eu.ebrains.kg.commons.permission.roles.Role;
+import eu.ebrains.kg.commons.permission.roles.RoleMapping;
+import eu.ebrains.kg.core.api.instances.TestContext;
 import org.junit.runner.RunWith;
+import org.keycloak.admin.client.Keycloak;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.cache.CacheManager;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.junit4.SpringRunner;
+
+import java.util.List;
+
 @RunWith(SpringRunner.class)
 @SpringBootTest(classes = KgCoreAllInOne.class, webEnvironment = SpringBootTest.WebEnvironment.DEFINED_PORT)
-@TestPropertySource(properties = {"eu.ebrains.kg.core.metadata.synchronous=true", "eu.ebrains.kg.test=true", "arangodb.connections.max=1"})
+@TestPropertySource(properties = {"KEYCLOAK_ISSUER_URI = http://invalid/", ""})
 public abstract class AbstractSystemTest {
 
     protected PaginationParam EMPTY_PAGINATION = new PaginationParam();
     protected ExtendedResponseConfiguration DEFAULT_RESPONSE_CONFIG = new ExtendedResponseConfiguration();
-    protected boolean DEFAULT_DEFER_INFERENCE = false;
-
 
     protected static final int smallPayload = 5;
     protected static final int averagePayload = 25;
@@ -59,14 +65,35 @@ public abstract class AbstractSystemTest {
     @MockBean
     protected AuthenticationAPI authenticationAPI;
 
+    //We mock the keycloak bean to prevent it to initialize
+    @MockBean
+    Keycloak keycloak;
+
+    //We mock the keycloak controller bean to prevent it to initialize
     @MockBean
     protected KeycloakController keycloakController;
 
-    @Autowired
-    @Qualifier("arangoBuilderForGraphDB")
-    protected ArangoDB.Builder database;
+
+    //We mock the keycloak client bean to prevent it to initialize
+    @MockBean
+    protected KeycloakClient keycloakClient;
 
     @Autowired
     protected IdUtils idUtils;
+
+    @Autowired
+    protected List<ArangoDatabaseProxy> arangoDatabaseProxyList;
+
+    @Autowired
+    private CacheManager cacheManager;
+
+
+    protected TestContext ctx(RoleMapping... roles){
+        return new TestContext(idUtils, arangoDatabaseProxyList, authenticationAPI, roles, cacheManager);
+    }
+
+    protected TestContext ctx(List<List<Role>> roleCollections){
+        return new TestContext(idUtils, arangoDatabaseProxyList, authenticationAPI, roleCollections, cacheManager);
+    }
 
 }

@@ -30,6 +30,7 @@ import eu.ebrains.kg.commons.permission.roles.RoleMapping;
 import eu.ebrains.kg.core.api.AbstractTest;
 import eu.ebrains.kg.core.api.Instances;
 import eu.ebrains.kg.core.api.Spaces;
+import eu.ebrains.kg.core.api.instances.TestContext;
 import eu.ebrains.kg.core.model.ExposedStage;
 import eu.ebrains.kg.testutils.TestDataFactory;
 
@@ -41,8 +42,8 @@ public class GetSpacesWithPermissionsTest extends AbstractTest {
     public PaginatedResult<SpaceInformation> response;
 
 
-    public GetSpacesWithPermissionsTest(ArangoDB.Builder database, AuthenticationAPI authenticationAPI,  RoleMapping[] roles, Instances instances, Spaces spaces) {
-        super(database, authenticationAPI,  roles);
+    public GetSpacesWithPermissionsTest(TestContext testContext, Instances instances, Spaces spaces) {
+        super(testContext);
         this.instances = instances;
         this.spaces = spaces;
     }

@@ -29,6 +29,7 @@ import eu.ebrains.kg.commons.jsonld.NormalizedJsonLd;
 import eu.ebrains.kg.commons.model.PaginatedResult;
 import eu.ebrains.kg.commons.permission.roles.RoleMapping;
 import eu.ebrains.kg.core.api.Instances;
+import eu.ebrains.kg.core.api.instances.TestContext;
 import eu.ebrains.kg.core.model.ExposedStage;
 
 public class GetInstancesTest extends AbstractInstanceTest {
@@ -36,11 +37,9 @@ public class GetInstancesTest extends AbstractInstanceTest {
     public PaginatedResult<NormalizedJsonLd> response;
     public NormalizedJsonLd originalInstanceA;
     public NormalizedJsonLd originalInstanceB;
-    public IdUtils idUtils;
 
-    public GetInstancesTest(ArangoDB.Builder database, AuthenticationAPI authenticationAPI, IdUtils idUtils, Instances instances, RoleMapping[] roles) {
-        super(database, authenticationAPI,  instances, roles);
-        this.idUtils = idUtils;
+    public GetInstancesTest(TestContext testContext, Instances instances) {
+        super(testContext, instances);
     }
 
     @Override

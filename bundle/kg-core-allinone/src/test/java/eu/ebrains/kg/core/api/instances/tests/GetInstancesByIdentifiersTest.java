@@ -30,6 +30,7 @@ import eu.ebrains.kg.commons.jsonld.NormalizedJsonLd;
 import eu.ebrains.kg.commons.model.Result;
 import eu.ebrains.kg.commons.permission.roles.RoleMapping;
 import eu.ebrains.kg.core.api.Instances;
+import eu.ebrains.kg.core.api.instances.TestContext;
 import eu.ebrains.kg.core.model.ExposedStage;
 import org.springframework.http.ResponseEntity;
 
@@ -43,11 +44,9 @@ public class GetInstancesByIdentifiersTest extends AbstractInstanceTest {
     public NormalizedJsonLd originalInstance;
     public String identifier = "https://foo/bar";
     public JsonLdDoc doc;
-    public IdUtils idUtils;
 
-    public GetInstancesByIdentifiersTest(ArangoDB.Builder database, AuthenticationAPI authenticationAPI, IdUtils idUtils, Instances instances, RoleMapping[] roles) {
-        super(database, authenticationAPI,  instances, roles);
-        this.idUtils = idUtils;
+    public GetInstancesByIdentifiersTest(TestContext testContext, Instances instances) {
+        super(testContext, instances);
     }
 
     @Override
@@ -55,7 +54,7 @@ public class GetInstancesByIdentifiersTest extends AbstractInstanceTest {
         originalInstance = createInstanceWithServerDefinedUUID(0);
         doc = new JsonLdDoc();
         doc.addIdentifiers(identifier);
-        updateResult = instances.contributeToInstancePartialReplacement(doc, idUtils.getUUID(originalInstance.id()), defaultResponseConfiguration);
+        updateResult = instances.contributeToInstancePartialReplacement(doc, testContext.getIdUtils().getUUID(originalInstance.id()), defaultResponseConfiguration);
 
     }
 

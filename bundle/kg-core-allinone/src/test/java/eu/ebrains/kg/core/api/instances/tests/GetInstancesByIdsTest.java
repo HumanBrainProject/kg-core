@@ -29,6 +29,7 @@ import eu.ebrains.kg.commons.jsonld.NormalizedJsonLd;
 import eu.ebrains.kg.commons.model.Result;
 import eu.ebrains.kg.commons.permission.roles.RoleMapping;
 import eu.ebrains.kg.core.api.Instances;
+import eu.ebrains.kg.core.api.instances.TestContext;
 import eu.ebrains.kg.core.model.ExposedStage;
 
 import java.util.Arrays;
@@ -45,19 +46,17 @@ public class GetInstancesByIdsTest extends AbstractInstanceTest {
     public NormalizedJsonLd originalInstanceB;
     public Map<UUID, NormalizedJsonLd> originalInstances;
     public List<UUID> ids;
-    public IdUtils idUtils;
 
-    public GetInstancesByIdsTest(ArangoDB.Builder database, AuthenticationAPI authenticationAPI, IdUtils idUtils, Instances instances, RoleMapping[] roles) {
-        super(database, authenticationAPI,  instances, roles);
-        this.idUtils = idUtils;
+    public GetInstancesByIdsTest(TestContext testContext, Instances instances) {
+        super(testContext,  instances);
     }
 
     @Override
     protected void setup() {
         originalInstanceA = createInstanceWithServerDefinedUUID(0);
         originalInstanceB = createInstanceWithServerDefinedUUID(1);
-        originalInstances = Stream.of(originalInstanceA, originalInstanceB).collect(Collectors.toMap(k -> idUtils.getUUID(k.id()), v -> v));
-        ids = Arrays.asList(idUtils.getUUID(originalInstanceA.id()), idUtils.getUUID(originalInstanceB.id()));
+        originalInstances = Stream.of(originalInstanceA, originalInstanceB).collect(Collectors.toMap(k -> testContext.getIdUtils().getUUID(k.id()), v -> v));
+        ids = Arrays.asList(testContext.getIdUtils().getUUID(originalInstanceA.id()), testContext.getIdUtils().getUUID(originalInstanceB.id()));
     }
 
     @Override

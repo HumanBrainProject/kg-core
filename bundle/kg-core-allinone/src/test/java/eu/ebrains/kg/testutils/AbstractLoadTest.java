@@ -23,6 +23,7 @@
 package eu.ebrains.kg.testutils;
 
 import com.arangodb.ArangoDB;
+import eu.ebrains.kg.arango.commons.model.ArangoDatabaseProxy;
 import eu.ebrains.kg.commons.AuthTokens;
 import eu.ebrains.kg.commons.model.User;
 import eu.ebrains.kg.commons.models.UserWithRoles;
@@ -95,11 +96,7 @@ public abstract class AbstractLoadTest extends AbstractSystemTest {
 
 
     private void clearDatabase() {
-        ArangoDB arango = database.build();
-        arango.getDatabases().stream().filter(db -> db.startsWith("kg")).forEach(db -> {
-            System.out.println(String.format("Removing database %s", db));
-            arango.db(db).drop();
-        });
+        arangoDatabaseProxyList.forEach(ArangoDatabaseProxy::removeDatabase);
     }
 
 }

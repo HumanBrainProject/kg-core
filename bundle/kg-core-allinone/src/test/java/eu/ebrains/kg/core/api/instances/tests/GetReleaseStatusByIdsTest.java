@@ -31,6 +31,7 @@ import eu.ebrains.kg.commons.model.Result;
 import eu.ebrains.kg.commons.params.ReleaseTreeScope;
 import eu.ebrains.kg.commons.permission.roles.RoleMapping;
 import eu.ebrains.kg.core.api.Instances;
+import eu.ebrains.kg.core.api.instances.TestContext;
 
 import java.util.Arrays;
 import java.util.Map;
@@ -44,20 +45,17 @@ public class GetReleaseStatusByIdsTest extends AbstractInstanceTest {
     public UUID uuidB;
     public NormalizedJsonLd originalInstanceB;
 
-    public IdUtils idUtils;
-
-    public GetReleaseStatusByIdsTest(ArangoDB.Builder database, AuthenticationAPI authenticationAPI, IdUtils idUtils, Instances instances, RoleMapping[] roles) {
-        super(database, authenticationAPI,  instances, roles);
-        this.idUtils = idUtils;
+    public GetReleaseStatusByIdsTest(TestContext testContext, Instances instances) {
+        super(testContext, instances);
     }
 
     @Override
     protected void setup() {
         originalInstanceA = createInstanceWithServerDefinedUUID(0);
-        uuidA = idUtils.getUUID(originalInstanceA.id());
+        uuidA = testContext.getIdUtils().getUUID(originalInstanceA.id());
 
         originalInstanceB = createInstanceWithServerDefinedUUID(1);
-        uuidB = idUtils.getUUID(originalInstanceB.id());
+        uuidB = testContext.getIdUtils().getUUID(originalInstanceB.id());
 
         instances.releaseInstance(uuidA, null);
     }

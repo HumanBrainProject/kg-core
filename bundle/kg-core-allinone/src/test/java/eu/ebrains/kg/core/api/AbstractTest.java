@@ -22,14 +22,14 @@
 
 package eu.ebrains.kg.core.api;
 
-import com.arangodb.ArangoDB;
-import eu.ebrains.kg.authentication.api.AuthenticationAPI;
+import eu.ebrains.kg.arango.commons.model.ArangoDatabaseProxy;
 import eu.ebrains.kg.commons.jsonld.JsonLdId;
 import eu.ebrains.kg.commons.jsonld.NormalizedJsonLd;
 import eu.ebrains.kg.commons.model.*;
 import eu.ebrains.kg.commons.models.UserWithRoles;
 import eu.ebrains.kg.commons.permission.roles.Role;
 import eu.ebrains.kg.commons.permission.roles.RoleMapping;
+import eu.ebrains.kg.core.api.instances.TestContext;
 import org.junit.Assert;
 import org.mockito.Mockito;
 import org.springframework.http.ResponseEntity;
@@ -52,26 +52,19 @@ public abstract class AbstractTest {
     public final static List<String> ADMIN_CLIENT_ROLE = Collections.singletonList(RoleMapping.ADMIN.toRole(null).getName());
 
     private List<Role> currentRoles;
-    private final AuthenticationAPI authentication;
-    private final Collection<List<Role>> roleCollections;
-    private final ArangoDB.Builder database;
 
-    public AbstractTest(ArangoDB.Builder database, AuthenticationAPI authentication, RoleMapping[] roleMappings) {
-        this(database, authentication, Arrays.stream(roleMappings).filter(Objects::nonNull).map(r -> Collections.singletonList(r.toRole(null))).collect(Collectors.toSet()));
-    }
+    protected final TestContext testContext;
 
-    public AbstractTest(ArangoDB.Builder database, AuthenticationAPI authentication, Collection<List<Role>> roleCollections) {
-        this.database = database;
-        this.roleCollections = roleCollections;
-        this.authentication = authentication;
+    public AbstractTest(TestContext testContext) {
+        this.testContext = testContext;
         this.defaultResponseConfiguration.setReturnEmbedded(true).setReturnPermissions(false).setReturnAlternatives(false).setReturnPayload(true);
     }
 
     protected void beAdmin() {
         User user = new User("bobEverythingGoes", "Bob Everything Goes", "fakeAdmin@ebrains.eu", "Bob Everything", "Goes", "admin");
         UserWithRoles userWithRoles = new UserWithRoles(user, ADMIN_ROLE, ADMIN_CLIENT_ROLE, "testClient");
-        Mockito.doAnswer(a -> user).when(authentication).getMyUserInfo();
-        Mockito.doAnswer(a -> userWithRoles).when(authentication).getRoles(Mockito.anyBoolean());
+        Mockito.doAnswer(a -> user).when(testContext.getAuthentication()).getMyUserInfo();
+        Mockito.doAnswer(a -> userWithRoles).when(testContext.getAuthentication()).getRoles(Mockito.anyBoolean());
     }
 
     protected void beInCurrentRole() {
@@ -82,8 +75,8 @@ public abstract class AbstractTest {
         } else {
             User user = new User("alice", "Alice ", "fakeAlice@ebrains.eu", "Alice", "User", "alice");
             UserWithRoles userWithRoles = new UserWithRoles(user, currentRoles.stream().filter(Objects::nonNull).map(Role::getName).collect(Collectors.toList()), ADMIN_CLIENT_ROLE, "testClient");
-            Mockito.doAnswer(a -> user).when(authentication).getMyUserInfo();
-            Mockito.doAnswer(a -> userWithRoles).when(authentication).getRoles(Mockito.anyBoolean());
+            Mockito.doAnswer(a -> user).when(testContext.getAuthentication()).getMyUserInfo();
+            Mockito.doAnswer(a -> userWithRoles).when(testContext.getAuthentication()).getRoles(Mockito.anyBoolean());
         }
     }
 
@@ -91,8 +84,8 @@ public abstract class AbstractTest {
         User user = new User("joeCantDoAThing", "Joe Cant Do A Thing", "fakeUnauthorized@ebrains.eu", "Joe Cant Do A", "Thing", "unauthorized");
         //It's the user not having any righexts - the client is still the same with full rights
         UserWithRoles userWithRoles = new UserWithRoles(user, Collections.emptyList(), ADMIN_CLIENT_ROLE, "testClient");
-        Mockito.doAnswer(a -> user).when(authentication).getMyUserInfo();
-        Mockito.doAnswer(a -> userWithRoles).when(authentication).getRoles(Mockito.anyBoolean());
+        Mockito.doAnswer(a -> user).when(testContext.getAuthentication()).getMyUserInfo();
+        Mockito.doAnswer(a -> userWithRoles).when(testContext.getAuthentication()).getRoles(Mockito.anyBoolean());
     }
 
     protected abstract void setup();
@@ -108,7 +101,7 @@ public abstract class AbstractTest {
     }
 
     private void execute(Assertion assertion, Class<? extends Exception> expectedException) {
-        for (List<Role> roles : roleCollections) {
+        for (List<Role> roles : testContext.getRoleCollections()) {
             currentRoles = roles;
             clearDatabase();
             beAdmin();
@@ -151,10 +144,10 @@ public abstract class AbstractTest {
     }
 
     private void clearDatabase() {
-        ArangoDB arango = database.build();
-        arango.getDatabases().stream().filter(db -> db.startsWith("kg")).forEach(db -> {
-            System.out.printf("Removing database %s%n", db);
-            arango.db(db).drop();
-        });
+        testContext.getDatabaseProxies().forEach(ArangoDatabaseProxy::removeDatabase);
+        if(testContext.getCacheManager()!=null){
+            //Also remove the caches to ensure we are in sync with the database (both empty)
+            testContext.getCacheManager().getCacheNames().forEach(c -> testContext.getCacheManager().getCache(c).clear());
+        }
     }
 }

@@ -121,7 +121,7 @@ public class QueriesTest extends AbstractFunctionalityTest {
     @Test
     public void simpleTestQueryInProgressWithAllInProgressRights() throws IOException {
         //Given
-        TestSimpleQueryTest test = new TestSimpleQueryTest(database, authenticationAPI, rolesAllSpacesInProgress, queries, instances, ExposedStage.IN_PROGRESS, idUtils, false);
+        TestSimpleQueryTest test = new TestSimpleQueryTest(ctx(rolesAllSpacesInProgress), queries, instances, ExposedStage.IN_PROGRESS, false);
 
         //When
         test.execute(() -> {
@@ -135,7 +135,7 @@ public class QueriesTest extends AbstractFunctionalityTest {
     @Test
     public void simpleTestQueryReleasedWithReleasedRights() throws IOException {
         //Given
-        TestSimpleQueryTest test = new TestSimpleQueryTest(database, authenticationAPI, rolesAllSpacesReleased, queries, instances, ExposedStage.RELEASED, idUtils, true);
+        TestSimpleQueryTest test = new TestSimpleQueryTest(ctx(rolesAllSpacesReleased), queries, instances, ExposedStage.RELEASED, true);
 
         //When
         test.execute(() -> {
@@ -148,7 +148,7 @@ public class QueriesTest extends AbstractFunctionalityTest {
     @Test
     public void simpleTestQueryReleasedWithSpaceAInProgressAndSpaceBReleasedRights() throws IOException {
         //Given
-        TestSimpleQueryTest test = new TestSimpleQueryTest(database, authenticationAPI, rolesSpaceAInProgressSpaceBReleasedOnly, queries, instances, ExposedStage.RELEASED, idUtils, true);
+        TestSimpleQueryTest test = new TestSimpleQueryTest(ctx(rolesSpaceAInProgressSpaceBReleasedOnly), queries, instances, ExposedStage.RELEASED, true);
 
         //When
         test.execute(() -> {
@@ -161,7 +161,7 @@ public class QueriesTest extends AbstractFunctionalityTest {
     @Test
     public void simpleTestQueryReleasedWithSpaceAReleasedAndSpaceBInProgressRights() throws IOException {
         //Given
-        TestSimpleQueryTest test = new TestSimpleQueryTest(database, authenticationAPI, rolesSpaceAReleasedSpaceBInProgress, queries, instances, ExposedStage.RELEASED, idUtils, true);
+        TestSimpleQueryTest test = new TestSimpleQueryTest(ctx(rolesSpaceAReleasedSpaceBInProgress), queries, instances, ExposedStage.RELEASED, true);
 
         //When
         test.execute(() -> {
@@ -175,7 +175,7 @@ public class QueriesTest extends AbstractFunctionalityTest {
     @Test
     public void simpleTestQueryReleasedWithInProgressRights() throws IOException {
         //Given
-        TestSimpleQueryTest test = new TestSimpleQueryTest(database, authenticationAPI, rolesAllSpacesInProgress, queries, instances, ExposedStage.RELEASED, idUtils, true);
+        TestSimpleQueryTest test = new TestSimpleQueryTest(ctx(rolesAllSpacesInProgress), queries, instances, ExposedStage.RELEASED, true);
 
         //When
         test.execute(() -> {
@@ -223,7 +223,7 @@ public class QueriesTest extends AbstractFunctionalityTest {
     @Test
     public void simpleTestQueryInProgressSpaceAInProgressOnly() throws IOException {
         //Given
-        TestSimpleQueryTest test = new TestSimpleQueryTest(database, authenticationAPI, rolesSpaceAInProgressOnly, queries, instances, ExposedStage.IN_PROGRESS, idUtils, false);
+        TestSimpleQueryTest test = new TestSimpleQueryTest(ctx(rolesSpaceAInProgressOnly), queries, instances, ExposedStage.IN_PROGRESS, false);
 
         //When
         test.execute(() -> {
@@ -236,7 +236,7 @@ public class QueriesTest extends AbstractFunctionalityTest {
     @Test
     public void simpleTestQueryReleasedSpaceAReleasedOnly() throws IOException {
         //Given
-        TestSimpleQueryTest test = new TestSimpleQueryTest(database, authenticationAPI, rolesSpaceAReleasedOnly, queries, instances, ExposedStage.RELEASED, idUtils, true);
+        TestSimpleQueryTest test = new TestSimpleQueryTest(ctx(rolesSpaceAReleasedOnly), queries, instances, ExposedStage.RELEASED, true);
 
         //When
         test.execute(() -> {
@@ -249,7 +249,7 @@ public class QueriesTest extends AbstractFunctionalityTest {
     @Test
     public void simpleTestQueryReleasedSpaceAInProgressOnly() throws IOException {
         //Given
-        TestSimpleQueryTest test = new TestSimpleQueryTest(database, authenticationAPI, rolesSpaceAInProgressOnly, queries, instances, ExposedStage.RELEASED, idUtils, true);
+        TestSimpleQueryTest test = new TestSimpleQueryTest(ctx(rolesSpaceAInProgressOnly), queries, instances, ExposedStage.RELEASED, true);
 
         //When
         test.execute(() -> {
@@ -262,7 +262,7 @@ public class QueriesTest extends AbstractFunctionalityTest {
     @Test
     public void simpleTestQueryInProgressSpaceAInProgressSpaceBReleasedOnly() throws IOException {
         //Given
-        TestSimpleQueryTest test = new TestSimpleQueryTest(database, authenticationAPI, rolesSpaceAInProgressSpaceBReleasedOnly, queries, instances, ExposedStage.IN_PROGRESS, idUtils, false);
+        TestSimpleQueryTest test = new TestSimpleQueryTest(ctx(rolesSpaceAInProgressSpaceBReleasedOnly), queries, instances, ExposedStage.IN_PROGRESS, false);
 
         //When
         test.execute(() -> {
@@ -275,7 +275,7 @@ public class QueriesTest extends AbstractFunctionalityTest {
     @Test
     public void simpleTestQueryInProgressSpaceAReleasedSpaceBInProgress() throws IOException {
         //Given
-        TestSimpleQueryTest test = new TestSimpleQueryTest(database, authenticationAPI, rolesSpaceAReleasedSpaceBInProgress, queries, instances, ExposedStage.IN_PROGRESS, idUtils, false);
+        TestSimpleQueryTest test = new TestSimpleQueryTest(ctx(rolesSpaceAReleasedSpaceBInProgress), queries, instances, ExposedStage.IN_PROGRESS, false);
 
         //When
         test.execute(() -> {
@@ -292,39 +292,39 @@ public class QueriesTest extends AbstractFunctionalityTest {
     @Test
     public void simpleTestQueryInProgressNoRights() throws IOException {
         //Given
-        TestSimpleQueryTest test = new TestSimpleQueryTest(database, authenticationAPI, noRights, queries, instances, ExposedStage.IN_PROGRESS, idUtils, false);
+        TestSimpleQueryTest test = new TestSimpleQueryTest(ctx(noRights), queries, instances, ExposedStage.IN_PROGRESS, false);
 
         //When
         test.execute(() -> {
             //Then
             Stream<? extends Map<?, ?>> normalizedJsonLds = test.assureValidPayload(test.response);
-            assertTrue("We expect the response to be empty because we don't have any rights.", normalizedJsonLds.count()==0);
+            assertEquals("We expect the response to be empty because we don't have any rights.", 0, normalizedJsonLds.count());
         });
     }
 
     @Test
     public void simpleTestQueryInProgressSpaceAReleasedOnly() throws IOException {
         //Given
-        TestSimpleQueryTest test = new TestSimpleQueryTest(database, authenticationAPI, rolesSpaceAReleasedOnly, queries, instances, ExposedStage.IN_PROGRESS, idUtils, false);
+        TestSimpleQueryTest test = new TestSimpleQueryTest(ctx(rolesSpaceAReleasedOnly), queries, instances, ExposedStage.IN_PROGRESS, false);
 
         //When
         test.execute(() -> {
             //Then
             Stream<? extends Map<?, ?>> normalizedJsonLds = test.assureValidPayload(test.response);
-            assertTrue("We expect the response to be empty because we only have released rights for space a.", normalizedJsonLds.count()==0);
+            assertEquals("We expect the response to be empty because we only have released rights for space a.", 0, normalizedJsonLds.count());
         });
     }
 
     @Test
     public void simpleTestQueryInProgressOnlyReleasedRights() throws IOException {
         //Given
-        TestSimpleQueryTest test = new TestSimpleQueryTest(database, authenticationAPI, rolesAllSpacesReleased, queries, instances, ExposedStage.IN_PROGRESS, idUtils, false);
+        TestSimpleQueryTest test = new TestSimpleQueryTest(ctx(rolesAllSpacesReleased), queries, instances, ExposedStage.IN_PROGRESS, false);
 
         //When
         test.execute(() -> {
             //Then
             Stream<? extends Map<?, ?>> normalizedJsonLds = test.assureValidPayload(test.response);
-            assertTrue("We expect the response to be empty because we query in progress but only have rights for released.", normalizedJsonLds.count()==0);
+            assertEquals("We expect the response to be empty because we query in progress but only have rights for released.", 0, normalizedJsonLds.count());
         });
     }
 
@@ -332,13 +332,13 @@ public class QueriesTest extends AbstractFunctionalityTest {
     @Test
     public void simpleTestQueryReleasedNoRights() throws IOException {
         //Given
-        TestSimpleQueryTest test = new TestSimpleQueryTest(database, authenticationAPI, noRights, queries, instances, ExposedStage.RELEASED, idUtils, true);
+        TestSimpleQueryTest test = new TestSimpleQueryTest(ctx(noRights), queries, instances, ExposedStage.RELEASED, true);
 
         //When
         test.execute(() -> {
             //Then
             Stream<? extends Map<?, ?>> normalizedJsonLds = test.assureValidPayload(test.response);
-            assertTrue("We were querying the released instances but have no rights. So we expect the response to be empty.",normalizedJsonLds.count()==0);
+            assertEquals("We were querying the released instances but have no rights. So we expect the response to be empty.", 0, normalizedJsonLds.count());
         });
     }
 
@@ -350,13 +350,13 @@ public class QueriesTest extends AbstractFunctionalityTest {
     @Test
     public void simpleTestQueryAllReleasedNoData() throws IOException {
         //Given
-        TestSimpleQueryTest test = new TestSimpleQueryTest(database, authenticationAPI, allRoles, queries, instances, ExposedStage.RELEASED, idUtils, false);
+        TestSimpleQueryTest test = new TestSimpleQueryTest(ctx(allRoles), queries, instances, ExposedStage.RELEASED, false);
 
         //When
         test.execute(() -> {
             //Then
             Stream<? extends Map<?, ?>> normalizedJsonLds = test.assureValidPayload(test.response);
-            assertTrue("We were querying the released instances but no instances have been released. So we expect the response to be empty.", normalizedJsonLds.count()==0);
+            assertEquals("We were querying the released instances but no instances have been released. So we expect the response to be empty.", 0, normalizedJsonLds.count());
         });
     }
 

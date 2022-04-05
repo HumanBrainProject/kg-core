@@ -30,14 +30,15 @@ import eu.ebrains.kg.commons.permission.roles.RoleMapping;
 import eu.ebrains.kg.commons.semantics.vocabularies.EBRAINSVocabulary;
 import eu.ebrains.kg.core.api.AbstractTest;
 import eu.ebrains.kg.core.api.Types;
+import eu.ebrains.kg.core.api.instances.TestContext;
 
 public class DefineTypeTest extends AbstractTest {
 
     private final Types types;
     public final NormalizedJsonLd typeDefinition = createTypeDefinition();
 
-    public DefineTypeTest(ArangoDB.Builder database, AuthenticationAPI authenticationAPI,  RoleMapping[] roles, Types types) {
-        super(database, authenticationAPI,  roles);
+    public DefineTypeTest(TestContext testContext, Types types) {
+        super(testContext);
         this.types = types;
     }
 

@@ -29,6 +29,7 @@ import eu.ebrains.kg.commons.jsonld.NormalizedJsonLd;
 import eu.ebrains.kg.commons.model.Result;
 import eu.ebrains.kg.commons.permission.roles.RoleMapping;
 import eu.ebrains.kg.core.api.Instances;
+import eu.ebrains.kg.core.api.instances.TestContext;
 import eu.ebrains.kg.testutils.TestDataFactory;
 import org.springframework.http.ResponseEntity;
 
@@ -37,8 +38,8 @@ public class CreateInstanceWithNewSpaceTest extends AbstractInstanceTest {
     public JsonLdDoc testData = TestDataFactory.createTestData(smallPayload, 0, true);
     public ResponseEntity<Result<NormalizedJsonLd>> response;
 
-    public CreateInstanceWithNewSpaceTest(ArangoDB.Builder database, AuthenticationAPI authenticationAPI, Instances instances, RoleMapping[] roles) {
-        super(database, authenticationAPI,  instances, roles);
+    public CreateInstanceWithNewSpaceTest(TestContext testContext, Instances instances) {
+        super(testContext, instances);
     }
 
     @Override

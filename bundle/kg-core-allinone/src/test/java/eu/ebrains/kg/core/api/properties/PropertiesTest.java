@@ -62,7 +62,7 @@ public class PropertiesTest extends AbstractFunctionalityTest {
     @Test
     public void definePropertyGlobalOk() {
         //Given
-        DefinePropertyGlobalTest test = new DefinePropertyGlobalTest(database, authenticationAPI, PROPERTY_DEFINITION_ROLES, instances, properties);
+        DefinePropertyGlobalTest test = new DefinePropertyGlobalTest(ctx(PROPERTY_DEFINITION_ROLES), instances, properties);
 
         //When
         test.execute(() -> {
@@ -79,7 +79,7 @@ public class PropertiesTest extends AbstractFunctionalityTest {
     @Test
     public void definePropertyGlobalForbidden() {
         //Given
-        DefinePropertyGlobalTest test = new DefinePropertyGlobalTest(database, authenticationAPI, NON_PROPERTY_DEFINITION_ROLES, instances, properties);
+        DefinePropertyGlobalTest test = new DefinePropertyGlobalTest(ctx(NON_PROPERTY_DEFINITION_ROLES), instances, properties);
 
         //When
         test.execute(ForbiddenException.class);

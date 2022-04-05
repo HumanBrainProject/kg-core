@@ -31,6 +31,7 @@ import eu.ebrains.kg.commons.permission.roles.RoleMapping;
 import eu.ebrains.kg.core.api.AbstractTest;
 import eu.ebrains.kg.core.api.Instances;
 import eu.ebrains.kg.core.api.Types;
+import eu.ebrains.kg.core.api.instances.TestContext;
 import eu.ebrains.kg.core.model.ExposedStage;
 import eu.ebrains.kg.testutils.TestDataFactory;
 
@@ -45,8 +46,8 @@ public class GetTypesByNameTest extends AbstractTest {
 
     public  Result<Map<String, Result<TypeInformation>>> response;
 
-    public GetTypesByNameTest(ArangoDB.Builder database, AuthenticationAPI authenticationAPI,  SpaceName spaceName, boolean withProperties, RoleMapping[] roles, Types types, Instances instances) {
-        super(database, authenticationAPI,  roles);
+    public GetTypesByNameTest(TestContext testContext, SpaceName spaceName, boolean withProperties, Types types, Instances instances) {
+        super(testContext);
         this.instances = instances;
         this.types = types;
         this.spaceName = spaceName;

@@ -115,7 +115,7 @@ public enum RoleMapping {
         return functionalityInstances;
     }
 
-    public static RoleMapping[] getRemainingUserRoles(RoleMapping[] excludedRoles){
+    public static RoleMapping[] getRemainingUserRoles(RoleMapping... excludedRoles){
         List<RoleMapping> roleMappings = Arrays.stream(RoleMapping.values()).filter(r -> Arrays.stream(excludedRoles).noneMatch(e -> e == r)).collect(Collectors.toList());
         if(Arrays.stream(excludedRoles).noneMatch(Objects::isNull)){
             roleMappings.add(null);

@@ -29,6 +29,7 @@ import eu.ebrains.kg.commons.jsonld.NormalizedJsonLd;
 import eu.ebrains.kg.commons.model.Result;
 import eu.ebrains.kg.commons.permission.roles.RoleMapping;
 import eu.ebrains.kg.core.api.Instances;
+import eu.ebrains.kg.core.api.instances.TestContext;
 import eu.ebrains.kg.core.model.ExposedStage;
 import org.springframework.http.ResponseEntity;
 
@@ -36,26 +37,24 @@ public class UnreleaseInstanceTest extends AbstractInstanceTest {
 
     public ResponseEntity<Result<Void>> response;
     public NormalizedJsonLd originalInstance;
-    public IdUtils idUtils;
 
-    public UnreleaseInstanceTest(ArangoDB.Builder database, AuthenticationAPI authenticationAPI, IdUtils idUtils, Instances instances, RoleMapping[] roles) {
-        super(database, authenticationAPI,  instances, roles);
-        this.idUtils = idUtils;
+    public UnreleaseInstanceTest(TestContext testContext, Instances instances) {
+        super(testContext, instances);
 
     }
 
     @Override
     protected void setup() {
         originalInstance = createInstanceWithServerDefinedUUID(0);
-        instances.releaseInstance(idUtils.getUUID(originalInstance.id()), null);
+        instances.releaseInstance(testContext.getIdUtils().getUUID(originalInstance.id()), null);
     }
 
     @Override
     protected void run() {
-        response = instances.unreleaseInstance(idUtils.getUUID(originalInstance.id()));
+        response = instances.unreleaseInstance(testContext.getIdUtils().getUUID(originalInstance.id()));
     }
 
     public ResponseEntity<Result<NormalizedJsonLd>> fetchInstance(ExposedStage stage){
-        return instances.getInstanceById(idUtils.getUUID(originalInstance.id()), stage, defaultResponseConfiguration);
+        return instances.getInstanceById(testContext.getIdUtils().getUUID(originalInstance.id()), stage, defaultResponseConfiguration);
     }
 }

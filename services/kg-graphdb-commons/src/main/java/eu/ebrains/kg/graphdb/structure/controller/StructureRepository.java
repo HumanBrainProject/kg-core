@@ -105,18 +105,27 @@ public class StructureRepository {
     private synchronized List<SpaceName> doReflectSpaces(DataStage stage){
         final ArangoDatabase database = arangoDatabases.getByStage(stage);
         final List<CollectionEntity> spaces = database.getCollections(new CollectionsReadOptions().excludeSystem(true)).stream().filter(c -> c.getType() == CollectionType.DOCUMENT).filter(c -> !InternalSpace.INTERNAL_SPACENAMES.contains(c.getName())).distinct().collect(Collectors.toList());
+        if(spaces.isEmpty()){
+            return Collections.emptyList();
+        }
         AQL query = new AQL();
         Map<String, Object> bindVars = new HashMap<>();
-        query.addLine(AQL.trust("FOR space IN UNION_DISTINCT("));
+        query.addLine(AQL.trust("FOR space IN "));
+        if(spaces.size()>1){
+            query.addLine(AQL.trust("UNION_DISTINCT("));
+        }
         for (int i = 0; i < spaces.size(); i++) {
             bindVars.put(String.format("@collection%d", i), spaces.get(i).getName());
-            query.addLine(AQL.trust(String.format("(FOR e IN @@collection%d FILTER e.@space != NULL AND e.@space != [] LIMIT 0,1 RETURN e.@space)", i)));
+            query.addLine(AQL.trust(String.format("(FOR e IN @@collection%d FILTER e.@space != NULL AND e.@space != [] LIMIT 0,1 RETURN DISTINCT e.@space)", i)));
             if (i < spaces.size() - 1) {
                 query.add(AQL.trust(", "));
             }
             bindVars.put("space", EBRAINSVocabulary.META_SPACE);
         }
-        query.addLine(AQL.trust(") RETURN space"));
+        if(spaces.size()>1){
+            query.addLine(AQL.trust(")"));
+        }
+        query.addLine(AQL.trust(" RETURN space"));
         return database.query(query.build().getValue(), bindVars, String.class).asListRemaining().stream().map(SpaceName::fromString).collect(Collectors.toList());
     }
 
@@ -141,12 +150,16 @@ public class StructureRepository {
 
     private synchronized List<Space> doGetSpaceSpecifications(){
         AQL aql = new AQL();
-        Map<String, Object> bindVars = new HashMap<>();
-        aql.addLine(AQL.trust("FOR d IN @@collection"));
-        bindVars.put("@collection", SPACES.getCollectionName());
-        aql.addLine(AQL.trust(String.format("SORT d.`%s` ASC", SchemaOrgVocabulary.NAME)));
-        aql.addLine(AQL.trust("RETURN KEEP(d, ATTRIBUTES(d, true))"));
-        return Collections.unmodifiableList(arangoDatabases.getStructureDB().query(aql.build().getValue(), bindVars, Space.class).asListRemaining());
+        final ArangoDatabase structureDB = arangoDatabases.getStructureDB();
+        if(structureDB.collection(SPACES.getCollectionName()).exists()) {
+            Map<String, Object> bindVars = new HashMap<>();
+            aql.addLine(AQL.trust("FOR d IN @@collection"));
+            bindVars.put("@collection", SPACES.getCollectionName());
+            aql.addLine(AQL.trust(String.format("SORT d.`%s` ASC", SchemaOrgVocabulary.NAME)));
+            aql.addLine(AQL.trust("RETURN KEEP(d, ATTRIBUTES(d, true))"));
+            return Collections.unmodifiableList(structureDB.query(aql.build().getValue(), bindVars, Space.class).asListRemaining());
+        }
+        return Collections.emptyList();
     }
 
 
@@ -185,14 +198,18 @@ public class StructureRepository {
     }
 
     private synchronized List<String> doGetTypesInSpaceBySpecification(SpaceName spaceName){
-        final UUID spaceUUID = spaceSpecificationRef(spaceName.getName());
-        AQL query = new AQL();
-        Map<String, Object> bindVars = new HashMap<>();
-        query.addLine(AQL.trust("FOR t IN @@collection FILTER t._from == @id"));
-        bindVars.put("@collection", TYPE_IN_SPACE.getCollectionName());
-        bindVars.put("id", String.format("%s/%s", SPACES.getCollectionName(), spaceUUID));
-        query.addLine(AQL.trust(String.format("RETURN DOCUMENT(t._to).`%s`", SchemaOrgVocabulary.IDENTIFIER)));
-        return arangoDatabases.getStructureDB().query(query.build().getValue(), bindVars, String.class).asListRemaining();
+        final ArangoDatabase structureDB = arangoDatabases.getStructureDB();
+        if(structureDB.collection(TYPE_IN_SPACE.getCollectionName()).exists()) {
+            final UUID spaceUUID = spaceSpecificationRef(spaceName.getName());
+            AQL query = new AQL();
+            Map<String, Object> bindVars = new HashMap<>();
+            query.addLine(AQL.trust("FOR t IN @@collection FILTER t._from == @id"));
+            bindVars.put("@collection", TYPE_IN_SPACE.getCollectionName());
+            bindVars.put("id", String.format("%s/%s", SPACES.getCollectionName(), spaceUUID));
+            query.addLine(AQL.trust(String.format("RETURN DOCUMENT(t._to).`%s`", SchemaOrgVocabulary.IDENTIFIER)));
+            return structureDB.query(query.build().getValue(), bindVars, String.class).asListRemaining();
+        }
+        return Collections.emptyList();
     }
 
     @Cacheable("clientSpecificTypeSpecification")

@@ -55,28 +55,37 @@ public class ArangoDatabaseProxy {
         this.databaseName = databaseName;
     }
 
-    public synchronized void createIfItDoesntExist(){
+    public synchronized void removeDatabase() {
+        if (arangoDB.db(databaseName).exists()) {
+            logger.info(String.format("Removing database %s", databaseName));
+            arangoDB.db(databaseName).drop();
+        }
+        exists = false;
+    }
+
+    public synchronized void createIfItDoesntExist() {
         ArangoDatabase db = arangoDB.db(databaseName);
-        if(!db.exists()){
+        if (!db.exists()) {
             db.create();
         }
     }
 
-    public ArangoDatabase get(){
+    public ArangoDatabase get() {
         return arangoDB.db(databaseName);
     }
 
     /**
      * Use {@link #createIfItDoesntExist()} in post construct and {@link #get()} whenever possible to not suffer from the lookup overhead.
+     *
      * @return
      */
-    public ArangoDatabase getOrCreate(){
+    public ArangoDatabase getOrCreate() {
         ArangoDatabase db = arangoDB.db(databaseName);
-        if(!exists){
+        if (!exists) {
             //If the database is flagged to not exist yet, we're asking the database to be sure.
             exists = db.exists();
         }
-        if(!exists){
+        if (!exists) {
             //The database really doesn't exist -> let's create it.
             db.create();
             exists = true;
@@ -84,7 +93,7 @@ public class ArangoDatabaseProxy {
         return db;
     }
 
-    public synchronized void createCollectionIfItDoesntExist(ArangoCollectionReference collection){
+    public synchronized void createCollectionIfItDoesntExist(ArangoCollectionReference collection) {
         final ArangoDatabase db = get();
         ArangoCollection c = db.collection(collection.getCollectionName());
         if (!c.exists()) {
@@ -92,7 +101,7 @@ public class ArangoDatabaseProxy {
         }
     }
 
-    public synchronized void createCollectionIfItDoesntExist(String collection){
+    public synchronized void createCollectionIfItDoesntExist(String collection) {
         ArangoCollection c = get().collection(collection);
         if (!c.exists()) {
             c.create();
@@ -119,7 +128,7 @@ public class ArangoDatabaseProxy {
     }
 
 
-    public static void ensureIndicesOnCollection(ArangoCollection collection){
+    public static void ensureIndicesOnCollection(ArangoCollection collection) {
         logger.debug(String.format("Ensuring indices properly set for collection %s", collection.name()));
         collection.ensureHashIndex(Collections.singleton(ArangoVocabulary.COLLECTION), new HashIndexOptions());
         collection.ensureSkiplistIndex(Collections.singletonList(JsonLdConsts.ID), new SkiplistIndexOptions());

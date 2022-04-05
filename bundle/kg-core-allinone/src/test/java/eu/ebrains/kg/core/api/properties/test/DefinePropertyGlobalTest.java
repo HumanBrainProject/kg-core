@@ -22,15 +22,12 @@
 
 package eu.ebrains.kg.core.api.properties.test;
 
-import com.arangodb.ArangoDB;
-import eu.ebrains.kg.authentication.api.AuthenticationAPI;
 import eu.ebrains.kg.commons.jsonld.NormalizedJsonLd;
 import eu.ebrains.kg.commons.model.ExtendedResponseConfiguration;
-import eu.ebrains.kg.commons.model.ResponseConfiguration;
-import eu.ebrains.kg.commons.permission.roles.RoleMapping;
 import eu.ebrains.kg.core.api.AbstractTest;
 import eu.ebrains.kg.core.api.Instances;
 import eu.ebrains.kg.core.api.Properties;
+import eu.ebrains.kg.core.api.instances.TestContext;
 import eu.ebrains.kg.testutils.TestDataFactory;
 
 public class DefinePropertyGlobalTest extends AbstractTest {
@@ -43,8 +40,8 @@ public class DefinePropertyGlobalTest extends AbstractTest {
     public String type;
 
 
-    public DefinePropertyGlobalTest(ArangoDB.Builder database, AuthenticationAPI authenticationAPI, RoleMapping[] roles, Instances instances, Properties properties) {
-        super(database, authenticationAPI, roles);
+    public DefinePropertyGlobalTest(TestContext testContext, Instances instances, Properties properties) {
+        super(testContext);
         this.instances = instances;
         this.properties = properties;
     }
