@@ -37,6 +37,7 @@ import eu.ebrains.kg.commons.permissions.controller.Permissions;
 import eu.ebrains.kg.commons.semantics.vocabularies.EBRAINSVocabulary;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.lang.NonNull;
 import org.springframework.stereotype.Component;
 
 import java.time.ZonedDateTime;
@@ -142,7 +143,7 @@ public class EventController {
         }
     }
 
-    private void ensureInternalIdInPayload(PersistedEvent persistedEvent, UserWithRoles userWithRoles) {
+    private void ensureInternalIdInPayload(@NonNull PersistedEvent persistedEvent, @NonNull UserWithRoles userWithRoles) {
         if (persistedEvent.getData() != null) {
             JsonLdId idFromPayload = persistedEvent.getData().id();
             if (idFromPayload != null) {

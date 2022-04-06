@@ -1218,7 +1218,8 @@ public class ArangoRepositoryInstances {
         for (ScopeElement el : elements) {
             instance.types().forEach(t -> typeToUUID.computeIfAbsent(t, x -> new HashSet<>()).add(el));
         }
-        return mergeInstancesOnSameLevel(elements).get(0);
+        final List<ScopeElement> scopeElements = mergeInstancesOnSameLevel(elements);
+        return scopeElements!=null && scopeElements.size()>0 ? scopeElements.get(0) : null;
     }
 
 }

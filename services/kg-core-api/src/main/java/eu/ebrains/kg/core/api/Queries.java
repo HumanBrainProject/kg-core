@@ -164,8 +164,14 @@ public class Queries {
                 return ResponseEntity.status(HttpStatus.CONFLICT).body(Result.nok(HttpStatus.CONFLICT.value(), "The query with this UUID already exists in a different space"));
             }
             final ResponseEntity<Result<NormalizedJsonLd>> result = queryController.updateQuery(normalizedJsonLd, resolveId);
-            if(result!=null && result.getBody()!=null && result.getBody().getData()!=null){
-                result.getBody().getData().renamePrivateSpace(authContext.getUserWithRoles().getPrivateSpace());
+            if(result != null) {
+                final Result<NormalizedJsonLd> body = result.getBody();
+                if(body!=null) {
+                    final NormalizedJsonLd data = body.getData();
+                    if (data != null) {
+                        data.renamePrivateSpace(authContext.getUserWithRoles().getPrivateSpace());
+                    }
+                }
             }
             return result;
         }
@@ -173,8 +179,14 @@ public class Queries {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Result.nok(HttpStatus.BAD_REQUEST.value(), "The query with this UUID doesn't exist yet. You therefore need to specify the space where it should be stored."));
         }
         final ResponseEntity<Result<NormalizedJsonLd>> result = queryController.createNewQuery(normalizedJsonLd, queryId, spaceName);
-        if(result!=null && result.getBody()!=null && result.getBody().getData()!=null){
-            result.getBody().getData().renamePrivateSpace(authContext.getUserWithRoles().getPrivateSpace());
+        if(result != null) {
+            final Result<NormalizedJsonLd> body = result.getBody();
+            if (body != null) {
+                final NormalizedJsonLd data = body.getData();
+                if (data != null) {
+                    data.renamePrivateSpace(authContext.getUserWithRoles().getPrivateSpace());
+                }
+            }
         }
         return result;
     }

@@ -143,6 +143,9 @@ public class JsonLdAPI implements eu.ebrains.kg.commons.api.JsonLd.Client {
 
 
     private <T> T flattenLists(T input, Map parent, String parentKey) {
+        if(parent==null){
+            return input;
+        }
         if (input instanceof List) {
             ((List) input).forEach(i -> flattenLists(i, parent, parentKey));
         } else if (input instanceof Map) {

@@ -22,6 +22,8 @@
 
 package eu.ebrains.kg.graphdb.queries.model.fieldFilter;
 
+import java.util.Objects;
+
 public class Value extends Exp {
     private String value;
     public Value(String v) {
@@ -33,10 +35,15 @@ public class Value extends Exp {
     }
 
     @Override
-    public boolean equals(Object obj) {
-        if (obj != null && this.getClass() == obj.getClass()) {
-            return this.value.equals(((Value)obj).value);
-        }
-        return false;
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        Value value1 = (Value) o;
+        return Objects.equals(value, value1.value);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(value);
     }
 }
