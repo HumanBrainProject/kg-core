@@ -113,7 +113,7 @@ public class DataQueryBuilderTest {
                 "   \"http://schema.org/streetAddress\": schema_org_streetaddress\n" +
                 "}";
         //Then
-        Assert.assertEquals(expected, aqlQuery.getAql());
+        Assert.assertEquals(expected, aqlQuery.getAql().build().getValue());
     }
 
 

@@ -106,8 +106,9 @@ public class Instances {
         logger.debug(String.format("Creating new instance with id %s", id));
         ResponseEntity<Result<NormalizedJsonLd>> newInstance = instanceController.createNewInstance(normalizePayload(jsonLdDoc, true), id, spaceName, responseConfiguration);
         logger.debug(String.format("Done creating new instance with id %s", id));
-        if(newInstance.getBody()!=null){
-            newInstance.getBody().setExecutionDetails(startTime, new Date());
+        final Result<NormalizedJsonLd> body = newInstance.getBody();
+        if(body !=null){
+            body.setExecutionDetails(startTime, new Date());
         }
         return newInstance;
     }

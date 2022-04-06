@@ -125,8 +125,10 @@ public class Queries {
         InstanceId instanceId = ids.resolveId(DataStage.IN_PROGRESS, queryId);
         if(instanceId != null) {
             NormalizedJsonLd kgQuery = queryController.fetchQueryById(instanceId);
-            kgQuery.renamePrivateSpace(authContext.getUserWithRoles().getPrivateSpace());
-            return kgQuery != null ? ResponseEntity.ok(Result.ok(kgQuery)): ResponseEntity.notFound().build();
+            if(kgQuery == null){
+                return ResponseEntity.notFound().build();
+            }
+            return ResponseEntity.ok(Result.ok(kgQuery.renamePrivateSpace(authContext.getUserWithRoles().getPrivateSpace())));
         }
         return ResponseEntity.notFound().build();
     }

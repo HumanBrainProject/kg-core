@@ -93,7 +93,10 @@ public class AQL {
     }
 
     public AQL addComment(String comment) {
-        query.append(createIndent()).append("\n\n/**\n* ").append(preventAqlInjection(comment, true).getValue()).append("\n*/\n");
+        final TrustedAqlValue trustedAqlValue = preventAqlInjection(comment, true);
+        if(trustedAqlValue!=null) {
+            query.append(createIndent()).append("\n\n/**\n* ").append(trustedAqlValue.getValue()).append("\n*/\n");
+        }
         return this;
     }
 
