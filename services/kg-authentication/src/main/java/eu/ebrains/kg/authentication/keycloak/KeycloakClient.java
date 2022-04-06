@@ -102,7 +102,7 @@ public class KeycloakClient {
                     return loadWithRetry(currentTry + 1, function);
                 } catch (InterruptedException e) {
                     logger.error("Interrupted keycloak connection", e);
-                    throw new RuntimeException(e);
+                    return null;
                 }
             }
         } else {
