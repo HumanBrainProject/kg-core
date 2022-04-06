@@ -34,6 +34,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 public class TestObjectFactory {
     private static final JsonAdapter JSON = new JsonAdapter4Test();
@@ -67,12 +68,14 @@ public class TestObjectFactory {
     public static NormalizedJsonLd createJsonLd(String jsonFile) {
         try {
             Path path = Paths.get(TestObjectFactory.class.getClassLoader().getResource("test/" + jsonFile).toURI());
-            String json = Files.lines(path).collect(Collectors.joining("\n"));
-            NormalizedJsonLd jsonLd = JSON.fromJson(json, NormalizedJsonLd.class);
-            if(jsonLd.id()!=null) {
-                jsonLd.addIdentifiers(jsonLd.id().getId());
+            try(final Stream<String> lines = Files.lines(path)){
+                String json = lines.collect(Collectors.joining("\n"));
+                NormalizedJsonLd jsonLd = JSON.fromJson(json, NormalizedJsonLd.class);
+                if (jsonLd.id() != null) {
+                    jsonLd.addIdentifiers(jsonLd.id().getId());
+                }
+                return jsonLd;
             }
-            return jsonLd;
         }
         catch (IOException | URISyntaxException e){
             throw new RuntimeException(e);
