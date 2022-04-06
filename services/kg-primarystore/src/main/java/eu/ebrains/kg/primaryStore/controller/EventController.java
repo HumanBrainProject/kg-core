@@ -143,7 +143,7 @@ public class EventController {
         }
     }
 
-    private void ensureInternalIdInPayload(@NonNull PersistedEvent persistedEvent, @NonNull UserWithRoles userWithRoles) {
+    private void ensureInternalIdInPayload(@NonNull PersistedEvent persistedEvent, UserWithRoles userWithRoles) {
         if (persistedEvent.getData() != null) {
             JsonLdId idFromPayload = persistedEvent.getData().id();
             if (idFromPayload != null) {
@@ -153,6 +153,9 @@ public class EventController {
             persistedEvent.getData().setId(idUtils.buildAbsoluteUrl(persistedEvent.getDocumentId()));
             //In the native space, we store the document separately for every user - this means the documents are actual contributions to an instance.
             if (persistedEvent.getDataStage() == DataStage.NATIVE) {
+                if(userWithRoles==null){
+                    throw new UnauthorizedException("It is not possible to persist an event without authentication information");
+                }
                 UUID userSpecificUUID = idUtils.getDocumentIdForUserAndInstance(persistedEvent.getUser() != null ? persistedEvent.getUser().getNativeId() : userWithRoles.getUser().getNativeId(), persistedEvent.getDocumentId());
                 persistedEvent.setInstance(persistedEvent.getSpaceName(), userSpecificUUID);
             }
