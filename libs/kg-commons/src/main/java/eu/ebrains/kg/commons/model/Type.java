@@ -32,6 +32,7 @@ import java.net.URISyntaxException;
 import java.net.URLDecoder;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
@@ -67,11 +68,11 @@ public class Type {
     }
 
     public Set<SpaceName> getSpaces() {
-        return spaces;
+        return spaces == null ? new HashSet<>() : spaces;
     }
 
     public Set<SpaceName> getSpacesForInternalUse(SpaceName privateSpaceName){
-        return spaces!=null ? spaces.stream().map(s -> SpaceName.getInternalSpaceName(s, privateSpaceName)).collect(Collectors.toSet()) : null ;
+        return spaces!=null ? spaces.stream().map(s -> SpaceName.getInternalSpaceName(s, privateSpaceName)).collect(Collectors.toSet()) : new HashSet<>() ;
     }
 
     @Override

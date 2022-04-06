@@ -37,19 +37,41 @@ public class GetInstancesTest extends AbstractInstanceTest {
     public PaginatedResult<NormalizedJsonLd> response;
     public NormalizedJsonLd originalInstanceA;
     public NormalizedJsonLd originalInstanceB;
+    private String type;
+    private String space = null;
 
-    public GetInstancesTest(TestContext testContext, Instances instances) {
+    private GetInstancesTest(TestContext testContext, Instances instances) {
         super(testContext, instances);
+    }
+
+    public static GetInstancesTest getInstancesWithExistingType(TestContext testContext, Instances instances){
+        return new GetInstancesTest(testContext, instances);
+    }
+
+
+    public static GetInstancesTest getInstancesByType(TestContext testContext, Instances instances, String type){
+        final GetInstancesTest test = getInstancesWithExistingType(testContext, instances);
+        test.type = type;
+        return test;
+    }
+
+    public static GetInstancesTest getInstancesByTypeAndSpace(TestContext testContext, Instances instances, String type, String space){
+        final GetInstancesTest test = getInstancesByType(testContext, instances, type);
+        test.space = space;
+        return test;
     }
 
     @Override
     protected void setup() {
         originalInstanceA = createInstanceWithServerDefinedUUID(0);
         originalInstanceB = createInstanceWithServerDefinedUUID(1);
+        if(type==null){
+            type = originalInstanceA.types().get(0);
+        }
     }
 
     @Override
     protected void run() {
-        response = this.instances.getInstances(ExposedStage.IN_PROGRESS, originalInstanceA.types().get(0), null, null, null, null, defaultResponseConfiguration, defaultPaginationParam);
+        response = this.instances.getInstances(ExposedStage.IN_PROGRESS, this.type, this.space, null, null, null, defaultResponseConfiguration, defaultPaginationParam);
     }
 }

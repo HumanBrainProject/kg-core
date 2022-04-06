@@ -283,7 +283,7 @@ public class InstancesTest extends AbstractFunctionalityTest {
     @Test
     public void getInstancesOk() {
         //Given
-        GetInstancesTest test = new GetInstancesTest(ctx(READ_IN_PROGRESS_ROLES), instances);
+        GetInstancesTest test = GetInstancesTest.getInstancesWithExistingType(ctx(READ_IN_PROGRESS_ROLES), instances);
 
         //When
         test.execute(() -> {
@@ -304,7 +304,46 @@ public class InstancesTest extends AbstractFunctionalityTest {
     @Test
     public void getInstancesForbidden() {
         //Given
-        GetInstancesTest test = new GetInstancesTest(ctx(NON_READ_IN_PROGRESS_ROLES), instances);
+        GetInstancesTest test = GetInstancesTest.getInstancesWithExistingType(ctx(NON_READ_IN_PROGRESS_ROLES), instances);
+
+        //When
+        test.execute(() -> {
+            assertNotNull(test.response);
+            assertNotNull(test.response.getData());
+            assertTrue(test.response.getData().isEmpty());
+        });
+    }
+
+    @Test
+    public void getInstancesWithNonExistingType() {
+        //Given
+        GetInstancesTest test = GetInstancesTest.getInstancesByType(ctx(READ_IN_PROGRESS_ROLES), instances, "http://aTypeThatDoesntExist");
+
+        //When
+        test.execute(() -> {
+            assertNotNull(test.response);
+            assertNotNull(test.response.getData());
+            assertTrue(test.response.getData().isEmpty());
+        });
+    }
+
+    @Test
+    public void getInstancesWithNonExistingTypeInExistingSpace() {
+        //Given
+        GetInstancesTest test = GetInstancesTest.getInstancesByTypeAndSpace(ctx(READ_IN_PROGRESS_ROLES), instances, "http://aTypeThatDoesntExist", "functionalityTest");
+
+        //When
+        test.execute(() -> {
+            assertNotNull(test.response);
+            assertNotNull(test.response.getData());
+            assertTrue(test.response.getData().isEmpty());
+        });
+    }
+
+    @Test
+    public void getInstancesWithNonExistingTypeInNonExistingSpace() {
+        //Given
+        GetInstancesTest test = GetInstancesTest.getInstancesByTypeAndSpace(ctx(READ_IN_PROGRESS_ROLES), instances, "http://aTypeThatDoesntExist", "aSpaceThatDoesntExist");
 
         //When
         test.execute(() -> {
