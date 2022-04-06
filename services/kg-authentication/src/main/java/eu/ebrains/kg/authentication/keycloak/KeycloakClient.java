@@ -101,7 +101,7 @@ public class KeycloakClient {
                     Thread.sleep(5000);
                     return loadWithRetry(currentTry + 1, function);
                 } catch (InterruptedException e) {
-                    e.printStackTrace();
+                    logger.error("Interrupted keycloak connection", e);
                     return null;
                 }
             }
