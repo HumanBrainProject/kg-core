@@ -81,6 +81,7 @@ public class InstancesTest extends AbstractFunctionalityTest {
 
 
     @Test
+    @SuppressWarnings("java:S2699") //The assertion is handled within the "execution" part.
     public void createInstanceForbidden() {
         //Given
         CreateInstanceTest test = new CreateInstanceTest(ctx(NON_WRITE_ROLES), instances);
@@ -90,6 +91,7 @@ public class InstancesTest extends AbstractFunctionalityTest {
     }
 
     @Test
+    @SuppressWarnings("java:S2699") //The assertion is handled within the "execution" part.
     public void createInstanceWithSpecifiedUUIDOk() {
         //Given
         CreateInstanceWithSpecifiedUUIDTest test = new CreateInstanceWithSpecifiedUUIDTest(ctx(WRITE_ROLES), instances);
