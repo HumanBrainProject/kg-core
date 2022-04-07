@@ -28,6 +28,7 @@ import com.arangodb.model.DocumentCreateOptions;
 import eu.ebrains.kg.arango.commons.model.ArangoDatabaseProxy;
 import eu.ebrains.kg.authentication.model.ArangoTermsOfUse;
 import eu.ebrains.kg.commons.JsonAdapter;
+import eu.ebrains.kg.commons.SetupLogic;
 import eu.ebrains.kg.commons.model.TermsOfUse;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.cache.annotation.CacheEvict;
@@ -38,7 +39,7 @@ import javax.annotation.PostConstruct;
 import java.util.Arrays;
 
 @Component
-public class TermsOfUseRepository {
+public class TermsOfUseRepository implements SetupLogic {
     private final ArangoDatabaseProxy arangoDatabase;
     private final JsonAdapter jsonAdapter;
 

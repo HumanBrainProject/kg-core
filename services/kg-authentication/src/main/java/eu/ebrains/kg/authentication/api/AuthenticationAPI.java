@@ -113,11 +113,11 @@ public class AuthenticationAPI implements Authentication.Client {
             if(clientProfile!=null && !keycloakController.isServiceAccount(clientProfile.getClaims())){
                 throw new UnauthorizedException("The client authorization credentials you've passed doesn't belong to a service account. This is not allowed!");
             }
-            // We only do the terms of use check for direct access calls (the clients are required to ensure that the user
-            // agrees to the terms of use.)
             List<UUID> invitationRoles = authenticationRepository.getInvitationRoles(user.getNativeId());
             UserWithRoles userWithRoles = new UserWithRoles(user, userProfile.getRoleNames(), clientProfile != null ? clientProfile.getRoleNames() : null, invitationRoles,
                     keycloakController.getClientInfoFromKeycloak(clientProfile != null ? clientProfile.getClaims() : null));
+            // We only do the terms of use check for direct access calls (the clients are required to ensure that the user
+            // agrees to the terms of use.)
             if(checkForTermsOfUse && clientProfile==null) {
                 TermsOfUse termsOfUseToAccept = authenticationRepository.findTermsOfUseToAccept(user.getNativeId());
                 if (termsOfUseToAccept != null) {

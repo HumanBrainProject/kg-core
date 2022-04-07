@@ -25,6 +25,7 @@ package eu.ebrains.kg.graphdb.instances.controller;
 import eu.ebrains.kg.commons.AuthContext;
 import eu.ebrains.kg.commons.IdUtils;
 import eu.ebrains.kg.commons.JsonAdapter;
+import eu.ebrains.kg.commons.api.Ids;
 import eu.ebrains.kg.commons.jsonld.NormalizedJsonLd;
 import eu.ebrains.kg.commons.permissions.controller.Permissions;
 import eu.ebrains.kg.graphdb.commons.controller.ArangoDatabases;
@@ -33,6 +34,7 @@ import eu.ebrains.kg.graphdb.commons.controller.GraphDBArangoUtils;
 import eu.ebrains.kg.graphdb.commons.controller.PermissionsController;
 import eu.ebrains.kg.graphdb.queries.controller.QueryController;
 import eu.ebrains.kg.graphdb.structure.api.GraphDBTypesAPI;
+import eu.ebrains.kg.graphdb.structure.controller.MetaDataController;
 import eu.ebrains.kg.graphdb.structure.controller.StructureRepository;
 import eu.ebrains.kg.test.JsonAdapter4Test;
 import org.junit.Assert;
@@ -47,7 +49,7 @@ public class ArangoRepositoryInstancesUnitTest {
     @Test
     public void mergeEmbeddedDocuments() {
         //Given
-        ArangoRepositoryInstances repository = new ArangoRepositoryInstances(Mockito.mock(ArangoRepositoryCommons.class), Mockito.mock(PermissionsController.class), Mockito.mock(Permissions.class), Mockito.mock(AuthContext.class), Mockito.mock(GraphDBArangoUtils.class), Mockito.mock(QueryController.class), Mockito.mock(ArangoDatabases.class), Mockito.mock(IdUtils.class), Mockito.mock(JsonAdapter.class), Mockito.mock(GraphDBTypesAPI.class), Mockito.mock(StructureRepository.class));
+        ArangoRepositoryInstances repository = new ArangoRepositoryInstances(Mockito.mock(ArangoRepositoryCommons.class), Mockito.mock(PermissionsController.class), Mockito.mock(Permissions.class), Mockito.mock(AuthContext.class), Mockito.mock(GraphDBArangoUtils.class), Mockito.mock(QueryController.class), Mockito.mock(ArangoDatabases.class), Mockito.mock(IdUtils.class), Mockito.mock(JsonAdapter.class), Mockito.mock(MetaDataController.class), Mockito.mock(StructureRepository.class), Mockito.mock(Ids.Client.class));
         JsonAdapter jsonAdapter = new JsonAdapter4Test();
         String originalDoc = "{\"helloWorld\": {\"@id\": \"http://foobar\"}, \"@id\": \"http://foo\"}";
         NormalizedJsonLd original = jsonAdapter.fromJson(originalDoc, NormalizedJsonLd.class);

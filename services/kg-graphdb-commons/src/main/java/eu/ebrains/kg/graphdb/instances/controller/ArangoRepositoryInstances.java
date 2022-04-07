@@ -31,6 +31,7 @@ import eu.ebrains.kg.arango.commons.aqlBuilder.AQL;
 import eu.ebrains.kg.arango.commons.aqlBuilder.ArangoVocabulary;
 import eu.ebrains.kg.arango.commons.model.*;
 import eu.ebrains.kg.commons.*;
+import eu.ebrains.kg.commons.api.Ids;
 import eu.ebrains.kg.commons.exception.AmbiguousException;
 import eu.ebrains.kg.commons.exception.ForbiddenException;
 import eu.ebrains.kg.commons.jsonld.*;
@@ -52,7 +53,8 @@ import eu.ebrains.kg.graphdb.commons.model.ArangoDocument;
 import eu.ebrains.kg.graphdb.instances.model.ArangoRelation;
 import eu.ebrains.kg.graphdb.queries.controller.QueryController;
 import eu.ebrains.kg.graphdb.queries.model.spec.GraphQueryKeys;
-import eu.ebrains.kg.graphdb.structure.api.GraphDBTypesAPI;
+import eu.ebrains.kg.graphdb.queries.utils.InvitationUtils;
+import eu.ebrains.kg.graphdb.structure.controller.MetaDataController;
 import eu.ebrains.kg.graphdb.structure.controller.StructureRepository;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
@@ -73,16 +75,17 @@ public class ArangoRepositoryInstances {
     private final QueryController queryController;
     private final ArangoDatabases databases;
     private final IdUtils idUtils;
+    private final Ids.Client ids;
     private final JsonAdapter jsonAdapter;
-    private final GraphDBTypesAPI graphDBTypesAPI;
     private final StructureRepository structureRepository;
+    private final MetaDataController metaDataController;
 
     public final static int DEFAULT_INCOMING_PAGESIZE = 10;
     //TODO make this configurable
     private final static List<String> SPACES_FOR_SCOPE = Collections.singletonList("kg-search");
 
 
-    public ArangoRepositoryInstances(ArangoRepositoryCommons arangoRepositoryCommons, PermissionsController permissionsController, Permissions permissions, AuthContext authContext, GraphDBArangoUtils graphDBArangoUtils, QueryController queryController, ArangoDatabases databases, IdUtils idUtils, JsonAdapter jsonAdapter, GraphDBTypesAPI graphDBTypesAPI, StructureRepository structureRepository) {
+    public ArangoRepositoryInstances(ArangoRepositoryCommons arangoRepositoryCommons, PermissionsController permissionsController, Permissions permissions, AuthContext authContext, GraphDBArangoUtils graphDBArangoUtils, QueryController queryController, ArangoDatabases databases, IdUtils idUtils, JsonAdapter jsonAdapter, MetaDataController metaDataController, StructureRepository structureRepository, Ids.Client ids) {
         this.arangoRepositoryCommons = arangoRepositoryCommons;
         this.permissionsController = permissionsController;
         this.permissions = permissions;
@@ -92,8 +95,9 @@ public class ArangoRepositoryInstances {
         this.databases = databases;
         this.idUtils = idUtils;
         this.jsonAdapter = jsonAdapter;
-        this.graphDBTypesAPI = graphDBTypesAPI;
+        this.metaDataController = metaDataController;
         this.structureRepository = structureRepository;
+        this.ids = ids;
     }
 
     @ExposesMinimalData
@@ -142,7 +146,7 @@ public class ArangoRepositoryInstances {
 
         if (incomingLinks) {
             ArangoDocumentReference arangoDocumentReference = ArangoDocumentReference.fromInstanceId(new InstanceId(id, space));
-            final boolean ignoreIncomingLinks = graphDBTypesAPI.getTypesByName(document.getDoc().types(), stage, space.getName(), false, false).values().stream().filter(t -> t.getData() != null).map(t -> Type.fromPayload(t.getData())).anyMatch(t -> t.getIgnoreIncomingLinks() != null && t.getIgnoreIncomingLinks());
+            final boolean ignoreIncomingLinks = metaDataController.getTypesByName(document.getDoc().types(), stage, space.getName(), false, false, authContext.getUserWithRoles(), InvitationUtils.getClientSpace(authContext), InvitationUtils.getInvitationDocuments(authContext, ids, this, idUtils)).values().stream().filter(t -> t.getData() != null).map(t -> Type.fromPayload(t.getData())).anyMatch(t -> t.getIgnoreIncomingLinks() != null && t.getIgnoreIncomingLinks());
             if (!ignoreIncomingLinks) {
                 NormalizedJsonLd instanceIncomingLinks = fetchIncomingLinks(Collections.singletonList(arangoDocumentReference), stage, 0L, incomingLinksPageSize, null, null);
                 if (!CollectionUtils.isEmpty(instanceIncomingLinks)) {
@@ -170,7 +174,7 @@ public class ArangoRepositoryInstances {
             //Nothing to do -> we can just return the original document
             return instanceIncomingLinks;
         }
-        final Collection<Result<TypeInformation>> typeInformation = graphDBTypesAPI.getTypesByName(types.stream().map(Type::getName).collect(Collectors.toList()), stage, null, true, false).values();
+        final Collection<Result<TypeInformation>> typeInformation = metaDataController.getTypesByName(types.stream().map(Type::getName).collect(Collectors.toList()), stage, null, true, false, authContext.getUserWithRoles(), InvitationUtils.getClientSpace(authContext), InvitationUtils.getInvitationDocuments(authContext, ids, this, idUtils)).values();
         final Map<String, TypeInformation> extendedTypeInformationByIdentifier = typeInformation.stream().map(Result::getData).filter(Objects::nonNull).collect(Collectors.toMap(TypeInformation::getIdentifier, v -> v));
         Map<UUID, String> labelsForInstances = getLabelsForInstances(stage, instanceIds);
         enrichDocument(instanceIncomingLinks, extendedTypeInformationByIdentifier, labelsForInstances);
@@ -244,7 +248,7 @@ public class ArangoRepositoryInstances {
     }
 
     private Set<String> getMinimalFields(DataStage stage, List<String> types) {
-        Set<String> keepProperties = new HashSet<>(graphDBTypesAPI.getTypesByName(types, stage, null, false, false).values().stream().filter(r -> r.getData() != null).map(r -> r.getData().getAs(EBRAINSVocabulary.META_TYPE_LABEL_PROPERTY, String.class)).filter(Objects::nonNull).collect(Collectors.toSet()));
+        Set<String> keepProperties = new HashSet<>(metaDataController.getTypesByName(types, stage, null, false, false, authContext.getUserWithRoles(), InvitationUtils.getClientSpace(authContext), InvitationUtils.getInvitationDocuments(authContext, ids, this, idUtils)).values().stream().filter(r -> r.getData() != null).map(r -> r.getData().getAs(EBRAINSVocabulary.META_TYPE_LABEL_PROPERTY, String.class)).filter(Objects::nonNull).collect(Collectors.toSet()));
         keepProperties.add(JsonLdConsts.ID);
         keepProperties.add(IndexedJsonLdDoc.LABEL);
         keepProperties.add(JsonLdConsts.TYPE);
@@ -357,7 +361,7 @@ public class ArangoRepositoryInstances {
             if (incomingLinks) {
                 List<String> involvedTypes = normalizedJsonLds.stream().map(JsonLdDoc::types).flatMap(Collection::stream).distinct().collect(Collectors.toList());
 
-                final Set<String> excludedTypes = graphDBTypesAPI.getTypesByName(involvedTypes, stage, null, false, false).values().stream()
+                final Set<String> excludedTypes = metaDataController.getTypesByName(involvedTypes, stage, null, false, false, authContext.getUserWithRoles(), InvitationUtils.getClientSpace(authContext), InvitationUtils.getInvitationDocuments(authContext, ids, this, idUtils)).values().stream()
                         .map(t -> Type.fromPayload(t.getData())).filter(t -> t.getIgnoreIncomingLinks() != null && t.getIgnoreIncomingLinks()).map(Type::getName).collect(Collectors.toSet());
                 List<ArangoDocumentReference> toInspectForIncomingLinks = normalizedJsonLds.stream().filter(n -> n.types().stream().noneMatch(excludedTypes::contains)).map(n -> ArangoDocument.from(n).getId()).collect(Collectors.toList());
                 if (!CollectionUtils.isEmpty(toInspectForIncomingLinks)) {

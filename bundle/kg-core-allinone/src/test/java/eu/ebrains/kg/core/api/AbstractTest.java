@@ -23,6 +23,7 @@
 package eu.ebrains.kg.core.api;
 
 import eu.ebrains.kg.arango.commons.model.ArangoDatabaseProxy;
+import eu.ebrains.kg.commons.SetupLogic;
 import eu.ebrains.kg.commons.jsonld.JsonLdId;
 import eu.ebrains.kg.commons.jsonld.NormalizedJsonLd;
 import eu.ebrains.kg.commons.model.*;
@@ -55,6 +56,9 @@ public abstract class AbstractTest {
 
     protected final TestContext testContext;
 
+    protected final static UUID USER_ID=UUID.randomUUID();
+
+
     public AbstractTest(TestContext testContext) {
         this.testContext = testContext;
         this.defaultResponseConfiguration.setReturnEmbedded(true).setReturnPermissions(false).setReturnAlternatives(false).setReturnPayload(true);
@@ -62,7 +66,8 @@ public abstract class AbstractTest {
 
     protected void beAdmin() {
         User user = new User("bobEverythingGoes", "Bob Everything Goes", "fakeAdmin@ebrains.eu", "Bob Everything", "Goes", "admin");
-        UserWithRoles userWithRoles = new UserWithRoles(user, ADMIN_ROLE, ADMIN_CLIENT_ROLE, "testClient");
+        final List<UUID> invitationRoles = testContext.getAuthenticationRepository().getInvitationRoles(USER_ID.toString());
+        UserWithRoles userWithRoles = new UserWithRoles(user, ADMIN_ROLE, ADMIN_CLIENT_ROLE, invitationRoles,"testClient");
         Mockito.doAnswer(a -> user).when(testContext.getAuthentication()).getMyUserInfo();
         Mockito.doAnswer(a -> userWithRoles).when(testContext.getAuthentication()).getRoles(Mockito.anyBoolean());
     }
@@ -73,17 +78,19 @@ public abstract class AbstractTest {
         } else if (currentRoles.size()==1 && currentRoles.get(0).equals(RoleMapping.ADMIN.toRole(null))) {
             beAdmin();
         } else {
-            User user = new User("alice", "Alice ", "fakeAlice@ebrains.eu", "Alice", "User", "alice");
-            UserWithRoles userWithRoles = new UserWithRoles(user, currentRoles.stream().filter(Objects::nonNull).map(Role::getName).collect(Collectors.toList()), ADMIN_CLIENT_ROLE, "testClient");
+            User user = new User("alice", "Alice ", "fakeAlice@ebrains.eu", "Alice", "User", USER_ID.toString());
+            final List<UUID> invitationRoles = testContext.getAuthenticationRepository().getInvitationRoles(USER_ID.toString());
+            UserWithRoles userWithRoles = new UserWithRoles(user, currentRoles.stream().filter(Objects::nonNull).map(Role::getName).collect(Collectors.toList()), ADMIN_CLIENT_ROLE, invitationRoles,"testClient");
             Mockito.doAnswer(a -> user).when(testContext.getAuthentication()).getMyUserInfo();
             Mockito.doAnswer(a -> userWithRoles).when(testContext.getAuthentication()).getRoles(Mockito.anyBoolean());
         }
     }
 
     protected void beUnauthorized() {
-        User user = new User("joeCantDoAThing", "Joe Cant Do A Thing", "fakeUnauthorized@ebrains.eu", "Joe Cant Do A", "Thing", "unauthorized");
+        User user = new User("joeCantDoAThing", "Joe Cant Do A Thing", "fakeUnauthorized@ebrains.eu", "Joe Cant Do A", "Thing",  USER_ID.toString());
         //It's the user not having any righexts - the client is still the same with full rights
-        UserWithRoles userWithRoles = new UserWithRoles(user, Collections.emptyList(), ADMIN_CLIENT_ROLE, "testClient");
+        final List<UUID> invitationRoles = testContext.getAuthenticationRepository().getInvitationRoles(USER_ID.toString());
+        UserWithRoles userWithRoles = new UserWithRoles(user, Collections.emptyList(), ADMIN_CLIENT_ROLE, invitationRoles,"testClient");
         Mockito.doAnswer(a -> user).when(testContext.getAuthentication()).getMyUserInfo();
         Mockito.doAnswer(a -> userWithRoles).when(testContext.getAuthentication()).getRoles(Mockito.anyBoolean());
     }
@@ -100,25 +107,37 @@ public abstract class AbstractTest {
         execute(assertion, null);
     }
 
+    private void doExecute(Assertion assertion, Class<? extends Exception> expectedException){
+        clearDatabase();
+        testContext.getSetupLogics().forEach(SetupLogic::setup);
+        beAdmin();
+        setup();
+        beInCurrentRole();
+        try {
+            run();
+            if (assertion != null) {
+                assertion.then();
+            }
+            if(expectedException!=null){
+                Assert.fail(String.format("Was expecting %s exception but it wasn't triggered", expectedException.getName()));
+            }
+        } catch (Exception e) {
+            if(!e.getClass().equals(expectedException)){
+                throw new RuntimeException(String.format("Failing test with role %s", currentRoles.stream().map(Role::getName).collect(Collectors.joining(", "))), e);
+            }
+        }
+    }
+
     private void execute(Assertion assertion, Class<? extends Exception> expectedException) {
-        for (List<Role> roles : testContext.getRoleCollections()) {
-            currentRoles = roles;
-            clearDatabase();
-            beAdmin();
-            setup();
-            beInCurrentRole();
-            try {
-                run();
-                if (assertion != null) {
-                    assertion.then();
-                }
-                if(expectedException!=null){
-                    Assert.fail(String.format("Was expecting %s exception but it wasn't triggered", expectedException.getName()));
-                }
-            } catch (Exception e) {
-                if(!e.getClass().equals(expectedException)){
-                    throw new RuntimeException(String.format("Failing test with role %s", currentRoles.stream().map(Role::getName).collect(Collectors.joining(", "))), e);
-                }
+        final Collection<List<Role>> roleCollections = testContext.getRoleCollections();
+        if(roleCollections.isEmpty()){
+            //We have no roles - which means, we run it "unauthorized"
+            doExecute(assertion, expectedException);
+        }
+        else {
+            for (List<Role> roles : testContext.getRoleCollections()) {
+                currentRoles = roles;
+                doExecute(assertion, expectedException);
             }
         }
     }

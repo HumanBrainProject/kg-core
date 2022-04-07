@@ -25,10 +25,12 @@ package eu.ebrains.kg.testutils;
 import eu.ebrains.kg.KgCoreAllInOne;
 import eu.ebrains.kg.arango.commons.model.ArangoDatabaseProxy;
 import eu.ebrains.kg.authentication.api.AuthenticationAPI;
+import eu.ebrains.kg.authentication.controller.AuthenticationRepository;
 import eu.ebrains.kg.authentication.keycloak.KeycloakClient;
 import eu.ebrains.kg.authentication.keycloak.KeycloakController;
 import eu.ebrains.kg.commons.AuthTokenContext;
 import eu.ebrains.kg.commons.IdUtils;
+import eu.ebrains.kg.commons.SetupLogic;
 import eu.ebrains.kg.commons.model.ExtendedResponseConfiguration;
 import eu.ebrains.kg.commons.model.PaginationParam;
 import eu.ebrains.kg.commons.permission.roles.Role;
@@ -85,15 +87,21 @@ public abstract class AbstractSystemTest {
     protected List<ArangoDatabaseProxy> arangoDatabaseProxyList;
 
     @Autowired
+    protected List<SetupLogic> setupLogics;
+
+    @Autowired
     private CacheManager cacheManager;
+
+    @Autowired
+    private AuthenticationRepository authenticationRepository;
 
 
     protected TestContext ctx(RoleMapping... roles){
-        return new TestContext(idUtils, arangoDatabaseProxyList, authenticationAPI, roles, cacheManager);
+        return new TestContext(idUtils, arangoDatabaseProxyList, authenticationAPI, roles, setupLogics, authenticationRepository, cacheManager);
     }
 
     protected TestContext ctx(List<List<Role>> roleCollections){
-        return new TestContext(idUtils, arangoDatabaseProxyList, authenticationAPI, roleCollections, cacheManager);
+        return new TestContext(idUtils, arangoDatabaseProxyList, authenticationAPI, roleCollections, setupLogics, authenticationRepository, cacheManager);
     }
 
 }
