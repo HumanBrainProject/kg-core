@@ -40,6 +40,7 @@
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
         <docker.image.prefix>registry.humanbrainproject.org/humanbrainproject/kg-core</docker.image.prefix>
         <spring.version>${parent.version}</spring.version>
+        <sonar.coverage.jacoco.xmlReportPaths>${project.basedir}/../../bundle/kg-core-allinone/target/site/jacoco-aggregate/jacoco.xml</sonar.coverage.jacoco.xmlReportPaths>
     </properties>
 
     <groupId>eu.ebrains.kg</groupId>
