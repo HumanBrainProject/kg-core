@@ -54,7 +54,43 @@
         </dependency>
         <dependency>
             <groupId>eu.ebrains.kg</groupId>
+            <artifactId>kg-library</artifactId>
+            <version>3.0-SNAPSHOT</version>
+            <classifier>library</classifier>
+        </dependency>
+        <dependency>
+            <groupId>eu.ebrains.kg</groupId>
+            <artifactId>kg-microservice</artifactId>
+            <version>3.0-SNAPSHOT</version>
+            <classifier>library</classifier>
+        </dependency>
+        <dependency>
+            <groupId>eu.ebrains.kg</groupId>
+            <artifactId>kg-arango-commons</artifactId>
+            <version>3.0-SNAPSHOT</version>
+            <classifier>library</classifier>
+        </dependency>
+        <dependency>
+            <groupId>eu.ebrains.kg</groupId>
+            <artifactId>kg-commons</artifactId>
+            <version>3.0-SNAPSHOT</version>
+            <classifier>library</classifier>
+        </dependency>
+        <dependency>
+            <groupId>eu.ebrains.kg</groupId>
+            <artifactId>kg-microservice-commons</artifactId>
+            <version>3.0-SNAPSHOT</version>
+            <classifier>library</classifier>
+        </dependency>
+        <dependency>
+            <groupId>eu.ebrains.kg</groupId>
             <artifactId>kg-core-api</artifactId>
+            <version>3.0-SNAPSHOT</version>
+            <classifier>library</classifier>
+        </dependency>
+        <dependency>
+            <groupId>eu.ebrains.kg</groupId>
+            <artifactId>kg-graphdb-commons</artifactId>
             <version>3.0-SNAPSHOT</version>
             <classifier>library</classifier>
         </dependency>
