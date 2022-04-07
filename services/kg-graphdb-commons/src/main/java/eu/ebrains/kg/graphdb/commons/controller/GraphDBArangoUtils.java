@@ -42,7 +42,7 @@ import javax.annotation.PostConstruct;
 import java.util.*;
 
 @Component
-public class GraphDBArangoUtils implements SetupLogic {
+public class GraphDBArangoUtils {
 
     private final ArangoDatabases arangoDatabases;
 
