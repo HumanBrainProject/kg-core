@@ -54,18 +54,6 @@
         </dependency>
         <dependency>
             <groupId>eu.ebrains.kg</groupId>
-            <artifactId>kg-library</artifactId>
-            <version>3.0-SNAPSHOT</version>
-            <classifier>library</classifier>
-        </dependency>
-        <dependency>
-            <groupId>eu.ebrains.kg</groupId>
-            <artifactId>kg-microservice</artifactId>
-            <version>3.0-SNAPSHOT</version>
-            <classifier>library</classifier>
-        </dependency>
-        <dependency>
-            <groupId>eu.ebrains.kg</groupId>
             <artifactId>kg-arango-commons</artifactId>
             <version>3.0-SNAPSHOT</version>
             <classifier>library</classifier>
