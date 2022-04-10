@@ -33,16 +33,18 @@ import eu.ebrains.kg.core.api.AbstractTest;
 import eu.ebrains.kg.metrics.MethodExecution;
 import eu.ebrains.kg.metrics.PerformanceTestUtils;
 import eu.ebrains.kg.metrics.TestInformation;
-import org.junit.After;
-import org.junit.AfterClass;
-import org.junit.Before;
-import org.junit.BeforeClass;
+import eu.ebrains.kg.test.APITest;
+import eu.ebrains.kg.test.LoadTest;
+import org.junit.*;
+import org.junit.experimental.categories.Category;
 import org.mockito.Mockito;
 import org.springframework.boot.test.mock.mockito.MockBean;
 
 import java.io.IOException;
 import java.util.*;
 
+@Ignore //TODO recover load tests
+@Category(LoadTest.class)
 public abstract class AbstractLoadTest extends AbstractSystemTest {
 
     protected final static int smallBatchInsertion = 10;

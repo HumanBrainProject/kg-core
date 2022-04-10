@@ -48,7 +48,7 @@ import java.util.UUID;
 
 import static org.junit.Assert.*;
 
-@Category(APITest.class)
+
 public class InstancesTest extends AbstractFunctionalityTest {
 
     @Autowired

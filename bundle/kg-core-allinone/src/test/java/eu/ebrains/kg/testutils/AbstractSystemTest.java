@@ -50,9 +50,8 @@ import org.springframework.test.context.junit4.SpringRunner;
 import java.util.List;
 
 @RunWith(SpringRunner.class)
-@SpringBootTest(classes = KgCoreAllInOne.class, webEnvironment = SpringBootTest.WebEnvironment.DEFINED_PORT)
+@SpringBootTest(classes = KgCoreAllInOne.class, webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @TestPropertySource(properties = {"KEYCLOAK_ISSUER_URI = http://invalid/", ""})
-@Category(APITest.class)
 public abstract class AbstractSystemTest {
 
     protected PaginationParam EMPTY_PAGINATION = new PaginationParam();

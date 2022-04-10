@@ -45,7 +45,6 @@ import java.util.stream.Stream;
 
 import static org.junit.Assert.*;
 
-@Category(APITest.class)
 public class QueriesTest extends AbstractFunctionalityTest {
 
     @Autowired

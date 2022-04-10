@@ -26,6 +26,7 @@ import eu.ebrains.kg.commons.IdUtils;
 import eu.ebrains.kg.commons.jsonld.NormalizedJsonLd;
 import eu.ebrains.kg.commons.model.Result;
 import eu.ebrains.kg.core.model.ExposedStage;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -36,7 +37,7 @@ import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
-
+@Ignore //TODO recover load tests
 public class DeleteSystemTest extends AbstractInstancesLoadTest {
 
     @Autowired
