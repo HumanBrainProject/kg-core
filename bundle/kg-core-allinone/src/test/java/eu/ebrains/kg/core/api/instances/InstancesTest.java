@@ -33,7 +33,7 @@ import eu.ebrains.kg.commons.semantics.vocabularies.EBRAINSVocabulary;
 import eu.ebrains.kg.core.api.Instances;
 import eu.ebrains.kg.core.api.instances.tests.*;
 import eu.ebrains.kg.core.model.ExposedStage;
-import eu.ebrains.kg.testutils.APITest;
+import eu.ebrains.kg.test.APITest;
 import eu.ebrains.kg.testutils.AbstractFunctionalityTest;
 import eu.ebrains.kg.testutils.TestDataFactory;
 import org.junit.Ignore;
@@ -43,7 +43,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 
-import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
 

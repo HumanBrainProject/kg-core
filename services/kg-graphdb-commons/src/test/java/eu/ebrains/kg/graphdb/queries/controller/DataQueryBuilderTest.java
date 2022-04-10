@@ -32,6 +32,7 @@ import eu.ebrains.kg.graphdb.queries.utils.DataQueryBuilder;
 import eu.ebrains.kg.test.JsonAdapter4Test;
 import eu.ebrains.kg.test.TestObjectFactory;
 import org.junit.Assert;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import java.io.IOException;
@@ -43,6 +44,7 @@ import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+@Ignore //TODO reevaluate if the tests shall be kept
 public class DataQueryBuilderTest {
 
     @Test

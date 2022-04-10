@@ -36,6 +36,8 @@ import eu.ebrains.kg.commons.model.PaginationParam;
 import eu.ebrains.kg.commons.permission.roles.Role;
 import eu.ebrains.kg.commons.permission.roles.RoleMapping;
 import eu.ebrains.kg.core.api.instances.TestContext;
+import eu.ebrains.kg.test.APITest;
+import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 import org.keycloak.admin.client.Keycloak;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -50,6 +52,7 @@ import java.util.List;
 @RunWith(SpringRunner.class)
 @SpringBootTest(classes = KgCoreAllInOne.class, webEnvironment = SpringBootTest.WebEnvironment.DEFINED_PORT)
 @TestPropertySource(properties = {"KEYCLOAK_ISSUER_URI = http://invalid/", ""})
+@Category(APITest.class)
 public abstract class AbstractSystemTest {
 
     protected PaginationParam EMPTY_PAGINATION = new PaginationParam();

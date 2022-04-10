@@ -31,9 +31,12 @@ import eu.ebrains.kg.commons.model.*;
 import eu.ebrains.kg.commons.models.UserWithRoles;
 import eu.ebrains.kg.commons.query.KgQuery;
 import eu.ebrains.kg.graphdb.ingestion.controller.TodoListProcessor;
+import eu.ebrains.kg.test.APITest;
 import eu.ebrains.kg.test.TestObjectFactory;
 import org.junit.Assert;
+import org.junit.Ignore;
 import org.junit.Test;
+import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -48,12 +51,12 @@ import java.util.UUID;
 
 @RunWith(SpringRunner.class)
 @SpringBootTest
-@TestPropertySource(properties = {"eu.ebrains.kg.arango.pwd=changeMe", "eu.ebrains.kg.arango.port=9111"})
+@Category(APITest.class)
+@Ignore //TODO fix test
 public class QueryControllerTest {
 
     @Autowired
     QueryController queryController;
-
 
     @Autowired
     TodoListProcessor todoListProcessor;

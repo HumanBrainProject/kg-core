@@ -23,6 +23,9 @@
 package eu.ebrains.kg.graphdb.types;
 
 
+import eu.ebrains.kg.test.APITest;
+import org.junit.Ignore;
+import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.TestPropertySource;
@@ -30,7 +33,8 @@ import org.springframework.test.context.junit4.SpringRunner;
 
 @RunWith(SpringRunner.class)
 @SpringBootTest
-@TestPropertySource(properties = {"eu.ebrains.kg.arango.pwd=changeMe", "eu.ebrains.kg.arango.port=9111"})
+@Ignore //TODO reevaluate if the tests shall be kept
+@Category(APITest.class)
 public class StructureTest {
 
 //

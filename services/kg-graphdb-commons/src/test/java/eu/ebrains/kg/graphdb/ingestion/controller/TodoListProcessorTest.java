@@ -33,9 +33,12 @@ import eu.ebrains.kg.commons.model.SpaceName;
 import eu.ebrains.kg.graphdb.commons.controller.ArangoDatabases;
 import eu.ebrains.kg.graphdb.commons.controller.ArangoRepositoryCommons;
 import eu.ebrains.kg.graphdb.commons.model.ArangoDocument;
+import eu.ebrains.kg.test.APITest;
 import eu.ebrains.kg.test.TestObjectFactory;
 import org.junit.Assert;
+import org.junit.Ignore;
 import org.junit.Test;
+import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -48,7 +51,8 @@ import java.util.UUID;
 
 @RunWith(SpringRunner.class)
 @SpringBootTest
-@TestPropertySource(properties = {"eu.ebrains.kg.arango.pwd=changeMe", "eu.ebrains.kg.arango.port=9111"})
+@Category(APITest.class)
+@Ignore //TODO fix test
 public class TodoListProcessorTest {
 
     @Autowired

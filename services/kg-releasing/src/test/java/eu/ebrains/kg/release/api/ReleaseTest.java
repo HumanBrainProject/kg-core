@@ -25,7 +25,9 @@ package eu.ebrains.kg.release.api;
 import eu.ebrains.kg.commons.IdUtils;
 import eu.ebrains.kg.commons.model.SpaceName;
 import eu.ebrains.kg.release.controller.Release;
+import eu.ebrains.kg.test.APITest;
 import org.junit.Ignore;
+import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -36,6 +38,7 @@ import java.util.UUID;
 @Ignore
 @RunWith(SpringRunner.class)
 @SpringBootTest
+@Category(APITest.class)
 public class ReleaseTest {
 
     @Autowired
