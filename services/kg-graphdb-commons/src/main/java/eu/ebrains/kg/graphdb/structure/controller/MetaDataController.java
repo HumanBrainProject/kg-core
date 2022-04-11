@@ -160,7 +160,7 @@ public class MetaDataController {
         for (Space space : s) {
             // We need all spaces either if there is no space filter or if we require incoming links (because we need to reflect on the whole structure to capture all).
             // If there is a space filter applied and no requirement for incoming links, we can speed things up.
-            if (withIncomingLinks || resolvedSpaceRestriction == null || space.getName().getName().equals(resolvedSpaceRestriction)) {
+            if (resolvedSpaceRestriction == null || (!SpaceName.REVIEW_SPACE.equals(spaceRestriction) && withIncomingLinks) || space.getName().getName().equals(resolvedSpaceRestriction)) {
                 //When asking for incoming links we need to fetch the properties as well -> otherwise we won't have the required information available.
                 readMetaDataStructureForSpace(stage, typeRestriction, withIncomingLinks, withIncomingLinks || withProperties, typeInformation, spaceTypeInformationLookup, allRelevantEdges, space, clientSpace, privateUserSpace);
             }
