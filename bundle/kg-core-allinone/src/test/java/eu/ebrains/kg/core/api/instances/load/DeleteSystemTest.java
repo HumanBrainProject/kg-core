@@ -37,7 +37,6 @@ import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
-@Ignore //TODO recover load tests
 public class DeleteSystemTest extends AbstractInstancesLoadTest {
 
     @Autowired
@@ -47,32 +46,13 @@ public class DeleteSystemTest extends AbstractInstancesLoadTest {
     public void testDeleteSingleAverageNoLink() throws IOException {
         //Given
         testInsert(averagePayload, 1, false, false, null);
-        List<NormalizedJsonLd> allInstancesFromInProgress = getAllInstancesFromInProgress(ExposedStage.IN_PROGRESS).subList(0, batchInsertion);
+        List<NormalizedJsonLd> allInstancesFromInProgress = getAllInstancesFromInProgress(ExposedStage.IN_PROGRESS);
         //When
         for (int i = 0; i < allInstancesFromInProgress.size(); i++) {
             Mockito.doReturn(i).when(testInformation).getExecutionNumber();
             ResponseEntity<Result<Void>> resultResponseEntity = instances.deleteInstance(idUtils.getUUID(allInstancesFromInProgress.get(i).id()));
             System.out.printf("Result %d: %d ms%n", i, resultResponseEntity.getBody().getDurationInMs());
         }
-    }
-
-    @Test
-    public void testDeleteSingleAverageNoLinkFullParallelism() throws IOException, InterruptedException {
-        //Given
-        testInsert(averagePayload, 1, false, false, null);
-        List<NormalizedJsonLd> allInstancesFromInProgress = getAllInstancesFromInProgress(ExposedStage.IN_PROGRESS).subList(0, batchInsertion);
-
-        //When
-        ExecutorService executorService = Executors.newFixedThreadPool(6);
-        for (int i = 0; i < allInstancesFromInProgress.size(); i++) {
-            int finalI = i;
-            executorService.execute(() -> {
-                ResponseEntity<Result<Void>> resultResponseEntity = instances.deleteInstance(idUtils.getUUID(allInstancesFromInProgress.get(finalI).id()));
-                System.out.printf("Result %d: %d ms%n", finalI, resultResponseEntity.getBody().getDurationInMs());
-            });
-        }
-        executorService.shutdown();
-        executorService.awaitTermination(5, TimeUnit.HOURS);
     }
 
 }

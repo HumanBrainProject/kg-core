@@ -51,5 +51,4 @@
         <module>services/kg-releasing</module>
         <module>bundle/kg-core-allinone</module>
     </modules>
-
 </project>

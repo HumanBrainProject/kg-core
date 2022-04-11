@@ -42,7 +42,6 @@ import org.springframework.http.ResponseEntity;
 import java.io.IOException;
 
 import static org.junit.Assert.*;
-@Ignore //TODO recover load tests
 public class WorkflowSystemTest extends AbstractInstancesLoadTest {
 
     @Autowired

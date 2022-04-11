@@ -30,7 +30,6 @@ import org.springframework.test.context.TestPropertySource;
 import java.io.IOException;
 
 
-@Ignore //TODO recover load tests
 @TestPropertySource(properties = {"logging.level.eu.ebrains.kg=WARN"})
 public class InsertSystemTest extends AbstractInstancesLoadTest {
 

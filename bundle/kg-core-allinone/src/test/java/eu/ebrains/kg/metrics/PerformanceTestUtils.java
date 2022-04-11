@@ -75,7 +75,7 @@ public class PerformanceTestUtils {
             return Double.compare(diffToMeanA, diffToMeanB);
         }).get();
 
-        List<List<MethodExecution>> relevantExecutions = Arrays.asList(fastestExecution,meanExecution, medianExecution, slowestExecution);
+        List<List<MethodExecution>> relevantExecutions = Collections.synchronizedList(Arrays.asList(fastestExecution,meanExecution, medianExecution, slowestExecution));
         relevantExecutions.forEach(v -> {
             List<GoogleCharts.Value> values = new ArrayList<>();
             MethodExecution firstExecution = v.stream().min(Comparator.comparing(MethodExecution::getStartTime)).get();

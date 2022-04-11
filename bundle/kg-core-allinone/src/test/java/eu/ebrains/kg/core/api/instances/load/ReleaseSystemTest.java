@@ -44,7 +44,6 @@ import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
-@Ignore //TODO recover load tests
 public class ReleaseSystemTest extends AbstractInstancesLoadTest {
 
     @Autowired

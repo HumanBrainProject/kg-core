@@ -66,6 +66,7 @@ public abstract class AbstractSystemTest {
     @MockBean
     protected AuthTokenContext authTokenContext;
 
+
     @MockBean
     protected AuthenticationAPI authenticationAPI;
 
@@ -92,7 +93,7 @@ public abstract class AbstractSystemTest {
     protected List<SetupLogic> setupLogics;
 
     @Autowired
-    private CacheManager cacheManager;
+    protected CacheManager cacheManager;
 
     @Autowired
     private AuthenticationRepository authenticationRepository;

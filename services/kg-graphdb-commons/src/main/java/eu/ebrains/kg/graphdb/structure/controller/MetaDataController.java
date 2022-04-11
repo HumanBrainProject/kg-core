@@ -70,12 +70,13 @@ public class MetaDataController {
     private void readMetaDataStructureForInvitations(DataStage stage, List<String> typeRestriction, boolean withIncomingLinks, boolean withProperties, Map<String, TypeInformation> typeInformations, Map<String, List<SpaceTypeInformation>> spaceTypeInformationLookup, List<String> allRelevantEdges, SpaceName clientSpace, List<NormalizedJsonLd> invitations, SpaceName privateUserSpace) {
         if (stage == DataStage.IN_PROGRESS) {
             invitations.forEach(i -> {
-                i.types().stream().distinct().forEach(t -> {
+                i.types().stream().distinct().filter(t -> CollectionUtils.isEmpty(typeRestriction) || typeRestriction.contains(t)).forEach(t -> {
                     final List<SpaceTypeInformation> spaceTypeInformations = spaceTypeInformationLookup.computeIfAbsent(t, k -> Arrays.asList(new SpaceTypeInformation()));
                     final SpaceTypeInformation spaceTypeInformation = spaceTypeInformations.get(0);
                     spaceTypeInformation.setSpace(SpaceName.REVIEW_SPACE);
                     spaceTypeInformation.setOccurrences(spaceTypeInformation.getOccurrences() == null ? 1 : spaceTypeInformation.getOccurrences() + 1);
-                    //TODO properties, typeRestriction, incomingLinks
+
+                    //TODO properties, incomingLinks
                     if (typeInformations.get(t) == null) {
                         final TypeInformation typeInformation = new TypeInformation();
                         final DynamicJson typeSpecification = structureRepository.getTypeSpecification(t);
@@ -107,13 +108,35 @@ public class MetaDataController {
                         reviewSpace.setOccurrences(1);
                         spaces.add(reviewSpace);
                     }
-                    if(withProperties){
-                        final Space spaceConfig = new Space(SpaceName.fromString(SpaceName.REVIEW_SPACE), false, false, false);
-                        spaceConfig.setExistsInDB(true);
-                        handleProperties(stage, allRelevantEdges, spaceConfig, clientSpace, privateUserSpace, t, spaceTypeInformation, new ArrayList<>(), new HashSet<>());
-                    }
                 });
             });
+            if(withProperties){
+                final Space spaceConfig = new Space(SpaceName.fromString(SpaceName.REVIEW_SPACE), false, false, false);
+                spaceConfig.setExistsInDB(false);
+                for (String type : spaceTypeInformationLookup.keySet()) {
+                    final List<SpaceTypeInformation> spaceTypeInformations = spaceTypeInformationLookup.get(type);
+                    final SpaceTypeInformation reviewSpaceType = spaceTypeInformations.stream().filter(i -> i.getSpace().equals(SpaceName.REVIEW_SPACE)).findFirst().get();
+                    reviewSpaceType.setProperties(new ArrayList<>());
+                    handleProperties(stage, allRelevantEdges, spaceConfig, clientSpace, privateUserSpace, type, reviewSpaceType, new ArrayList<>(), new HashSet<>());
+                    final SpaceTypeInformation spaceTypeInformationForTypeInformations = typeInformations.get(type).getSpaces().stream().filter(s -> s.getSpace().equals(SpaceName.REVIEW_SPACE)).findFirst().get();
+                    spaceTypeInformationForTypeInformations.setProperties(new ArrayList<>(reviewSpaceType.getProperties()));
+                }
+                invitations.forEach( i-> i.types().stream().distinct().filter(t -> CollectionUtils.isEmpty(typeRestriction) || typeRestriction.contains(t)).forEach(t -> {
+                    final SpaceTypeInformation spaceTypeInformation = spaceTypeInformationLookup.get(t).stream().filter(type -> type.getSpace().equals(SpaceName.REVIEW_SPACE)).findFirst().get();
+                    i.visitPublicKeys((k, v)-> {
+                        final Optional<Property> property = spaceTypeInformation.getProperties().stream().filter(p -> p.getIdentifier().equals(k)).findFirst();
+                        if(property.isPresent()){
+                            property.get().setOccurrences(property.get().getOccurrences()+1);
+                        }
+                        else{
+                            Property p = new Property();
+                            p.setIdentifier(k);
+                            p.setOccurrences(1);
+                            spaceTypeInformation.getProperties().add(p);
+                        }
+                    });
+                }));
+            }
         }
     }
 

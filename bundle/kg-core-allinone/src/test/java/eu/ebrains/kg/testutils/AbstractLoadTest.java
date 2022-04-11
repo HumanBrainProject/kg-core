@@ -25,6 +25,7 @@ package eu.ebrains.kg.testutils;
 import com.arangodb.ArangoDB;
 import eu.ebrains.kg.arango.commons.model.ArangoDatabaseProxy;
 import eu.ebrains.kg.commons.AuthTokens;
+import eu.ebrains.kg.commons.SetupLogic;
 import eu.ebrains.kg.commons.model.User;
 import eu.ebrains.kg.commons.models.UserWithRoles;
 import eu.ebrains.kg.commons.permission.ClientAuthToken;
@@ -38,18 +39,19 @@ import eu.ebrains.kg.test.LoadTest;
 import org.junit.*;
 import org.junit.experimental.categories.Category;
 import org.mockito.Mockito;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.mock.mockito.MockBean;
 
 import java.io.IOException;
 import java.util.*;
 
-@Ignore //TODO recover load tests
 @Category(LoadTest.class)
 public abstract class AbstractLoadTest extends AbstractSystemTest {
 
     protected final static int smallBatchInsertion = 10;
     protected final static int batchInsertion = 100;
     protected final static int bigBatchInsertion = 10000;
+
 
     @MockBean
     protected TestInformation testInformation;
@@ -74,11 +76,12 @@ public abstract class AbstractLoadTest extends AbstractSystemTest {
     @Before
     public void setup() {
         clearDatabase();
+        setupLogics.forEach(SetupLogic::setup);
         //We execute the load tests as an admin...
         User user = new User("bobEverythingGoes", "Bob Everything Goes", "fakeAdmin@ebrains.eu", "Bob Everything", "Goes", "admin");
         UserWithRoles userWithRoles = new UserWithRoles(user, AbstractTest.ADMIN_ROLE, AbstractTest.ADMIN_CLIENT_ROLE, "testClient");
         Mockito.doReturn(user).when(authenticationAPI).getMyUserInfo();
-        Mockito.doReturn(userWithRoles).when(authenticationAPI).getRoles(false);
+        Mockito.doReturn(userWithRoles).when(authenticationAPI).getRoles(Mockito.anyBoolean());
         AuthTokens authTokens=new AuthTokens();
         authTokens.setUserAuthToken(new UserAuthToken("userToken"));
         authTokens.setClientAuthToken(new ClientAuthToken("clientToken"));
@@ -99,6 +102,10 @@ public abstract class AbstractLoadTest extends AbstractSystemTest {
 
     private void clearDatabase() {
         arangoDatabaseProxyList.forEach(ArangoDatabaseProxy::removeDatabase);
+        if(cacheManager!=null){
+            //Also remove the caches to ensure we are in sync with the database (both empty)
+            cacheManager.getCacheNames().forEach(c -> cacheManager.getCache(c).clear());
+        }
     }
 
 }
