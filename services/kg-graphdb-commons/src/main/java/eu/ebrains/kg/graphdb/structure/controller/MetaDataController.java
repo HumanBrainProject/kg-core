@@ -71,7 +71,7 @@ public class MetaDataController {
         if (stage == DataStage.IN_PROGRESS) {
             invitations.forEach(i -> {
                 i.types().stream().distinct().filter(t -> CollectionUtils.isEmpty(typeRestriction) || typeRestriction.contains(t)).forEach(t -> {
-                    final List<SpaceTypeInformation> spaceTypeInformations = spaceTypeInformationLookup.computeIfAbsent(t, k -> Arrays.asList(new SpaceTypeInformation()));
+                    final List<SpaceTypeInformation> spaceTypeInformations = spaceTypeInformationLookup.computeIfAbsent(t, k -> new ArrayList<>(Collections.singletonList(new SpaceTypeInformation())));
                     final SpaceTypeInformation spaceTypeInformation = spaceTypeInformations.get(0);
                     spaceTypeInformation.setSpace(SpaceName.REVIEW_SPACE);
                     spaceTypeInformation.setOccurrences(spaceTypeInformation.getOccurrences() == null ? 1 : spaceTypeInformation.getOccurrences() + 1);
