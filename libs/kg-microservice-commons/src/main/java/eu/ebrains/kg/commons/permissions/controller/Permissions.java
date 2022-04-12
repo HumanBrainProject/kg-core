@@ -22,7 +22,6 @@
 
 package eu.ebrains.kg.commons.permissions.controller;
 
-import eu.ebrains.kg.commons.model.DataStage;
 import eu.ebrains.kg.commons.model.SpaceName;
 import eu.ebrains.kg.commons.models.UserWithRoles;
 import eu.ebrains.kg.commons.permission.Functionality;
@@ -53,10 +52,6 @@ public class Permissions {
         return instances;
     }
 
-    private boolean isServiceAccountForClientSpace(UserWithRoles userWithRoles, SpaceName space) {
-        return userWithRoles != null && space != null && userWithRoles.getClientId() != null && userWithRoles.getClientId().equals(space.getName()) && userWithRoles.getUser() != null && userWithRoles.getUser().isServiceAccountForClient(userWithRoles.getClientId());
-    }
-
     public boolean hasPermission(UserWithRoles userWithRoles, Functionality functionality, SpaceName space) {
         return hasPermission(userWithRoles, functionality, space, null);
     }
@@ -66,22 +61,7 @@ public class Permissions {
         return expectedRoles.stream().anyMatch(permissions::contains);
     }
 
-
-    public Functionality getMinimalReadFunctionality(DataStage stage) {
-        return Functionality.MINIMAL_READ;
-    }
-
-    public Functionality getReadFunctionality(DataStage stage) {
-        switch (stage) {
-            case IN_PROGRESS:
-                return Functionality.READ;
-            case RELEASED:
-                return Functionality.READ_RELEASED;
-        }
-        return null;
-    }
-
-     public boolean hasPermission(UserWithRoles userWithRoles, Functionality functionality, SpaceName space, UUID id) {
+    public boolean hasPermission(UserWithRoles userWithRoles, Functionality functionality, SpaceName space, UUID id) {
         if (userWithRoles == null || functionality == null) {
             return false;
         }

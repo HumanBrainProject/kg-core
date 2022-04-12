@@ -35,10 +35,10 @@ import java.util.stream.Collectors;
  * Example: Space-administrator inherits the permissions of Space-Curator etc...
  */
 public enum RoleMapping {
-    CONSUMER(false, true,false, null, Functionality.READ_RELEASED, Functionality.CREATE_QUERY, Functionality.WRITE_QUERY, Functionality.READ_QUERY, Functionality.DELETE_QUERY, Functionality.READ_SPACE),
+    CONSUMER(false, true,false, null, Functionality.READ_RELEASED, Functionality.READ_QUERY),
     REVIEWER(true, false, true, CONSUMER, Functionality.READ, Functionality.SUGGEST, Functionality.INVITE_FOR_REVIEW, Functionality.MINIMAL_READ, Functionality.RELEASE_STATUS),
-    EDITOR(true, false, true, REVIEWER, Functionality.WRITE, Functionality.CREATE, Functionality.INVITE_FOR_SUGGESTION, Functionality.DELETE),
-    OWNER(true, false, true, EDITOR, Functionality.RELEASE, Functionality.UNRELEASE, Functionality.MANAGE_SPACE, Functionality.READ_SPACE),
+    EDITOR(true, false, true, REVIEWER, Functionality.WRITE, Functionality.CREATE, Functionality.CREATE_QUERY, Functionality.WRITE_QUERY, Functionality.DELETE_QUERY, Functionality.INVITE_FOR_SUGGESTION, Functionality.DELETE),
+    OWNER(true, false, true, EDITOR, Functionality.RELEASE, Functionality.UNRELEASE, Functionality.MANAGE_SPACE),
     ADMIN(true, false, true, null, Functionality.values());
 
     private final RoleMapping childRole;
@@ -82,16 +82,16 @@ public enum RoleMapping {
     }
 
     public static Set<FunctionalityInstance> fromRole(String role) {
-        String[] roleSplit = role.trim().split("\\:");
+        String[] roleSplit = role.trim().split(":");
         String space = null;
-        String kgrole = null;
+        String kgRole = null;
         if (roleSplit.length == 2) {
             //This is the default mapping for kg roles (internal roles)
             space = roleSplit[0];
-            kgrole = roleSplit[1];
+            kgRole = roleSplit[1];
         }
-        if(kgrole!=null && space!=null) {
-            String fixedKgRole = kgrole;
+        if(kgRole!=null && space!=null) {
+            String fixedKgRole = kgRole;
             RoleMapping userRole = Arrays.stream(RoleMapping.values()).filter(r -> r.getName().equals(fixedKgRole)).findFirst().orElse(null);
             if (userRole != null) {
                 return userRole.getFunctionalityInstances(!space.equals("") ? new SpaceName(space) : null);
