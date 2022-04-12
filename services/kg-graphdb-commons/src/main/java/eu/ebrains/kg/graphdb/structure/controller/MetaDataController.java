@@ -115,14 +115,14 @@ public class MetaDataController {
                 spaceConfig.setExistsInDB(false);
                 for (String type : spaceTypeInformationLookup.keySet()) {
                     final List<SpaceTypeInformation> spaceTypeInformations = spaceTypeInformationLookup.get(type);
-                    final SpaceTypeInformation reviewSpaceType = spaceTypeInformations.stream().filter(i -> i.getSpace().equals(SpaceName.REVIEW_SPACE)).findFirst().get();
+                    final SpaceTypeInformation reviewSpaceType = spaceTypeInformations.stream().filter(i -> i.getSpace().equals(SpaceName.REVIEW_SPACE)).findFirst().orElseThrow();
                     reviewSpaceType.setProperties(new ArrayList<>());
                     handleProperties(stage, allRelevantEdges, spaceConfig, clientSpace, privateUserSpace, type, reviewSpaceType, new ArrayList<>(), new HashSet<>());
-                    final SpaceTypeInformation spaceTypeInformationForTypeInformations = typeInformations.get(type).getSpaces().stream().filter(s -> s.getSpace().equals(SpaceName.REVIEW_SPACE)).findFirst().get();
+                    final SpaceTypeInformation spaceTypeInformationForTypeInformations = typeInformations.get(type).getSpaces().stream().filter(s -> s.getSpace().equals(SpaceName.REVIEW_SPACE)).findFirst().orElseThrow();
                     spaceTypeInformationForTypeInformations.setProperties(new ArrayList<>(reviewSpaceType.getProperties()));
                 }
                 invitations.forEach( i-> i.types().stream().distinct().filter(t -> CollectionUtils.isEmpty(typeRestriction) || typeRestriction.contains(t)).forEach(t -> {
-                    final SpaceTypeInformation spaceTypeInformation = spaceTypeInformationLookup.get(t).stream().filter(type -> type.getSpace().equals(SpaceName.REVIEW_SPACE)).findFirst().get();
+                    final SpaceTypeInformation spaceTypeInformation = spaceTypeInformationLookup.get(t).stream().filter(type -> type.getSpace().equals(SpaceName.REVIEW_SPACE)).findFirst().orElseThrow();
                     i.visitPublicKeys((k, v)-> {
                         final Optional<Property> property = spaceTypeInformation.getProperties().stream().filter(p -> p.getIdentifier().equals(k)).findFirst();
                         if(property.isPresent()){
