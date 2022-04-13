@@ -22,16 +22,14 @@
 
 package eu.ebrains.kg.core.api.instances.tests;
 
-import com.arangodb.ArangoDB;
-import eu.ebrains.kg.authentication.api.AuthenticationAPI;
-import eu.ebrains.kg.commons.IdUtils;
 import eu.ebrains.kg.commons.jsonld.NormalizedJsonLd;
 import eu.ebrains.kg.commons.model.Result;
-import eu.ebrains.kg.commons.permission.roles.RoleMapping;
 import eu.ebrains.kg.core.api.Instances;
 import eu.ebrains.kg.core.api.instances.TestContext;
 import eu.ebrains.kg.core.model.ExposedStage;
 import org.springframework.http.ResponseEntity;
+
+import java.util.UUID;
 
 public class ReleaseInstanceTest extends AbstractInstanceTest {
 
@@ -49,11 +47,15 @@ public class ReleaseInstanceTest extends AbstractInstanceTest {
 
     @Override
     protected void run() {
-        response = instances.releaseInstance(testContext.getIdUtils().getUUID(originalInstance.id()), null);
+        response = instances.releaseInstance(getInstanceUUID(), null);
     }
 
     public ResponseEntity<Result<NormalizedJsonLd>> fetchInstance(){
-        return instances.getInstanceById(testContext.getIdUtils().getUUID(originalInstance.id()), ExposedStage.RELEASED, defaultResponseConfiguration);
+        return instances.getInstanceById(getInstanceUUID(), ExposedStage.RELEASED, defaultResponseConfiguration);
+    }
+
+    public UUID getInstanceUUID(){
+        return testContext.getIdUtils().getUUID(originalInstance.id());
     }
 
 }

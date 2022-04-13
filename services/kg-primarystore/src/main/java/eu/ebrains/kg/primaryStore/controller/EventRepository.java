@@ -23,14 +23,16 @@
 package eu.ebrains.kg.primaryStore.controller;
 
 import com.arangodb.ArangoCollection;
-import com.arangodb.model.*;
+import com.arangodb.model.HashIndexOptions;
+import com.arangodb.model.PersistentIndexOptions;
+import com.arangodb.model.SkiplistIndexOptions;
 import eu.ebrains.kg.arango.commons.aqlBuilder.AQL;
-import eu.ebrains.kg.arango.commons.aqlBuilder.TrustedAqlValue;
 import eu.ebrains.kg.arango.commons.model.ArangoCollectionReference;
 import eu.ebrains.kg.arango.commons.model.ArangoDatabaseProxy;
 import eu.ebrains.kg.commons.JsonAdapter;
-import eu.ebrains.kg.commons.jsonld.DynamicJson;
+import eu.ebrains.kg.commons.exception.AmbiguousException;
 import eu.ebrains.kg.commons.model.DataStage;
+import eu.ebrains.kg.commons.model.Event;
 import eu.ebrains.kg.commons.model.PersistedEvent;
 import eu.ebrains.kg.commons.model.SpaceName;
 import eu.ebrains.kg.primaryStore.model.FailedEvent;
@@ -39,8 +41,11 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Component;
 
+import java.time.Instant;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.*;
-import java.util.stream.Collectors;
 
 @Component
 public class EventRepository {
@@ -88,8 +93,34 @@ public class EventRepository {
         ArangoCollection events = primaryStoreDBUtils.getOrCreateArangoCollection(arangoDatabase.getOrCreate(), collectionReference);
         events.ensurePersistentIndex(Arrays.asList("indexedTimestamp", "eventId"), new PersistentIndexOptions());
         events.ensureHashIndex(Collections.singleton("eventId"), new HashIndexOptions());
-        events.ensureSkiplistIndex(Arrays.asList("resourceId", "indexedTimestamp"), new SkiplistIndexOptions());
+        events.ensureSkiplistIndex(Arrays.asList("documentId", "type", "indexedTimestamp"), new SkiplistIndexOptions());
         return events;
+    }
+
+    public String getFirstRelease(UUID documentId){
+        getOrCreateCollection(DataStage.RELEASED); //ensure the collection exists.
+        AQL aql = new AQL();
+        Map<String, Object> bindVars = new HashMap<>();
+        aql.addLine(AQL.trust("RETURN FIRST(FOR r IN "+getCollectionName(DataStage.RELEASED)));
+        aql.addLine(AQL.trust("FILTER r.type==\""+ Event.Type.RELEASE.name()+"\" AND r.documentId==@documentId"));
+        bindVars.put("documentId", documentId);
+        aql.addLine(AQL.trust("SORT r.indexedTimestamp ASC"));
+        aql.addLine(AQL.trust("RETURN r.indexedTimestamp)"));
+        final List<Long> timestamps = arangoDatabase.getOrCreate().query(aql.build().getValue(), bindVars, Long.class).asListRemaining();
+        if(timestamps.isEmpty()){
+            return null;
+        }
+        else if(timestamps.size()==1){
+            final Long timestamp = timestamps.get(0);
+            if(timestamp!=null){
+                return ZonedDateTime.ofInstant(Instant.ofEpochMilli(timestamp), ZoneId.systemDefault()).format(DateTimeFormatter.ISO_INSTANT);
+            }
+        }
+        else {
+            throw new AmbiguousException(String.format("Unexpected number of results when querying for first release of document %s", documentId));
+        }
+        return null;
+
     }
 
    public List<PersistedEvent> queryAllEvents(DataStage stage, SpaceName spaceName) {

@@ -495,13 +495,29 @@ public class InstancesTest extends AbstractFunctionalityTest {
             //Then
             ResponseEntity<Result<NormalizedJsonLd>> instanceById = test.fetchInstance();
             NormalizedJsonLd releasedInstance = test.assureValidPayloadIncludingId(instanceById);
-            assertNotNull(releasedInstance.get(EBRAINSVocabulary.META_LAST_RELEASED_AT));
-            assertNotNull(releasedInstance.get(EBRAINSVocabulary.META_FIRST_RELEASED_AT));
+            final String firstRelease = releasedInstance.getAs(EBRAINSVocabulary.META_FIRST_RELEASED_AT, String.class);
+            assertNotNull(firstRelease);
+            final String lastRelease = releasedInstance.getAs(EBRAINSVocabulary.META_LAST_RELEASED_AT, String.class);
+            assertNotNull(lastRelease);
+            assertEquals(firstRelease, lastRelease);
             releasedInstance.removeAllFieldsFromNamespace(EBRAINSVocabulary.META);
             test.originalInstance.removeAllFieldsFromNamespace(EBRAINSVocabulary.META);
             assertEquals(releasedInstance, test.originalInstance);
+
+            //Release again and ensure the release dates are correct
+            instances.releaseInstance(test.getInstanceUUID(), null);
+            NormalizedJsonLd releasedInstanceAfterSecondRelease = test.assureValidPayloadIncludingId(test.fetchInstance());
+            final String firstReleaseAfterSecondRelease = releasedInstanceAfterSecondRelease.getAs(EBRAINSVocabulary.META_FIRST_RELEASED_AT, String.class);
+            assertNotNull(firstRelease);
+            final String lastReleaseAfterSecondRelease = releasedInstanceAfterSecondRelease.getAs(EBRAINSVocabulary.META_LAST_RELEASED_AT, String.class);
+            assertNotNull(lastRelease);
+            assertEquals(firstRelease, firstReleaseAfterSecondRelease);
+            assertNotEquals(lastRelease, lastReleaseAfterSecondRelease);
+            assertNotEquals(firstReleaseAfterSecondRelease, lastReleaseAfterSecondRelease);
         });
     }
+
+
 
     @Test
     public void releaseInstanceForbidden() {
