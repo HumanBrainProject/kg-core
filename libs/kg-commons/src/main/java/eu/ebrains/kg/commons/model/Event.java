@@ -48,11 +48,8 @@ public class Event {
 
     private Type type;
 
-    private String userId;
-
     private Long reportedTimeStampInMs;
 
-    private boolean undeprecate;
 
     public Event() {
     }
@@ -75,10 +72,6 @@ public class Event {
 
     public Type getType() {
         return type;
-    }
-
-    public String getUserId() {
-        return userId;
     }
 
     public Long getReportedTimeStampInMs() {
@@ -106,10 +99,6 @@ public class Event {
 
     public UUID getDocumentId() {
         return documentId;
-    }
-
-    public void setUserId(String userId) {
-        this.userId = userId;
     }
 
 }

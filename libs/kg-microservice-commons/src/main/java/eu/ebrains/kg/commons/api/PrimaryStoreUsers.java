@@ -26,13 +26,21 @@ import eu.ebrains.kg.commons.jsonld.NormalizedJsonLd;
 import eu.ebrains.kg.commons.markers.ExposesUserInfo;
 import eu.ebrains.kg.commons.model.Paginated;
 import eu.ebrains.kg.commons.model.PaginationParam;
+import eu.ebrains.kg.commons.model.ReducedUserInformation;
 
-public interface GraphDBUsers {
-    interface Client extends GraphDBUsers {}
+import java.util.Map;
+import java.util.Set;
+import java.util.UUID;
+
+public interface PrimaryStoreUsers {
+    interface Client extends PrimaryStoreUsers {}
 
     @ExposesUserInfo
     Paginated<NormalizedJsonLd> getUsers(PaginationParam paginationParam);
 
     @ExposesUserInfo
     Paginated<NormalizedJsonLd> getUsersWithLimitedInfo(PaginationParam paginationParam, String id);
+
+    @ExposesUserInfo
+    Map<String, ReducedUserInformation> getUsers(Set<UUID> uuids);
 }

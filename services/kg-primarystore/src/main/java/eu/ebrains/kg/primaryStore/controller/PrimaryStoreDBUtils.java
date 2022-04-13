@@ -30,5 +30,4 @@ public class PrimaryStoreDBUtils {
     public ArangoCollection getOrCreateArangoCollection(ArangoDatabase db, ArangoCollectionReference c) {
         return ArangoDatabaseProxy.getOrCreateArangoCollection(db, c);
     }
-
 }

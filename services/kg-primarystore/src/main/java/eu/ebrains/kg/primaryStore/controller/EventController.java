@@ -54,18 +54,18 @@ public class EventController {
     private final EventRepository eventRepository;
     private final IdUtils idUtils;
     private final GraphDBSpaces.Client graphDBSpaces;
-    private final UserResolver userResolver;
     private final AuthContext authContext;
+    private final UsersRepository usersRepository;
 
     private final Logger logger = LoggerFactory.getLogger(getClass());
 
-    public EventController(Permissions permissions, Ids.Client ids, EventRepository eventRepository, IdUtils idUtils, GraphDBSpaces.Client graphDBSpaces, UserResolver userResolver, AuthContext authContext) {
+    public EventController(Permissions permissions, Ids.Client ids, EventRepository eventRepository, IdUtils idUtils, GraphDBSpaces.Client graphDBSpaces, UsersRepository usersRepository, AuthContext authContext) {
         this.permissions = permissions;
         this.ids = ids;
         this.eventRepository = eventRepository;
         this.idUtils = idUtils;
         this.graphDBSpaces = graphDBSpaces;
-        this.userResolver = userResolver;
+        this.usersRepository = usersRepository;
         this.authContext = authContext;
     }
 
@@ -120,8 +120,18 @@ public class EventController {
     public PersistedEvent persistEvent(Event event, DataStage dataStage) {
         UserWithRoles userWithRoles = authContext.getUserWithRoles();
         logger.info(String.format("Received event of type %s for instance %s in space %s by user %s via client %s", event.getType().name(), event.getDocumentId(), event.getSpaceName() != null ? event.getSpaceName().getName() : null, userWithRoles != null && userWithRoles.getUser() != null ? userWithRoles.getUser().getUserName() : "anonymous", userWithRoles != null && userWithRoles.getClientId() != null ? userWithRoles.getClientId() : "direct access"));
-        User user = userResolver.resolveUser(event);
-        PersistedEvent persistedEvent = new PersistedEvent(event, dataStage, user, graphDBSpaces.getSpace(event.getSpaceName()));
+        if(userWithRoles==null){
+            throw new UnauthorizedException("Can not persist an event without user information");
+        }
+        if(dataStage == event.getType().getStage()){
+            //We only update the representation of the user at its original stage since otherwise, we might end up having the user updated multiple times (once per stage)
+            usersRepository.updateUserRepresentation(userWithRoles.getUser());
+        }
+        if(dataStage==DataStage.NATIVE && (event.getType() == Event.Type.INSERT || event.getType() == Event.Type.UPDATE)){
+            //For insert and update, we need to ensure that the user information is also present in the native payload to properly calculate the alternatives
+            event.getData().put(EBRAINSVocabulary.META_USER, idUtils.buildAbsoluteUrl(usersRepository.getUserUUID(userWithRoles.getUser())));
+        }
+        PersistedEvent persistedEvent = new PersistedEvent(event, dataStage, userWithRoles.getUser(), graphDBSpaces.getSpace(event.getSpaceName()));
         ensureInternalIdInPayload(persistedEvent, userWithRoles);
         checkPermission(persistedEvent);
         handleIds(dataStage, persistedEvent);
@@ -156,7 +166,7 @@ public class EventController {
                 if(userWithRoles==null){
                     throw new UnauthorizedException("It is not possible to persist an event without authentication information");
                 }
-                UUID userSpecificUUID = idUtils.getDocumentIdForUserAndInstance(persistedEvent.getUser() != null ? persistedEvent.getUser().getNativeId() : userWithRoles.getUser().getNativeId(), persistedEvent.getDocumentId());
+                UUID userSpecificUUID = idUtils.getDocumentIdForUserAndInstance(persistedEvent.getUserId(), persistedEvent.getDocumentId());
                 persistedEvent.setInstance(persistedEvent.getSpaceName(), userSpecificUUID);
             }
         }

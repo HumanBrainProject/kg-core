@@ -24,12 +24,10 @@ package eu.ebrains.kg.core.api.instances;
 
 import eu.ebrains.kg.commons.exception.ForbiddenException;
 import eu.ebrains.kg.commons.jsonld.NormalizedJsonLd;
-import eu.ebrains.kg.commons.model.GraphEntity;
-import eu.ebrains.kg.commons.model.ReleaseStatus;
-import eu.ebrains.kg.commons.model.Result;
-import eu.ebrains.kg.commons.model.ScopeElement;
+import eu.ebrains.kg.commons.model.*;
 import eu.ebrains.kg.commons.permission.roles.RoleMapping;
 import eu.ebrains.kg.commons.semantics.vocabularies.EBRAINSVocabulary;
+import eu.ebrains.kg.commons.semantics.vocabularies.SchemaOrgVocabulary;
 import eu.ebrains.kg.core.api.Instances;
 import eu.ebrains.kg.core.api.instances.tests.*;
 import eu.ebrains.kg.core.model.ExposedStage;
@@ -186,6 +184,33 @@ public class InstancesTest extends AbstractFunctionalityTest {
                 assertNotNull(document.get(k));
                 assertEquals("The non-dynamic properties should remain the same when doing a contribution", test.originalInstance.get(k), document.get(k));
             });
+        });
+    }
+
+    @Test
+    public void contributeToInstanceAlternatives() {
+        //Given
+        final ExtendedResponseConfiguration extendedResponseConfiguration = new ExtendedResponseConfiguration();
+        extendedResponseConfiguration.setReturnAlternatives(true);
+        ContributeToInstancePartialReplacementTest test = new ContributeToInstancePartialReplacementTest(ctx(WRITE_ROLES), instances, extendedResponseConfiguration);
+
+        //When
+        test.execute(() -> {
+            NormalizedJsonLd document = test.assureValidPayloadIncludingId(test.response);
+            final NormalizedJsonLd alternative = document.getAs(EBRAINSVocabulary.META_ALTERNATIVE, NormalizedJsonLd.class);
+            assertNotNull(alternative);
+
+            final List<NormalizedJsonLd> alternativeOfManipulatedProperty = alternative.getAsListOf(ContributeToInstancePartialReplacementTest.MANIPULATED_PROPERTY, NormalizedJsonLd.class);
+            assertEquals(2, alternativeOfManipulatedProperty.size());
+
+            final NormalizedJsonLd selectedAlternative = alternativeOfManipulatedProperty.stream().filter(a -> a.getAs(EBRAINSVocabulary.META_SELECTED, Boolean.class)).findFirst().orElseThrow();
+            final NormalizedJsonLd userOfSelectedAlternative = selectedAlternative.getAs(EBRAINSVocabulary.META_USER, NormalizedJsonLd.class);
+            assertEquals(userOfSelectedAlternative.getAs(SchemaOrgVocabulary.NAME, String.class), "Alice");
+
+            final NormalizedJsonLd notSelectedAlternative = alternativeOfManipulatedProperty.stream().filter(a -> !a.getAs(EBRAINSVocabulary.META_SELECTED, Boolean.class)).findFirst().orElseThrow();
+            final NormalizedJsonLd userOfNotSelectedAlternative = notSelectedAlternative.getAs(EBRAINSVocabulary.META_USER, NormalizedJsonLd.class);
+            assertEquals(userOfNotSelectedAlternative.getAs(SchemaOrgVocabulary.NAME, String.class), "Admin");
+
         });
     }
 
@@ -470,6 +495,8 @@ public class InstancesTest extends AbstractFunctionalityTest {
             //Then
             ResponseEntity<Result<NormalizedJsonLd>> instanceById = test.fetchInstance();
             NormalizedJsonLd releasedInstance = test.assureValidPayloadIncludingId(instanceById);
+            assertNotNull(releasedInstance.get(EBRAINSVocabulary.META_LAST_RELEASED_AT));
+            assertNotNull(releasedInstance.get(EBRAINSVocabulary.META_FIRST_RELEASED_AT));
             releasedInstance.removeAllFieldsFromNamespace(EBRAINSVocabulary.META);
             test.originalInstance.removeAllFieldsFromNamespace(EBRAINSVocabulary.META);
             assertEquals(releasedInstance, test.originalInstance);

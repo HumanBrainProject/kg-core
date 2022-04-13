@@ -65,7 +65,7 @@ public abstract class AbstractTest {
     }
 
     protected void beAdmin() {
-        User user = new User("bobEverythingGoes", "Bob Everything Goes", "fakeAdmin@ebrains.eu", "Bob Everything", "Goes", "admin");
+        User user = new User("bobEverythingGoes", "Admin", "fakeAdmin@ebrains.eu", "Bob Everything", "Goes", "admin");
         final List<UUID> invitationRoles = testContext.getAuthenticationRepository().getInvitationRoles(USER_ID.toString());
         UserWithRoles userWithRoles = new UserWithRoles(user, ADMIN_ROLE, ADMIN_CLIENT_ROLE, invitationRoles,"testClient");
         Mockito.doAnswer(a -> user).when(testContext.getAuthentication()).getMyUserInfo();
@@ -78,7 +78,7 @@ public abstract class AbstractTest {
         } else if (currentRoles.size()==1 && currentRoles.get(0).equals(RoleMapping.ADMIN.toRole(null))) {
             beAdmin();
         } else {
-            User user = new User("alice", "Alice ", "fakeAlice@ebrains.eu", "Alice", "User", USER_ID.toString());
+            User user = new User("alice", "Alice", "fakeAlice@ebrains.eu", "Alice", "User", USER_ID.toString());
             final List<UUID> invitationRoles = testContext.getAuthenticationRepository().getInvitationRoles(USER_ID.toString());
             UserWithRoles userWithRoles = new UserWithRoles(user, currentRoles.stream().filter(Objects::nonNull).map(Role::getName).collect(Collectors.toList()), ADMIN_CLIENT_ROLE, invitationRoles,"testClient");
             Mockito.doAnswer(a -> user).when(testContext.getAuthentication()).getMyUserInfo();

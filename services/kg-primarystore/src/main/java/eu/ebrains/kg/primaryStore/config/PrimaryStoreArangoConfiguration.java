@@ -59,4 +59,10 @@ public class PrimaryStoreArangoConfiguration {
         return new ArangoDatabaseProxy(arangoDB.build(), "kg1-events");
     }
 
+    @Bean
+    @Qualifier("userDB")
+    public ArangoDatabaseProxy produceUsersDb(@Qualifier("arangoBuilderForPrimaryStore") ArangoDB.Builder arangoDB) {
+        return new ArangoDatabaseProxy(arangoDB.build(), "kg1-users");
+    }
+
 }
