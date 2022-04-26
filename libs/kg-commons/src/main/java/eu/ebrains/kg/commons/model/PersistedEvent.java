@@ -24,16 +24,13 @@ package eu.ebrains.kg.commons.model;
 
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import eu.ebrains.kg.commons.jsonld.JsonLdId;
 import eu.ebrains.kg.commons.model.internal.spaces.Space;
 
 import java.util.Date;
-import java.util.List;
 import java.util.UUID;
 
 public class PersistedEvent extends Event implements EventId {
-    private User user;
-    private String ingestionUserId;
+    private String userId;
     private Long indexedTimestamp;
     private String eventId;
     private DataStage dataStage;
@@ -49,12 +46,11 @@ public class PersistedEvent extends Event implements EventId {
 
     public PersistedEvent(Event event, DataStage dataStage, User user, Space space) {
         super(event.getSpaceName(), event.getDocumentId(), event.getData(), event.getType(), event.getReportedTimeStampInMs());
-        this.ingestionUserId = event.getUserId();
+        this.userId = user.getNativeId();
         this.indexedTimestamp = new Date().getTime();
         this.eventId = UUID.randomUUID().toString();
         this.key = this.eventId;
         this.dataStage = dataStage;
-        this.user = user;
         this.space = space;
     }
 
@@ -62,8 +58,8 @@ public class PersistedEvent extends Event implements EventId {
         return key;
     }
 
-    public String getIngestionUserId() {
-        return ingestionUserId;
+    public String getUserId() {
+        return userId;
     }
 
     public boolean isSuggestion() {
@@ -80,10 +76,6 @@ public class PersistedEvent extends Event implements EventId {
 
     public DataStage getDataStage() {
         return dataStage;
-    }
-
-    public User getUser() {
-        return user;
     }
 
     public void setSuggestion(boolean suggestion) {

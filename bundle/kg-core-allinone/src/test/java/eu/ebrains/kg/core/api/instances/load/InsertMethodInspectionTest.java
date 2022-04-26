@@ -23,6 +23,7 @@
 package eu.ebrains.kg.core.api.instances.load;
 
 import eu.ebrains.kg.metrics.PerformanceTestUtils;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.springframework.test.context.TestPropertySource;
 

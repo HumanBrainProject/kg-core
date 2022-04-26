@@ -17,9 +17,13 @@
 package eu.ebrains.kg.graphdb.structure.controller;
 
 import eu.ebrains.kg.arango.commons.model.ArangoCollectionReference;
+import eu.ebrains.kg.commons.IdUtils;
 import eu.ebrains.kg.commons.Tuple;
+import eu.ebrains.kg.commons.api.Ids;
 import eu.ebrains.kg.commons.jsonld.DynamicJson;
+import eu.ebrains.kg.commons.jsonld.NormalizedJsonLd;
 import eu.ebrains.kg.commons.model.DataStage;
+import eu.ebrains.kg.commons.model.Result;
 import eu.ebrains.kg.commons.model.SpaceName;
 import eu.ebrains.kg.commons.model.Type;
 import eu.ebrains.kg.commons.model.external.types.*;
@@ -28,7 +32,6 @@ import eu.ebrains.kg.commons.models.UserWithRoles;
 import eu.ebrains.kg.commons.semantics.vocabularies.EBRAINSVocabulary;
 import eu.ebrains.kg.commons.semantics.vocabularies.SchemaOrgVocabulary;
 import eu.ebrains.kg.graphdb.commons.controller.PermissionsController;
-import eu.ebrains.kg.graphdb.instances.api.GraphDBInstancesAPI;
 import eu.ebrains.kg.graphdb.structure.model.PropertyOfTypeInSpaceReflection;
 import eu.ebrains.kg.graphdb.structure.model.TargetTypeReflection;
 import eu.ebrains.kg.graphdb.structure.model.TypeWithInstanceCountReflection;
@@ -47,9 +50,10 @@ public class MetaDataController {
 
     private final StructureRepository structureRepository;
     private final PermissionsController permissionsController;
+
     private final Logger logger = LoggerFactory.getLogger(getClass());
 
-    public MetaDataController(StructureRepository structureRepository, PermissionsController permissionsController) {
+    public MetaDataController(StructureRepository structureRepository, PermissionsController permissionsController, Ids.Client ids, IdUtils idUtils) {
         this.structureRepository = structureRepository;
         this.permissionsController = permissionsController;
     }
@@ -63,27 +67,100 @@ public class MetaDataController {
     }
 
 
-    private void readMetaDataStructureForInvitations(DataStage stage, List<String> typeRestriction, boolean withIncomingLinks, boolean withProperties, Map<String, TypeInformation> typeInformations, Map<String, List<SpaceTypeInformation>> spaceTypeInformationLookup, List<String> allRelevantEdges, SpaceName clientSpace, List<UUID> invitations) {
-        //TODO to be implemented
+    private void readMetaDataStructureForInvitations(DataStage stage, List<String> typeRestriction, boolean withIncomingLinks, boolean withProperties, Map<String, TypeInformation> typeInformations, Map<String, List<SpaceTypeInformation>> spaceTypeInformationLookup, List<String> allRelevantEdges, SpaceName clientSpace, List<NormalizedJsonLd> invitations, SpaceName privateUserSpace) {
+        if (stage == DataStage.IN_PROGRESS) {
+            invitations.forEach(i -> {
+                i.types().stream().distinct().filter(t -> CollectionUtils.isEmpty(typeRestriction) || typeRestriction.contains(t)).forEach(t -> {
+                    final List<SpaceTypeInformation> spaceTypeInformations = spaceTypeInformationLookup.computeIfAbsent(t, k -> new ArrayList<>(Collections.singletonList(new SpaceTypeInformation())));
+                    final SpaceTypeInformation spaceTypeInformation = spaceTypeInformations.get(0);
+                    spaceTypeInformation.setSpace(SpaceName.REVIEW_SPACE);
+                    spaceTypeInformation.setOccurrences(spaceTypeInformation.getOccurrences() == null ? 1 : spaceTypeInformation.getOccurrences() + 1);
 
+                    //TODO properties, incomingLinks
+                    if (typeInformations.get(t) == null) {
+                        final TypeInformation typeInformation = new TypeInformation();
+                        final DynamicJson typeSpecification = structureRepository.getTypeSpecification(t);
+                        typeInformation.setIdentifier(t);
+                        typeInformation.setName(Type.labelFromName(t));
+                        if (typeSpecification != null) {
+                            typeSpecification.keySet().forEach(k -> {
+                                if (typeSpecification.get(k) != null) {
+                                    typeInformation.put(k, typeSpecification.get(k));
+                                }
+                            });
+                        }
+                        typeInformations.put(t, typeInformation);
+                    }
+                    final TypeInformation typeInformation = typeInformations.get(t);
+                    List<SpaceTypeInformation> spaces = typeInformation.getSpaces();
+                    if (CollectionUtils.isEmpty(spaces)) {
+                        spaces = new ArrayList<>();
+                        typeInformation.setSpaces(spaces);
+                    }
+                    final Optional<SpaceTypeInformation> space = spaces.stream().filter(s -> s.getSpace().equals(SpaceName.REVIEW_SPACE)).findFirst();
+                    SpaceTypeInformation reviewSpace;
+                    if (space.isPresent()) {
+                        reviewSpace = space.get();
+                        reviewSpace.setOccurrences(reviewSpace.getOccurrences() + 1);
+                    } else {
+                        reviewSpace = new SpaceTypeInformation();
+                        reviewSpace.setSpace(SpaceName.REVIEW_SPACE);
+                        reviewSpace.setOccurrences(1);
+                        spaces.add(reviewSpace);
+                    }
+                });
+            });
+            if(withProperties){
+                final Space spaceConfig = new Space(SpaceName.fromString(SpaceName.REVIEW_SPACE), false, false, false);
+                spaceConfig.setExistsInDB(false);
+                for (String type : spaceTypeInformationLookup.keySet()) {
+                    final List<SpaceTypeInformation> spaceTypeInformations = spaceTypeInformationLookup.get(type);
+                    final SpaceTypeInformation reviewSpaceType = spaceTypeInformations.stream().filter(i -> i.getSpace().equals(SpaceName.REVIEW_SPACE)).findFirst().orElseThrow();
+                    reviewSpaceType.setProperties(new ArrayList<>());
+                    handleProperties(stage, allRelevantEdges, spaceConfig, clientSpace, privateUserSpace, type, reviewSpaceType, new ArrayList<>(), new HashSet<>());
+                    final SpaceTypeInformation spaceTypeInformationForTypeInformations = typeInformations.get(type).getSpaces().stream().filter(s -> s.getSpace().equals(SpaceName.REVIEW_SPACE)).findFirst().orElseThrow();
+                    spaceTypeInformationForTypeInformations.setProperties(new ArrayList<>(reviewSpaceType.getProperties()));
+                }
+                invitations.forEach( i-> i.types().stream().distinct().filter(t -> CollectionUtils.isEmpty(typeRestriction) || typeRestriction.contains(t)).forEach(t -> {
+                    final SpaceTypeInformation spaceTypeInformation = spaceTypeInformationLookup.get(t).stream().filter(type -> type.getSpace().equals(SpaceName.REVIEW_SPACE)).findFirst().orElseThrow();
+                    i.visitPublicKeys((k, v)-> {
+                        final Optional<Property> property = spaceTypeInformation.getProperties().stream().filter(p -> p.getIdentifier().equals(k)).findFirst();
+                        if(property.isPresent()){
+                            property.get().setOccurrences(property.get().getOccurrences()+1);
+                        }
+                        else{
+                            Property p = new Property();
+                            p.setIdentifier(k);
+                            p.setOccurrences(1);
+                            spaceTypeInformation.getProperties().add(p);
+                        }
+                    });
+                }));
+            }
+        }
     }
 
+    public Map<String, Result<TypeInformation>> getTypesByName(List<String> types, DataStage stage, String space,
+                                                               boolean withProperties, boolean withIncomingLinks, UserWithRoles userWithRoles, SpaceName clientSpace, List<NormalizedJsonLd> invitationDocuments) {
+        final List<TypeInformation> typeInformation = readMetaDataStructure(stage, space, types, withProperties, withIncomingLinks, userWithRoles, clientSpace, userWithRoles.getPrivateSpace(), invitationDocuments);
+        return typeInformation.stream().filter(t -> types.contains(t.getIdentifier())).collect(Collectors.toMap(TypeInformation::getIdentifier, Result::ok));
+    }
 
-    public List<TypeInformation> readMetaDataStructure(DataStage stage, String spaceRestriction, List<String> typeRestriction, boolean withProperties, boolean withIncomingLinks, UserWithRoles userWithRoles, SpaceName clientSpace, SpaceName privateUserSpace, List<UUID> invitations) {
+    public List<TypeInformation> readMetaDataStructure(DataStage stage, String spaceRestriction, List<String> typeRestriction, boolean withProperties, boolean withIncomingLinks, UserWithRoles userWithRoles, SpaceName clientSpace, SpaceName privateUserSpace, List<NormalizedJsonLd> invitationDocuments) {
         Date start = new Date();
         Map<String, TypeInformation> typeInformation = new HashMap<>();
         Map<String, List<SpaceTypeInformation>> spaceTypeInformationLookup = new HashMap<>();
         final List<String> allRelevantEdges = structureRepository.getAllRelevantEdges(stage);
-        if (!CollectionUtils.isEmpty(invitations) && (withIncomingLinks || spaceRestriction == null || SpaceName.REVIEW_SPACE.equals(spaceRestriction))) {
+        String resolvedSpaceRestriction = privateUserSpace != null && SpaceName.PRIVATE_SPACE.equals(spaceRestriction) ? privateUserSpace.getName() : spaceRestriction;
+        if (!CollectionUtils.isEmpty(invitationDocuments) && (withIncomingLinks || spaceRestriction == null || SpaceName.REVIEW_SPACE.equals(spaceRestriction))) {
             //We have invitations available -> we have to reflect on them explicitly
-            readMetaDataStructureForInvitations(stage, typeRestriction, withIncomingLinks, withIncomingLinks || withProperties, typeInformation, spaceTypeInformationLookup, allRelevantEdges, clientSpace, invitations);
+            readMetaDataStructureForInvitations(stage, typeRestriction, withIncomingLinks, withIncomingLinks || withProperties, typeInformation, spaceTypeInformationLookup, allRelevantEdges, clientSpace, invitationDocuments, privateUserSpace);
         }
         final List<Space> s = getSpaces(stage, userWithRoles);
-        String resolvedSpaceRestriction = privateUserSpace != null && SpaceName.PRIVATE_SPACE.equals(spaceRestriction) ? privateUserSpace.getName() : spaceRestriction;
         for (Space space : s) {
             // We need all spaces either if there is no space filter or if we require incoming links (because we need to reflect on the whole structure to capture all).
             // If there is a space filter applied and no requirement for incoming links, we can speed things up.
-            if (withIncomingLinks || resolvedSpaceRestriction == null || space.getName().getName().equals(resolvedSpaceRestriction)) {
+            if (resolvedSpaceRestriction == null || (!SpaceName.REVIEW_SPACE.equals(spaceRestriction) && withIncomingLinks) || space.getName().getName().equals(resolvedSpaceRestriction)) {
                 //When asking for incoming links we need to fetch the properties as well -> otherwise we won't have the required information available.
                 readMetaDataStructureForSpace(stage, typeRestriction, withIncomingLinks, withIncomingLinks || withProperties, typeInformation, spaceTypeInformationLookup, allRelevantEdges, space, clientSpace, privateUserSpace);
             }
@@ -259,96 +336,99 @@ public class MetaDataController {
                 spaceTypeInformation.setProperties(new ArrayList<>());
                 final List<PropertyOfTypeInSpaceReflection> reflectedProperties = space.isExistsInDB() ? structureRepository.reflectPropertiesOfTypeInSpace(stage, space.getName(), type.getName()) : Collections.emptyList();
                 final Set<String> reflectedPropertyNames = reflectedProperties.stream().map(PropertyOfTypeInSpaceReflection::getName).collect(Collectors.toSet());
-                final Map<String, DynamicJson> propertiesOfTypeBySpecification = structureRepository.getPropertiesOfTypeBySpecification(type.getName()).stream().collect(Collectors.toMap(k -> k.getAs(SchemaOrgVocabulary.IDENTIFIER, String.class), v -> v));
-                final Map<String, DynamicJson> clientSpecificPropertiesOfTypeBySpecification = clientSpace == null ? Collections.emptyMap() : structureRepository.getClientSpecificPropertiesOfTypeBySpecification(type.getName(), clientSpace).stream().collect(Collectors.toMap(k -> k.getAs(SchemaOrgVocabulary.IDENTIFIER, String.class), v -> v));
+                handleProperties(stage, allRelevantEdges, space, clientSpace, privateUserSpace, type.getName(), spaceTypeInformation, reflectedProperties, reflectedPropertyNames);
+            }
 
-                Stream.concat(reflectedProperties.stream(), propertiesOfTypeBySpecification.keySet().stream().filter(k -> !reflectedPropertyNames.contains(k)).map(k -> {
-                    //Create placeholders for those properties that are only existing in the specification
-                    PropertyOfTypeInSpaceReflection p = new PropertyOfTypeInSpaceReflection();
-                    p.setName(k);
-                    p.setOccurrences(0);
-                    return p;
-                })).forEach(property -> {
-                    Property p = new Property();
-                    spaceTypeInformation.getProperties().add(p);
-                    final DynamicJson globalPropertySpec = structureRepository.getPropertyBySpecification(property.getName());
-                    Set<String> targetTypesFromSpec = new HashSet<>();
-                    if (globalPropertySpec != null) {
-                        globalPropertySpec.keySet().forEach(k -> {
-                            //Target types are part of the property specification but will be treated differently
-                            if (!EBRAINSVocabulary.META_PROPERTY_TARGET_TYPES.equals(k)) {
-                                p.put(k, globalPropertySpec.get(k));
-                            }
-                        });
-                        targetTypesFromSpec.addAll(globalPropertySpec.getAsListOf(EBRAINSVocabulary.META_PROPERTY_TARGET_TYPES, String.class));
+        });
+    }
+
+    private void handleProperties(DataStage stage, List<String> allRelevantEdges, Space space, SpaceName clientSpace, SpaceName privateUserSpace, String typeName, SpaceTypeInformation spaceTypeInformation, List<PropertyOfTypeInSpaceReflection> reflectedProperties, Set<String> reflectedPropertyNames) {
+        final Map<String, DynamicJson> propertiesOfTypeBySpecification = structureRepository.getPropertiesOfTypeBySpecification(typeName).stream().collect(Collectors.toMap(k -> k.getAs(SchemaOrgVocabulary.IDENTIFIER, String.class), v -> v));
+        final Map<String, DynamicJson> clientSpecificPropertiesOfTypeBySpecification = clientSpace == null ? Collections.emptyMap() : structureRepository.getClientSpecificPropertiesOfTypeBySpecification(typeName, clientSpace).stream().collect(Collectors.toMap(k -> k.getAs(SchemaOrgVocabulary.IDENTIFIER, String.class), v -> v));
+        Stream.concat(reflectedProperties.stream(), propertiesOfTypeBySpecification.keySet().stream().filter(k -> !reflectedPropertyNames.contains(k)).map(k -> {
+            //Create placeholders for those properties that are only existing in the specification
+            PropertyOfTypeInSpaceReflection p = new PropertyOfTypeInSpaceReflection();
+            p.setName(k);
+            p.setOccurrences(0);
+            return p;
+        })).forEach(property -> {
+            Property p = new Property();
+            spaceTypeInformation.getProperties().add(p);
+            final DynamicJson globalPropertySpec = structureRepository.getPropertyBySpecification(property.getName());
+            Set<String> targetTypesFromSpec = new HashSet<>();
+            if (globalPropertySpec != null) {
+                globalPropertySpec.keySet().forEach(k -> {
+                    //Target types are part of the property specification but will be treated differently
+                    if (!EBRAINSVocabulary.META_PROPERTY_TARGET_TYPES.equals(k)) {
+                        p.put(k, globalPropertySpec.get(k));
                     }
-                    if (clientSpace != null) {
-                        final DynamicJson clientSpecificPropertySpec = structureRepository.getClientSpecificPropertyBySpecification(property.getName(), clientSpace);
-                        if (clientSpecificPropertySpec != null) {
-                            clientSpecificPropertySpec.keySet().forEach(k -> {
-                                //We don't allow client specific target type definitions.
-                                if (!EBRAINSVocabulary.META_PROPERTY_TARGET_TYPES.equals(k)) {
-                                    p.put(k, clientSpecificPropertySpec.get(k));
-                                }
-                            });
+                });
+                targetTypesFromSpec.addAll(globalPropertySpec.getAsListOf(EBRAINSVocabulary.META_PROPERTY_TARGET_TYPES, String.class));
+            }
+            if (clientSpace != null) {
+                final DynamicJson clientSpecificPropertySpec = structureRepository.getClientSpecificPropertyBySpecification(property.getName(), clientSpace);
+                if (clientSpecificPropertySpec != null) {
+                    clientSpecificPropertySpec.keySet().forEach(k -> {
+                        //We don't allow client specific target type definitions.
+                        if (!EBRAINSVocabulary.META_PROPERTY_TARGET_TYPES.equals(k)) {
+                            p.put(k, clientSpecificPropertySpec.get(k));
                         }
+                    });
+                }
+            }
+            final DynamicJson propertySpecFromRelation = propertiesOfTypeBySpecification.get(property.getName());
+            if (propertySpecFromRelation != null) {
+                propertySpecFromRelation.keySet().forEach(k -> {
+                    //Target types are part of the property specification but will be treated differently
+                    if (!EBRAINSVocabulary.META_PROPERTY_TARGET_TYPES.equals(k)) {
+                        p.put(k, propertySpecFromRelation.get(k));
                     }
-                    final DynamicJson propertySpecFromRelation = propertiesOfTypeBySpecification.get(property.getName());
-                    if (propertySpecFromRelation != null) {
-                        propertySpecFromRelation.keySet().forEach(k -> {
-                            //Target types are part of the property specification but will be treated differently
-                            if (!EBRAINSVocabulary.META_PROPERTY_TARGET_TYPES.equals(k)) {
-                                p.put(k, propertySpecFromRelation.get(k));
-                            }
-                        });
-                        targetTypesFromSpec.addAll(propertySpecFromRelation.getAsListOf(EBRAINSVocabulary.META_PROPERTY_TARGET_TYPES, String.class));
-                    }
-                    final DynamicJson clientSpecificPropertySpecFromRelation = clientSpecificPropertiesOfTypeBySpecification.get(property.getName());
-                    if (clientSpecificPropertySpecFromRelation != null) {
-                        clientSpecificPropertySpecFromRelation.keySet().forEach(k -> {
-                            //We don't allow client specific target type definitions.
-                            if (!EBRAINSVocabulary.META_PROPERTY_TARGET_TYPES.equals(k)) {
-                                p.put(k, clientSpecificPropertySpecFromRelation.get(k));
-                            }
-                        });
-                    }
-                    p.setOccurrences(property.getOccurrences());
-                    p.setIdentifier(property.getName());
-                    final ArangoCollectionReference edgeCollection = new ArangoCollectionReference(property.getName(), true);
-                    if (!targetTypesFromSpec.isEmpty() || allRelevantEdges.contains(edgeCollection.getCollectionName())) {
-                        final List<TargetTypeReflection> targetTypeReflections = space.isExistsInDB() && allRelevantEdges.contains(edgeCollection.getCollectionName()) ? structureRepository.reflectTargetTypes(stage, space.getName(), type.getName(), property.getName()) : Collections.emptyList();
-                        final List<TargetType> targetTypes = new ArrayList<>();
-                        p.setTargetTypes(targetTypes);
-                        final Map<String, List<TargetTypeReflection>> targetTypeReflectionsByType = targetTypeReflections.stream().collect(Collectors.groupingBy(TargetTypeReflection::getName));
-                        targetTypeReflectionsByType.putAll(targetTypesFromSpec.stream().filter(t -> !targetTypeReflectionsByType.containsKey(t)).map(t -> {
-                            TargetTypeReflection r = new TargetTypeReflection();
-                            r.setName(t);
-                            return r;
-                        }).collect(Collectors.toMap(TargetTypeReflection::getName, Collections::singletonList)));
-                        for (String targetType : targetTypeReflectionsByType.keySet()) {
-                            TargetType t = new TargetType();
-                            t.setType(targetType);
-                            final List<SpaceReference> spaceReferences = new ArrayList<>();
-                            targetTypes.add(t);
-                            int totalOccurrences = 0;
-                            for (TargetTypeReflection reflection : targetTypeReflectionsByType.get(targetType)) {
-                                if (reflection.getSpace() != null) {
-                                    SpaceReference spaceReference = new SpaceReference();
-                                    spaceReference.setSpace(SpaceName.translateSpace(reflection.getSpace(), privateUserSpace));
-                                    spaceReference.setOccurrences(reflection.getOccurrences());
-                                    totalOccurrences += reflection.getOccurrences();
-                                    spaceReferences.add(spaceReference);
-                                }
-                            }
-                            if (!spaceReferences.isEmpty()) {
-                                t.setSpaces(spaceReferences);
-                            }
-                            t.setOccurrences(totalOccurrences);
-                        }
+                });
+                targetTypesFromSpec.addAll(propertySpecFromRelation.getAsListOf(EBRAINSVocabulary.META_PROPERTY_TARGET_TYPES, String.class));
+            }
+            final DynamicJson clientSpecificPropertySpecFromRelation = clientSpecificPropertiesOfTypeBySpecification.get(property.getName());
+            if (clientSpecificPropertySpecFromRelation != null) {
+                clientSpecificPropertySpecFromRelation.keySet().forEach(k -> {
+                    //We don't allow client specific target type definitions.
+                    if (!EBRAINSVocabulary.META_PROPERTY_TARGET_TYPES.equals(k)) {
+                        p.put(k, clientSpecificPropertySpecFromRelation.get(k));
                     }
                 });
             }
-
+            p.setOccurrences(property.getOccurrences());
+            p.setIdentifier(property.getName());
+            final ArangoCollectionReference edgeCollection = new ArangoCollectionReference(property.getName(), true);
+            if (!targetTypesFromSpec.isEmpty() || allRelevantEdges.contains(edgeCollection.getCollectionName())) {
+                final List<TargetTypeReflection> targetTypeReflections = space.isExistsInDB() && allRelevantEdges.contains(edgeCollection.getCollectionName()) ? structureRepository.reflectTargetTypes(stage, space.getName(), typeName, property.getName()) : Collections.emptyList();
+                final List<TargetType> targetTypes = new ArrayList<>();
+                p.setTargetTypes(targetTypes);
+                final Map<String, List<TargetTypeReflection>> targetTypeReflectionsByType = targetTypeReflections.stream().collect(Collectors.groupingBy(TargetTypeReflection::getName));
+                targetTypeReflectionsByType.putAll(targetTypesFromSpec.stream().filter(t -> !targetTypeReflectionsByType.containsKey(t)).map(t -> {
+                    TargetTypeReflection r = new TargetTypeReflection();
+                    r.setName(t);
+                    return r;
+                }).collect(Collectors.toMap(TargetTypeReflection::getName, Collections::singletonList)));
+                for (String targetType : targetTypeReflectionsByType.keySet()) {
+                    TargetType t = new TargetType();
+                    t.setType(targetType);
+                    final List<SpaceReference> spaceReferences = new ArrayList<>();
+                    targetTypes.add(t);
+                    int totalOccurrences = 0;
+                    for (TargetTypeReflection reflection : targetTypeReflectionsByType.get(targetType)) {
+                        if (reflection.getSpace() != null) {
+                            SpaceReference spaceReference = new SpaceReference();
+                            spaceReference.setSpace(SpaceName.translateSpace(reflection.getSpace(), privateUserSpace));
+                            spaceReference.setOccurrences(reflection.getOccurrences());
+                            totalOccurrences += reflection.getOccurrences();
+                            spaceReferences.add(spaceReference);
+                        }
+                    }
+                    if (!spaceReferences.isEmpty()) {
+                        t.setSpaces(spaceReferences);
+                    }
+                    t.setOccurrences(totalOccurrences);
+                }
+            }
         });
     }
 
@@ -357,7 +437,7 @@ public class MetaDataController {
         final List<SpaceName> reflectedSpaces = this.structureRepository.reflectSpaces(stage);
         final List<Space> spaceSpecifications = this.structureRepository.getSpaceSpecifications();
         final Set<SpaceName> spacesWithSpecifications = spaceSpecifications.stream().map(Space::getName).collect(Collectors.toSet());
-        final Stream<Space> allSpaces = Stream.concat(spaceSpecifications.stream().map(s->new Space(s.getName(), s.isAutoRelease(), s.isClientSpace(), s.isDeferCache())), reflectedSpaces.stream().filter(s -> !spacesWithSpecifications.contains(s))
+        final Stream<Space> allSpaces = Stream.concat(spaceSpecifications.stream().map(s -> new Space(s.getName(), s.isAutoRelease(), s.isClientSpace(), s.isDeferCache())), reflectedSpaces.stream().filter(s -> !spacesWithSpecifications.contains(s))
                 //These are the types without specification so they fall back to default settings.
                 .map(s -> new Space(s, false, false, false).setReflected(true)))
                 .peek(s -> {

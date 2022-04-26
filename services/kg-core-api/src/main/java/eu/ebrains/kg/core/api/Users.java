@@ -27,8 +27,8 @@ import eu.ebrains.kg.commons.IdUtils;
 import eu.ebrains.kg.commons.Version;
 import eu.ebrains.kg.commons.api.Authentication;
 import eu.ebrains.kg.commons.api.GraphDBInstances;
-import eu.ebrains.kg.commons.api.GraphDBUsers;
 import eu.ebrains.kg.commons.api.PrimaryStoreEvents;
+import eu.ebrains.kg.commons.api.PrimaryStoreUsers;
 import eu.ebrains.kg.commons.config.openApiGroups.Admin;
 import eu.ebrains.kg.commons.config.openApiGroups.Advanced;
 import eu.ebrains.kg.commons.config.openApiGroups.Simple;
@@ -62,14 +62,14 @@ import java.util.stream.Collectors;
 public class Users {
 
     private final Authentication.Client authentication;
-    private final GraphDBUsers.Client graphDBUsers;
+    private final PrimaryStoreUsers.Client primaryStoreUsers;
     private final GraphDBInstances.Client graphDBInstances;
     private final IdUtils idUtils;
     private final PrimaryStoreEvents.Client primaryStoreEvents;
 
-    public Users(Authentication.Client authentication, GraphDBUsers.Client graphDBUsers, GraphDBInstances.Client graphDBInstances, IdUtils idUtils, PrimaryStoreEvents.Client primaryStoreEvents) {
+    public Users(Authentication.Client authentication, PrimaryStoreUsers.Client primaryStoreUsers, GraphDBInstances.Client graphDBInstances, IdUtils idUtils, PrimaryStoreEvents.Client primaryStoreEvents) {
         this.authentication = authentication;
-        this.graphDBUsers = graphDBUsers;
+        this.primaryStoreUsers = primaryStoreUsers;
         this.graphDBInstances = graphDBInstances;
         this.idUtils = idUtils;
         this.primaryStoreEvents = primaryStoreEvents;
@@ -119,7 +119,7 @@ public class Users {
     @ExposesUserInfo
     @Advanced
     public ResponseEntity<PaginatedResult<NormalizedJsonLd>> getUserList(@ParameterObject PaginationParam paginationParam) {
-        Paginated<NormalizedJsonLd> users = graphDBUsers.getUsers(paginationParam);
+        Paginated<NormalizedJsonLd> users = this.primaryStoreUsers.getUsers(paginationParam);
         users.getData().forEach(NormalizedJsonLd::removeAllInternalProperties);
         return ResponseEntity.ok(PaginatedResult.ok(users));
     }
@@ -139,7 +139,7 @@ public class Users {
     @ExposesUserInfo
     @Advanced
     public ResponseEntity<PaginatedResult<NormalizedJsonLd>> getUserListLimited(@ParameterObject PaginationParam paginationParam, @RequestParam(value = "id", required = false) String id) {
-        Paginated<NormalizedJsonLd> users = graphDBUsers.getUsersWithLimitedInfo(paginationParam, id);
+        Paginated<NormalizedJsonLd> users = this.primaryStoreUsers.getUsersWithLimitedInfo(paginationParam, id);
         users.getData().forEach(NormalizedJsonLd::removeAllInternalProperties);
         return ResponseEntity.ok(PaginatedResult.ok(users));
     }
@@ -164,7 +164,7 @@ public class Users {
     @ExposesUserPicture
     public ResponseEntity<Map<UUID, String>> getUserPictures(@RequestBody List<UUID> userIds) {
         SpaceName targetSpace = InternalSpace.USERS_PICTURE_SPACE;
-        Map<UUID, Result<NormalizedJsonLd>> instancesByIds = graphDBInstances.getInstancesByIds(userIds.stream().filter(Objects::nonNull).map(userId -> new InstanceId(createUserPictureId(userId), targetSpace).serialize()).collect(Collectors.toList()), DataStage.IN_PROGRESS, false, false, false, null);
+        Map<UUID, Result<NormalizedJsonLd>> instancesByIds = graphDBInstances.getInstancesByIds(userIds.stream().filter(Objects::nonNull).map(userId -> new InstanceId(createUserPictureId(userId), targetSpace).serialize()).collect(Collectors.toList()), DataStage.IN_PROGRESS, null, false, false, false, null);
         Map<UUID, UUID> userPictureIdToUserId = userIds.stream().collect(Collectors.toMap(this::createUserPictureId, v-> v));
         return ResponseEntity.ok(instancesByIds.keySet().stream().filter(k -> instancesByIds.get(k).getData() != null && instancesByIds.get(k).getData().getAs(EBRAINSVocabulary.META_PICTURE, String.class) != null).collect(Collectors.toMap(userPictureIdToUserId::get, v -> "data:image/jpeg;base64,"+instancesByIds.get(v).getData().getAs(EBRAINSVocabulary.META_PICTURE, String.class))));
     }

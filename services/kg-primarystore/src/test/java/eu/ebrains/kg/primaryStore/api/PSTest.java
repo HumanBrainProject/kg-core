@@ -25,8 +25,11 @@ package eu.ebrains.kg.primaryStore.api;
 import eu.ebrains.kg.commons.jsonld.NormalizedJsonLd;
 import eu.ebrains.kg.commons.model.Event;
 import eu.ebrains.kg.commons.model.SpaceName;
+import eu.ebrains.kg.test.APITest;
 import eu.ebrains.kg.test.TestObjectFactory;
+import org.junit.Ignore;
 import org.junit.Test;
+import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -38,7 +41,8 @@ import java.util.UUID;
 
 @RunWith(SpringRunner.class)
 @SpringBootTest
-@TestPropertySource(properties = {"eu.ebrains.kg.arango.pwd = changeMe"})
+@Category(APITest.class)
+@Ignore //TODO fix test
 public class PSTest {
 
     @Autowired

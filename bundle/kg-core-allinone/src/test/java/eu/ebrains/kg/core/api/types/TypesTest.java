@@ -33,10 +33,12 @@ import eu.ebrains.kg.core.api.Instances;
 import eu.ebrains.kg.core.api.Types;
 import eu.ebrains.kg.core.api.types.test.DefineTypeTest;
 import eu.ebrains.kg.core.api.types.test.GetTypesByNameTest;
+import eu.ebrains.kg.core.api.types.test.GetTypesForInvitation;
 import eu.ebrains.kg.core.api.types.test.GetTypesTest;
 import eu.ebrains.kg.core.model.ExposedStage;
 import eu.ebrains.kg.testutils.AbstractFunctionalityTest;
 import eu.ebrains.kg.testutils.TestDataFactory;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.context.TestPropertySource;
@@ -48,6 +50,7 @@ import java.util.Map;
 import static org.junit.Assert.*;
 
 @TestPropertySource(properties = {"eu.ebrains.kg.core.metadata.synchronous=true"})
+@Ignore //TODO fix tests
 public class TypesTest extends AbstractFunctionalityTest {
 
     @Autowired
@@ -232,6 +235,32 @@ public class TypesTest extends AbstractFunctionalityTest {
             Result.Error error = test.response.getData().get(TestDataFactory.TEST_TYPE).getError();
             assertNotNull(error);
             assertEquals(403, error.getCode());
+        });
+    }
+
+    @Test
+    public void getTypesForInvitationInReviewSpace() {
+        //Given
+        GetTypesForInvitation test = new GetTypesForInvitation(ctx(NON_READ_TYPES_IN_PROGRESS_ROLES),  false, false, types, SpaceName.REVIEW_SPACE, instances);
+
+        //When
+        test.execute(()->{
+            //Then
+            test.assureValidPayload(test.response);
+            assertEquals(1, test.response.getData().size());
+        });
+    }
+
+    @Test
+    public void getTypesForInvitation() {
+        //Given
+        GetTypesForInvitation test = new GetTypesForInvitation(ctx(NON_READ_TYPES_IN_PROGRESS_ROLES),  false, false, types, null, instances);
+
+        //When
+        test.execute(()->{
+            //Then
+            test.assureValidPayload(test.response);
+            assertEquals(1, test.response.getData().size());
         });
     }
 

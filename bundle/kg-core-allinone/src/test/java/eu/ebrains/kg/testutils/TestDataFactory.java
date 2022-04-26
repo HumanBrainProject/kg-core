@@ -26,6 +26,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import eu.ebrains.kg.commons.jsonld.JsonLdConsts;
 import eu.ebrains.kg.commons.jsonld.JsonLdDoc;
 import eu.ebrains.kg.commons.jsonld.JsonLdId;
+import eu.ebrains.kg.commons.jsonld.NormalizedJsonLd;
 import eu.ebrains.kg.commons.semantics.vocabularies.SchemaOrgVocabulary;
 
 import java.util.HashMap;
@@ -48,6 +49,7 @@ public class TestDataFactory {
 
     public static String DYNAMIC_FIELD_PREFIX = "https://schema.hbp.eu/test";
     public static String TEST_TYPE = "https://core.kg.ebrains.eu/TestPayload";
+
 
     public static JsonLdDoc createTestData(int numberOfFields, boolean normalized, String salt, Integer linkedInstance) {
         Map<String, Object> testData = new HashMap<>();

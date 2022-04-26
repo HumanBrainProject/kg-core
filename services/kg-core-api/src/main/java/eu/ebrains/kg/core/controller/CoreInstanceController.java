@@ -183,7 +183,7 @@ public class CoreInstanceController {
         }
     }
 
-    public Map<String, Result<NormalizedJsonLd>> getInstancesByIds(List<String> ids, DataStage stage, ExtendedResponseConfiguration responseConfiguration) {
+    public Map<String, Result<NormalizedJsonLd>> getInstancesByIds(List<String> ids, DataStage stage, ExtendedResponseConfiguration responseConfiguration, String typeRestriction) {
         Map<String, Result<NormalizedJsonLd>> result = new HashMap<>();
         List<UUID> validUUIDs = ids.stream().filter(Objects::nonNull).map(id -> {
             try {
@@ -195,10 +195,12 @@ public class CoreInstanceController {
         List<InstanceId> idsAfterResolution = this.ids.resolveIdsByUUID(stage, validUUIDs, true);
         idsAfterResolution.stream().filter(InstanceId::isUnresolved).forEach(id -> result.put(id.getUuid().toString(), Result.nok(HttpStatus.NOT_FOUND.value(), HttpStatus.NOT_FOUND.getReasonPhrase())));
         if(responseConfiguration.isReturnPayload()) {
-            Map<UUID, Result<NormalizedJsonLd>> instancesByIds = graphDBInstances.getInstancesByIds(idsAfterResolution.stream().filter(i -> !i.isUnresolved()).map(InstanceId::serialize).collect(Collectors.toList()), stage, responseConfiguration.isReturnEmbedded(), responseConfiguration.isReturnAlternatives(), responseConfiguration.isReturnIncomingLinks(), responseConfiguration.getIncomingLinksPageSize());
+            Map<UUID, Result<NormalizedJsonLd>> instancesByIds = graphDBInstances.getInstancesByIds(idsAfterResolution.stream().filter(i -> !i.isUnresolved()).map(InstanceId::serialize).collect(Collectors.toList()), stage, typeRestriction, responseConfiguration.isReturnEmbedded(), responseConfiguration.isReturnAlternatives(), responseConfiguration.isReturnIncomingLinks(), responseConfiguration.getIncomingLinksPageSize());
             final SpaceName privateSpaceName = authContext.getUserWithRoles().getPrivateSpace();
             instancesByIds.forEach((k, v) -> {
-                v.getData().renamePrivateSpace(privateSpaceName);
+                if(v.getData()!=null) {
+                    v.getData().renamePrivateSpace(privateSpaceName);
+                }
                 result.put(k.toString(), v);
             });
             ids.stream().filter(Objects::nonNull).forEach(
@@ -242,7 +244,7 @@ public class CoreInstanceController {
         Result<NormalizedJsonLd> result;
         if (responseConfiguration.isReturnPayload()) {
             Map<UUID, Result<NormalizedJsonLd>> instancesByIds = graphDBInstances.getInstancesByIds(instanceIds.stream().map(InstanceId::serialize).collect(Collectors.toList()),
-                    DataStage.IN_PROGRESS,
+                    DataStage.IN_PROGRESS, null,
                     responseConfiguration.isReturnEmbedded(),
                     responseConfiguration.isReturnAlternatives(),
                     responseConfiguration instanceof ExtendedResponseConfiguration && ((ExtendedResponseConfiguration) responseConfiguration).isReturnIncomingLinks(), responseConfiguration instanceof ExtendedResponseConfiguration ? ((ExtendedResponseConfiguration) responseConfiguration).getIncomingLinksPageSize() : null);

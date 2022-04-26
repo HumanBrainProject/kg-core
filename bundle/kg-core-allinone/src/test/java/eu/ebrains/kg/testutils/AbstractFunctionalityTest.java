@@ -25,9 +25,12 @@ package eu.ebrains.kg.testutils;
 import eu.ebrains.kg.commons.AuthTokens;
 import eu.ebrains.kg.commons.permission.ClientAuthToken;
 import eu.ebrains.kg.commons.permission.UserAuthToken;
+import eu.ebrains.kg.test.APITest;
 import org.junit.Before;
+import org.junit.experimental.categories.Category;
 import org.mockito.Mockito;
 
+@Category(APITest.class)
 public abstract class AbstractFunctionalityTest extends AbstractSystemTest {
 
     private AuthTokens authTokens;

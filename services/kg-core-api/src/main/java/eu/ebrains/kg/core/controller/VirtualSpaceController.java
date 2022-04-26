@@ -23,25 +23,18 @@
 package eu.ebrains.kg.core.controller;
 
 import eu.ebrains.kg.commons.AuthContext;
-import eu.ebrains.kg.commons.jsonld.JsonLdDoc;
 import eu.ebrains.kg.commons.jsonld.NormalizedJsonLd;
-import eu.ebrains.kg.commons.model.DataStage;
-import eu.ebrains.kg.commons.model.ExtendedResponseConfiguration;
-import eu.ebrains.kg.commons.model.ResponseConfiguration;
-import eu.ebrains.kg.commons.model.Result;
+import eu.ebrains.kg.commons.model.*;
 import org.springframework.stereotype.Component;
 
-import java.util.Collection;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.UUID;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 @Component
 public class VirtualSpaceController {
-
-    public static final String INVITATION_SPACE = "invitations";
 
     private final CoreInstanceController instanceController;
     private final AuthContext authContext;
@@ -54,36 +47,23 @@ public class VirtualSpaceController {
     public boolean isVirtualSpace(String spaceName){
         if(spaceName != null) {
             switch (spaceName) {
-                case INVITATION_SPACE:
+                case SpaceName.REVIEW_SPACE:
                     return true;
             }
         }
         return false;
     }
 
-    public List<String> getTypesByInvitation( DataStage stage){
-        final Stream<NormalizedJsonLd> stream = handleInvitations(new ResponseConfiguration(), stage);
-        return stream.map(JsonLdDoc::types).flatMap(Collection::stream).distinct().collect(Collectors.toList());
-    }
 
     public List<NormalizedJsonLd> getInstancesByInvitation(ResponseConfiguration responseConfiguration, DataStage stage, String type){
-        Stream<NormalizedJsonLd> stream = handleInvitations(responseConfiguration, stage);
-        if(type!=null){
-            stream = stream.filter(d -> d.types().contains(type));
-        }
-        return stream.collect(Collectors.toList());
-    }
-
-
-    private Stream<NormalizedJsonLd> handleInvitations(ResponseConfiguration responseConfiguration, DataStage stage){
         final ExtendedResponseConfiguration r = new ExtendedResponseConfiguration();
         r.setReturnAlternatives(responseConfiguration.isReturnAlternatives());
         r.setReturnEmbedded(responseConfiguration.isReturnEmbedded());
         r.setReturnPayload(responseConfiguration.isReturnPayload());
         r.setReturnPermissions(responseConfiguration.isReturnPermissions());
         final List<String> invitationIds = authContext.getUserWithRoles().getInvitations().stream().map(UUID::toString).sorted().collect(Collectors.toList());
-        final Map<String, Result<NormalizedJsonLd>> instancesByIds = instanceController.getInstancesByIds(invitationIds, stage, r);
-        return instancesByIds.values().stream().map(Result::getData);
+        final Map<String, Result<NormalizedJsonLd>> instancesByIds = instanceController.getInstancesByIds(invitationIds, stage, r, type);
+        return instancesByIds.values().stream().map(Result::getData).filter(Objects::nonNull).collect(Collectors.toList());
     }
 
 

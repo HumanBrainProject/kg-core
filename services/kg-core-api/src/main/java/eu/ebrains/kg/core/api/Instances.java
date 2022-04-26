@@ -232,7 +232,7 @@ public class Instances {
     @Advanced
     public Result<Map<String, Result<NormalizedJsonLd>>> getInstancesByIds(@RequestBody List<String> ids, @RequestParam("stage") ExposedStage stage, @ParameterObject ExtendedResponseConfiguration responseConfiguration) {
         Date startTime = new Date();
-        return Result.ok(instanceController.getInstancesByIds(ids, stage.getStage(), responseConfiguration)).setExecutionDetails(startTime, new Date());
+        return Result.ok(instanceController.getInstancesByIds(ids, stage.getStage(), responseConfiguration, null)).setExecutionDetails(startTime, new Date());
     }
 
 
@@ -246,7 +246,7 @@ public class Instances {
         Map<UUID, InstanceId> resolvedIds = idsController.resolveIds(stage.getStage(), idWithAlternatives);
         Map<String, InstanceId> identifierToInstanceIdLookup = new HashMap<>();
         resolvedIds.keySet().forEach(uuid -> identifierToInstanceIdLookup.put(uuidToIdentifier.get(uuid), resolvedIds.get(uuid)));
-        Map<String, Result<NormalizedJsonLd>> instancesByIds = instanceController.getInstancesByIds(identifierToInstanceIdLookup.values().stream().filter(Objects::nonNull).map(id -> id.getUuid().toString()).collect(Collectors.toList()), stage.getStage(), responseConfiguration);
+        Map<String, Result<NormalizedJsonLd>> instancesByIds = instanceController.getInstancesByIds(identifierToInstanceIdLookup.values().stream().filter(Objects::nonNull).map(id -> id.getUuid().toString()).collect(Collectors.toList()), stage.getStage(), responseConfiguration, null);
         Map<String, Result<NormalizedJsonLd>> result = new HashMap<>();
         identifiers.forEach(identifier -> {
             InstanceId instanceId = identifierToInstanceIdLookup.get(identifier);

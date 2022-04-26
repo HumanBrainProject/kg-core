@@ -146,56 +146,6 @@ public class ReconcileTest {
     }
 
 
-    @Test
-    public void testCompareInferredInstancesMerge() {
-        //given
-        Set<IndexedJsonLdDoc> existingInstances = new HashSet<>();
-        Set<InferredJsonLdDoc> inferredJsonLdDocs = new HashSet<>();
-
-        existingInstances.add(createDoc("A"));
-        existingInstances.add(createDoc("B"));
-
-        inferredJsonLdDocs.add(InferredJsonLdDoc.from(createDoc("X", "A", "B")));
-
-        //when
-        Reconcile.InferenceResult inferenceResult = reconcile.compareInferredInstances(existingInstances, inferredJsonLdDocs);
-
-        //then
-        assertNotNull(inferenceResult);
-        //We assume that there is one merge with two sources ("a" and "b")
-        assertEquals(1, inferenceResult.toBeMerged.size());
-        assertEquals(2, inferenceResult.toBeMerged.get(inferenceResult.toBeMerged.keySet().iterator().next()).size());
-
-        //Ensure that there is nothing else...
-        assertEquals(0, inferenceResult.toBeRemoved.size());
-        assertEquals(0, inferenceResult.toBeUpdated.size());
-        assertEquals(0, inferenceResult.toBeInserted.size());
-    }
 
 
-    @Test
-    public void testTranslateMergeInferenceResultToEvents(){
-        //Given
-        SpaceName space = new SpaceName("Foobar");
-        Reconcile.InferenceResult result = new Reconcile.InferenceResult();
-        Set<IndexedJsonLdDoc> existing = new HashSet<>();
-        existing.add(createDoc("A", "X"));
-        existing.add(createDoc("B"));
-        result.toBeMerged.put(InferredJsonLdDoc.from(createDoc( "A", "B")), existing);
-
-        //When
-        List<Event> events = reconcile.translateInferenceResultToEvents(space, result);
-
-        //Then
-        assertNotNull(events);
-        assertEquals(3, events.size());
-        for (Event event : events) {
-            if(event.getType() == Event.Type.INSERT){
-                assertTrue(event.getData().allIdentifiersIncludingId().contains("A"));
-                assertTrue(event.getData().allIdentifiersIncludingId().contains("B"));
-                assertTrue(event.getData().allIdentifiersIncludingId().contains("X"));
-            }
-        }
-
-    }
 }

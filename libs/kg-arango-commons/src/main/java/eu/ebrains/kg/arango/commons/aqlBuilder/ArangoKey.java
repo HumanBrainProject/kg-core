@@ -68,6 +68,7 @@ public class ArangoKey extends TrustedAqlValue {
         return value != null ? value.replaceAll("[^"+VALID_CHARS+"]", "_") : null;
     }
 
+    @SuppressWarnings("java:S4790") // The hashing functionality is not used to hide sensitive information but for reduction of length instead.
     private static String reduceStringToMaxSizeByHashing(String string) {
         return string == null || string.length() <= MAX_CHARACTERS ? string : String.format("h%s", DigestUtils.md5Hex(string));
     }

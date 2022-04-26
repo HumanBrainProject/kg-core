@@ -48,10 +48,9 @@ public class PermissionsController {
     }
 
     public Set<SpaceName> whitelistedSpaceReads(UserWithRoles userWithRoles){
-        Functionality functionality = Functionality.READ_SPACE;
-        if(!permissions.hasGlobalPermission(userWithRoles, functionality)){
+        if(!permissions.hasGlobalPermission(userWithRoles, Functionality.READ) && !permissions.hasGlobalPermission(userWithRoles, Functionality.READ_RELEASED) ){
             //We only need to filter if there is no "global" read available...
-            return userWithRoles.getPermissions().stream().filter(p -> p.getFunctionality() == functionality).map(FunctionalityInstance::getSpace).filter(Objects::nonNull).collect(Collectors.toSet());
+            return userWithRoles.getPermissions().stream().filter(p -> p.getFunctionality() == Functionality.READ || p.getFunctionality() == Functionality.READ_RELEASED).map(FunctionalityInstance::getSpace).filter(Objects::nonNull).collect(Collectors.toSet());
         }
         return null;
     }

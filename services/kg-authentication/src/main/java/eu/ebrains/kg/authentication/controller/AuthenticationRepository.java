@@ -33,6 +33,7 @@ import eu.ebrains.kg.authentication.model.InstanceScope;
 import eu.ebrains.kg.authentication.model.Invitation;
 import eu.ebrains.kg.authentication.model.TermsOfUseAcceptance;
 import eu.ebrains.kg.commons.JsonAdapter;
+import eu.ebrains.kg.commons.SetupLogic;
 import eu.ebrains.kg.commons.jsonld.JsonLdDoc;
 import eu.ebrains.kg.commons.model.TermsOfUse;
 import eu.ebrains.kg.commons.permission.roles.Role;
@@ -46,7 +47,7 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 @Component
-public class AuthenticationRepository {
+public class AuthenticationRepository implements SetupLogic {
 
     private final ArangoDatabaseProxy arangoDatabase;
     private final TermsOfUseRepository termsOfUseRepository;

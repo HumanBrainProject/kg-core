@@ -26,6 +26,7 @@ import com.arangodb.ArangoDBException;
 import com.arangodb.ArangoDatabase;
 import com.arangodb.entity.CollectionType;
 import com.arangodb.model.AqlQueryOptions;
+import eu.ebrains.kg.arango.commons.ArangoQueries;
 import eu.ebrains.kg.arango.commons.model.AQLQuery;
 import eu.ebrains.kg.arango.commons.model.ArangoCollectionReference;
 import eu.ebrains.kg.arango.commons.model.InternalSpace;
@@ -44,6 +45,7 @@ import eu.ebrains.kg.graphdb.queries.utils.DataQueryBuilder;
 import eu.ebrains.kg.graphdb.queries.utils.SpecificationToScopeQueryAdapter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import java.util.*;
@@ -66,12 +68,15 @@ public class QueryController {
 
     private final GraphDBArangoUtils graphDBArangoUtils;
 
-    public QueryController(SpecificationInterpreter specificationInterpreter, ArangoDatabases arangoDatabases, ArangoRepositoryCommons arangoRepositoryCommons, PermissionsController permissionsController, GraphDBArangoUtils graphDBArangoUtils) {
+    private final Double maxMemoryForQuery;
+
+    public QueryController(SpecificationInterpreter specificationInterpreter, ArangoDatabases arangoDatabases, ArangoRepositoryCommons arangoRepositoryCommons, PermissionsController permissionsController, GraphDBArangoUtils graphDBArangoUtils, @Value("${eu.ebrains.kg.arango.maxMemory:#{null}}") Double maxMemoryForQuery) {
         this.specificationInterpreter = specificationInterpreter;
         this.arangoDatabases = arangoDatabases;
         this.graphDBArangoUtils = graphDBArangoUtils;
         this.arangoRepositoryCommons = arangoRepositoryCommons;
         this.permissionsController = permissionsController;
+        this.maxMemoryForQuery = maxMemoryForQuery;
     }
 
     public <T> void visit(UserWithRoles userWithRoles, KgQuery query, Map<String, String> filterValues, boolean scopeMode, Consumer<T> consumer, Class<T> clazz){
@@ -90,7 +95,7 @@ public class QueryController {
         ArangoDatabase database = arangoDatabases.getByStage(query.getStage());
         final Tuple<AQLQuery, Specification> q = query(database, userWithRoles, query, paginationParam, filterValues, scopeMode);
         try {
-            return new QueryResult(arangoRepositoryCommons.queryDocuments(database, q.getA()), q.getB().getResponseVocab());
+            return new QueryResult(ArangoQueries.queryDocuments(database, q.getA(), maxMemoryForQuery), q.getB().getResponseVocab());
         } catch (ArangoDBException ex) {
             logger.error(String.format("Was not able to execute query: %s", q.getA()));
             throw ex;
@@ -101,7 +106,7 @@ public class QueryController {
         ArangoDatabase database = arangoDatabases.getByStage(query.getStage());
         final Tuple<AQLQuery, Specification> q = query(database, userWithRoles, query, paginationParam, filterValues, scopeMode);
         try {
-            return new StreamedQueryResult(arangoRepositoryCommons.queryDocumentsAsStream(database, q.getA()), q.getB().getResponseVocab());
+            return new StreamedQueryResult(ArangoQueries.queryDocumentsAsStream(database, q.getA(), maxMemoryForQuery), q.getB().getResponseVocab());
         } catch (ArangoDBException ex) {
             logger.error(String.format("Was not able to execute query: %s", q.getA()));
             throw ex;

@@ -20,37 +20,27 @@
  * (Human Brain Project SGA1, SGA2 and SGA3).
  */
 
-package eu.ebrains.kg.systemTest.api;
+package eu.ebrains.kg.commons.api;
 
-import eu.ebrains.kg.systemTest.controller.regression.RegressionController;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import eu.ebrains.kg.commons.jsonld.NormalizedJsonLd;
+import eu.ebrains.kg.commons.markers.ExposesUserInfo;
+import eu.ebrains.kg.commons.model.Paginated;
+import eu.ebrains.kg.commons.model.PaginationParam;
+import eu.ebrains.kg.commons.model.ReducedUserInformation;
 
-@RestController
-@RequestMapping("/tests/regression")
-public class Regression {
+import java.util.Map;
+import java.util.Set;
+import java.util.UUID;
 
-    private final RegressionController regression;
+public interface PrimaryStoreUsers {
+    interface Client extends PrimaryStoreUsers {}
 
-    private final Logger logger = LoggerFactory.getLogger(getClass());
+    @ExposesUserInfo
+    Paginated<NormalizedJsonLd> getUsers(PaginationParam paginationParam);
 
-    public Regression(RegressionController regression) {
-        this.regression = regression;
-    }
+    @ExposesUserInfo
+    Paginated<NormalizedJsonLd> getUsersWithLimitedInfo(PaginationParam paginationParam, String id);
 
-    @GetMapping("merge")
-    public void merge(){
-        regression.merge();
-    }
-
-
-    @GetMapping("dontReconcileSameIdentifiersInDifferentSpaces")
-    public void dontReconcileSameIdentifiersInDifferentSpaces(){
-        regression.dontReconcileSameIdentifiersInDifferentSpaces();
-    }
-
-
+    @ExposesUserInfo
+    Map<String, ReducedUserInformation> getUsers(Set<UUID> uuids);
 }

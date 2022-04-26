@@ -36,7 +36,8 @@ import org.springframework.http.ResponseEntity;
 import java.util.List;
 import java.util.Objects;
 
-public class AbstractInstancesLoadTest extends AbstractLoadTest {
+
+public abstract class AbstractInstancesLoadTest extends AbstractLoadTest {
 
     @Autowired
     protected Instances instances;

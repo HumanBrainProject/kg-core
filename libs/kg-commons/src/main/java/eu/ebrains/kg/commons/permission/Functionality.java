@@ -28,7 +28,6 @@ import eu.ebrains.kg.commons.semantics.vocabularies.EBRAINSVocabulary;
 
 import java.util.Arrays;
 import java.util.List;
-import java.util.stream.Collectors;
 
 public enum Functionality {
 
@@ -37,7 +36,6 @@ public enum Functionality {
     MINIMAL_READ_RELEASED(Permission.Level.GLOBAL_AND_SPACE, FunctionalityGroup.PERMISSIONS, null, null, null),
 
     //Space mgmt
-    READ_SPACE(Permission.Level.GLOBAL_AND_SPACE, FunctionalityGroup.SPACES, null, null, null),
     MANAGE_SPACE(Permission.Level.GLOBAL_AND_SPACE, FunctionalityGroup.SPACES, null, Event.Type.INSERT, EBRAINSVocabulary.META_SPACEDEFINITION_TYPE),
     RERUN_EVENTS_FOR_SPACE(Permission.Level.GLOBAL_ONLY, FunctionalityGroup.SPACES, null, null, null),
 
@@ -51,10 +49,10 @@ public enum Functionality {
     RELEASE_STATUS(Permission.Level.ALL_LEVELS, FunctionalityGroup.INSTANCE, DataStage.IN_PROGRESS, null, null),
     SUGGEST(Permission.Level.ALL_LEVELS, FunctionalityGroup.INSTANCE, DataStage.IN_PROGRESS, null, null),
     WRITE(Permission.Level.GLOBAL_AND_SPACE, FunctionalityGroup.INSTANCE, DataStage.IN_PROGRESS, null, null),
-    CREATE( Permission.Level.GLOBAL_AND_SPACE, FunctionalityGroup.INSTANCE, DataStage.IN_PROGRESS, null, null),
+    CREATE(Permission.Level.GLOBAL_AND_SPACE, FunctionalityGroup.INSTANCE, DataStage.IN_PROGRESS, null, null),
     RELEASE(Permission.Level.GLOBAL_AND_SPACE, FunctionalityGroup.INSTANCE, DataStage.IN_PROGRESS, null, null),
-    UNRELEASE( Permission.Level.GLOBAL_AND_SPACE, FunctionalityGroup.INSTANCE, DataStage.RELEASED, null, null),
-    DELETE( Permission.Level.GLOBAL_AND_SPACE, FunctionalityGroup.INSTANCE, DataStage.IN_PROGRESS, null, null),
+    UNRELEASE(Permission.Level.GLOBAL_AND_SPACE, FunctionalityGroup.INSTANCE, DataStage.RELEASED, null, null),
+    DELETE(Permission.Level.GLOBAL_AND_SPACE, FunctionalityGroup.INSTANCE, DataStage.IN_PROGRESS, null, null),
 
     //Users
     LIST_USERS(Permission.Level.GLOBAL_ONLY, FunctionalityGroup.USERS, DataStage.NATIVE, null, null),
@@ -66,23 +64,23 @@ public enum Functionality {
     // Client mgmt
     READ_CLIENT(Permission.Level.GLOBAL_AND_SPACE, FunctionalityGroup.CLIENT, null, null, null),
     READ_CLIENT_PERMISSION(Permission.Level.GLOBAL_AND_SPACE, FunctionalityGroup.CLIENT, null, null, null),
-    CREATE_CLIENT_PERMISSION( Permission.Level.GLOBAL_AND_SPACE, FunctionalityGroup.CLIENT, null, null, null),
+    CREATE_CLIENT_PERMISSION(Permission.Level.GLOBAL_AND_SPACE, FunctionalityGroup.CLIENT, null, null, null),
     DELETE_CLIENT_PERMISSION(Permission.Level.GLOBAL_AND_SPACE, FunctionalityGroup.CLIENT, null, null, null),
 
     //Query
-    READ_QUERY( Permission.Level.GLOBAL_AND_SPACE, FunctionalityGroup.QUERY, null, null, null),
-    WRITE_QUERY( Permission.Level.GLOBAL_AND_SPACE, FunctionalityGroup.QUERY, null, Event.Type.UPDATE, EBRAINSVocabulary.META_QUERY_TYPE),
-    CREATE_QUERY( Permission.Level.GLOBAL_AND_SPACE, FunctionalityGroup.QUERY, null, Event.Type.INSERT, EBRAINSVocabulary.META_QUERY_TYPE),
+    READ_QUERY(Permission.Level.GLOBAL_AND_SPACE, FunctionalityGroup.QUERY, null, null, null),
+    WRITE_QUERY(Permission.Level.GLOBAL_AND_SPACE, FunctionalityGroup.QUERY, null, Event.Type.UPDATE, EBRAINSVocabulary.META_QUERY_TYPE),
+    CREATE_QUERY(Permission.Level.GLOBAL_AND_SPACE, FunctionalityGroup.QUERY, null, Event.Type.INSERT, EBRAINSVocabulary.META_QUERY_TYPE),
     DELETE_QUERY(Permission.Level.GLOBAL_AND_SPACE, FunctionalityGroup.QUERY, null, Event.Type.DELETE, EBRAINSVocabulary.META_QUERY_TYPE),
 
 
     //Permission management
     READ_PERMISSION(Permission.Level.GLOBAL_AND_SPACE, FunctionalityGroup.PERMISSIONS, null, null, null),
-    CREATE_PERMISSION(Permission.Level.GLOBAL_AND_SPACE, FunctionalityGroup.PERMISSIONS, null, null, null ),
+    CREATE_PERMISSION(Permission.Level.GLOBAL_AND_SPACE, FunctionalityGroup.PERMISSIONS, null, null, null),
     DELETE_PERMISSION(Permission.Level.GLOBAL_AND_SPACE, FunctionalityGroup.PERMISSIONS, null, null, null),
 
-    DEFINE_TERMS_OF_USE( Permission.Level.GLOBAL_ONLY, FunctionalityGroup.PERMISSIONS, null, null, null),
-    DEFINE_PUBLIC_SPACE( Permission.Level.GLOBAL_ONLY, FunctionalityGroup.PERMISSIONS, null, null, null);
+    DEFINE_TERMS_OF_USE(Permission.Level.GLOBAL_ONLY, FunctionalityGroup.PERMISSIONS, null, null, null),
+    DEFINE_PUBLIC_SPACE(Permission.Level.GLOBAL_ONLY, FunctionalityGroup.PERMISSIONS, null, null, null);
 
 
     private final List<Permission.Level> allowedPermissionLevels;
@@ -99,11 +97,11 @@ public enum Functionality {
         this.semantic = semantic;
     }
 
-    public static Functionality withSemanticsForOperation(List<String> semantics, Event.Type type, Functionality fallback){
+    public static Functionality withSemanticsForOperation(List<String> semantics, Event.Type type, Functionality fallback) {
         return Arrays.stream(values()).filter(v -> v.type == type && v.semantic != null && semantics.contains(v.semantic)).findFirst().orElse(fallback);
     }
 
-    public FunctionalityGroup getFunctionalityGroup(){
+    public FunctionalityGroup getFunctionalityGroup() {
         return functionalityGroup;
     }
 
@@ -111,15 +109,11 @@ public enum Functionality {
         return allowedPermissionLevels;
     }
 
-    public static List<Functionality> getGlobalFunctionality() {
-        return Arrays.stream(values()).filter(f -> f.getAllowedPermissionLevels().contains(Permission.Level.GLOBAL)).collect(Collectors.toList());
-    }
-
     public DataStage getStage() {
         return stage;
     }
 
-    public enum FunctionalityGroup{
+    public enum FunctionalityGroup {
         INSTANCE, CLIENT, QUERY, PERMISSIONS, SPACES, USERS, TYPES
     }
 }

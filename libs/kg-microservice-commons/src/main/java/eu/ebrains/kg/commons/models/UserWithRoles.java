@@ -44,6 +44,7 @@ public class UserWithRoles {
     private List<String> userRoles;
     private List<UUID> invitations;
     private String clientId;
+    private List<FunctionalityInstance> permissions;
     private transient final Logger logger = LoggerFactory.getLogger(getClass());
 
     // For serialization
@@ -52,15 +53,16 @@ public class UserWithRoles {
     }
 
     public UserWithRoles(User user, List<String> userRoles, List<String> clientRoles, String clientId){
-        this(user, userRoles, clientRoles, Collections.emptyList(), null);
+        this(user, userRoles, clientRoles, Collections.emptyList(), clientId);
     }
 
     public UserWithRoles(User user, List<String> userRoles, List<String> clientRoles, List<UUID> invitations, String clientId) {
         this.user = user;
-        this.userRoles = userRoles;
-        this.clientRoles = clientRoles;
+        this.userRoles = userRoles == null ? null : Collections.unmodifiableList(userRoles);
+        this.clientRoles = clientRoles == null ? null : Collections.unmodifiableList(clientRoles);
         this.clientId = clientId;
-        this.invitations = invitations;
+        this.invitations = invitations == null ? null : Collections.unmodifiableList(invitations);
+        this.permissions = calculatePermissions();
     }
 
     /**
@@ -81,6 +83,10 @@ public class UserWithRoles {
      * @return the list of functionalities, the user is allowed to execute
      */
     public List<FunctionalityInstance> getPermissions() {
+        return permissions;
+    }
+
+    private List<FunctionalityInstance> calculatePermissions(){
         //Invitation permissions are added after permission evaluation (of global and space)
         final List<FunctionalityInstance> functionalityInstances = evaluatePermissions(userRoles, clientRoles);
         if(!CollectionUtils.isEmpty(invitations)){

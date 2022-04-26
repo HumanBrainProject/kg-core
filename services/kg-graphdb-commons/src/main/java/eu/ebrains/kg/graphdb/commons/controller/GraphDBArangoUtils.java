@@ -30,12 +30,11 @@ import eu.ebrains.kg.arango.commons.model.ArangoCollectionReference;
 import eu.ebrains.kg.arango.commons.model.ArangoDatabaseProxy;
 import eu.ebrains.kg.arango.commons.model.InternalSpace;
 import eu.ebrains.kg.commons.IdUtils;
+import eu.ebrains.kg.commons.SetupLogic;
 import eu.ebrains.kg.commons.jsonld.IndexedJsonLdDoc;
 import eu.ebrains.kg.commons.jsonld.NormalizedJsonLd;
 import eu.ebrains.kg.commons.model.SpaceName;
 import eu.ebrains.kg.graphdb.instances.model.ArangoRelation;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Component;
 
@@ -51,7 +50,7 @@ public class GraphDBArangoUtils {
 
 
     @PostConstruct
-    public void configureArango(){
+    public void setup(){
         arangoDatabases.setup();
     }
 

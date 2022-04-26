@@ -27,10 +27,13 @@ import com.arangodb.entity.CollectionType;
 import com.arangodb.model.AqlQueryOptions;
 import com.arangodb.model.CollectionCreateOptions;
 import com.arangodb.model.CollectionsReadOptions;
+import eu.ebrains.kg.arango.commons.ArangoQueries;
 import eu.ebrains.kg.arango.commons.aqlBuilder.AQL;
 import eu.ebrains.kg.arango.commons.aqlBuilder.ArangoVocabulary;
 import eu.ebrains.kg.arango.commons.model.*;
 import eu.ebrains.kg.commons.*;
+import eu.ebrains.kg.commons.api.Ids;
+import eu.ebrains.kg.commons.api.PrimaryStoreUsers;
 import eu.ebrains.kg.commons.exception.AmbiguousException;
 import eu.ebrains.kg.commons.exception.ForbiddenException;
 import eu.ebrains.kg.commons.jsonld.*;
@@ -52,7 +55,8 @@ import eu.ebrains.kg.graphdb.commons.model.ArangoDocument;
 import eu.ebrains.kg.graphdb.instances.model.ArangoRelation;
 import eu.ebrains.kg.graphdb.queries.controller.QueryController;
 import eu.ebrains.kg.graphdb.queries.model.spec.GraphQueryKeys;
-import eu.ebrains.kg.graphdb.structure.api.GraphDBTypesAPI;
+import eu.ebrains.kg.graphdb.queries.utils.InvitationUtils;
+import eu.ebrains.kg.graphdb.structure.controller.MetaDataController;
 import eu.ebrains.kg.graphdb.structure.controller.StructureRepository;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
@@ -73,16 +77,19 @@ public class ArangoRepositoryInstances {
     private final QueryController queryController;
     private final ArangoDatabases databases;
     private final IdUtils idUtils;
+    private final Ids.Client ids;
     private final JsonAdapter jsonAdapter;
-    private final GraphDBTypesAPI graphDBTypesAPI;
     private final StructureRepository structureRepository;
+    private final MetaDataController metaDataController;
+    private final PrimaryStoreUsers.Client primaryStoreUsers;
+
 
     public final static int DEFAULT_INCOMING_PAGESIZE = 10;
     //TODO make this configurable
     private final static List<String> SPACES_FOR_SCOPE = Collections.singletonList("kg-search");
 
 
-    public ArangoRepositoryInstances(ArangoRepositoryCommons arangoRepositoryCommons, PermissionsController permissionsController, Permissions permissions, AuthContext authContext, GraphDBArangoUtils graphDBArangoUtils, QueryController queryController, ArangoDatabases databases, IdUtils idUtils, JsonAdapter jsonAdapter, GraphDBTypesAPI graphDBTypesAPI, StructureRepository structureRepository) {
+    public ArangoRepositoryInstances(ArangoRepositoryCommons arangoRepositoryCommons, PermissionsController permissionsController, Permissions permissions, AuthContext authContext, GraphDBArangoUtils graphDBArangoUtils, QueryController queryController, ArangoDatabases databases, IdUtils idUtils, JsonAdapter jsonAdapter, MetaDataController metaDataController, StructureRepository structureRepository, Ids.Client ids, PrimaryStoreUsers.Client primaryStoreUsers) {
         this.arangoRepositoryCommons = arangoRepositoryCommons;
         this.permissionsController = permissionsController;
         this.permissions = permissions;
@@ -92,8 +99,10 @@ public class ArangoRepositoryInstances {
         this.databases = databases;
         this.idUtils = idUtils;
         this.jsonAdapter = jsonAdapter;
-        this.graphDBTypesAPI = graphDBTypesAPI;
+        this.metaDataController = metaDataController;
         this.structureRepository = structureRepository;
+        this.ids = ids;
+        this.primaryStoreUsers = primaryStoreUsers;
     }
 
     @ExposesMinimalData
@@ -142,7 +151,7 @@ public class ArangoRepositoryInstances {
 
         if (incomingLinks) {
             ArangoDocumentReference arangoDocumentReference = ArangoDocumentReference.fromInstanceId(new InstanceId(id, space));
-            final boolean ignoreIncomingLinks = graphDBTypesAPI.getTypesByName(document.getDoc().types(), stage, space.getName(), false, false).values().stream().filter(t -> t.getData() != null).map(t -> Type.fromPayload(t.getData())).anyMatch(t -> t.getIgnoreIncomingLinks() != null && t.getIgnoreIncomingLinks());
+            final boolean ignoreIncomingLinks = metaDataController.getTypesByName(document.getDoc().types(), stage, space.getName(), false, false, authContext.getUserWithRoles(), InvitationUtils.getClientSpace(authContext), InvitationUtils.getInvitationDocuments(authContext, ids, this, idUtils)).values().stream().filter(t -> t.getData() != null).map(t -> Type.fromPayload(t.getData())).anyMatch(t -> t.getIgnoreIncomingLinks() != null && t.getIgnoreIncomingLinks());
             if (!ignoreIncomingLinks) {
                 NormalizedJsonLd instanceIncomingLinks = fetchIncomingLinks(Collections.singletonList(arangoDocumentReference), stage, 0L, incomingLinksPageSize, null, null);
                 if (!CollectionUtils.isEmpty(instanceIncomingLinks)) {
@@ -170,7 +179,7 @@ public class ArangoRepositoryInstances {
             //Nothing to do -> we can just return the original document
             return instanceIncomingLinks;
         }
-        final Collection<Result<TypeInformation>> typeInformation = graphDBTypesAPI.getTypesByName(types.stream().map(Type::getName).collect(Collectors.toList()), stage, null, true, false).values();
+        final Collection<Result<TypeInformation>> typeInformation = metaDataController.getTypesByName(types.stream().map(Type::getName).collect(Collectors.toList()), stage, null, true, false, authContext.getUserWithRoles(), InvitationUtils.getClientSpace(authContext), InvitationUtils.getInvitationDocuments(authContext, ids, this, idUtils)).values();
         final Map<String, TypeInformation> extendedTypeInformationByIdentifier = typeInformation.stream().map(Result::getData).filter(Objects::nonNull).collect(Collectors.toMap(TypeInformation::getIdentifier, v -> v));
         Map<UUID, String> labelsForInstances = getLabelsForInstances(stage, instanceIds);
         enrichDocument(instanceIncomingLinks, extendedTypeInformationByIdentifier, labelsForInstances);
@@ -244,7 +253,7 @@ public class ArangoRepositoryInstances {
     }
 
     private Set<String> getMinimalFields(DataStage stage, List<String> types) {
-        Set<String> keepProperties = new HashSet<>(graphDBTypesAPI.getTypesByName(types, stage, null, false, false).values().stream().filter(r -> r.getData() != null).map(r -> r.getData().getAs(EBRAINSVocabulary.META_TYPE_LABEL_PROPERTY, String.class)).filter(Objects::nonNull).collect(Collectors.toSet()));
+        Set<String> keepProperties = new HashSet<>(metaDataController.getTypesByName(types, stage, null, false, false, authContext.getUserWithRoles(), InvitationUtils.getClientSpace(authContext), InvitationUtils.getInvitationDocuments(authContext, ids, this, idUtils)).values().stream().filter(r -> r.getData() != null).map(r -> r.getData().getAs(EBRAINSVocabulary.META_TYPE_LABEL_PROPERTY, String.class)).filter(Objects::nonNull).collect(Collectors.toSet()));
         keepProperties.add(JsonLdConsts.ID);
         keepProperties.add(IndexedJsonLdDoc.LABEL);
         keepProperties.add(JsonLdConsts.TYPE);
@@ -278,7 +287,7 @@ public class ArangoRepositoryInstances {
 
 
     private void resolveUsersForAlternatives(List<NormalizedJsonLd[]> alternatives) {
-        List<ArangoDocumentReference> userIdsToResolve = alternatives.stream().flatMap(Arrays::stream).map(d ->
+        Set<UUID> userIdsToResolve = alternatives.stream().flatMap(Arrays::stream).map(d ->
                 d.keySet().stream().filter(k -> !NormalizedJsonLd.isInternalKey(k) && !JsonLdConsts.isJsonLdConst(k)).map(k -> {
                     List<NormalizedJsonLd> alternative;
                     try {
@@ -286,10 +295,10 @@ public class ArangoRepositoryInstances {
                     } catch (IllegalArgumentException e) {
                         alternative = Collections.emptyList();
                     }
-                    return alternative != null ? alternative.stream().map(a -> a.getAsListOf(EBRAINSVocabulary.META_USER, String.class)).flatMap(List::stream).collect(Collectors.toList()) : Collections.<String>emptyList();
-                }).flatMap(List::stream).collect(Collectors.toList())).flatMap(List::stream).map(id -> ArangoCollectionReference.fromSpace(InternalSpace.USERS_SPACE).doc(idUtils.getUUID(new JsonLdId(id)))).distinct().collect(Collectors.toList());
-        //We always resolve users in native space, since users are only maintained there...
-        Map<UUID, Result<NormalizedJsonLd>> usersById = getDocumentsByReferenceList(DataStage.NATIVE, userIdsToResolve, false, false, false, null);
+                    return alternative != null ? alternative.stream().map(a -> a.getAsListOf(EBRAINSVocabulary.META_USER, String.class)).flatMap(List::stream).collect(Collectors.toSet()) : Collections.<String>emptySet();
+                }).flatMap(Set::stream).collect(Collectors.toSet())).flatMap(Set::stream).map(id -> idUtils.getUUID(new JsonLdId(id))).collect(Collectors.toSet());
+
+        final Map<String, ReducedUserInformation> resolvedUsers = primaryStoreUsers.getUsers(userIdsToResolve);
         alternatives.stream().flatMap(Arrays::stream).forEach(d ->
                 d.keySet().stream().filter(k -> !NormalizedJsonLd.isInternalKey(k) && !JsonLdConsts.isJsonLdConst(k)).forEach(k -> {
                     Object obj = d.get(k);
@@ -299,13 +308,11 @@ public class ArangoRepositoryInstances {
                                 Map alternative = (Map) o;
                                 List<Object> users = new NormalizedJsonLd(alternative).getAsListOf(EBRAINSVocabulary.META_USER, String.class).stream().map(id -> {
                                     UUID uuid = idUtils.getUUID(new JsonLdId(id));
-                                    Result<NormalizedJsonLd> userResult = null;
+                                    ReducedUserInformation userResult = null;
                                     if (uuid != null) {
-                                        userResult = usersById.get(uuid);
+                                        userResult = resolvedUsers.get(uuid.toString());
                                     }
-                                    NormalizedJsonLd user = userResult != null && userResult.getData() != null ? userResult.getData() : null;
-                                    //We only expose the necessary subset of user information.
-                                    return new ReducedUserInformation(user != null ? user.getAs(SchemaOrgVocabulary.NAME, String.class) : null, user != null ? user.getAs(SchemaOrgVocabulary.ALTERNATE_NAME, String.class) : null, user != null ? user.getAsListOf(SchemaOrgVocabulary.IDENTIFIER, String.class) : null, id);
+                                    return userResult;
                                 }).collect(Collectors.toList());
                                 alternative.put(EBRAINSVocabulary.META_USER, users);
                                 //A special case: if the value has alternatives but the last value is null, we need to set the value explicitly, since it won't be properly stored in the alternatives payload.
@@ -318,15 +325,24 @@ public class ArangoRepositoryInstances {
                 }));
     }
 
-    private Map<UUID, Result<NormalizedJsonLd>> getDocumentsByReferenceList(DataStage stage, List<ArangoDocumentReference> documentReferences, boolean embedded, boolean alternatives, boolean incomingLinks, Long incomingLinksPageSize) {
+    private Map<UUID, Result<NormalizedJsonLd>> getDocumentsByReferenceList(DataStage stage, List<ArangoDocumentReference> documentReferences, String typeRestriction, boolean embedded, boolean alternatives, boolean incomingLinks, Long incomingLinksPageSize) {
         ArangoDatabase db = databases.getByStage(stage);
-        AQL aql = new AQL().addLine(AQL.trust("RETURN {"));
+        AQL aql = new AQL();
+
         int counter = 0;
         Map<String, Object> bindVars = new HashMap<>();
-
+        aql.addLine(AQL.trust("RETURN {"));
+        if(typeRestriction!=null && !CollectionUtils.isEmpty(documentReferences)){
+            bindVars.put("typeRestriction", typeRestriction);
+        }
         for (ArangoDocumentReference reference : documentReferences) {
             bindVars.put("doc" + counter, reference.getId());
-            aql.addLine(AQL.trust("\"" + reference.getDocumentId() + "\": DOCUMENT(@doc" + counter + ")"));
+            if(typeRestriction!=null){
+                aql.addLine(AQL.trust("\"" + reference.getDocumentId() + "\": @typeRestriction IN DOCUMENT(@doc" + counter + ").`@type` ? DOCUMENT(@doc" + counter + ") : null"));
+            }
+            else {
+                aql.addLine(AQL.trust("\"" + reference.getDocumentId() + "\": DOCUMENT(@doc" + counter +")"));
+            }
             counter++;
             if (counter < documentReferences.size()) {
                 aql.add(AQL.trust(", "));
@@ -357,7 +373,7 @@ public class ArangoRepositoryInstances {
             if (incomingLinks) {
                 List<String> involvedTypes = normalizedJsonLds.stream().map(JsonLdDoc::types).flatMap(Collection::stream).distinct().collect(Collectors.toList());
 
-                final Set<String> excludedTypes = graphDBTypesAPI.getTypesByName(involvedTypes, stage, null, false, false).values().stream()
+                final Set<String> excludedTypes = metaDataController.getTypesByName(involvedTypes, stage, null, false, false, authContext.getUserWithRoles(), InvitationUtils.getClientSpace(authContext), InvitationUtils.getInvitationDocuments(authContext, ids, this, idUtils)).values().stream()
                         .map(t -> Type.fromPayload(t.getData())).filter(t -> t.getIgnoreIncomingLinks() != null && t.getIgnoreIncomingLinks()).map(Type::getName).collect(Collectors.toSet());
                 List<ArangoDocumentReference> toInspectForIncomingLinks = normalizedJsonLds.stream().filter(n -> n.types().stream().noneMatch(excludedTypes::contains)).map(n -> ArangoDocument.from(n).getId()).collect(Collectors.toList());
                 if (!CollectionUtils.isEmpty(toInspectForIncomingLinks)) {
@@ -390,15 +406,15 @@ public class ArangoRepositoryInstances {
     }
 
     @ExposesData
-    public Map<UUID, Result<NormalizedJsonLd>> getDocumentsByIdList(DataStage stage, List<InstanceId> instanceIds, boolean embedded, boolean alternatives, boolean incomingLinks, Long incomingLinksPageSize) {
+    public Map<UUID, Result<NormalizedJsonLd>> getDocumentsByIdList(DataStage stage, List<InstanceId> instanceIds, String typeRestriction, boolean embedded, boolean alternatives, boolean incomingLinks, Long incomingLinksPageSize) {
         UserWithRoles userWithRoles = authContext.getUserWithRoles();
 
         Set<InstanceId> hasReadPermissions = instanceIds.stream().filter(i -> permissions.hasPermission(userWithRoles, permissionsController.getReadFunctionality(stage), i.getSpace(), i.getUuid())).collect(Collectors.toSet());
         Set<InstanceId> hasOnlyMinimalReadPermissions = instanceIds.stream().filter(i -> !hasReadPermissions.contains(i) && permissions.hasPermission(userWithRoles, permissionsController.getMinimalReadFunctionality(stage), i.getSpace(), i.getUuid())).collect(Collectors.toSet());
         Set<InstanceId> hasNoPermissions = instanceIds.stream().filter(i -> !hasReadPermissions.contains(i) && !hasOnlyMinimalReadPermissions.contains(i)).collect(Collectors.toSet());
 
-        Map<UUID, Result<NormalizedJsonLd>> documentsByReferenceList = getDocumentsByReferenceList(stage, hasReadPermissions.stream().map(ArangoDocumentReference::fromInstanceId).collect(Collectors.toList()), embedded, alternatives, incomingLinks, incomingLinksPageSize);
-        Map<UUID, Result<NormalizedJsonLd>> documentsByReferenceListWithMinimalReadAccess = getDocumentsByReferenceList(stage, hasOnlyMinimalReadPermissions.stream().map(ArangoDocumentReference::fromInstanceId).collect(Collectors.toList()), false, false, false, null);
+        Map<UUID, Result<NormalizedJsonLd>> documentsByReferenceList = getDocumentsByReferenceList(stage, hasReadPermissions.stream().map(ArangoDocumentReference::fromInstanceId).collect(Collectors.toList()), typeRestriction, embedded, alternatives, incomingLinks, incomingLinksPageSize);
+        Map<UUID, Result<NormalizedJsonLd>> documentsByReferenceListWithMinimalReadAccess = getDocumentsByReferenceList(stage, hasOnlyMinimalReadPermissions.stream().map(ArangoDocumentReference::fromInstanceId).collect(Collectors.toList()), typeRestriction, false, false, false, null);
 
         //Reduce the payload to the minimal fields
         documentsByReferenceListWithMinimalReadAccess.values().stream().filter(Objects::nonNull).map(Result::getData).filter(Objects::nonNull).forEach(d -> d.keepPropertiesOnly(getMinimalFields(stage, d.types())));
@@ -489,7 +505,7 @@ public class ArangoRepositoryInstances {
         aql.addLine(AQL.trust("CONCAT_SEPARATOR(\", \", (FOR s IN NOT_NULL(searchableProperties[typeDefinition.typeName], []) RETURN v[s]))"));
         aql.addLine(AQL.trust("LET attWithMeta = [{name: \"" + JsonLdConsts.ID + "\", value: v.`" + JsonLdConsts.ID + "`}, {name: \"" + EBRAINSVocabulary.LABEL + "\", value: v." + IndexedJsonLdDoc.LABEL + "},  {name: \""+EBRAINSVocabulary.ADDITIONAL_INFO+"\", value: additionalInfo}, {name: \"" + EBRAINSVocabulary.META_TYPE + "\", value: typeDefinition.typeName}, {name: \"" + EBRAINSVocabulary.META_SPACE + "\", value: v.`" + EBRAINSVocabulary.META_SPACE + "`}]"));
         aql.addLine(AQL.trust("RETURN ZIP(attWithMeta[*].name, attWithMeta[*].value)"));
-        Paginated<NormalizedJsonLd> normalizedJsonLdPaginated = arangoRepositoryCommons.queryDocuments(databases.getByStage(stage), new AQLQuery(aql, bindVars));
+        Paginated<NormalizedJsonLd> normalizedJsonLdPaginated = ArangoQueries.queryDocuments(databases.getByStage(stage), new AQLQuery(aql, bindVars), null);
         List<SuggestedLink> links = normalizedJsonLdPaginated.getData().stream().map(payload -> {
             SuggestedLink link = new SuggestedLink();
             UUID uuid = idUtils.getUUID(payload.id());
@@ -697,7 +713,7 @@ public class ArangoRepositoryInstances {
                         break;
                 }
                 aql.addLine(AQL.trust("RETURN v"));
-                Paginated<NormalizedJsonLd> normalizedJsonLdPaginated = arangoRepositoryCommons.queryDocuments(database, new AQLQuery(aql, bindVars));
+                Paginated<NormalizedJsonLd> normalizedJsonLdPaginated = ArangoQueries.queryDocuments(database, new AQLQuery(aql, bindVars), null);
                 handleAlternativesAndEmbedded(normalizedJsonLdPaginated.getData(), stage, alternatives, embedded);
                 exposeRevision(normalizedJsonLdPaginated.getData());
                 final SpaceName privateSpace = authContext.getUserWithRolesWithoutTermsCheck().getPrivateSpace();
@@ -735,7 +751,7 @@ public class ArangoRepositoryInstances {
             aql.addPagination(paginationParam);
             aql.addLine(AQL.trust("RETURN v"));
             bindVars.put("@typeRelationCollection", InternalSpace.TYPE_EDGE_COLLECTION.getCollectionName());
-            Paginated<NormalizedJsonLd> normalizedJsonLdPaginated = arangoRepositoryCommons.queryDocuments(database, new AQLQuery(aql, bindVars));
+            Paginated<NormalizedJsonLd> normalizedJsonLdPaginated = ArangoQueries.queryDocuments(database, new AQLQuery(aql, bindVars), null);
             handleAlternativesAndEmbedded(normalizedJsonLdPaginated.getData(), stage, alternatives, embedded);
             exposeRevision(normalizedJsonLdPaginated.getData());
             normalizedJsonLdPaginated.getData().forEach(NormalizedJsonLd::removeAllInternalProperties);

@@ -22,13 +22,10 @@
 
 package eu.ebrains.kg.core.api.instances.tests;
 
-import com.arangodb.ArangoDB;
-import eu.ebrains.kg.authentication.api.AuthenticationAPI;
-import eu.ebrains.kg.commons.IdUtils;
 import eu.ebrains.kg.commons.jsonld.JsonLdDoc;
 import eu.ebrains.kg.commons.jsonld.NormalizedJsonLd;
+import eu.ebrains.kg.commons.model.ExtendedResponseConfiguration;
 import eu.ebrains.kg.commons.model.Result;
-import eu.ebrains.kg.commons.permission.roles.RoleMapping;
 import eu.ebrains.kg.core.api.Instances;
 import eu.ebrains.kg.core.api.instances.TestContext;
 import eu.ebrains.kg.testutils.TestDataFactory;
@@ -39,21 +36,29 @@ public class ContributeToInstancePartialReplacementTest extends AbstractInstance
     public NormalizedJsonLd originalInstance;
     public JsonLdDoc update;
     public ResponseEntity<Result<NormalizedJsonLd>> response;
+    private final ExtendedResponseConfiguration responseConfiguration;
+    public static final String MANIPULATED_PROPERTY = TestDataFactory.DYNAMIC_FIELD_PREFIX + "0";
 
     public ContributeToInstancePartialReplacementTest(TestContext testContext, Instances instances) {
         super(testContext, instances);
+        this.responseConfiguration = defaultResponseConfiguration;
+    }
+
+    public ContributeToInstancePartialReplacementTest(TestContext testContext, Instances instances, ExtendedResponseConfiguration responseConfiguration) {
+        super(testContext, instances);
+        this.responseConfiguration = responseConfiguration;
     }
 
     @Override
     protected void setup() {
         originalInstance = createInstanceWithServerDefinedUUID(0);
         update =  new JsonLdDoc();
-        update.put(TestDataFactory.DYNAMIC_FIELD_PREFIX + "0", "foobar");
+        update.put(MANIPULATED_PROPERTY, "foobar");
     }
 
     @Override
     protected void run(){
-       response = instances.contributeToInstancePartialReplacement(update, testContext.getIdUtils().getUUID(originalInstance.id()), defaultResponseConfiguration);
+       response = instances.contributeToInstancePartialReplacement(update, testContext.getIdUtils().getUUID(originalInstance.id()), responseConfiguration);
     }
 
 }

@@ -30,7 +30,10 @@ import eu.ebrains.kg.commons.exception.ForbiddenException;
 import eu.ebrains.kg.commons.exception.UnauthorizedException;
 import eu.ebrains.kg.commons.jsonld.IndexedJsonLdDoc;
 import eu.ebrains.kg.commons.jsonld.JsonLdId;
-import eu.ebrains.kg.commons.model.*;
+import eu.ebrains.kg.commons.model.DataStage;
+import eu.ebrains.kg.commons.model.Event;
+import eu.ebrains.kg.commons.model.IdWithAlternatives;
+import eu.ebrains.kg.commons.model.PersistedEvent;
 import eu.ebrains.kg.commons.models.UserWithRoles;
 import eu.ebrains.kg.commons.permission.Functionality;
 import eu.ebrains.kg.commons.permissions.controller.Permissions;
@@ -40,6 +43,8 @@ import org.slf4j.LoggerFactory;
 import org.springframework.lang.NonNull;
 import org.springframework.stereotype.Component;
 
+import java.time.Instant;
+import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Collections;
@@ -54,18 +59,18 @@ public class EventController {
     private final EventRepository eventRepository;
     private final IdUtils idUtils;
     private final GraphDBSpaces.Client graphDBSpaces;
-    private final UserResolver userResolver;
     private final AuthContext authContext;
+    private final UsersRepository usersRepository;
 
     private final Logger logger = LoggerFactory.getLogger(getClass());
 
-    public EventController(Permissions permissions, Ids.Client ids, EventRepository eventRepository, IdUtils idUtils, GraphDBSpaces.Client graphDBSpaces, UserResolver userResolver, AuthContext authContext) {
+    public EventController(Permissions permissions, Ids.Client ids, EventRepository eventRepository, IdUtils idUtils, GraphDBSpaces.Client graphDBSpaces, UsersRepository usersRepository, AuthContext authContext) {
         this.permissions = permissions;
         this.ids = ids;
         this.eventRepository = eventRepository;
         this.idUtils = idUtils;
         this.graphDBSpaces = graphDBSpaces;
-        this.userResolver = userResolver;
+        this.usersRepository = usersRepository;
         this.authContext = authContext;
     }
 
@@ -120,8 +125,18 @@ public class EventController {
     public PersistedEvent persistEvent(Event event, DataStage dataStage) {
         UserWithRoles userWithRoles = authContext.getUserWithRoles();
         logger.info(String.format("Received event of type %s for instance %s in space %s by user %s via client %s", event.getType().name(), event.getDocumentId(), event.getSpaceName() != null ? event.getSpaceName().getName() : null, userWithRoles != null && userWithRoles.getUser() != null ? userWithRoles.getUser().getUserName() : "anonymous", userWithRoles != null && userWithRoles.getClientId() != null ? userWithRoles.getClientId() : "direct access"));
-        User user = userResolver.resolveUser(event);
-        PersistedEvent persistedEvent = new PersistedEvent(event, dataStage, user, graphDBSpaces.getSpace(event.getSpaceName()));
+        if(userWithRoles==null){
+            throw new UnauthorizedException("Can not persist an event without user information");
+        }
+        if(dataStage == event.getType().getStage()){
+            //We only update the representation of the user at its original stage since otherwise, we might end up having the user updated multiple times (once per stage)
+            usersRepository.updateUserRepresentation(userWithRoles.getUser());
+        }
+        if(dataStage==DataStage.NATIVE && (event.getType() == Event.Type.INSERT || event.getType() == Event.Type.UPDATE)){
+            //For insert and update, we need to ensure that the user information is also present in the native payload to properly calculate the alternatives
+            event.getData().put(EBRAINSVocabulary.META_USER, idUtils.buildAbsoluteUrl(usersRepository.getUserUUID(userWithRoles.getUser())));
+        }
+        PersistedEvent persistedEvent = new PersistedEvent(event, dataStage, userWithRoles.getUser(), graphDBSpaces.getSpace(event.getSpaceName()));
         ensureInternalIdInPayload(persistedEvent, userWithRoles);
         checkPermission(persistedEvent);
         handleIds(dataStage, persistedEvent);
@@ -156,7 +171,7 @@ public class EventController {
                 if(userWithRoles==null){
                     throw new UnauthorizedException("It is not possible to persist an event without authentication information");
                 }
-                UUID userSpecificUUID = idUtils.getDocumentIdForUserAndInstance(persistedEvent.getUser() != null ? persistedEvent.getUser().getNativeId() : userWithRoles.getUser().getNativeId(), persistedEvent.getDocumentId());
+                UUID userSpecificUUID = idUtils.getDocumentIdForUserAndInstance(persistedEvent.getUserId(), persistedEvent.getDocumentId());
                 persistedEvent.setInstance(persistedEvent.getSpaceName(), userSpecificUUID);
             }
         }
@@ -170,7 +185,10 @@ public class EventController {
         data.setTimestamp(event.getReportedTimeStampInMs());
         data.setIndexTimestamp(event.getIndexedTimestamp());
         if (dataStage == DataStage.RELEASED) {
-            data.getDoc().put(EBRAINSVocabulary.META_LAST_RELEASED_AT, ZonedDateTime.now().format(DateTimeFormatter.ISO_INSTANT));
+            final String indexTimestamp = ZonedDateTime.ofInstant(Instant.ofEpochMilli(event.getIndexedTimestamp()), ZoneId.systemDefault()).format(DateTimeFormatter.ISO_INSTANT);
+            final String firstRelease = eventRepository.getFirstRelease(event.getDocumentId());
+            data.getDoc().put(EBRAINSVocabulary.META_FIRST_RELEASED_AT, firstRelease == null ? indexTimestamp : firstRelease);
+            data.getDoc().put(EBRAINSVocabulary.META_LAST_RELEASED_AT, indexTimestamp);
         }
     }
 

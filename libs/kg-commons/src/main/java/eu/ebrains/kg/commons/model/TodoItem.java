@@ -22,10 +22,8 @@
 
 package eu.ebrains.kg.commons.model;
 
-import eu.ebrains.kg.commons.jsonld.JsonLdId;
 import eu.ebrains.kg.commons.jsonld.NormalizedJsonLd;
 
-import java.util.List;
 import java.util.UUID;
 
 public class TodoItem {
@@ -35,23 +33,20 @@ public class TodoItem {
     private Event.Type type;
     private NormalizedJsonLd payload;
     private SpaceName space;
-    private List<JsonLdId> mergeIds;
-    private User user;
 
     public TodoItem() {
     }
 
     public static TodoItem fromEvent(PersistedEvent event){
-        return new TodoItem(event.getEventId(), event.getDocumentId(), event.getSpaceName(), event.getType(), event.getData(), event.getUser());
+        return new TodoItem(event.getEventId(), event.getDocumentId(), event.getSpaceName(), event.getType(), event.getData());
     }
 
-    public TodoItem(String eventId, UUID documentId, SpaceName space, Event.Type type, NormalizedJsonLd payload, User user) {
+    public TodoItem(String eventId, UUID documentId, SpaceName space, Event.Type type, NormalizedJsonLd payload) {
         this.documentId = documentId;
         this.eventId = eventId;
         this.space = space;
         this.type = type;
         this.payload = payload;
-        this.user = user;
     }
 
     public Event.Type getType() {
@@ -72,9 +67,5 @@ public class TodoItem {
 
     public UUID getDocumentId() {
         return documentId;
-    }
-
-    public User getUser() {
-        return user;
     }
 }

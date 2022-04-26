@@ -24,9 +24,10 @@ package eu.ebrains.kg.graphdb.ingestion.controller;
 
 import eu.ebrains.kg.arango.commons.model.ArangoCollectionReference;
 import eu.ebrains.kg.arango.commons.model.ArangoDocumentReference;
-import eu.ebrains.kg.arango.commons.model.InternalSpace;
 import eu.ebrains.kg.commons.IdUtils;
-import eu.ebrains.kg.commons.jsonld.*;
+import eu.ebrains.kg.commons.jsonld.InferredJsonLdDoc;
+import eu.ebrains.kg.commons.jsonld.JsonLdId;
+import eu.ebrains.kg.commons.jsonld.NormalizedJsonLd;
 import eu.ebrains.kg.commons.model.DataStage;
 import eu.ebrains.kg.commons.model.TodoItem;
 import eu.ebrains.kg.commons.model.User;
@@ -35,14 +36,16 @@ import eu.ebrains.kg.graphdb.commons.controller.ArangoRepositoryCommons;
 import eu.ebrains.kg.graphdb.commons.model.ArangoDocument;
 import eu.ebrains.kg.graphdb.commons.model.ArangoInstance;
 import eu.ebrains.kg.graphdb.ingestion.model.DBOperation;
-import eu.ebrains.kg.graphdb.ingestion.model.RemoveReleaseStateOperation;
 import eu.ebrains.kg.graphdb.ingestion.model.EdgeResolutionOperation;
+import eu.ebrains.kg.graphdb.ingestion.model.RemoveReleaseStateOperation;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
-import java.nio.charset.StandardCharsets;
-import java.util.*;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 @Component
@@ -72,36 +75,11 @@ public class TodoListProcessor {
         this.releasingController = releasingController;
     }
 
-    private InstanceId getUserInstanceId(User user) {
-        UUID id;
-        try {
-            id = UUID.fromString(user.getNativeId());
-        } catch (IllegalArgumentException e) {
-            //If the native id is not a UUID on its own, we build one based on the string.
-            id = UUID.nameUUIDFromBytes(user.getNativeId().getBytes(StandardCharsets.UTF_8));
-        }
-        return new InstanceId(id, InternalSpace.USERS_SPACE);
-    }
-
-
-    private User getUserForItem(TodoItem item) {
-        return item.getUser() != null ? item.getUser() : new User("unknown", "Unknown", null, null, null, UUID.nameUUIDFromBytes("unknown".getBytes(StandardCharsets.UTF_8)).toString());
-    }
-
     public void doProcessTodoList(List<TodoItem> todoList, DataStage stage) {
         //TODO can we make this transactional?
         Set<User> handledUsers = new HashSet<>();
         for (TodoItem todoItem : todoList) {
             ArangoDocumentReference rootDocumentReference = ArangoCollectionReference.fromSpace(todoItem.getSpace()).doc(todoItem.getDocumentId());
-            if(stage == DataStage.NATIVE){
-                User user = getUserForItem(todoItem);
-                InstanceId userId = getUserInstanceId(user);
-                if (!handledUsers.contains(user)) {
-                    handleUserRepresentation(user, userId);
-                    handledUsers.add(user);
-                }
-                todoItem.getPayload().put(EBRAINSVocabulary.META_USER, idUtils.buildAbsoluteUrl(userId.getUuid()));
-            }
             if(todoItem.getPayload()!=null && todoItem.getSpace()!=null){
                 todoItem.getPayload().put(EBRAINSVocabulary.META_SPACE, todoItem.getSpace());
             }
@@ -140,18 +118,6 @@ public class TodoListProcessor {
         return inferenceSourceDocs.stream().map(inferenceSourceDoc -> new ArangoDocumentReference(document.getId().getArangoCollectionReference(), idUtils.getUUID(new JsonLdId(inferenceSourceDoc)))).collect(Collectors.toList());
     }
 
-    private void handleUserRepresentation(User user, InstanceId instanceId) {
-        //Update user info
-        // The user info is kept independent of the lifecycle of the triggering event. We therefore define the root document reference as the one from the stable instance id.
-        // Also: the user representation will only be stored in NATIVE
-        ArangoDocumentReference userRef = ArangoDocumentReference.fromInstanceId(instanceId);
-        ArangoDocument userDocument = repository.getDocument(DataStage.NATIVE, userRef);
-        if (userDocument == null || !new User(userDocument.getDoc()).isEqual(user)) {
-            logger.info(String.format("Creating / updating user profile for %s", user.getNativeId()));
-            user.setId(idUtils.buildAbsoluteUrl(instanceId.getUuid()));
-            upsertDocument(userRef, user, DataStage.NATIVE);
-        }
-    }
 
     private void unreleaseDocument(ArangoDocumentReference rootDocumentReference) {
         deleteDocument(DataStage.RELEASED, rootDocumentReference);
