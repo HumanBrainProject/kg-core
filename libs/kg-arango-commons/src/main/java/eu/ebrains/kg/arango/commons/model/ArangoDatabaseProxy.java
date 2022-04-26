@@ -78,11 +78,12 @@ public class ArangoDatabaseProxy {
             }
             else{
                 try {
-                    int waitingTime = (int)Math.pow(2, retry + 1);
+                    int waitingTime = (int)Math.pow(2.0, retry+1.0);
                     logger.info("Was not able to connect to arango database - retry in {} secs...", waitingTime);
                     Thread.sleep(waitingTime*1000L);
                     doCreateIfItDoesntExist(db, retry+1);
                 } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
                     throw new RuntimeException(e);
                 }
             }
