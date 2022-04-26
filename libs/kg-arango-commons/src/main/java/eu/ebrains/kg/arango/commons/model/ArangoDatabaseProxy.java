@@ -24,6 +24,7 @@ package eu.ebrains.kg.arango.commons.model;
 
 import com.arangodb.ArangoCollection;
 import com.arangodb.ArangoDB;
+import com.arangodb.ArangoDBException;
 import com.arangodb.ArangoDatabase;
 import com.arangodb.entity.CollectionType;
 import com.arangodb.model.CollectionCreateOptions;
@@ -46,6 +47,8 @@ public class ArangoDatabaseProxy {
     public final static int ARANGO_TIMEOUT = 10 * 60 * 1000;
     public final static int ARANGO_MAX_CONNECTIONS = 10;
 
+    private final static int ARANGO_CONNECTION_RETRIES = 5;
+
     private final ArangoDB arangoDB;
     private final String databaseName;
     private boolean exists;
@@ -63,11 +66,31 @@ public class ArangoDatabaseProxy {
         exists = false;
     }
 
+    private void doCreateIfItDoesntExist(ArangoDatabase db, int retry){
+        try {
+            if (!db.exists()) {
+                db.create();
+            }
+        }
+        catch(ArangoDBException exception){
+            if(retry>=ARANGO_CONNECTION_RETRIES){
+                throw exception;
+            }
+            else{
+                try {
+                    int waitingTime = (int)Math.pow(2, retry + 1);
+                    logger.info("Was not able to connect to arango database - retry in {} secs...", waitingTime);
+                    Thread.sleep(waitingTime*1000L);
+                    doCreateIfItDoesntExist(db, retry+1);
+                } catch (InterruptedException e) {
+                    throw new RuntimeException(e);
+                }
+            }
+        }
+    }
     public synchronized void createIfItDoesntExist() {
         ArangoDatabase db = arangoDB.db(databaseName);
-        if (!db.exists()) {
-            db.create();
-        }
+        doCreateIfItDoesntExist(db, 0);
     }
 
     public ArangoDatabase get() {
