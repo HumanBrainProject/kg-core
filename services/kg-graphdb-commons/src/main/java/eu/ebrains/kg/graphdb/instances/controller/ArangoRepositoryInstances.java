@@ -736,8 +736,16 @@ public class ArangoRepositoryInstances {
         if (database.collection(InternalSpace.TYPE_EDGE_COLLECTION.getCollectionName()).exists()) {
             Map<String, Object> bindVars = new HashMap<>();
             AQL aql = new AQL();
+            Map<String, Object> whitelistFilter = permissionsController.whitelistFilterForReadInstances(authContext.getUserWithRoles(), stage);
+            if (whitelistFilter != null) {
+                aql.specifyWhitelist();
+                bindVars.putAll(whitelistFilter);
+            }
             iterateThroughTypeList(Collections.singletonList(new Type(EBRAINSVocabulary.META_QUERY_TYPE)), null, bindVars, aql);
             aql.indent().addLine(AQL.trust("FOR v IN 1..1 OUTBOUND typeDefinition.type @@typeRelationCollection"));
+            if (whitelistFilter != null) {
+                aql.addDocumentFilterWithWhitelistFilter(AQL.trust("v"));
+            }
             if (typeFilter != null && !typeFilter.isBlank()) {
                 aql.addLine(AQL.trust("FILTER v.`" + GraphQueryKeys.GRAPH_QUERY_META.getFieldName() + "`.`" + GraphQueryKeys.GRAPH_QUERY_TYPE.getFieldName() + "` == @typeFilter"));
                 bindVars.put("typeFilter", typeFilter);

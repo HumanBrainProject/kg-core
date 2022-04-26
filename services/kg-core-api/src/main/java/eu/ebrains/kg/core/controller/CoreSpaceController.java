@@ -22,27 +22,21 @@
 
 package eu.ebrains.kg.core.controller;
 
-import eu.ebrains.kg.arango.commons.model.InternalSpace;
 import eu.ebrains.kg.commons.AuthContext;
 import eu.ebrains.kg.commons.api.GraphDBSpaces;
-import eu.ebrains.kg.commons.api.GraphDBTypes;
 import eu.ebrains.kg.commons.api.PrimaryStoreEvents;
-import eu.ebrains.kg.commons.exception.ForbiddenException;
-import eu.ebrains.kg.commons.exception.InvalidRequestException;
-import eu.ebrains.kg.commons.jsonld.JsonLdId;
-import eu.ebrains.kg.commons.model.*;
+import eu.ebrains.kg.commons.model.Paginated;
+import eu.ebrains.kg.commons.model.PaginationParam;
+import eu.ebrains.kg.commons.model.SpaceName;
 import eu.ebrains.kg.commons.model.external.spaces.SpaceInformation;
 import eu.ebrains.kg.commons.model.external.spaces.SpaceSpecification;
 import eu.ebrains.kg.commons.model.internal.spaces.Space;
 import eu.ebrains.kg.commons.models.UserWithRoles;
 import eu.ebrains.kg.commons.permission.Functionality;
 import eu.ebrains.kg.commons.permission.FunctionalityInstance;
-import eu.ebrains.kg.commons.permissions.controller.Permissions;
-import eu.ebrains.kg.core.model.ExposedStage;
 import org.springframework.stereotype.Component;
 
-import java.nio.charset.StandardCharsets;
-import java.util.*;
+import java.util.List;
 import java.util.stream.Collectors;
 
 @Component
@@ -66,9 +60,7 @@ public class CoreSpaceController {
             if (spaceIdentifier != null) {
                 final SpaceName internalSpaceName = SpaceName.getInternalSpaceName(spaceIdentifier, userWithRoles.getPrivateSpace());
                 List<Functionality> applyingFunctionalities = userWithRoles.getPermissions().stream().
-                        filter(f -> (
-                                f.getFunctionality().getFunctionalityGroup() == Functionality.FunctionalityGroup.INSTANCE
-                                || f.getFunctionality().getFunctionalityGroup() == Functionality.FunctionalityGroup.QUERY)
+                        filter(f -> f.getFunctionality().getFunctionalityGroup() == Functionality.FunctionalityGroup.INSTANCE
                                 && f.appliesTo(internalSpaceName, null)
                         ).map(FunctionalityInstance::getFunctionality).distinct().collect(Collectors.toList());
                 spaceInformation.setPermissions(applyingFunctionalities);

@@ -67,12 +67,6 @@ public enum Functionality {
     CREATE_CLIENT_PERMISSION(Permission.Level.GLOBAL_AND_SPACE, FunctionalityGroup.CLIENT, null, null, null),
     DELETE_CLIENT_PERMISSION(Permission.Level.GLOBAL_AND_SPACE, FunctionalityGroup.CLIENT, null, null, null),
 
-    //Query
-    READ_QUERY(Permission.Level.GLOBAL_AND_SPACE, FunctionalityGroup.QUERY, null, null, null),
-    WRITE_QUERY(Permission.Level.GLOBAL_AND_SPACE, FunctionalityGroup.QUERY, null, Event.Type.UPDATE, EBRAINSVocabulary.META_QUERY_TYPE),
-    CREATE_QUERY(Permission.Level.GLOBAL_AND_SPACE, FunctionalityGroup.QUERY, null, Event.Type.INSERT, EBRAINSVocabulary.META_QUERY_TYPE),
-    DELETE_QUERY(Permission.Level.GLOBAL_AND_SPACE, FunctionalityGroup.QUERY, null, Event.Type.DELETE, EBRAINSVocabulary.META_QUERY_TYPE),
-
 
     //Permission management
     READ_PERMISSION(Permission.Level.GLOBAL_AND_SPACE, FunctionalityGroup.PERMISSIONS, null, null, null),
@@ -114,6 +108,6 @@ public enum Functionality {
     }
 
     public enum FunctionalityGroup {
-        INSTANCE, CLIENT, QUERY, PERMISSIONS, SPACES, USERS, TYPES
+        INSTANCE, CLIENT, PERMISSIONS, SPACES, USERS, TYPES
     }
 }
