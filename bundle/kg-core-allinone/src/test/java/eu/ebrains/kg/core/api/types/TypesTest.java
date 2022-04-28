@@ -83,6 +83,7 @@ public class TypesTest extends AbstractFunctionalityTest {
     }
 
     @Test
+    @SuppressWarnings("java:S2699") //The assertion is handled within the "execution" part.
     public void defineTypeForbidden() {
         //Given
         DefineTypeTest test = new DefineTypeTest(ctx(NON_TYPE_DEFINITION_ROLES), types);
@@ -211,6 +212,7 @@ public class TypesTest extends AbstractFunctionalityTest {
 
 
     @Test
+    @SuppressWarnings("java:S2699") //The assertion is handled within the "execution" part.
     public void getTypesByNameOk() {
         //Given
         GetTypesByNameTest test = new GetTypesByNameTest(ctx(READ_TYPES_IN_PROGRESS_ROLES), null, false, types, instances);

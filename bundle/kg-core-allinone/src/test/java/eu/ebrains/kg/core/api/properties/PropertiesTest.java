@@ -77,6 +77,7 @@ public class PropertiesTest extends AbstractFunctionalityTest {
 
 
     @Test
+    @SuppressWarnings("java:S2699") //The assertion is handled within the "execution" part.
     public void definePropertyGlobalForbidden() {
         //Given
         DefinePropertyGlobalTest test = new DefinePropertyGlobalTest(ctx(NON_PROPERTY_DEFINITION_ROLES), instances, properties);

@@ -42,7 +42,7 @@ import java.util.UUID;
 @Component
 public class RequestLoggingFilter extends OncePerRequestFilter {
 
-    private final Logger logger = LoggerFactory.getLogger(getClass());
+    private final Logger requestLogger = LoggerFactory.getLogger(getClass());
     private final AuthContext authContext;
 
     public RequestLoggingFilter(AuthContext authContext) {
@@ -60,7 +60,7 @@ public class RequestLoggingFilter extends OncePerRequestFilter {
             } catch (UnauthorizedException | NotAcceptedTermsOfUseException ex) {
                 userWithRoles = null;
             }
-            logger.info("{}, {}, {}, {}, {}, {}, {}", StructuredArguments.keyValue("action", "API request"),
+            requestLogger.info("{}, {}, {}, {}, {}, {}, {}", StructuredArguments.keyValue("action", "API request"),
                     StructuredArguments.keyValue("id", apiRequestId),
                     StructuredArguments.keyValue("method", request.getMethod()),
                     StructuredArguments.keyValue("path", request.getRequestURI()),
@@ -70,7 +70,7 @@ public class RequestLoggingFilter extends OncePerRequestFilter {
             Date start = new Date();
             filterChain.doFilter(request, response);
             Date end = new Date();
-            	logger.info("{}, {}, {}, {}, {}, {}, {}, {}, {}", StructuredArguments.keyValue("action", "API response"),
+            	requestLogger.info("{}, {}, {}, {}, {}, {}, {}, {}, {}", StructuredArguments.keyValue("action", "API response"),
                     StructuredArguments.keyValue("id", apiRequestId),
                     StructuredArguments.keyValue("method", request.getMethod()),
                     StructuredArguments.keyValue("path", request.getRequestURI()),

@@ -65,6 +65,7 @@ public class InstancesTest extends AbstractFunctionalityTest {
     private static final RoleMapping[] RELEASE_STATUS_ROLES = RoleMapping.getRemainingUserRoles(NON_RELEASE_STATUS_ROLES);
 
     @Test
+    @SuppressWarnings("java:S2699") //The assertion is handled within the "execution" part.
     public void createInstanceOk() {
         //Given
         CreateInstanceTest test = new CreateInstanceTest(ctx(WRITE_ROLES), instances);
@@ -102,6 +103,7 @@ public class InstancesTest extends AbstractFunctionalityTest {
     }
 
     @Test
+    @SuppressWarnings("java:S2699") //The assertion is handled within the "execution" part.
     public void createInstanceWithSpecifiedUUIDOkForbidden() {
         //Given
         CreateInstanceWithSpecifiedUUIDTest test = new CreateInstanceWithSpecifiedUUIDTest(ctx(NON_WRITE_ROLES), instances);
@@ -111,6 +113,7 @@ public class InstancesTest extends AbstractFunctionalityTest {
     }
 
     @Test
+    @SuppressWarnings("java:S2699") //The assertion is handled within the "execution" part.
     public void createInstanceWithNewSpaceOk() {
         //Given
         CreateInstanceWithNewSpaceTest test = new CreateInstanceWithNewSpaceTest(ctx(OWNER_ROLES), instances);
@@ -126,6 +129,7 @@ public class InstancesTest extends AbstractFunctionalityTest {
      * Only an administrator can create an instance in a not-yet existing space (since space creation rights are required)
      */
     @Test
+    @SuppressWarnings("java:S2699") //The assertion is handled within the "execution" part.
     public void createInstanceWithNewSpaceForbidden() {
         //Given
         CreateInstanceWithNewSpaceTest test = new CreateInstanceWithNewSpaceTest(ctx(NON_OWNER_ROLES), instances);
@@ -155,6 +159,7 @@ public class InstancesTest extends AbstractFunctionalityTest {
     }
 
     @Test
+    @SuppressWarnings("java:S2699") //The assertion is handled within the "execution" part.
     public void contributeToInstanceFullReplacementForbidden() {
         //Given
         ContributeToInstanceFullReplacementTest test = new ContributeToInstanceFullReplacementTest(ctx(NON_WRITE_ROLES), instances);
@@ -188,6 +193,7 @@ public class InstancesTest extends AbstractFunctionalityTest {
     }
 
     @Test
+    @SuppressWarnings("java:S2699") //The assertion is handled within the "execution" part.
     public void contributeToInstanceAlternatives() {
         //Given
         final ExtendedResponseConfiguration extendedResponseConfiguration = new ExtendedResponseConfiguration();
@@ -215,6 +221,7 @@ public class InstancesTest extends AbstractFunctionalityTest {
     }
 
     @Test
+    @SuppressWarnings("java:S2699") //The assertion is handled within the "execution" part.
     public void contributeToInstancePartialReplacementForbidden() {
         //Given
         ContributeToInstancePartialReplacementTest test = new ContributeToInstancePartialReplacementTest(ctx(NON_WRITE_ROLES), instances);
@@ -239,6 +246,7 @@ public class InstancesTest extends AbstractFunctionalityTest {
 
     @Ignore("this doesn't return a forbidden exception anymore but rather minimal metadata")
     @Test
+    @SuppressWarnings("java:S2699") //The assertion is handled within the "execution" part.
     public void getInstanceByIdForbidden() {
         //Given
         GetInstanceByIdTest test = new GetInstanceByIdTest(ctx(NON_READ_IN_PROGRESS_ROLES), instances);
@@ -267,6 +275,7 @@ public class InstancesTest extends AbstractFunctionalityTest {
 
     @Ignore("this doesn't return a forbidden exception anymore but rather minimal metadata")
     @Test
+    @SuppressWarnings("java:S2699") //The assertion is handled within the "execution" part.
     public void getInstanceScopeSimpleForbidden() {
         //Given
         GetInstanceScopeSimpleTest test = new GetInstanceScopeSimpleTest(ctx(NON_READ_IN_PROGRESS_ROLES), instances);
@@ -296,6 +305,7 @@ public class InstancesTest extends AbstractFunctionalityTest {
     }
 
     @Test
+    @SuppressWarnings("java:S2699") //The assertion is handled within the "execution" part.
     public void getInstanceNeighborsSimpleForbidden() {
 
         //Given
@@ -476,6 +486,7 @@ public class InstancesTest extends AbstractFunctionalityTest {
     }
 
     @Test
+    @SuppressWarnings("java:S2699") //The assertion is handled within the "execution" part.
     public void deleteInstanceForbidden() {
         //Given
         DeleteInstanceTest test = new DeleteInstanceTest(ctx(NON_WRITE_ROLES), instances);

@@ -68,6 +68,7 @@ public class SpacesTest extends AbstractFunctionalityTest {
 
     @Test
     @Ignore //TODO fix test
+    @SuppressWarnings("java:S2699") //The assertion is handled within the "execution" part.
     public void getSpaceWithPermissionsForbidden() {
         //Given
         GetSpaceWithPermissionsTest test = new GetSpaceWithPermissionsTest(ctx(NON_READ_SPACE_ROLES), instances, spaces);

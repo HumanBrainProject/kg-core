@@ -40,6 +40,7 @@ import java.util.stream.Collectors;
 
 import static org.springframework.util.Assert.*;
 
+@SuppressWarnings("java:S2187") //We don't add "tests" to these classes because they are test abstractions and are used in other tests
 public abstract class AbstractTest {
 
     protected static final int smallPayload = 5;
