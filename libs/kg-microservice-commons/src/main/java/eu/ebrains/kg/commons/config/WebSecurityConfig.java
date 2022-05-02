@@ -24,8 +24,9 @@ import org.springframework.security.config.annotation.web.configuration.WebSecur
 public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
 
     @Override
+    @SuppressWarnings("java:S4502") //We suppress the csrf disable warning because we have a stateless, token-base API (also see https://www.baeldung.com/spring-security-csrf#stateless-spring-api ).
     protected void configure(HttpSecurity http) throws Exception {
-        http.authorizeRequests().antMatchers("/actuator/**").hasRole("ACTUATOR").and().httpBasic();
+        http.csrf().disable().authorizeRequests().antMatchers("/actuator/**").hasRole("ACTUATOR").and().httpBasic();
     }
 
 }
