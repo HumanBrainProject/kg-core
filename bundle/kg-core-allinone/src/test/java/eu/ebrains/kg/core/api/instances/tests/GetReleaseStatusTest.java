@@ -31,6 +31,7 @@ import eu.ebrains.kg.testutils.TestDataFactory;
 
 import java.util.UUID;
 
+@SuppressWarnings("java:S2187") //We don't add "tests" to these classes because they are test abstractions and are used in other tests
 public class GetReleaseStatusTest extends AbstractInstanceTest {
 
     public NormalizedJsonLd originalInstance;

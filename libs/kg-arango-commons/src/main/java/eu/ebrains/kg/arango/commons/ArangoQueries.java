@@ -34,6 +34,8 @@ import java.util.stream.StreamSupport;
 
 public class ArangoQueries {
 
+    private ArangoQueries() {
+    }
 
     private final static Logger logger = LoggerFactory.getLogger(ArangoQueries.class);
 
@@ -50,7 +52,7 @@ public class ArangoQueries {
         }
         aql.getQueryOptions().count(true);
         ArangoCursor<NormalizedJsonLd> result = db.query(value, aqlQuery.getBindVars(), aql.getQueryOptions(), NormalizedJsonLd.class);
-        logger.debug(String.format("Received %d results from Arango in %dms", result.getCount(), new Date().getTime() - launch));
+        logger.debug("Received {} results from Arango in {}ms", result.getCount(), new Date().getTime() - launch);
         Long count = result.getCount() != null ? result.getCount().longValue() : null;
         Long totalCount;
         if (aql.getPaginationParam() != null && aql.getPaginationParam().getSize() != null) {
@@ -58,10 +60,10 @@ public class ArangoQueries {
         } else {
             totalCount = count;
         }
-        logger.debug(String.format("Start parsing the results after %dms", new Date().getTime() - launch));
+        logger.debug("Start parsing the results after {}ms", new Date().getTime() - launch);
         final Stream<NormalizedJsonLd> stream = StreamSupport.stream(result.spliterator(), false);
         Stream<T> resultStream = stream.map(Objects.requireNonNullElseGet(mapper, () -> s -> (T) s));
-        logger.debug(String.format("Done processing the Arango result - received %d results in %dms total", count, new Date().getTime() - launch));
+        logger.debug("Done processing the Arango result - received {} results in {}ms total", count, new Date().getTime() - launch);
         if (aql.getPaginationParam() != null && aql.getPaginationParam().getSize() == null && (int) aql.getPaginationParam().getFrom() > 0 && count != null && (int) aql.getPaginationParam().getFrom() < count) {
             //Arango doesn't allow to request from a specific offset to infinite. To achieve this, we load everything and we cut the additional instances in Java
             resultStream = resultStream.skip((int) aql.getPaginationParam().getFrom());

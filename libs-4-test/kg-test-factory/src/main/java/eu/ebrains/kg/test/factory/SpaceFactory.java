@@ -21,6 +21,9 @@ import eu.ebrains.kg.commons.model.internal.spaces.Space;
 
 public class SpaceFactory {
 
+    private SpaceFactory() {
+    }
+
     public static Space myspace() {
         return new Space(SpaceName.fromString("myspace"), false, false, false);
     }

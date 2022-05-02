@@ -39,6 +39,7 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+@SuppressWarnings("java:S2187") //We don't add "tests" to these classes because they are test abstractions and are used in other tests
 public class GetInstancesByIdsTest extends AbstractInstanceTest {
 
     public Result<Map<String, Result<NormalizedJsonLd>>> response;

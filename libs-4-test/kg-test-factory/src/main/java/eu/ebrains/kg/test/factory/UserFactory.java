@@ -25,6 +25,9 @@ import java.util.ArrayList;
 
 public class UserFactory {
 
+    private UserFactory() {
+    }
+
     public static AuthContext noPermissionUser() {
         final AuthContext authContext = Mockito.mock(AuthContext.class);
         final ArrayList<String> userRoles = new ArrayList<>();

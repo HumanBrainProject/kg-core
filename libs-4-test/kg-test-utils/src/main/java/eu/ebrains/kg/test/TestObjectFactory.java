@@ -43,6 +43,8 @@ public class TestObjectFactory {
     public static final SpaceName ADMIN = new SpaceName("admin");
     public static final SpaceName KGEDITOR = new SpaceName("kgeditor");
 
+    private TestObjectFactory() {
+    }
 
     public static NormalizedJsonLd overrideId(NormalizedJsonLd jsonLd, JsonLdId id) {
         jsonLd.addIdentifiers(jsonLd.id().getId());

@@ -33,6 +33,7 @@ import eu.ebrains.kg.core.api.instances.TestContext;
 import eu.ebrains.kg.core.model.ExposedStage;
 import org.springframework.http.ResponseEntity;
 
+@SuppressWarnings("java:S2187") //We don't add "tests" to these classes because they are test abstractions and are used in other tests
 public class GetInstanceByIdTest extends AbstractInstanceTest {
 
     public ResponseEntity<Result<NormalizedJsonLd>> response;

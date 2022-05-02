@@ -211,11 +211,11 @@ public class InstancesTest extends AbstractFunctionalityTest {
 
             final NormalizedJsonLd selectedAlternative = alternativeOfManipulatedProperty.stream().filter(a -> a.getAs(EBRAINSVocabulary.META_SELECTED, Boolean.class)).findFirst().orElseThrow();
             final NormalizedJsonLd userOfSelectedAlternative = selectedAlternative.getAs(EBRAINSVocabulary.META_USER, NormalizedJsonLd.class);
-            assertEquals(userOfSelectedAlternative.getAs(SchemaOrgVocabulary.NAME, String.class), "Alice");
+            assertEquals("Alice", userOfSelectedAlternative.getAs(SchemaOrgVocabulary.NAME, String.class));
 
             final NormalizedJsonLd notSelectedAlternative = alternativeOfManipulatedProperty.stream().filter(a -> !a.getAs(EBRAINSVocabulary.META_SELECTED, Boolean.class)).findFirst().orElseThrow();
             final NormalizedJsonLd userOfNotSelectedAlternative = notSelectedAlternative.getAs(EBRAINSVocabulary.META_USER, NormalizedJsonLd.class);
-            assertEquals(userOfNotSelectedAlternative.getAs(SchemaOrgVocabulary.NAME, String.class), "Admin");
+            assertEquals("Admin", userOfNotSelectedAlternative.getAs(SchemaOrgVocabulary.NAME, String.class));
 
         });
     }

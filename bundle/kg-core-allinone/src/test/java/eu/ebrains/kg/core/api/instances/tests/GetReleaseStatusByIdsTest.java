@@ -37,6 +37,7 @@ import java.util.Arrays;
 import java.util.Map;
 import java.util.UUID;
 
+@SuppressWarnings("java:S2187") //We don't add "tests" to these classes because they are test abstractions and are used in other tests
 public class GetReleaseStatusByIdsTest extends AbstractInstanceTest {
 
     public Result<Map<UUID, Result<ReleaseStatus>>> response;

@@ -37,6 +37,7 @@ import org.springframework.http.ResponseEntity;
 import java.util.Collections;
 import java.util.Map;
 
+@SuppressWarnings("java:S2187") //We don't add "tests" to these classes because they are test abstractions and are used in other tests
 public class GetInstancesByIdentifiersTest extends AbstractInstanceTest {
 
     public Result<Map<String, Result<NormalizedJsonLd>>> response;

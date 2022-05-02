@@ -34,6 +34,7 @@ import eu.ebrains.kg.core.api.Instances;
 import eu.ebrains.kg.core.api.instances.TestContext;
 import eu.ebrains.kg.core.model.ExposedStage;
 
+@SuppressWarnings("java:S2187") //We don't add "tests" to these classes because they are test abstractions and are used in other tests
 public class GetSuggestionsTest extends AbstractInstanceTest {
 
     public Result<SuggestionResult> response;

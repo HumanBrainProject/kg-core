@@ -24,12 +24,12 @@ import java.util.List;
 
 public class FunctionalityAssertions {
 
-    private static final List<Functionality> EXPECTED_ADMIN_FUNCTIONALITIES = Arrays.asList(Functionality.READ, Functionality.CREATE, Functionality.WRITE, Functionality.RELEASE, Functionality.UNRELEASE);
+    private FunctionalityAssertions() {
+    }
 
     public static void assertHasAdminFunctionalities(List<Functionality> functionalities){
         List<Functionality> expectedFunctionalities = Arrays.asList(Functionality.READ, Functionality.CREATE, Functionality.WRITE, Functionality.RELEASE, Functionality.UNRELEASE);
         Assertions.assertTrue(functionalities.containsAll(expectedFunctionalities));
-
     }
 
 

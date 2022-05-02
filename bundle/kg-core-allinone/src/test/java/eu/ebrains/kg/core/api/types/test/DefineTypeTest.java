@@ -32,6 +32,7 @@ import eu.ebrains.kg.core.api.AbstractTest;
 import eu.ebrains.kg.core.api.Types;
 import eu.ebrains.kg.core.api.instances.TestContext;
 
+@SuppressWarnings("java:S2187") //We don't add "tests" to these classes because they are test abstractions and are used in other tests
 public class DefineTypeTest extends AbstractTest {
 
     private final Types types;
