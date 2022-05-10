@@ -112,12 +112,12 @@ public class ArangoRepositoryInstances {
             resolveIncomingLinks(stage, instanceIncomingLinks);
         }
         final NormalizedJsonLd byInstanceId = instanceIncomingLinks.getAs(id.toString(), NormalizedJsonLd.class);
-        if(byInstanceId!=null){
+        if (byInstanceId != null) {
             final NormalizedJsonLd byProperty = byInstanceId.getAs(property, NormalizedJsonLd.class);
-            if(byProperty!=null){
+            if (byProperty != null) {
                 final NormalizedJsonLd document = byProperty.getAs(type, NormalizedJsonLd.class);
-                if(document!=null){
-                    return new Paginated<>(document.getAsListOf("data", NormalizedJsonLd.class), document.getAs("total", Long.class, 0L),document.getAs("size", Long.class, 0L), document.getAs("from", Long.class, 0L));
+                if (document != null) {
+                    return new Paginated<>(document.getAsListOf("data", NormalizedJsonLd.class), document.getAs("total", Long.class, 0L), document.getAs("size", Long.class, 0L), document.getAs("from", Long.class, 0L));
                 }
             }
         }
@@ -165,7 +165,7 @@ public class ArangoRepositoryInstances {
             document.getDoc().removeAllInternalProperties();
         }
         NormalizedJsonLd doc = document.getDoc();
-        if (doc != null && !permissions.hasPermission(authContext.getUserWithRoles(), stage==DataStage.RELEASED ? Functionality.READ_RELEASED : Functionality.READ, space, id)) {
+        if (doc != null && !permissions.hasPermission(authContext.getUserWithRoles(), stage == DataStage.RELEASED ? Functionality.READ_RELEASED : Functionality.READ, space, id)) {
             //The user doesn't have read rights - we need to restrict the information to minimal data
             doc.keepPropertiesOnly(getMinimalFields(stage, doc.types()));
         }
@@ -268,7 +268,6 @@ public class ArangoRepositoryInstances {
     private void handleAlternativesAndEmbedded(List<NormalizedJsonLd> documents, DataStage stage, boolean alternatives, boolean embedded) {
         if (alternatives) {
             List<NormalizedJsonLd[]> embeddedDocuments = getEmbeddedDocuments(documents, stage, true);
-            resolveUsersForAlternatives(embeddedDocuments);
             for (NormalizedJsonLd[] embeddedDocument : embeddedDocuments) {
                 Arrays.stream(embeddedDocument).forEach(e -> {
                     e.remove(EBRAINSVocabulary.META_REVISION);
@@ -277,6 +276,7 @@ public class ArangoRepositoryInstances {
                 });
             }
             addEmbeddedInstancesToDocument(documents, embeddedDocuments);
+            resolveUsersForAlternatives(documents);
         } else {
             documents.forEach(d -> d.remove(EBRAINSVocabulary.META_ALTERNATIVE));
         }
@@ -286,27 +286,31 @@ public class ArangoRepositoryInstances {
     }
 
 
-    private void resolveUsersForAlternatives(List<NormalizedJsonLd[]> alternatives) {
-        Set<UUID> userIdsToResolve = alternatives.stream().flatMap(Arrays::stream).map(d ->
-                d.keySet().stream().filter(k -> !NormalizedJsonLd.isInternalKey(k) && !JsonLdConsts.isJsonLdConst(k)).map(k -> {
-                    List<NormalizedJsonLd> alternative;
+    private void resolveUsersForAlternatives(List<NormalizedJsonLd> documents) {
+        //Collect all ids to resolve
+        final Set<UUID> userIdsToResolve = documents.stream().map(document -> {
+            final NormalizedJsonLd alternative = document.getAs(EBRAINSVocabulary.META_ALTERNATIVE, NormalizedJsonLd.class);
+            if (alternative != null) {
+                return alternative.keySet().stream().filter(key -> !NormalizedJsonLd.isInternalKey(key) && !JsonLdConsts.isJsonLdConst(key)).map(key -> {
+                    List<NormalizedJsonLd> alt;
                     try {
-                        alternative = d.getAsListOf(k, NormalizedJsonLd.class);
+                        alt = alternative.getAsListOf(key, NormalizedJsonLd.class);
                     } catch (IllegalArgumentException e) {
-                        alternative = Collections.emptyList();
+                        alt = Collections.emptyList();
                     }
-                    return alternative != null ? alternative.stream().map(a -> a.getAsListOf(EBRAINSVocabulary.META_USER, String.class)).flatMap(List::stream).collect(Collectors.toSet()) : Collections.<String>emptySet();
-                }).flatMap(Set::stream).collect(Collectors.toSet())).flatMap(Set::stream).map(id -> idUtils.getUUID(new JsonLdId(id))).collect(Collectors.toSet());
+                    return alt != null ? alt.stream().map(a -> a.getAsListOf(EBRAINSVocabulary.META_USER, String.class)).flatMap(List::stream).collect(Collectors.toSet()) : Collections.<String>emptySet();
+                }).flatMap(Set::stream).map(id -> idUtils.getUUID(new JsonLdId(id))).collect(Collectors.toSet());
+            }
+            return Collections.<UUID>emptySet();
+        }).flatMap(Set::stream).collect(Collectors.toSet());
 
         final Map<String, ReducedUserInformation> resolvedUsers = primaryStoreUsers.getUsers(userIdsToResolve);
-        alternatives.stream().flatMap(Arrays::stream).forEach(d ->
-                d.keySet().stream().filter(k -> !NormalizedJsonLd.isInternalKey(k) && !JsonLdConsts.isJsonLdConst(k)).forEach(k -> {
-                    Object obj = d.get(k);
-                    if (obj instanceof Collection) {
-                        ((Collection<?>) obj).forEach(o -> {
-                            if (o instanceof Map) {
-                                Map alternative = (Map) o;
-                                List<Object> users = new NormalizedJsonLd(alternative).getAsListOf(EBRAINSVocabulary.META_USER, String.class).stream().map(id -> {
+        documents.forEach(document -> {
+            final NormalizedJsonLd alternative = document.getAs(EBRAINSVocabulary.META_ALTERNATIVE, NormalizedJsonLd.class);
+            if (alternative != null) {
+                alternative.keySet().stream().filter(key -> !NormalizedJsonLd.isInternalKey(key) && !JsonLdConsts.isJsonLdConst(key)).forEach(key -> {
+                    alternative.put(key, alternative.getAsListOf(key, NormalizedJsonLd.class, true).stream().peek(a -> {
+                        List<Object> users = a.getAsListOf(EBRAINSVocabulary.META_USER, String.class).stream().map(id -> {
                                     UUID uuid = idUtils.getUUID(new JsonLdId(id));
                                     ReducedUserInformation userResult = null;
                                     if (uuid != null) {
@@ -314,16 +318,15 @@ public class ArangoRepositoryInstances {
                                     }
                                     return userResult;
                                 }).collect(Collectors.toList());
-                                alternative.put(EBRAINSVocabulary.META_USER, users);
-                                //A special case: if the value has alternatives but the last value is null, we need to set the value explicitly, since it won't be properly stored in the alternatives payload.
-                                if (!alternative.containsKey(EBRAINSVocabulary.META_VALUE)) {
-                                    alternative.put(EBRAINSVocabulary.META_VALUE, null);
-                                }
-                            }
-                        });
-                    }
-                }));
+                        a.put(EBRAINSVocabulary.META_USER, users);
+                    }).collect(Collectors.toList()));
+                });
+                document.put(EBRAINSVocabulary.META_ALTERNATIVE, alternative);
+            }
+        });
     }
+
+
 
     private Map<UUID, Result<NormalizedJsonLd>> getDocumentsByReferenceList(DataStage stage, List<ArangoDocumentReference> documentReferences, String typeRestriction, boolean embedded, boolean alternatives, boolean incomingLinks, Long incomingLinksPageSize) {
         ArangoDatabase db = databases.getByStage(stage);
@@ -332,16 +335,15 @@ public class ArangoRepositoryInstances {
         int counter = 0;
         Map<String, Object> bindVars = new HashMap<>();
         aql.addLine(AQL.trust("RETURN {"));
-        if(typeRestriction!=null && !CollectionUtils.isEmpty(documentReferences)){
+        if (typeRestriction != null && !CollectionUtils.isEmpty(documentReferences)) {
             bindVars.put("typeRestriction", typeRestriction);
         }
         for (ArangoDocumentReference reference : documentReferences) {
             bindVars.put("doc" + counter, reference.getId());
-            if(typeRestriction!=null){
+            if (typeRestriction != null) {
                 aql.addLine(AQL.trust("\"" + reference.getDocumentId() + "\": @typeRestriction IN DOCUMENT(@doc" + counter + ").`@type` ? DOCUMENT(@doc" + counter + ") : null"));
-            }
-            else {
-                aql.addLine(AQL.trust("\"" + reference.getDocumentId() + "\": DOCUMENT(@doc" + counter +")"));
+            } else {
+                aql.addLine(AQL.trust("\"" + reference.getDocumentId() + "\": DOCUMENT(@doc" + counter + ")"));
             }
             counter++;
             if (counter < documentReferences.size()) {
@@ -466,13 +468,13 @@ public class ArangoRepositoryInstances {
         // ATTENTION: We are only allowed to search by "label" fields but not by "searchable" fields if the user has no read rights
         // for those instances since otherwise, information could be extracted by doing searches. We therefore don't provide additional search fields.
         iterateThroughTypeList(type, null, bindVars, aql);
-        if(searchablePropertiesByType == null){
+        if (searchablePropertiesByType == null) {
             searchablePropertiesByType = Collections.emptyMap();
         }
 
         //For suggestions, we're a little more strict. We only show additional information if the user has read rights for the space - individual instance permissions are not reflected.
         final Map<String, Object> whitelistFilter = permissionsController.whitelistFilterForReadInstances(authContext.getUserWithRoles(), stage);
-        if(whitelistFilter!=null){
+        if (whitelistFilter != null) {
             aql.addLine(AQL.trust("LET restrictedSpaces = @restrictedSpaces"));
             bindVars.put("restrictedSpaces", whitelistFilter.get(AQL.READ_ACCESS_BY_SPACE));
         }
@@ -499,11 +501,11 @@ public class ArangoRepositoryInstances {
         aql.addPagination(paginationParam);
 
         aql.addLine(AQL.trust("LET additionalInfo = "));
-        if(whitelistFilter!=null){
-            aql.addLine(AQL.trust("v.`"+EBRAINSVocabulary.META_SPACE+"` NOT IN restrictedSpaces ? null : "));
+        if (whitelistFilter != null) {
+            aql.addLine(AQL.trust("v.`" + EBRAINSVocabulary.META_SPACE + "` NOT IN restrictedSpaces ? null : "));
         }
         aql.addLine(AQL.trust("CONCAT_SEPARATOR(\", \", (FOR s IN NOT_NULL(searchableProperties[typeDefinition.typeName], []) RETURN v[s]))"));
-        aql.addLine(AQL.trust("LET attWithMeta = [{name: \"" + JsonLdConsts.ID + "\", value: v.`" + JsonLdConsts.ID + "`}, {name: \"" + EBRAINSVocabulary.LABEL + "\", value: v." + IndexedJsonLdDoc.LABEL + "},  {name: \""+EBRAINSVocabulary.ADDITIONAL_INFO+"\", value: additionalInfo}, {name: \"" + EBRAINSVocabulary.META_TYPE + "\", value: typeDefinition.typeName}, {name: \"" + EBRAINSVocabulary.META_SPACE + "\", value: v.`" + EBRAINSVocabulary.META_SPACE + "`}]"));
+        aql.addLine(AQL.trust("LET attWithMeta = [{name: \"" + JsonLdConsts.ID + "\", value: v.`" + JsonLdConsts.ID + "`}, {name: \"" + EBRAINSVocabulary.LABEL + "\", value: v." + IndexedJsonLdDoc.LABEL + "},  {name: \"" + EBRAINSVocabulary.ADDITIONAL_INFO + "\", value: additionalInfo}, {name: \"" + EBRAINSVocabulary.META_TYPE + "\", value: typeDefinition.typeName}, {name: \"" + EBRAINSVocabulary.META_SPACE + "\", value: v.`" + EBRAINSVocabulary.META_SPACE + "`}]"));
         aql.addLine(AQL.trust("RETURN ZIP(attWithMeta[*].name, attWithMeta[*].value)"));
         Paginated<NormalizedJsonLd> normalizedJsonLdPaginated = ArangoQueries.queryDocuments(databases.getByStage(stage), new AQLQuery(aql, bindVars), null);
         List<SuggestedLink> links = normalizedJsonLdPaginated.getData().stream().map(payload -> {
@@ -965,18 +967,17 @@ public class ArangoRepositoryInstances {
         // we memorize if there are space permissions available and only do explicit checks for individual instances if needed.
         Set<SpaceName> permissionsForSpace = new HashSet<>();
         instanceIds.forEach(id -> {
-            if (!permissionsForSpace.contains(id.getSpace())){
-                if(!permissions.hasPermission(userWithRoles, Functionality.RELEASE_STATUS, id.getSpace())){
-                    if(!permissions.hasPermission(userWithRoles, Functionality.RELEASE_STATUS, id.getSpace(), id.getUuid())){
+            if (!permissionsForSpace.contains(id.getSpace())) {
+                if (!permissions.hasPermission(userWithRoles, Functionality.RELEASE_STATUS, id.getSpace())) {
+                    if (!permissions.hasPermission(userWithRoles, Functionality.RELEASE_STATUS, id.getSpace(), id.getUuid())) {
                         throw new ForbiddenException();
                     }
-                }
-                else if(id.getSpace()!=null){
+                } else if (id.getSpace() != null) {
                     permissionsForSpace.add(id.getSpace());
                 }
             }
         });
-        return TypeUtils.splitList(instanceIds, 2000).stream().map(chunk -> getTopInstanceReleaseStatus(chunk).entrySet()).flatMap(Collection::stream).collect(Collectors.toMap(Map.Entry::getKey,  Map.Entry::getValue));
+        return TypeUtils.splitList(instanceIds, 2000).stream().map(chunk -> getTopInstanceReleaseStatus(chunk).entrySet()).flatMap(Collection::stream).collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
     }
 
 
@@ -1033,7 +1034,7 @@ public class ArangoRepositoryInstances {
         bindVars.put("ids", instanceId.stream().map(id -> ArangoDocumentReference.fromInstanceId(id).getId()).collect(Collectors.toList()));
         aql.addLine(AQL.trust("LET doc = DOCUMENT(id)"));
         aql.addLine(AQL.trust("RETURN {\"id\": doc._key, \"status\": NOT_NULL(FIRST(FOR v IN 1..1 INBOUND doc @@releaseStatusCollection"));
-        aql.addLine(AQL.trust("RETURN v.`"+SchemaOrgVocabulary.NAME+"`), \""+ReleaseStatus.UNRELEASED.name()+"\")}"));
+        aql.addLine(AQL.trust("RETURN v.`" + SchemaOrgVocabulary.NAME + "`), \"" + ReleaseStatus.UNRELEASED.name() + "\")}"));
         bindVars.put("@releaseStatusCollection", releaseStatusCollection.getCollectionName());
         List<String> data = db.query(aql.build().getValue(), bindVars, new AqlQueryOptions(), String.class).asListRemaining();
         Map<UUID, ReleaseStatus> result = new HashMap<>();
@@ -1165,17 +1166,16 @@ public class ArangoRepositoryInstances {
         boolean isNotRootButSameType = !isRoot && root.getAsListOf("type", String.class).stream().anyMatch(type::contains);
 
         //If the subelement has the same type as root, we stop. Also, if this is the root instance, we don't apply restrictions.
-        if(isNotRootButSameType){
+        if (isNotRootButSameType) {
             return null;
         }
 
         boolean applyRestrictionsForRoot = false;
         boolean skipInstanceByRestriction = false;
-        if(applyRestrictions && type.stream().anyMatch(t -> structureRepository.getTypeSpecification(t).getAs(EBRAINSVocabulary.META_CAN_BE_EXCLUDED_FROM_SCOPE, Boolean.class, Boolean.FALSE))){
-            if(isRoot){
+        if (applyRestrictions && type.stream().anyMatch(t -> structureRepository.getTypeSpecification(t).getAs(EBRAINSVocabulary.META_CAN_BE_EXCLUDED_FROM_SCOPE, Boolean.class, Boolean.FALSE))) {
+            if (isRoot) {
                 applyRestrictionsForRoot = true;
-            }
-            else{
+            } else {
                 skipInstanceByRestriction = true;
             }
         }
@@ -1183,20 +1183,18 @@ public class ArangoRepositoryInstances {
         String id = data.getAs("id", String.class);
         UUID uuid = idUtils.getUUID(new JsonLdId(id));
         List<ScopeElement> children;
-        if(!applyRestrictionsForRoot) {
+        if (!applyRestrictionsForRoot) {
             children = data.keySet().stream().filter(k -> k.startsWith("dependency_")).map(k ->
                     data.getAsListOf(k, NormalizedJsonLd.class).stream().map(d -> handleSubElement(d, typeToUUID, applyRestrictions, root)).filter(Objects::nonNull).flatMap(Collection::stream).collect(Collectors.toList())
             ).flatMap(Collection::stream).distinct().collect(Collectors.toList());
-        }
-        else{
+        } else {
             //If the root instance is of a restricted type, we don't add any children but only return the individual instance
             children = null;
         }
-        if(skipInstanceByRestriction){
+        if (skipInstanceByRestriction) {
             //We skip the instance - so we're only aiming for the children
             return children;
-        }
-        else {
+        } else {
             ScopeElement element = new ScopeElement(uuid, type, children == null || children.isEmpty() ? null : children, data.getAs("internalId", String.class), data.getAs("space", String.class), data.getAs("label", String.class));
             type.forEach(t -> {
                 typeToUUID.computeIfAbsent(t, x -> new HashSet<>()).add(element);
@@ -1243,7 +1241,7 @@ public class ArangoRepositoryInstances {
             instance.types().forEach(t -> typeToUUID.computeIfAbsent(t, x -> new HashSet<>()).add(el));
         }
         final List<ScopeElement> scopeElements = mergeInstancesOnSameLevel(elements);
-        return scopeElements!=null && scopeElements.size()>0 ? scopeElements.get(0) : null;
+        return scopeElements != null && scopeElements.size() > 0 ? scopeElements.get(0) : null;
     }
 
 }
