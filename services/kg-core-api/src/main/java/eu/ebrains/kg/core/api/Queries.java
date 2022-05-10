@@ -139,10 +139,7 @@ public class Queries {
     public ResponseEntity<Void> removeQuery(@PathVariable("queryId") UUID queryId) {
         InstanceId resolveId = ids.resolveId(DataStage.IN_PROGRESS, queryId);
         if(resolveId!=null) {
-            Set<InstanceId> instanceIds = queryController.deleteQuery(resolveId);
-            if(instanceIds.isEmpty()){
-                return ResponseEntity.notFound().build();
-            }
+            queryController.deleteQuery(resolveId);
             return ResponseEntity.ok().build();
         }
         else {
