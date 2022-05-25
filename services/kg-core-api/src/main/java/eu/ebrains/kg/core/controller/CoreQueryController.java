@@ -92,4 +92,8 @@ public class CoreQueryController {
     public Set<InstanceId> deleteQuery(InstanceId instanceId) {
         return instanceController.deleteInstance(instanceId);
     }
+
+    public boolean isInvited(NormalizedJsonLd normalizedJsonLd) {
+       return instanceController.isInvited(normalizedJsonLd);
+    }
 }

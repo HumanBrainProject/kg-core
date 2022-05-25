@@ -194,12 +194,12 @@ public class CoreInstanceController {
         }).filter(Objects::nonNull).collect(Collectors.toList());
         List<InstanceId> idsAfterResolution = this.ids.resolveIdsByUUID(stage, validUUIDs, true);
         idsAfterResolution.stream().filter(InstanceId::isUnresolved).forEach(id -> result.put(id.getUuid().toString(), Result.nok(HttpStatus.NOT_FOUND.value(), HttpStatus.NOT_FOUND.getReasonPhrase())));
-        if(responseConfiguration.isReturnPayload()) {
+        if (responseConfiguration.isReturnPayload()) {
             Map<UUID, Result<NormalizedJsonLd>> instancesByIds = graphDBInstances.getInstancesByIds(idsAfterResolution.stream().filter(i -> !i.isUnresolved()).map(InstanceId::serialize).collect(Collectors.toList()), stage, typeRestriction, responseConfiguration.isReturnEmbedded(), responseConfiguration.isReturnAlternatives(), responseConfiguration.isReturnIncomingLinks(), responseConfiguration.getIncomingLinksPageSize());
             final SpaceName privateSpaceName = authContext.getUserWithRoles().getPrivateSpace();
             instancesByIds.forEach((k, v) -> {
-                if(v.getData()!=null) {
-                    v.getData().renamePrivateSpace(privateSpaceName);
+                if (v.getData() != null) {
+                    v.getData().renameSpace(privateSpaceName, isInvited(v.getData()));
                 }
                 result.put(k.toString(), v);
             });
@@ -236,7 +236,7 @@ public class CoreInstanceController {
             enrichWithPermissionInformation(stage, instancesByType.getData().stream().map(Result::ok).collect(Collectors.toList()));
         }
         final SpaceName privateSpaceName = authContext.getUserWithRoles().getPrivateSpace();
-        instancesByType.getData().forEach(d -> d.renamePrivateSpace(privateSpaceName));
+        instancesByType.getData().forEach(d -> d.renameSpace(privateSpaceName, isInvited(d)));
         return instancesByType;
     }
 
@@ -255,7 +255,7 @@ public class CoreInstanceController {
                 enrichWithPermissionInformation(DataStage.IN_PROGRESS, instancesByIds.values());
             }
             final SpaceName privateSpaceName = authContext.getUserWithRoles().getPrivateSpace();
-            result = AmbiguousResult.ok(instancesByIds.values().stream().map(Result::getData).map(r -> r.renamePrivateSpace(privateSpaceName)).collect(Collectors.toList()));
+            result = AmbiguousResult.ok(instancesByIds.values().stream().map(Result::getData).map(r -> r.renameSpace(privateSpaceName, isInvited(r))).collect(Collectors.toList()));
         } else {
             result = AmbiguousResult.ok(instanceIds.stream().map(id -> {
                 NormalizedJsonLd jsonLd = new NormalizedJsonLd();
@@ -273,7 +273,7 @@ public class CoreInstanceController {
         }
         final SpaceName privateSpaceName = authContext.getUserWithRoles().getPrivateSpace();
         final Paginated<NormalizedJsonLd> incomingLinks = graphDBInstances.getIncomingLinks(instanceId.getSpace().getName(), instanceId.getUuid(), stage, property, type.getName(), pagination);
-        incomingLinks.getData().forEach(d -> d.renamePrivateSpace(privateSpaceName));
+        incomingLinks.getData().forEach(d -> d.renameSpace(privateSpaceName, isInvited(d)));
         return incomingLinks;
     }
 
@@ -291,7 +291,7 @@ public class CoreInstanceController {
                 enrichWithPermissionInformation(stage, Collections.singletonList(Result.ok(instance)));
             }
             if (instance != null) {
-                instance.renamePrivateSpace(authContext.getUserWithRoles().getPrivateSpace());
+                instance.renameSpace(authContext.getUserWithRoles().getPrivateSpace(), isInvited(instance));
             }
             return instance;
         } else {
@@ -300,6 +300,18 @@ public class CoreInstanceController {
             return idPayload;
         }
     }
+    public boolean isInvited(NormalizedJsonLd normalizedJsonLd) {
+        final UUID uuid = idUtils.getUUID(normalizedJsonLd.id());
+        if (authContext.getUserWithRolesWithoutTermsCheck().getInvitations().contains(uuid)) {
+            //The user is invited for this instance
+            final String space = normalizedJsonLd.getAs(EBRAINSVocabulary.META_SPACE, String.class, null);
+            if(space!=null){
+                return !permissions.hasPermission(authContext.getUserWithRolesWithoutTermsCheck(), Functionality.READ, SpaceName.fromString(space));
+            }
+        }
+        return false;
+    }
+
 
     private void resolveAlternatives(DataStage stage, List<NormalizedJsonLd> documents) {
         Map<String, List<Map<String, Object>>> idsForResolution = documents.stream()
@@ -332,7 +344,7 @@ public class CoreInstanceController {
             List<Map<String, Object>> objectsToBeUpdated = idsForResolution.get(requestedIdentifier);
             objectsToBeUpdated.forEach(o -> {
                 final InstanceId instanceId = instanceIdByIdentifier.get(requestedIdentifier);
-                if(instanceId!=null) {
+                if (instanceId != null) {
                     o.put(JsonLdConsts.ID, idUtils.buildAbsoluteUrl(instanceId.getUuid()).getId());
                     instanceIds.add(instanceId);
                     updatedObjects.computeIfAbsent(instanceId.getUuid(), x -> new HashSet<>()).add(o);

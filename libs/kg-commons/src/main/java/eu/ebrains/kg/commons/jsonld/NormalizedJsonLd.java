@@ -94,11 +94,16 @@ public class NormalizedJsonLd extends JsonLdDoc {
         });
     }
 
-    public NormalizedJsonLd renamePrivateSpace(SpaceName privateSpace){
-        if(privateSpace!=null) {
+    public NormalizedJsonLd renameSpace(SpaceName privateSpace, boolean invitation){
+        if(privateSpace!=null || invitation) {
             visitKeys((map, key) -> {
-                if (key.equals(EBRAINSVocabulary.META_SPACE) && privateSpace.getName().equals(map.get(key))) {
-                    map.put(key, SpaceName.PRIVATE_SPACE);
+                if(key.equals(EBRAINSVocabulary.META_SPACE)) {
+                    if (privateSpace != null && privateSpace.getName().equals(map.get(key))){
+                        map.put(key, SpaceName.PRIVATE_SPACE);
+                    }
+                    else if(invitation){
+                        map.put(key, SpaceName.REVIEW_SPACE);
+                    }
                 }
             });
         }

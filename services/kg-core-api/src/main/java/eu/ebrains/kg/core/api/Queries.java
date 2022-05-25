@@ -47,7 +47,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -90,8 +89,9 @@ public class Queries {
 
     private void handleResponse(Paginated<NormalizedJsonLd> data){
         final SpaceName privateSpace = authContext.getUserWithRoles().getPrivateSpace();
-        data.getData().forEach(d -> d.renamePrivateSpace(privateSpace));
+        data.getData().forEach(d -> d.renameSpace(privateSpace, queryController.isInvited(d)));
     }
+
 
     @Operation(summary = "Execute the query in the payload in test mode (e.g. for execution before saving with the KG QueryBuilder)")
     @PostMapping
@@ -128,7 +128,7 @@ public class Queries {
             if(kgQuery == null){
                 return ResponseEntity.notFound().build();
             }
-            return ResponseEntity.ok(Result.ok(kgQuery.renamePrivateSpace(authContext.getUserWithRoles().getPrivateSpace())));
+            return ResponseEntity.ok(Result.ok(kgQuery.renameSpace(authContext.getUserWithRoles().getPrivateSpace(), queryController.isInvited(kgQuery))));
         }
         return ResponseEntity.notFound().build();
     }
@@ -166,7 +166,7 @@ public class Queries {
                 if(body!=null) {
                     final NormalizedJsonLd data = body.getData();
                     if (data != null) {
-                        data.renamePrivateSpace(authContext.getUserWithRoles().getPrivateSpace());
+                        data.renameSpace(authContext.getUserWithRoles().getPrivateSpace(), queryController.isInvited(data));
                     }
                 }
             }
@@ -181,7 +181,7 @@ public class Queries {
             if (body != null) {
                 final NormalizedJsonLd data = body.getData();
                 if (data != null) {
-                    data.renamePrivateSpace(authContext.getUserWithRoles().getPrivateSpace());
+                    data.renameSpace(authContext.getUserWithRoles().getPrivateSpace(), queryController.isInvited(data));
                 }
             }
         }
