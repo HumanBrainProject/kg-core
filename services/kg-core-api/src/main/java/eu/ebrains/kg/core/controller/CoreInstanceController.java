@@ -107,7 +107,7 @@ public class CoreInstanceController {
     }
 
     public ResponseEntity<Result<NormalizedJsonLd>> createNewInstance(NormalizedJsonLd normalizedJsonLd, UUID id, SpaceName s, ExtendedResponseConfiguration responseConfiguration) {
-        ids.checkIdForExistence(id, normalizedJsonLd.identifiers());
+        ids.checkIdForExistence(id, normalizedJsonLd.allIdentifiersIncludingId());
         normalizedJsonLd.defineFieldUpdateTimes(normalizedJsonLd.keySet().stream().collect(Collectors.toMap(k -> k, k -> ZonedDateTime.now())));
         Event upsertEvent = createUpsertEvent(id, normalizedJsonLd, s);
         Set<InstanceId> ids = primaryStoreEvents.postEvent(upsertEvent);
