@@ -273,7 +273,7 @@ public class Instances {
         } else {
             ReleaseStatus releaseStatus = release.getReleaseStatus(instanceId.getSpace().getName(), instanceId.getUuid(), ReleaseTreeScope.TOP_INSTANCE_ONLY);
             if (releaseStatus != null && releaseStatus != ReleaseStatus.UNRELEASED) {
-                return ResponseEntity.status(HttpStatus.CONFLICT).body(Result.nok(HttpStatus.CONFLICT.value(), "Was not able to move an instance because it is released still"), instanceId.getUuid());
+                return ResponseEntity.status(HttpStatus.CONFLICT).body(Result.nok(HttpStatus.CONFLICT.value(), "Was not able to move an instance because it is released still", instanceId.getUuid()));
             }
             return instanceController.moveInstance(instanceId, authContext.resolveSpaceName(targetSpace), responseConfiguration);
         }
