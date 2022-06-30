@@ -158,7 +158,7 @@ public class Queries {
         SpaceName spaceName = authContext.resolveSpaceName(space);
         if(resolveId != null){
             if(spaceName!=null && !resolveId.getSpace().equals(spaceName)){
-                return ResponseEntity.status(HttpStatus.CONFLICT).body(Result.nok(HttpStatus.CONFLICT.value(), "The query with this UUID already exists in a different space"));
+                return ResponseEntity.status(HttpStatus.CONFLICT).body(Result.nok(HttpStatus.CONFLICT.value(), "The query with this UUID already exists in a different space", resolveId.getUuid()));
             }
             final ResponseEntity<Result<NormalizedJsonLd>> result = queryController.updateQuery(normalizedJsonLd, resolveId);
             if(result != null) {

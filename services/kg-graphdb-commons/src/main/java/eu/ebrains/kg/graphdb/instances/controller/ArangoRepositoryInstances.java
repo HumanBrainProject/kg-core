@@ -424,7 +424,7 @@ public class ArangoRepositoryInstances {
 
         //Define responses for no-permission instances
         hasNoPermissions.forEach(i -> {
-            documentsByReferenceList.put(i.getUuid(), Result.nok(HttpStatus.FORBIDDEN.value(), String.format("You don't have rights to read id %s", i.getUuid())));
+            documentsByReferenceList.put(i.getUuid(), Result.nok(HttpStatus.FORBIDDEN.value(), String.format("You don't have rights to read id %s", i.getUuid()), i.getUuid()));
         });
         return documentsByReferenceList;
     }

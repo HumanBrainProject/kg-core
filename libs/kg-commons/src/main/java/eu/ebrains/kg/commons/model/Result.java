@@ -81,7 +81,7 @@ public class Result<T> {
     }
 
     public static <T> Result<T> nok(int errorCode, String message){
-        return nok(errorCode, message);
+        return nok(errorCode, message, null);
     }
     public static <T> Result<T> nok(int errorCode, String message, UUID uuid){
         Result<T> result = new Result<>();
