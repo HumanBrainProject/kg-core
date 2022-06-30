@@ -114,11 +114,11 @@ public class Reconcile {
     }
 
 
-    private InvolvedPayloads findInvolvedDocuments(SpaceName space, UUID id, Set<UUID> handledDocumentIds, Set<UUID> handledInstanceIds, InvolvedPayloads involvedPayloads) {
+    private InvolvedPayloads findInvolvedDocuments(SpaceName space, UUID id, Set<UUID> handledDocumentIds, Set<UUID> handledInstanceIds, InvolvedPayloads involvedPayloads, Set<UUID> relatedDocumentIds) {
         List<IndexedJsonLdDoc> relatedInstancesByIdentifiers = graphDBInstances.getDocumentWithRelatedInstancesByIdentifiers(space == null ? null : space.getName(), id, DataStage.NATIVE, true, false).stream().map(IndexedJsonLdDoc::from).collect(Collectors.toList());
         involvedPayloads.documents.addAll(relatedInstancesByIdentifiers);
         handledDocumentIds.add(id);
-        Set<UUID> nonProcessedRelatedDocumentIds = relatedInstancesByIdentifiers.stream().map(IndexedJsonLdDoc::getDocumentId).filter(docId -> !handledDocumentIds.contains(docId)).collect(Collectors.toSet());
+        relatedDocumentIds.addAll(relatedInstancesByIdentifiers.stream().map(IndexedJsonLdDoc::getDocumentId).collect(Collectors.toSet()));
         //Find already existing instances for this document
         List<InferredJsonLdDoc> inferredInstances = graphDBInstances.getDocumentWithIncomingRelatedInstances(space == null ? null : space.getName(), id, DataStage.IN_PROGRESS, InferredJsonLdDoc.INFERENCE_OF, true, false, false).stream().map(InferredJsonLdDoc::from).collect(Collectors.toList());
         if (inferredInstances.size() > 1) {
@@ -130,12 +130,11 @@ public class Reconcile {
             if (!handledInstanceIds.contains(instanceId)) {
                 handledInstanceIds.add(instanceId);
                 involvedPayloads.existingInstances.add(inferredInstance);
-                nonProcessedRelatedDocumentIds.addAll(inferredInstances.get(0).getInferenceOf().stream().map(idUtils::getUUID).filter(Objects::nonNull).filter(uuid -> !handledDocumentIds.contains(uuid)).collect(Collectors.toSet()));
+                relatedDocumentIds.addAll(inferredInstances.get(0).getInferenceOf().stream().map(idUtils::getUUID).filter(Objects::nonNull).filter(uuid -> !handledDocumentIds.contains(uuid)).collect(Collectors.toSet()));
             }
         }
-        if (!nonProcessedRelatedDocumentIds.isEmpty()) {
-            nonProcessedRelatedDocumentIds.forEach(docId -> findInvolvedDocuments(space, docId, handledDocumentIds, handledInstanceIds, involvedPayloads));
-        }
+        final Optional<UUID> nextNonProcessedRelatedDocumentId = relatedDocumentIds.stream().filter(d -> !handledDocumentIds.contains(d)).findFirst();
+        nextNonProcessedRelatedDocumentId.ifPresent(uuid -> findInvolvedDocuments(space, uuid, handledDocumentIds, handledInstanceIds, involvedPayloads, relatedDocumentIds));
         return involvedPayloads;
     }
 
@@ -218,7 +217,8 @@ public class Reconcile {
         inferenceResult.toBeRemoved.addAll(existingInstances);
         inferenceResult.toBeRemoved.removeAll(newToExistingMapping.values().stream().flatMap(Collection::stream).collect(Collectors.toSet()));
 
-        Map<String, Result<TypeInformation>> typesInformation = graphDBTypes.getTypesByName(new ArrayList<>(newTypes), DataStage.IN_PROGRESS, null, false, false);
+        // Map<String, Result<TypeInformation>> typesInformation = graphDBTypes.getTypesByName(new ArrayList<>(newTypes), DataStage.IN_PROGRESS, null, false, false);
+        Map<String, Result<TypeInformation>> typesInformation = new HashMap<>();
         for (InferredJsonLdDoc nextNew : newToExistingMapping.keySet()) {
             finalizeInferredDocument(nextNew, typesInformation);
             Set<IndexedJsonLdDoc> existing = newToExistingMapping.get(nextNew);
@@ -289,7 +289,7 @@ public class Reconcile {
 
 
     public List<Event> reconcile(SpaceName space, UUID id) {
-        InvolvedPayloads involvedPayloads = findInvolvedDocuments(space, id, new HashSet<>(), new HashSet<>(), new InvolvedPayloads());
+        InvolvedPayloads involvedPayloads = findInvolvedDocuments(space, id, new HashSet<>(), new HashSet<>(), new InvolvedPayloads(), new HashSet<>());
         Set<InferredJsonLdDoc> inferredJsonLdDocs = reconcileDocuments(involvedPayloads.documents);
         //Compare calculated inferred instances to already existing ones and take according action.
         InferenceResult inferenceResult = compareInferredInstances(involvedPayloads.existingInstances, inferredJsonLdDocs);

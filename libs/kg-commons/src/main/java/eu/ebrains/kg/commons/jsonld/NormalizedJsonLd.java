@@ -58,12 +58,16 @@ public class NormalizedJsonLd extends JsonLdDoc {
         put(EBRAINSVocabulary.META_PROPERTYUPDATES, serializeUpdateTimes(fieldUpdateTimes));
     }
 
+    private transient Map<String, ZonedDateTime> fieldUpdateTimes;
+
     public Map<String, ZonedDateTime> fieldUpdateTimes() {
-        Object o = get(EBRAINSVocabulary.META_PROPERTYUPDATES);
-        if (o instanceof Map) {
-            return deserializeUpdateTimes((Map) o);
+        if(fieldUpdateTimes == null) {
+            Object o = get(EBRAINSVocabulary.META_PROPERTYUPDATES);
+            if (o instanceof Map) {
+                fieldUpdateTimes = deserializeUpdateTimes((Map) o);
+            }
         }
-        return null;
+        return fieldUpdateTimes;
     }
 
     private Map<String, String> serializeUpdateTimes(Map<String, ZonedDateTime> map) {

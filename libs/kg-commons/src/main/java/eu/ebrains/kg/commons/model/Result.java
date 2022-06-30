@@ -81,10 +81,16 @@ public class Result<T> {
     }
 
     public static <T> Result<T> nok(int errorCode, String message){
+        return nok(errorCode, message);
+    }
+    public static <T> Result<T> nok(int errorCode, String message, UUID uuid){
         Result<T> result = new Result<>();
         Error error = new Error();
         error.setCode(errorCode);
         error.setMessage(message);
+        if(uuid!=null) {
+            error.setInstanceId(uuid);
+        }
         result.error = error;
         return result;
     }

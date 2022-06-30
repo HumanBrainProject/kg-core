@@ -61,7 +61,7 @@ public class IdsController {
     public void checkIdForExistence(UUID uuid, Set<String> identifiers){
         final InstanceId id = findId(uuid, identifiers);
         if(id!=null){
-            final Result<?> nok = Result.nok(HttpStatus.CONFLICT.value(), String.format("The payload you're providing is pointing to the instance %s (either by the %s or the %s field it contains). Please do a PUT or a PATCH to the mentioned id instead.", id.serialize(), JsonLdConsts.ID, SchemaOrgVocabulary.IDENTIFIER));
+            final Result<?> nok = Result.nok(HttpStatus.CONFLICT.value(), String.format("The payload you're providing is pointing to the instance %s (either by the %s or the %s field it contains). Please do a PUT or a PATCH to the mentioned id instead.", id.serialize(), JsonLdConsts.ID, SchemaOrgVocabulary.IDENTIFIER), id.getUuid());
             throw new CancelProcessException(nok, HttpStatus.CONFLICT.value());
         }
     }
