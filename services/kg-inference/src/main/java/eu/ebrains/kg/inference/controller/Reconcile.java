@@ -217,8 +217,7 @@ public class Reconcile {
         inferenceResult.toBeRemoved.addAll(existingInstances);
         inferenceResult.toBeRemoved.removeAll(newToExistingMapping.values().stream().flatMap(Collection::stream).collect(Collectors.toSet()));
 
-        // Map<String, Result<TypeInformation>> typesInformation = graphDBTypes.getTypesByName(new ArrayList<>(newTypes), DataStage.IN_PROGRESS, null, false, false);
-        Map<String, Result<TypeInformation>> typesInformation = new HashMap<>();
+        Map<String, Result<TypeInformation>> typesInformation = graphDBTypes.getTypesByName(new ArrayList<>(newTypes), DataStage.IN_PROGRESS, null, false, false);
         for (InferredJsonLdDoc nextNew : newToExistingMapping.keySet()) {
             finalizeInferredDocument(nextNew, typesInformation);
             Set<IndexedJsonLdDoc> existing = newToExistingMapping.get(nextNew);
