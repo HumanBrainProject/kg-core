@@ -22,14 +22,10 @@
 
 package eu.ebrains.kg.core.api.queries.tests;
 
-import com.arangodb.ArangoDB;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import eu.ebrains.kg.authentication.api.AuthenticationAPI;
-import eu.ebrains.kg.commons.IdUtils;
 import eu.ebrains.kg.commons.jsonld.JsonLdDoc;
 import eu.ebrains.kg.commons.jsonld.NormalizedJsonLd;
 import eu.ebrains.kg.commons.model.PaginatedStreamResult;
-import eu.ebrains.kg.commons.permission.roles.Role;
 import eu.ebrains.kg.core.api.AbstractTest;
 import eu.ebrains.kg.core.api.Instances;
 import eu.ebrains.kg.core.api.Queries;

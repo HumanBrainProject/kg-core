@@ -22,11 +22,9 @@
 
 package eu.ebrains.kg.core.api.instances.load;
 
-import eu.ebrains.kg.commons.api.Inference;
 import eu.ebrains.kg.commons.jsonld.NormalizedJsonLd;
 import eu.ebrains.kg.commons.model.Result;
 import eu.ebrains.kg.core.api.Instances;
-import eu.ebrains.kg.core.api.Spaces;
 import eu.ebrains.kg.core.model.ExposedStage;
 import eu.ebrains.kg.metrics.PerformanceTestUtils;
 import eu.ebrains.kg.testutils.AbstractLoadTest;
@@ -76,7 +74,7 @@ public abstract class AbstractInstancesLoadTest extends AbstractLoadTest {
     }
 
     protected List<NormalizedJsonLd> getAllInstancesFromInProgress(ExposedStage stage) {
-        return this.instances.getInstances(stage, type, null, null, null, null, DEFAULT_RESPONSE_CONFIG, EMPTY_PAGINATION).getData();
+        return this.instances.listInstances(stage, type, null, null, null, null, DEFAULT_RESPONSE_CONFIG, EMPTY_PAGINATION).getData();
     }
 
 }

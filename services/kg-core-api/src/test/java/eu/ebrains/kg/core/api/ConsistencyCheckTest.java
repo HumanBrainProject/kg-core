@@ -40,7 +40,6 @@ import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.ResponseEntity;
-import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.test.context.web.WebAppConfiguration;
 
@@ -82,15 +81,15 @@ public class ConsistencyCheckTest {
             System.out.println(String.format("Created instance %s", id.getId()));
         }
         Assert.assertEquals(createInstances, getAllInstancesFromInProgress(ExposedStage.IN_PROGRESS).size());
-        Assert.assertEquals(1, types.getTypes(ExposedStage.IN_PROGRESS, null, false, false, EMPTY_PAGINATION).getSize());
-        List<TypeInformation> typeWithPropertiesAndCounts = types.getTypes(ExposedStage.IN_PROGRESS, null, true, true, EMPTY_PAGINATION).getData();
+        Assert.assertEquals(1, types.listTypes(ExposedStage.IN_PROGRESS, null, false, false, EMPTY_PAGINATION).getSize());
+        List<TypeInformation> typeWithPropertiesAndCounts = types.listTypes(ExposedStage.IN_PROGRESS, null, true, true, EMPTY_PAGINATION).getData();
         Assert.assertEquals(1, typeWithPropertiesAndCounts.size());
         TypeInformation typeWithProperty = typeWithPropertiesAndCounts.get(0);
         Assert.assertEquals(type, typeWithProperty.get(SchemaOrgVocabulary.IDENTIFIER));
     }
 
     private List<NormalizedJsonLd> getAllInstancesFromInProgress(ExposedStage stage){
-        return this.instances.getInstances(stage, type, null, null, null, null,  new ResponseConfiguration().setReturnAlternatives(false).setReturnPermissions(false).setReturnEmbedded(false), EMPTY_PAGINATION).getData();
+        return this.instances.listInstances(stage, type, null, null, null, null,  new ResponseConfiguration().setReturnAlternatives(false).setReturnPermissions(false).setReturnEmbedded(false), EMPTY_PAGINATION).getData();
     }
 
     @Test

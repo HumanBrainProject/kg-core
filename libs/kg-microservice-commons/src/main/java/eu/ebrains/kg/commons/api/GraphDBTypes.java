@@ -25,7 +25,6 @@ package eu.ebrains.kg.commons.api;
 import eu.ebrains.kg.commons.jsonld.JsonLdId;
 import eu.ebrains.kg.commons.jsonld.NormalizedJsonLd;
 import eu.ebrains.kg.commons.model.*;
-import eu.ebrains.kg.commons.model.external.spaces.SpaceSpecification;
 import eu.ebrains.kg.commons.model.external.types.TypeInformation;
 
 import java.util.List;
@@ -35,7 +34,7 @@ public interface GraphDBTypes {
 
     interface Client extends GraphDBTypes {}
 
-    Paginated<TypeInformation> getTypes(DataStage stage, String space, boolean withProperties, boolean withIncomingLinks, PaginationParam paginationParam);
+    Paginated<TypeInformation> listTypes(DataStage stage, String space, boolean withProperties, boolean withIncomingLinks, PaginationParam paginationParam);
 
     Map<String, Result<TypeInformation>> getTypesByName(List<String> types, DataStage stage, String space, boolean withProperties, boolean withIncomingLinks);
 

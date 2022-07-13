@@ -40,6 +40,8 @@ public interface Authentication {
 
     ClientAuthToken fetchToken(String clientId, String clientSecret);
 
+    String openIdConfigUrl();
+
     String authEndpoint();
 
     String tokenEndpoint();

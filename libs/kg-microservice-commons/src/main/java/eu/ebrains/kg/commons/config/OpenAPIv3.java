@@ -25,6 +25,7 @@ package eu.ebrains.kg.commons.config;
 import eu.ebrains.kg.commons.Version;
 import eu.ebrains.kg.commons.config.openApiGroups.Admin;
 import eu.ebrains.kg.commons.config.openApiGroups.Advanced;
+import eu.ebrains.kg.commons.config.openApiGroups.Extra;
 import eu.ebrains.kg.commons.config.openApiGroups.Simple;
 import io.swagger.v3.oas.models.Components;
 import io.swagger.v3.oas.models.OpenAPI;
@@ -98,10 +99,19 @@ public class OpenAPIv3 {
     }
 
     @Bean
+    public GroupedOpenApi extraApi(RequestMappingHandlerMapping requestHandlerMapping) {
+        return GroupedOpenApi.builder()
+                .group("4 extra")
+                .pathsToMatch(getPathsByAnnotation(requestHandlerMapping, "eu.ebrains.kg.core", Extra.class))
+                .build();
+    }
+
+
+    @Bean
     @ConditionalOnProperty(value = "eu.ebrains.kg.api.doc.hideInternal", havingValue = "false", matchIfMissing = true)
     public GroupedOpenApi internalApi() {
         return GroupedOpenApi.builder()
-                .group("4 internal")
+                .group("5 internal")
                 .packagesToScan("eu.ebrains.kg")
                 .packagesToExclude("eu.ebrains.kg.core")
                 .build();

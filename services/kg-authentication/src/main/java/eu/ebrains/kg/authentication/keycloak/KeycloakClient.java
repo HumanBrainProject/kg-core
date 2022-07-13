@@ -81,6 +81,10 @@ public class KeycloakClient {
         logger.info("Successfully loaded keycloak configuration");
     }
 
+    public String getOpenIdConfigUrl() {
+        return config.getConfigUrl();
+    }
+
     public String getServerUrl(){
         return openIdConfig.getIssuer().split("/realms")[0];
     }

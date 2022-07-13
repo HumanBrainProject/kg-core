@@ -70,8 +70,8 @@ public class CoreSpaceController {
     }
 
 
-    public Paginated<SpaceInformation> getSpaces(PaginationParam pagination, boolean permissions) {
-        Paginated<Space> sp = graphDBSpaces.getSpaces(pagination);
+    public Paginated<SpaceInformation> listSpaces(PaginationParam pagination, boolean permissions) {
+        Paginated<Space> sp = graphDBSpaces.listSpaces(pagination);
         final List<SpaceInformation> spaceInformations = sp.getData().stream().map(s -> translateSpaceToSpaceInformation(s, permissions)).collect(Collectors.toList());
         return new Paginated<>(spaceInformations, sp.getTotalResults(), sp.getSize(), sp.getFrom());
     }

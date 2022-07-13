@@ -80,7 +80,7 @@ public class GraphDBSpacesAPI implements GraphDBSpaces.Client {
     }
 
     @Override
-    public Paginated<Space> getSpaces(PaginationParam paginationParam) {
+    public Paginated<Space> listSpaces(PaginationParam paginationParam) {
         return PaginationParam.paginate(getSpaces(), paginationParam);
     }
 

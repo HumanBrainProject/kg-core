@@ -20,26 +20,18 @@
  * (Human Brain Project SGA1, SGA2 and SGA3).
  */
 
-package eu.ebrains.kg.commons.api;
+package eu.ebrains.kg.commons.config.openApiGroups;
 
-import eu.ebrains.kg.commons.model.*;
-import eu.ebrains.kg.commons.model.external.spaces.SpaceSpecification;
-import eu.ebrains.kg.commons.model.internal.spaces.Space;
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
 
-public interface GraphDBSpaces {
-
-    interface Client extends GraphDBSpaces {}
-
-    Space getSpace(SpaceName space);
-
-    Paginated<Space> listSpaces(PaginationParam paginationParam);
-
-    void specifySpace(SpaceSpecification spaceSpecification);
-
-    void removeSpaceSpecification(SpaceName spaceName);
-
-    void addTypeToSpace(SpaceName spaceName, String typeName);
-
-    void removeTypeFromSpace(SpaceName spaceName, String typeName);
-
+/**
+ * Interfaces flagged with this annotation are meant for specific use-cases (e.g. to cover needs of tools like the KG-Editor, etc.)
+ * Although not excluded from the use by other clients, these endpoints are not meant to be integrated by plenty of external services.
+ */
+@Retention(RetentionPolicy.RUNTIME)
+@Target(value={ElementType.METHOD, ElementType.TYPE})
+public @interface Extra {
 }

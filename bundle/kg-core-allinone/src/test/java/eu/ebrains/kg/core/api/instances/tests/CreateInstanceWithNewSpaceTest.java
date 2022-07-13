@@ -22,12 +22,9 @@
 
 package eu.ebrains.kg.core.api.instances.tests;
 
-import com.arangodb.ArangoDB;
-import eu.ebrains.kg.authentication.api.AuthenticationAPI;
 import eu.ebrains.kg.commons.jsonld.JsonLdDoc;
 import eu.ebrains.kg.commons.jsonld.NormalizedJsonLd;
 import eu.ebrains.kg.commons.model.Result;
-import eu.ebrains.kg.commons.permission.roles.RoleMapping;
 import eu.ebrains.kg.core.api.Instances;
 import eu.ebrains.kg.core.api.instances.TestContext;
 import eu.ebrains.kg.testutils.TestDataFactory;

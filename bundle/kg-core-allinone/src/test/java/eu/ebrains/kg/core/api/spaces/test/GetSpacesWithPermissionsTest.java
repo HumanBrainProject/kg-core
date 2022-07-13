@@ -22,16 +22,12 @@
 
 package eu.ebrains.kg.core.api.spaces.test;
 
-import com.arangodb.ArangoDB;
-import eu.ebrains.kg.authentication.api.AuthenticationAPI;
 import eu.ebrains.kg.commons.model.*;
 import eu.ebrains.kg.commons.model.external.spaces.SpaceInformation;
-import eu.ebrains.kg.commons.permission.roles.RoleMapping;
 import eu.ebrains.kg.core.api.AbstractTest;
 import eu.ebrains.kg.core.api.Instances;
 import eu.ebrains.kg.core.api.Spaces;
 import eu.ebrains.kg.core.api.instances.TestContext;
-import eu.ebrains.kg.core.model.ExposedStage;
 import eu.ebrains.kg.testutils.TestDataFactory;
 
 @SuppressWarnings("java:S2187") //We don't add "tests" to these classes because they are test abstractions and are used in other tests
@@ -57,6 +53,6 @@ public class GetSpacesWithPermissionsTest extends AbstractTest {
 
     @Override
     protected void run() {
-        response = this.spaces.getSpaces(new PaginationParam(), true);
+        response = this.spaces.listSpaces(new PaginationParam(), true);
     }
 }

@@ -22,13 +22,9 @@
 
 package eu.ebrains.kg.core.api.spaces.test;
 
-import com.arangodb.ArangoDB;
-import eu.ebrains.kg.authentication.api.AuthenticationAPI;
 import eu.ebrains.kg.commons.model.ExtendedResponseConfiguration;
-import eu.ebrains.kg.commons.model.ResponseConfiguration;
 import eu.ebrains.kg.commons.model.Result;
 import eu.ebrains.kg.commons.model.external.spaces.SpaceInformation;
-import eu.ebrains.kg.commons.permission.roles.RoleMapping;
 import eu.ebrains.kg.core.api.AbstractTest;
 import eu.ebrains.kg.core.api.Instances;
 import eu.ebrains.kg.core.api.Spaces;

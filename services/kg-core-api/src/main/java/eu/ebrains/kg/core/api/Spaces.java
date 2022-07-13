@@ -75,8 +75,8 @@ public class Spaces {
     @GetMapping
     @ExposesSpace
     @Advanced
-    public PaginatedResult<SpaceInformation> getSpaces(@ParameterObject PaginationParam paginationParam, @RequestParam(value = "permissions", defaultValue = "false") boolean permissions) {
-        return PaginatedResult.ok(spaceController.getSpaces(paginationParam, permissions));
+    public PaginatedResult<SpaceInformation> listSpaces(@ParameterObject PaginationParam paginationParam, @RequestParam(value = "permissions", defaultValue = "false") boolean permissions) {
+        return PaginatedResult.ok(spaceController.listSpaces(paginationParam, permissions));
     }
 
 

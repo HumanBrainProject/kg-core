@@ -31,6 +31,7 @@ import eu.ebrains.kg.commons.api.PrimaryStoreEvents;
 import eu.ebrains.kg.commons.api.PrimaryStoreUsers;
 import eu.ebrains.kg.commons.config.openApiGroups.Admin;
 import eu.ebrains.kg.commons.config.openApiGroups.Advanced;
+import eu.ebrains.kg.commons.config.openApiGroups.Extra;
 import eu.ebrains.kg.commons.config.openApiGroups.Simple;
 import eu.ebrains.kg.commons.jsonld.InstanceId;
 import eu.ebrains.kg.commons.jsonld.JsonLdDoc;
@@ -78,17 +79,27 @@ public class Users {
     @Operation(summary = "Get the endpoint of the authentication service")
     @GetMapping(value = "/authorization", produces = MediaType.APPLICATION_JSON_VALUE)
     @ExposesConfigurationInformation
-    @Advanced
+    @Extra
     public Result<JsonLdDoc> getAuthEndpoint() {
         JsonLdDoc ld = new JsonLdDoc();
         ld.addProperty("endpoint", authentication.authEndpoint());
         return Result.ok(ld);
     }
 
+    @Operation(summary = "Get the endpoint of the openid configuration")
+    @GetMapping(value = "/authorization/config", produces = MediaType.APPLICATION_JSON_VALUE)
+    @ExposesConfigurationInformation
+    @Advanced
+    public Result<JsonLdDoc> getOpenIdConfigUrl() {
+        JsonLdDoc ld = new JsonLdDoc();
+        ld.addProperty("endpoint", authentication.openIdConfigUrl());
+        return Result.ok(ld);
+    }
+
     @Operation(summary = "Get the endpoint to retrieve your token (e.g. via client id and client secret)")
     @GetMapping(value = "/authorization/tokenEndpoint", produces = MediaType.APPLICATION_JSON_VALUE)
     @ExposesConfigurationInformation
-    @Advanced
+    @Extra
     public Result<JsonLdDoc> getTokenEndpoint() {
         JsonLdDoc ld = new JsonLdDoc();
         ld.addProperty("endpoint", authentication.tokenEndpoint());
@@ -107,7 +118,7 @@ public class Users {
     @Operation(summary = "Retrieve the roles for the current user")
     @GetMapping("/me/roles")
     @ExposesUserInfo
-    @Admin
+    @Extra
     public ResponseEntity<Result<UserWithRoles>> myRoles() {
         final UserWithRoles roles = authentication.getRoles(false);
         return roles!=null ? ResponseEntity.ok(Result.ok(roles)) : ResponseEntity.notFound().build();
@@ -117,7 +128,7 @@ public class Users {
     @Operation(summary = "Retrieve a list of users")
     @GetMapping
     @ExposesUserInfo
-    @Advanced
+    @Extra
     public ResponseEntity<PaginatedResult<NormalizedJsonLd>> getUserList(@ParameterObject PaginationParam paginationParam) {
         Paginated<NormalizedJsonLd> users = this.primaryStoreUsers.getUsers(paginationParam);
         users.getData().forEach(NormalizedJsonLd::removeAllInternalProperties);
@@ -127,7 +138,7 @@ public class Users {
     @Operation(summary = "Retrieve a list of users from IAM")
     @GetMapping("/fromIAM")
     @ExposesUserInfo
-    @Advanced
+    @Extra
     public ResponseEntity<Result<List<ReducedUserInformation>>>findUsers(@RequestParam("search") String search) {
         List<ReducedUserInformation> users = authentication.findUsers(search);
         return users!=null ? ResponseEntity.ok(Result.ok(users)) : ResponseEntity.notFound().build();
@@ -137,7 +148,7 @@ public class Users {
     @Operation(summary = "Retrieve a list of users without sensitive information")
     @GetMapping("/limited")
     @ExposesUserInfo
-    @Advanced
+    @Extra
     public ResponseEntity<PaginatedResult<NormalizedJsonLd>> getUserListLimited(@ParameterObject PaginationParam paginationParam, @RequestParam(value = "id", required = false) String id) {
         Paginated<NormalizedJsonLd> users = this.primaryStoreUsers.getUsersWithLimitedInfo(paginationParam, id);
         users.getData().forEach(NormalizedJsonLd::removeAllInternalProperties);
@@ -162,6 +173,7 @@ public class Users {
     @Operation(summary = "Get a pictures for a list of users (only found ones are returned)")
     @PostMapping(value = "/pictures")
     @ExposesUserPicture
+    @Extra
     public ResponseEntity<Map<UUID, String>> getUserPictures(@RequestBody List<UUID> userIds) {
         SpaceName targetSpace = InternalSpace.USERS_PICTURE_SPACE;
         Map<UUID, Result<NormalizedJsonLd>> instancesByIds = graphDBInstances.getInstancesByIds(userIds.stream().filter(Objects::nonNull).map(userId -> new InstanceId(createUserPictureId(userId), targetSpace).serialize()).collect(Collectors.toList()), DataStage.IN_PROGRESS, null, false, false, false, null);
@@ -173,6 +185,7 @@ public class Users {
     @Operation(summary = "Get a picture for a specific user")
     @GetMapping(value = "/{id}/picture")
     @ExposesUserPicture
+    @Extra
     public ResponseEntity<String> getUserPicture(@PathVariable("id") UUID userId) {
         SpaceName targetSpace = InternalSpace.USERS_PICTURE_SPACE;
         NormalizedJsonLd instance = graphDBInstances.getInstanceById(targetSpace.getName(), createUserPictureId(userId), DataStage.IN_PROGRESS, false, false, false, null, true);
@@ -191,7 +204,7 @@ public class Users {
 
     @Operation(summary = "Define a picture for a specific user")
     @PutMapping("/{id}/picture")
-    @Advanced
+    @Extra
     public ResponseEntity<Result<Void>> defineUserPicture(@PathVariable("id") UUID userId, @RequestBody String base64encodedImage) {
         SpaceName targetSpace = InternalSpace.USERS_PICTURE_SPACE;
         NormalizedJsonLd doc = new NormalizedJsonLd();

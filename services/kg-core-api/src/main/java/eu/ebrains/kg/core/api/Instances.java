@@ -30,8 +30,8 @@ import eu.ebrains.kg.commons.api.JsonLd;
 import eu.ebrains.kg.commons.api.Release;
 import eu.ebrains.kg.commons.config.openApiGroups.Admin;
 import eu.ebrains.kg.commons.config.openApiGroups.Advanced;
+import eu.ebrains.kg.commons.config.openApiGroups.Extra;
 import eu.ebrains.kg.commons.config.openApiGroups.Simple;
-import eu.ebrains.kg.commons.exception.ForbiddenException;
 import eu.ebrains.kg.commons.exception.InvalidRequestException;
 import eu.ebrains.kg.commons.jsonld.*;
 import eu.ebrains.kg.commons.markers.*;
@@ -91,7 +91,7 @@ public class Instances {
     @ExposesData
     @Simple
     public ResponseEntity<Result<NormalizedJsonLd>> createNewInstance(@RequestBody JsonLdDoc jsonLdDoc, @RequestParam(value = "space") @Parameter(description = "The space name the instance shall be stored in or \""+SpaceName.PRIVATE_SPACE+"\" if you want to store it to your private space") String space, @ParameterObject ExtendedResponseConfiguration responseConfiguration) {
-        return createNewInstance(jsonLdDoc, UUID.randomUUID(), space, responseConfiguration);
+        return createNewInstanceWithId(jsonLdDoc, UUID.randomUUID(), space, responseConfiguration);
     }
 
   
@@ -100,7 +100,7 @@ public class Instances {
     @ExposesData
     @WritesData
     @Simple
-    public ResponseEntity<Result<NormalizedJsonLd>> createNewInstance(@RequestBody JsonLdDoc jsonLdDoc, @PathVariable("id") UUID id, @RequestParam(value = "space") @Parameter(description = "The space name the instance shall be stored in or \""+SpaceName.PRIVATE_SPACE+"\" if you want to store it to your private space") String space,  @ParameterObject ExtendedResponseConfiguration responseConfiguration) {
+    public ResponseEntity<Result<NormalizedJsonLd>> createNewInstanceWithId(@RequestBody JsonLdDoc jsonLdDoc, @PathVariable("id") UUID id, @RequestParam(value = "space") @Parameter(description = "The space name the instance shall be stored in or \""+SpaceName.PRIVATE_SPACE+"\" if you want to store it to your private space") String space, @ParameterObject ExtendedResponseConfiguration responseConfiguration) {
 	    Date startTime = new Date();
         SpaceName spaceName = authContext.resolveSpaceName(space);
         logger.debug(String.format("Creating new instance with id %s", id));
@@ -194,7 +194,7 @@ public class Instances {
     @Operation(summary = "Get the neighborhood for the instance by its KG-internal ID")
     @GetMapping("/instances/{id}/neighbors")
     @ExposesMinimalData
-    @Advanced
+    @Extra
     public ResponseEntity<Result<GraphEntity>> getNeighbors(@PathVariable("id") UUID id, @RequestParam("stage") ExposedStage stage) {
         Date startTime = new Date();
         GraphEntity scope = instanceController.getNeighbors(id, stage.getStage());
@@ -206,7 +206,7 @@ public class Instances {
     @GetMapping("/instances")
     @ExposesData
     @Simple
-    public PaginatedResult<NormalizedJsonLd> getInstances(@RequestParam("stage") ExposedStage stage, @RequestParam("type") String type, @RequestParam(value = "space", required = false) @Parameter(description = "The space of the instances to be listed or \""+SpaceName.PRIVATE_SPACE+"\" for your private space") String space, @RequestParam(value = "searchByLabel", required = false) String searchByLabel, @RequestParam(value = "filterProperty", required = false) String filterProperty,  @RequestParam(value = "filterValue", required = false) String filterValue, @ParameterObject ResponseConfiguration responseConfiguration, @ParameterObject PaginationParam paginationParam) {
+    public PaginatedResult<NormalizedJsonLd> listInstances(@RequestParam("stage") ExposedStage stage, @RequestParam("type") String type, @RequestParam(value = "space", required = false) @Parameter(description = "The space of the instances to be listed or \""+SpaceName.PRIVATE_SPACE+"\" for your private space") String space, @RequestParam(value = "searchByLabel", required = false) String searchByLabel, @RequestParam(value = "filterProperty", required = false) String filterProperty, @RequestParam(value = "filterValue", required = false) String filterValue, @ParameterObject ResponseConfiguration responseConfiguration, @ParameterObject PaginationParam paginationParam) {
         PaginatedResult<NormalizedJsonLd> result;
         Date startTime = new Date();
         if(virtualSpaceController.isVirtualSpace(space)){
@@ -376,7 +376,7 @@ public class Instances {
     @Operation(summary = "Returns suggestions for an instance to be linked by the given property (e.g. for the KG Editor)")
     @GetMapping("/instances/{id}/suggestedLinksForProperty")
     @ExposesMinimalData
-    @Advanced
+    @Extra
     public Result<SuggestionResult> getSuggestedLinksForProperty(@RequestParam("stage") ExposedStage stage, @PathVariable("id") UUID id, @RequestParam(value = "property") String propertyName, @RequestParam(value = "sourceType", required = false) @Parameter(description = "The source type for which the given property shall be evaluated. If not provided, the API tries to figure out the type by analyzing the type of the root object of the persisted instance. Please note, that this parameter is mandatory for embedded structures.") String sourceType, @RequestParam(value = "targetType", required = false) @Parameter(description = "The target type of the suggestions. If not provided, suggestions of all possible target types will be returned.") String targetType, @RequestParam(value = "search", required = false) String search, @ParameterObject PaginationParam paginationParam) {
         return getSuggestedLinksForProperty(null, stage, propertyName, id, sourceType, targetType, search, paginationParam);
     }
@@ -384,7 +384,7 @@ public class Instances {
     @Operation(summary = "Returns suggestions for an instance to be linked by the given property (e.g. for the KG Editor) - and takes into account the passed payload (already chosen values, reflection on dependencies between properties - e.g. providing only parcellations for an already chosen brain atlas)")
     @PostMapping("/instances/{id}/suggestedLinksForProperty")
     @ExposesMinimalData
-    @Advanced
+    @Extra
     public Result<SuggestionResult> getSuggestedLinksForProperty(@RequestBody NormalizedJsonLd payload, @RequestParam("stage") ExposedStage stage, @RequestParam(value = "property") String propertyName, @PathVariable("id") UUID id, @Parameter(description = "The source type for which the given property shall be evaluated. If not provided, the API tries to figure out the type by analyzing the type of the root object originating from the payload. Please note, that this parameter is mandatory for embedded structures.") @RequestParam(value = "sourceType", required = false) String sourceType, @Parameter(description = "The target type of the suggestions. If not provided, suggestions of all possible target types will be returned.") @RequestParam(value = "targetType", required = false) String targetType, @RequestParam(value = "search", required = false) String search, @ParameterObject PaginationParam paginationParam) {
         Date start = new Date();
         InstanceId instanceId = idsController.resolveId(DataStage.IN_PROGRESS, id);

@@ -22,12 +22,8 @@
 
 package eu.ebrains.kg.core.api.instances.tests;
 
-import com.arangodb.ArangoDB;
-import eu.ebrains.kg.authentication.api.AuthenticationAPI;
-import eu.ebrains.kg.commons.IdUtils;
 import eu.ebrains.kg.commons.jsonld.NormalizedJsonLd;
 import eu.ebrains.kg.commons.model.PaginatedResult;
-import eu.ebrains.kg.commons.permission.roles.RoleMapping;
 import eu.ebrains.kg.core.api.Instances;
 import eu.ebrains.kg.core.api.instances.TestContext;
 import eu.ebrains.kg.core.model.ExposedStage;
@@ -73,6 +69,6 @@ public class GetInstancesTest extends AbstractInstanceTest {
 
     @Override
     protected void run() {
-        response = this.instances.getInstances(ExposedStage.IN_PROGRESS, this.type, this.space, null, null, null, defaultResponseConfiguration, defaultPaginationParam);
+        response = this.instances.listInstances(ExposedStage.IN_PROGRESS, this.type, this.space, null, null, null, defaultResponseConfiguration, defaultPaginationParam);
     }
 }

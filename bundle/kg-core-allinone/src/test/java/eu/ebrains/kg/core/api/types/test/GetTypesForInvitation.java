@@ -33,8 +33,6 @@ import eu.ebrains.kg.core.model.ExposedStage;
 import eu.ebrains.kg.testutils.TestDataFactory;
 import org.springframework.http.ResponseEntity;
 
-import java.util.UUID;
-
 @SuppressWarnings("java:S2187") //We don't add "tests" to these classes because they are test abstractions and are used in other tests
 public class GetTypesForInvitation extends AbstractTest {
     private final Types types;
@@ -62,6 +60,6 @@ public class GetTypesForInvitation extends AbstractTest {
 
     @Override
     protected void run() {
-        response = this.types.getTypes(ExposedStage.IN_PROGRESS, space, withProperties, withIncomingLinks, new PaginationParam());
+        response = this.types.listTypes(ExposedStage.IN_PROGRESS, space, withProperties, withIncomingLinks, new PaginationParam());
     }
 }

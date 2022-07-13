@@ -93,6 +93,11 @@ public class AuthenticationAPI implements Authentication.Client {
     }
 
     @Override
+    public String openIdConfigUrl() {
+        return keycloakClient.getOpenIdConfigUrl();
+    }
+
+    @Override
     public String tokenEndpoint() {
         return keycloakClient.getTokenEndpoint();
     }
