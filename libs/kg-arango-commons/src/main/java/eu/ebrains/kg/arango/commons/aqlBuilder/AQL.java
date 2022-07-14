@@ -180,7 +180,7 @@ public class AQL {
 
     public AQL addDocumentFilterWithWhitelistFilter(TrustedAqlValue documentAlias) {
         addDocumentFilter(documentAlias);
-        addLine(trust("FILTER " + documentAlias.getValue() + "." + ArangoVocabulary.COLLECTION + " IN " + WHITELIST_ALIAS + " OR " + documentAlias.getValue() + ".`" + JsonLdConsts.ID + "` IN " + INVITATION_ALIAS));
+        addLine(trust("FILTER " + documentAlias.getValue() + "." + ArangoVocabulary.COLLECTION + " IN " + WHITELIST_ALIAS + " OR HAS(" + INVITATION_ALIAS+", "+documentAlias.getValue() + "." + ArangoVocabulary.KEY + ")"));
         return this;
     }
 

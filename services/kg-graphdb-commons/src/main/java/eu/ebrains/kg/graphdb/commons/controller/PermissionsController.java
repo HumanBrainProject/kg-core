@@ -89,7 +89,7 @@ public class PermissionsController {
             Set<SpaceName> spacesWithReadPermission = permissions.getSpacesForPermission(userWithRoles, readFunctionality);
             Set<UUID> instancesWithReadPermissions = getInstancesWithExplicitPermission(userWithRoles, stage);
             bindVars.put(AQL.READ_ACCESS_BY_SPACE, spacesWithReadPermission != null ? spacesWithReadPermission.stream().map(s -> ArangoCollectionReference.fromSpace(s).getCollectionName()).collect(Collectors.toList()) : Collections.emptyList());
-            bindVars.put(AQL.READ_ACCESS_BY_INVITATION, instancesWithReadPermissions != null ? instancesWithReadPermissions.stream().map(i -> idUtils.buildAbsoluteUrl(i).getId()).collect(Collectors.toList()): Collections.emptyList());
+            bindVars.put(AQL.READ_ACCESS_BY_INVITATION, instancesWithReadPermissions != null ? instancesWithReadPermissions.stream().collect(Collectors.toMap(k -> k, v -> Collections.emptyMap())): Collections.emptyList());
             return bindVars;
         }
         return null;
