@@ -283,7 +283,7 @@ public class AuthenticationRepository implements SetupLogic {
 
     public List<UUID> getInvitationRoles(String userId){
         List<String> ids = this.getAllInvitationsForUserId(userId);
-        return ids.stream().map(UUID::fromString).collect(Collectors.toList());
+        return ids.stream().distinct().map(UUID::fromString).collect(Collectors.toList());
     }
 
     @Cacheable("termsOfUseByUser")
