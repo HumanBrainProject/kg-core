@@ -42,7 +42,7 @@ public class Paginated<T> {
         this(stream.getStream().collect(Collectors.toList()), stream.getTotalResults(), stream.getSize(), stream.getFrom());
     }
 
-    public Paginated(List<T> data, long totalResults, long size, long from) {
+    public Paginated(List<T> data, Long totalResults, long size, long from) {
         this.data = data;
         this.totalResults = totalResults;
         this.size = size;

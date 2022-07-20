@@ -216,7 +216,7 @@ public class Instances {
                 int lastIndex = paginationParam.getSize() == null ? instancesByInvitation.size() : Math.min(instancesByInvitation.size(), (int)(paginationParam.getFrom()+paginationParam.getSize()));
                 instancesByInvitation = instancesByInvitation.subList((int)paginationParam.getFrom(), lastIndex);
             }
-            return PaginatedResult.ok(new Paginated<>(instancesByInvitation, instancesByInvitation.size(), total, paginationParam.getFrom()));
+            return PaginatedResult.ok(new Paginated<>(instancesByInvitation, (long) instancesByInvitation.size(), total, paginationParam.getFrom()));
         }
         else{
             searchByLabel = enrichSearchTermIfItIsAUUID(searchByLabel);

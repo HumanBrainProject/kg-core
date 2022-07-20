@@ -187,8 +187,8 @@ public class AQL {
 
     public AQL addPagination(PaginationParam paginationParam) {
         this.paginationParam = paginationParam;
-        if (paginationParam != null && paginationParam.getSize() != null && paginationParam.isReturnTotalResults()) {
-            queryOptions.fullCount(true);
+        if (paginationParam != null && paginationParam.getSize() != null ) {
+            queryOptions.fullCount(paginationParam.isReturnTotalResults());
             addLine(AQL.trust(String.format("LIMIT %d, %d", paginationParam.getFrom(), paginationParam.getSize())));
         } else {
             queryOptions.count(true);

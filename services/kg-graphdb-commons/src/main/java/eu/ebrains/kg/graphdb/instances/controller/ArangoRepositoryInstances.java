@@ -121,7 +121,7 @@ public class ArangoRepositoryInstances {
                 }
             }
         }
-        return new Paginated<>(Collections.emptyList(), 0, 0, 0);
+        return new Paginated<>(Collections.emptyList(), 0L, 0, 0);
     }
 
     @ExposesData
@@ -442,11 +442,11 @@ public class ArangoRepositoryInstances {
                     l.setLabel(result.getAs(IndexedJsonLdDoc.LABEL, String.class));
                     l.setType(types.get(0));
                     l.setSpace(result.getAs(EBRAINSVocabulary.META_SPACE, String.class, null));
-                    return new Paginated<>(Collections.singletonList(l), 1, 1, 0);
+                    return new Paginated<>(Collections.singletonList(l), 1L, 1, 0);
                 }
             }
         }
-        return new Paginated<>(Collections.emptyList(), 0, 0, 0);
+        return new Paginated<>(Collections.emptyList(), 0L, 0, 0);
     }
 
 
@@ -729,7 +729,7 @@ public class ArangoRepositoryInstances {
                 return normalizedJsonLdPaginated;
             }
         }
-        return new Paginated<>(Collections.emptyList(), 0, 0, 0);
+        return new Paginated<>(Collections.emptyList(), 0L, 0, 0);
     }
 
     @ExposesQuery
@@ -767,7 +767,7 @@ public class ArangoRepositoryInstances {
             normalizedJsonLdPaginated.getData().forEach(NormalizedJsonLd::removeAllInternalProperties);
             return normalizedJsonLdPaginated;
         }
-        return new Paginated<>(Collections.emptyList(), 0, 0, 0);
+        return new Paginated<>(Collections.emptyList(), 0L, 0, 0);
     }
 
 

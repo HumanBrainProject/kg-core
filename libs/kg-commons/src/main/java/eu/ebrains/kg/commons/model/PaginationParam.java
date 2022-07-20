@@ -63,13 +63,13 @@ public class PaginationParam {
     public static <T> Paginated<T> paginate(List<T> source, PaginationParam paginationParam){
         if(paginationParam!=null) {
             if(paginationParam.getFrom()>source.size()-1){
-                return new Paginated<>(Collections.emptyList(), source.size(), 0, paginationParam.getFrom());
+                return new Paginated<>(Collections.emptyList(), (long) source.size(), 0, paginationParam.getFrom());
             }
             int upper = paginationParam.getSize() == null ? source.size() : Math.min(source.size(), (int) (paginationParam.getFrom() + paginationParam.getSize()));
             final List<T> result = source.subList((int)paginationParam.getFrom(), upper);
-            return new Paginated<>(result, source.size(), result.size(), paginationParam.getFrom());
+            return new Paginated<>(result, (long)source.size(), result.size(), paginationParam.getFrom());
         }
-        return new Paginated<>(source, source.size(), source.size(), 0);
+        return new Paginated<>(source, (long)source.size(), source.size(), 0);
     }
 
 }
