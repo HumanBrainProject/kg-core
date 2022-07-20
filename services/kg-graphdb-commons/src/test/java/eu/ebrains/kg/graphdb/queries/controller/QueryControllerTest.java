@@ -83,7 +83,7 @@ public class QueryControllerTest {
 
         //Then
         Assert.assertEquals(1, queryResult.getSize());
-        Assert.assertEquals(1, queryResult.getTotalResults());
+        Assert.assertEquals(Long.valueOf(1), queryResult.getTotalResults());
         Assert.assertEquals(1, queryResult.getData().size());
         Assert.assertEquals("Homer", queryResult.getData().get(0).getAs("http://schema.org/givenName", String.class));
         Assert.assertEquals("Simpson", queryResult.getData().get(0).getAs("http://schema.org/familyName", String.class));
@@ -129,7 +129,7 @@ public class QueryControllerTest {
 
         //Then
         Assert.assertEquals(1, queryResult.getSize());
-        Assert.assertEquals(1, queryResult.getTotalResults());
+        Assert.assertEquals(Long.valueOf(1), queryResult.getTotalResults());
         Assert.assertEquals(1, queryResult.getData().size());
         Assert.assertEquals("Homer", queryResult.getData().get(0).getAs("http://schema.org/address", String.class));
         Assert.assertEquals("Simpson", queryResult.getData().get(0).getAs("http://schema.org/streetAddress", String.class));

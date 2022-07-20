@@ -27,7 +27,7 @@ import java.util.stream.Stream;
 public class PaginatedStream<T> {
 
     private Stream<T> stream;
-    private long totalResults;
+    private Long totalResults;
     private long size;
     private long from;
 
@@ -35,7 +35,7 @@ public class PaginatedStream<T> {
     public PaginatedStream() {
     }
 
-    public PaginatedStream(Stream<T> stream, long totalResults, long size, long from) {
+    public PaginatedStream(Stream<T> stream, Long totalResults, long size, long from) {
         this.stream = stream;
         this.totalResults = totalResults;
         this.size = size;
@@ -46,7 +46,7 @@ public class PaginatedStream<T> {
         return stream;
     }
 
-    public long getTotalResults() {
+    public Long getTotalResults() {
         return totalResults;
     }
 

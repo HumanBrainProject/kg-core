@@ -25,7 +25,7 @@ package eu.ebrains.kg.commons.model;
 import java.util.stream.Stream;
 
 public class PaginatedStreamResult<T> extends Result<Stream<T>> {
-    private long total;
+    private Long total;
     private long size;
     private long from;
 
@@ -48,7 +48,7 @@ public class PaginatedStreamResult<T> extends Result<Stream<T>> {
         return result;
     }
 
-    public long getTotal() {
+    public Long getTotal() {
         return total;
     }
 

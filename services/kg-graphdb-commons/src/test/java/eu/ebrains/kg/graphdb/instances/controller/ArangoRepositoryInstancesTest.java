@@ -71,13 +71,13 @@ public class ArangoRepositoryInstancesTest {
 
 
         //Then
-        assertEquals(1, kids.getTotalResults());
+        assertEquals(Long.valueOf(1), kids.getTotalResults());
         assertEquals(0, kids.getFrom());
         assertEquals(1, kids.getSize());
         assertEquals(1, kids.getData().size());
         assertEquals("Maggie", kids.getData().get(0).get("http://schema.org/givenName"));
 
-        assertEquals(2, familyMembers.getTotalResults());
+        assertEquals(Long.valueOf(2), familyMembers.getTotalResults());
         assertEquals(0, familyMembers.getFrom());
         assertEquals(2, familyMembers.getSize());
         assertEquals(2, familyMembers.getData().size());
@@ -98,7 +98,7 @@ public class ArangoRepositoryInstancesTest {
         //Then
         assertEquals(1, familyMembers.getSize());
         assertEquals(1, familyMembers.getFrom());
-        assertEquals(2, familyMembers.getTotalResults());
+        assertEquals(Long.valueOf(2), familyMembers.getTotalResults());
         assertEquals("Although the pagination is set to 1, there are more elements", 1, familyMembers.getData().size());
     }
 }
