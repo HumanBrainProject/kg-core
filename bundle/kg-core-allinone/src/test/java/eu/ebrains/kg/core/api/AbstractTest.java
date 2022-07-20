@@ -47,7 +47,7 @@ public abstract class AbstractTest {
     protected static final int bigPayload = 100;
 
     protected ExtendedResponseConfiguration defaultResponseConfiguration = new ExtendedResponseConfiguration();
-    protected PaginationParam defaultPaginationParam = new PaginationParam().setFrom(0).setSize(20l);
+    protected PaginationParam defaultPaginationParam = new PaginationParam().setFrom(0).setSize(20l).setReturnTotalResults(true);
 
     public final static List<String> ADMIN_ROLE = Collections.singletonList(RoleMapping.ADMIN.toRole(null).getName());
     public final static List<String> ADMIN_CLIENT_ROLE = Collections.singletonList(RoleMapping.ADMIN.toRole(null).getName());

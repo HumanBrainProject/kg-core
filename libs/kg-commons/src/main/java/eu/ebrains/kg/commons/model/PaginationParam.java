@@ -55,8 +55,9 @@ public class PaginationParam {
         return returnTotalResults;
     }
 
-    public void setReturnTotalResults(boolean returnTotalResults) {
+    public PaginationParam setReturnTotalResults(boolean returnTotalResults) {
         this.returnTotalResults = returnTotalResults;
+        return this;
     }
 
     public static <T> Paginated<T> paginate(List<T> source, PaginationParam paginationParam){

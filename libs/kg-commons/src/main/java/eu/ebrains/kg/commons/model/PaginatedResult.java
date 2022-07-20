@@ -25,7 +25,7 @@ package eu.ebrains.kg.commons.model;
 import java.util.List;
 
 public class PaginatedResult<T> extends Result<List<T>> {
-    private long total;
+    private Long total;
     private long size;
     private long from;
 
@@ -45,7 +45,7 @@ public class PaginatedResult<T> extends Result<List<T>> {
         return result;
     }
 
-    public long getTotal() {
+    public Long getTotal() {
         return total;
     }
 

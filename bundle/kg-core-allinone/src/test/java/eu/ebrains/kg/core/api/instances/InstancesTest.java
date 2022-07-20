@@ -327,7 +327,7 @@ public class InstancesTest extends AbstractFunctionalityTest {
             //Then
             assertEquals(0, test.response.getFrom());
             assertEquals(2, test.response.getSize());
-            assertEquals(2, test.response.getTotal());
+            assertEquals(Long.valueOf(2), test.response.getTotal());
             List<NormalizedJsonLd> data = test.response.getData();
             assertNotNull(data);
             assertEquals(2, data.size());
