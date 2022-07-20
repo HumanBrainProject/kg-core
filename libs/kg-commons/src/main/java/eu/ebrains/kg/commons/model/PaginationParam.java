@@ -31,6 +31,7 @@ public class PaginationParam {
     private long from;
     private Long size;
 
+    private boolean returnTotalResults;
 
     public long getFrom() {
         return from;
@@ -48,6 +49,14 @@ public class PaginationParam {
     public PaginationParam setSize(Long size) {
         this.size = size;
         return this;
+    }
+
+    public boolean isReturnTotalResults() {
+        return returnTotalResults;
+    }
+
+    public void setReturnTotalResults(boolean returnTotalResults) {
+        this.returnTotalResults = returnTotalResults;
     }
 
     public static <T> Paginated<T> paginate(List<T> source, PaginationParam paginationParam){

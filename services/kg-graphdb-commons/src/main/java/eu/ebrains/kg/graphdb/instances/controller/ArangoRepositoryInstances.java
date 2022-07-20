@@ -1172,7 +1172,10 @@ public class ArangoRepositoryInstances {
 
         boolean applyRestrictionsForRoot = false;
         boolean skipInstanceByRestriction = false;
-        if (applyRestrictions && type.stream().anyMatch(t -> structureRepository.getTypeSpecification(t).getAs(EBRAINSVocabulary.META_CAN_BE_EXCLUDED_FROM_SCOPE, Boolean.class, Boolean.FALSE))) {
+        if (applyRestrictions && type.stream().filter(Objects::nonNull).anyMatch(t -> {
+            final DynamicJson typeSpecification = structureRepository.getTypeSpecification(t);
+            return typeSpecification != null ? typeSpecification.getAs(EBRAINSVocabulary.META_CAN_BE_EXCLUDED_FROM_SCOPE, Boolean.class, Boolean.FALSE) : Boolean.FALSE;
+        })) {
             if (isRoot) {
                 applyRestrictionsForRoot = true;
             } else {

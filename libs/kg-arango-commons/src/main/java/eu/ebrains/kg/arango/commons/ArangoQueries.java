@@ -56,7 +56,7 @@ public class ArangoQueries {
         Long count = result.getCount() != null ? result.getCount().longValue() : null;
         Long totalCount;
         if (aql.getPaginationParam() != null && aql.getPaginationParam().getSize() != null) {
-            totalCount = result.getStats().getFullCount();
+            totalCount = aql.getPaginationParam().isReturnTotalResults() ? result.getStats().getFullCount() : null;
         } else {
             totalCount = count;
         }
