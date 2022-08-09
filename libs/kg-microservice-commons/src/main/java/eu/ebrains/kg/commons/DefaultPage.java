@@ -48,7 +48,7 @@ public class DefaultPage {
 
     @GetMapping("/")
     public String defaultPage(Model model) {
-        model.addAttribute("appname", this.applicationName + " " + Version.API);
+        model.addAttribute("appname", this.applicationName + " " + Version.CURRENT);
         model.addAttribute("currentYear", ZonedDateTime.now().getYear());
         return "defaultPage";
     }

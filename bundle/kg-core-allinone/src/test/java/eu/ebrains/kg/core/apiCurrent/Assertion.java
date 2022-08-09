@@ -20,19 +20,9 @@
  * (Human Brain Project SGA1, SGA2 and SGA3).
  */
 
-package eu.ebrains.kg.commons.model;
+package eu.ebrains.kg.core.apiCurrent;
 
-import com.fasterxml.jackson.annotation.JsonPropertyOrder;
-
-@JsonPropertyOrder
-public class TermsOfUseError extends TermsOfUse {
-
-    private final int code = 403;
-    private String message;
-
-    public TermsOfUseError(TermsOfUse termsOfUse) {
-        super(termsOfUse.getVersion(), termsOfUse.getData());
-        this.message = String.format("You have not yet accepted the latest version (%s) of the terms of use", termsOfUse.getVersion());
-    }
-
+@FunctionalInterface
+public interface Assertion {
+    void then() throws Exception;
 }

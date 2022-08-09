@@ -26,5 +26,7 @@ package eu.ebrains.kg.commons;
  * Providing the current version information for KG core
  */
 public class Version {
-    public final static String API = "v3-beta";
+    public final static String PREVIOUS = "none";
+    public final static String CURRENT = "v3-beta";
+    public final static String UPCOMING = "v3";
 }

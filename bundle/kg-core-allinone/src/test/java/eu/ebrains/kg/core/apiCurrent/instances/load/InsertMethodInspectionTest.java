@@ -20,19 +20,32 @@
  * (Human Brain Project SGA1, SGA2 and SGA3).
  */
 
-package eu.ebrains.kg.commons.model;
+package eu.ebrains.kg.core.apiCurrent.instances.load;
 
-import com.fasterxml.jackson.annotation.JsonPropertyOrder;
+import eu.ebrains.kg.metrics.PerformanceTestUtils;
+import org.junit.Test;
+import org.springframework.test.context.TestPropertySource;
 
-@JsonPropertyOrder
-public class TermsOfUseError extends TermsOfUse {
+import java.io.IOException;
 
-    private final int code = 403;
-    private String message;
+@TestPropertySource(properties = {"eu.ebrains.kg.metrics=true", "logging.level.eu.ebrains.kg=WARN"})
+public class InsertMethodInspectionTest extends AbstractInstancesLoadTest {
 
-    public TermsOfUseError(TermsOfUse termsOfUse) {
-        super(termsOfUse.getVersion(), termsOfUse.getData());
-        this.message = String.format("You have not yet accepted the latest version (%s) of the terms of use", termsOfUse.getVersion());
+    @Test
+    public void methodInspectionInsertSmallNoLink() throws IOException {
+        testInsert(smallPayload, batchInsertion, false, false,  null);
+
+    }
+
+    @Test
+    public void methodInspectionInsertSmallNoLinkNormalize() throws IOException {
+        testInsert(smallPayload, batchInsertion, false, true, null);
+
+    }
+
+    @Test
+    public void methodInspectionInsertAverageImmediateLink() throws IOException {
+        testInsert(averagePayload, batchInsertion, false,  true, PerformanceTestUtils.Link.PREVIOUS);
     }
 
 }

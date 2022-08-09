@@ -20,19 +20,26 @@
  * (Human Brain Project SGA1, SGA2 and SGA3).
  */
 
-package eu.ebrains.kg.commons.model;
+package eu.ebrains.kg.core.apiCurrent;
 
-import com.fasterxml.jackson.annotation.JsonPropertyOrder;
+import eu.ebrains.kg.commons.api.GraphDBTypes;
+import eu.ebrains.kg.commons.jsonld.NormalizedJsonLd;
+import eu.ebrains.kg.core.api.current.PropertiesV3Beta;
+import org.junit.Before;
+import org.junit.Test;
+import org.mockito.Mockito;
 
-@JsonPropertyOrder
-public class TermsOfUseError extends TermsOfUse {
+public class PropertiesTest {
+    PropertiesV3Beta instance = new PropertiesV3Beta(Mockito.mock(GraphDBTypes.Client.class));
 
-    private final int code = 403;
-    private String message;
+    @Before
+    public void init(){
+    }
 
-    public TermsOfUseError(TermsOfUse termsOfUse) {
-        super(termsOfUse.getVersion(), termsOfUse.getData());
-        this.message = String.format("You have not yet accepted the latest version (%s) of the terms of use", termsOfUse.getVersion());
+    @Test
+    public void testPropertyDefinitionOk() {
+        NormalizedJsonLd ld = new NormalizedJsonLd();
+        instance.defineProperty(ld, false, "http://foobar");
     }
 
 }

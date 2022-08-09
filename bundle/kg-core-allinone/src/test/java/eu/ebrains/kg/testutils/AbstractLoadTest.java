@@ -22,7 +22,6 @@
 
 package eu.ebrains.kg.testutils;
 
-import com.arangodb.ArangoDB;
 import eu.ebrains.kg.arango.commons.model.ArangoDatabaseProxy;
 import eu.ebrains.kg.commons.AuthTokens;
 import eu.ebrains.kg.commons.SetupLogic;
@@ -30,16 +29,14 @@ import eu.ebrains.kg.commons.model.User;
 import eu.ebrains.kg.commons.models.UserWithRoles;
 import eu.ebrains.kg.commons.permission.ClientAuthToken;
 import eu.ebrains.kg.commons.permission.UserAuthToken;
-import eu.ebrains.kg.core.api.AbstractTest;
+import eu.ebrains.kg.core.apiCurrent.AbstractTest;
 import eu.ebrains.kg.metrics.MethodExecution;
 import eu.ebrains.kg.metrics.PerformanceTestUtils;
 import eu.ebrains.kg.metrics.TestInformation;
-import eu.ebrains.kg.test.APITest;
 import eu.ebrains.kg.test.LoadTest;
 import org.junit.*;
 import org.junit.experimental.categories.Category;
 import org.mockito.Mockito;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.mock.mockito.MockBean;
 
 import java.io.IOException;
