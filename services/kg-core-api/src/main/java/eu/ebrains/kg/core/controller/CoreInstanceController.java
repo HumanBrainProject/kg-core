@@ -102,6 +102,10 @@ public class CoreInstanceController {
         return this.invitation.listInvitations(instanceId);
     }
 
+    public List<UUID> listInstancesWithInvitations() {
+        return this.invitation.listInstances();
+    }
+
     public void calculateInstanceInvitationScope(UUID instanceId) {
         this.invitation.calculateInstanceScope(instanceId);
     }

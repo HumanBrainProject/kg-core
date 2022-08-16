@@ -130,6 +130,12 @@ public class AuthenticationRepository implements SetupLogic {
         return arangoDatabase.get().query(aql.build().getValue(), bindVars, Invitation.class).asListRemaining();
     }
 
+    public List<UUID> getAllInstancesWithInvitation(){
+        AQL aql = new AQL();
+        aql.add(AQL.trust("FOR i in invitations RETURN DISTINCT i.instanceId"));
+        return arangoDatabase.get().query(aql.build().getValue(), UUID.class).asListRemaining();
+    }
+
     public List<String> getAllInvitationsForUserId(String userId){
         AQL aql = new AQL();
         Map<String, Object> bindVars = new HashMap<>();

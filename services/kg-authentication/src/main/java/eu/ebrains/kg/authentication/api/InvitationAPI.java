@@ -72,6 +72,11 @@ public class InvitationAPI implements eu.ebrains.kg.commons.api.Invitation.Clien
     }
 
     @Override
+    public List<UUID> listInstances() {
+        return authenticationRepository.getAllInstancesWithInvitation();
+    }
+
+    @Override
     public void calculateInstanceScope(UUID id) {
         this.invitationController.calculateInstanceScope(id);
     }

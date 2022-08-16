@@ -431,10 +431,17 @@ public class Instances {
     }
 
     @Operation(summary = "Update invitation scope for this instance")
-    @GetMapping("/instances/{id}/invitationScope")
+    @PutMapping("/instances/{id}/invitationScope")
     @Admin
     public void calculateInstanceInvitationScope(@PathVariable("id") UUID id) {
         instanceController.calculateInstanceInvitationScope(id);
+    }
+
+    @Operation(summary = "List instances with invitations")
+    @GetMapping("/instancesWithInvitations")
+    @Admin
+    public Result<List<UUID>> listInstancesWithInvitations() {
+        return Result.ok(instanceController.listInstancesWithInvitations());
     }
 
 

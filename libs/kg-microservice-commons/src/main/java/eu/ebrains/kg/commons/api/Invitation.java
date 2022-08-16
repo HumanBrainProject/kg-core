@@ -37,5 +37,7 @@ public interface Invitation {
 
     List<ReducedUserInformation> listInvitations(UUID id);
 
+    List<UUID> listInstances();
+
     void calculateInstanceScope(UUID id);
 }
