@@ -42,6 +42,8 @@ public enum Functionality {
     //Invitations
     INVITE_FOR_REVIEW(Permission.Level.ALL_LEVELS, FunctionalityGroup.INSTANCE, DataStage.IN_PROGRESS, null, null),
     INVITE_FOR_SUGGESTION(Permission.Level.ALL_LEVELS, FunctionalityGroup.INSTANCE, DataStage.IN_PROGRESS, null, null),
+    LIST_INVITATIONS(Permission.Level.GLOBAL_ONLY, FunctionalityGroup.INSTANCE, null, null, null),
+    UPDATE_INVITATIONS(Permission.Level.ALL_LEVELS, FunctionalityGroup.INSTANCE,  DataStage.IN_PROGRESS, null, null),
 
     //Instances
     READ_RELEASED(Permission.Level.ALL_LEVELS, FunctionalityGroup.INSTANCE, DataStage.RELEASED, null, null),

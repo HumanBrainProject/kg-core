@@ -103,10 +103,17 @@ public class CoreInstanceController {
     }
 
     public List<UUID> listInstancesWithInvitations() {
+        if (!permissions.hasGlobalPermission(authContext.getUserWithRoles(), Functionality.LIST_INVITATIONS)) {
+            throw new UnauthorizedException("You don't have the right to list instances with invitations");
+        }
         return this.invitation.listInstances();
     }
 
     public void calculateInstanceInvitationScope(UUID instanceId) {
+        final InstanceId resolvedInstanceId = ids.resolveId(DataStage.IN_PROGRESS, instanceId);
+        if (!permissions.hasPermission(authContext.getUserWithRoles(), Functionality.UPDATE_INVITATIONS, resolvedInstanceId.getSpace(), instanceId)) {
+            throw new UnauthorizedException("You don't have the right to recalculate the invitation scope for this instance");
+        }
         this.invitation.calculateInstanceScope(instanceId);
     }
 
