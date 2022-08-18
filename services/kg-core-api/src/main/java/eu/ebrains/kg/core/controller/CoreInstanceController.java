@@ -77,16 +77,24 @@ public class CoreInstanceController {
 
     public void createInvitation(UUID instanceId, UUID userId) {
         //TODO move permission check to authentication module
-        final InstanceId resolvedInstanceId = ids.resolveId(DataStage.IN_PROGRESS, instanceId);
+        final InstanceId resolvedInstanceId = resolveIdOrThrowException(instanceId);
         if (!permissions.hasPermission(authContext.getUserWithRoles(), Functionality.INVITE_FOR_REVIEW, resolvedInstanceId.getSpace(), instanceId)) {
             throw new UnauthorizedException("You don't have the right to invite somebody to this instance.");
         }
         this.invitation.inviteUserForInstance(instanceId, userId);
     }
 
+    private InstanceId resolveIdOrThrowException(UUID instanceId) {
+        final InstanceId resolvedInstanceId = ids.resolveId(DataStage.IN_PROGRESS, instanceId);
+        if(resolvedInstanceId == null) {
+            throw new InstanceNotFoundException(String.format("Instance %s not found", instanceId));
+        }
+        return resolvedInstanceId;
+    }
+
     public void revokeInvitation(UUID instanceId, UUID userId) {
         //TODO move permission check to authentication module
-        final InstanceId resolvedInstanceId = ids.resolveId(DataStage.IN_PROGRESS, instanceId);
+        final InstanceId resolvedInstanceId = resolveIdOrThrowException(instanceId);
         if (!permissions.hasPermission(authContext.getUserWithRoles(), Functionality.INVITE_FOR_REVIEW, resolvedInstanceId.getSpace(), instanceId)) {
             throw new UnauthorizedException("You don't have the right to invite somebody to this instance.");
         }
@@ -95,7 +103,7 @@ public class CoreInstanceController {
 
     public List<ReducedUserInformation> listInvitations(UUID instanceId) {
         //TODO move permission check to authentication module
-        final InstanceId resolvedInstanceId = ids.resolveId(DataStage.IN_PROGRESS, instanceId);
+        final InstanceId resolvedInstanceId = resolveIdOrThrowException(instanceId);
         if (!permissions.hasPermission(authContext.getUserWithRoles(), Functionality.INVITE_FOR_REVIEW, resolvedInstanceId.getSpace(), instanceId)) {
             throw new UnauthorizedException("You don't have the right to list the invitations for this instance");
         }
@@ -110,7 +118,7 @@ public class CoreInstanceController {
     }
 
     public void calculateInstanceInvitationScope(UUID instanceId) {
-        final InstanceId resolvedInstanceId = ids.resolveId(DataStage.IN_PROGRESS, instanceId);
+        final InstanceId resolvedInstanceId = resolveIdOrThrowException(instanceId);
         if (!permissions.hasPermission(authContext.getUserWithRoles(), Functionality.UPDATE_INVITATIONS, resolvedInstanceId.getSpace(), instanceId)) {
             throw new UnauthorizedException("You don't have the right to recalculate the invitation scope for this instance");
         }
