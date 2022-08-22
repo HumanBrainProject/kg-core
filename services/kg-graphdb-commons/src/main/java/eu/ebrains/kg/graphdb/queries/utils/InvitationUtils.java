@@ -36,7 +36,7 @@ public class InvitationUtils {
 
     public static List<NormalizedJsonLd> getInvitationDocuments(AuthContext authContext, Ids.Client ids, ArangoRepositoryInstances instancesRepository, IdUtils idUtils){
         final List<UUID> invitations = authContext.getUserWithRolesWithoutTermsCheck().getInvitations();
-        final Collection<InstanceId> values = ids.resolveId(invitations.stream().distinct().map(id -> new IdWithAlternatives().setId(id).setAlternatives(Collections.singleton(idUtils.buildAbsoluteUrl(id).getId()))).collect(Collectors.toList()), DataStage.IN_PROGRESS).values();
+        final Collection<InstanceId> values = ids.resolveId(invitations.stream().distinct().map(id -> new IdWithAlternatives().setId(id).setAlternatives(Collections.singleton(idUtils.buildAbsoluteUrl(id).getId()))).collect(Collectors.toList()), DataStage.IN_PROGRESS).values().stream().filter(Objects::nonNull).collect(Collectors.toList());
         final Map<UUID, Result<NormalizedJsonLd>> documentsByIdList = instancesRepository.getDocumentsByIdList(DataStage.IN_PROGRESS, new ArrayList<>(values), null, false, false, false, null);
         return documentsByIdList.values().stream().map(Result::getData).collect(Collectors.toList());
     }
