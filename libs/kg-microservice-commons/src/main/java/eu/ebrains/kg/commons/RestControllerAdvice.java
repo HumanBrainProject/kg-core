@@ -62,7 +62,7 @@ public class RestControllerAdvice {
 
     @ExceptionHandler({InstanceNotFoundException.class})
     protected ResponseEntity<?> handleInstanceNotFound(RuntimeException ex, WebRequest request) {
-        return ResponseEntity.notFound().build();
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(ex.getMessage());
     }
 
 

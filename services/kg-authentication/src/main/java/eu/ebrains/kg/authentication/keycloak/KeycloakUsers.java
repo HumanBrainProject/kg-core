@@ -35,6 +35,7 @@ import org.springframework.cache.annotation.Cacheable;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
+import javax.ws.rs.NotFoundException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -82,7 +83,11 @@ public class KeycloakUsers {
     public ReducedUserInformation getUserById(String userId) {
         final UserResource userResource = getUsers().get(userId);
         if (userResource != null) {
-            return fromUserRepresentation(userResource.toRepresentation());
+            try {
+                return fromUserRepresentation(userResource.toRepresentation());
+            } catch (NotFoundException e) {
+                return null;
+            }
         }
         return null;
     }
