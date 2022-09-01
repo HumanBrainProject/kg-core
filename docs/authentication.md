@@ -88,16 +88,16 @@ You should first create a "confidential" client as described in
 Please note, that you can use an already existing client as long as it is "confidential". If your already existing client is "public", you need to register a second one. To ensure full compatibility with KG, make sure, you have the following settings to be configured:
 
 - Access type
-  - confidential 
-- Client default scopes 
-  - openid
-  - email
-  - group
-  - profile
-  - roles
-  - team
+    - confidential 
+- Client default scopes
+    - openid
+    - email
+    - group
+    - profile
+    - roles
+    - team
 - Service Accounts
-  - enabled
+    - enabled
 
 Now that you have your client registered, you can easily fetch a token (without supervision) by using the client_credentials flow as described in [Use your OIDC client as service account](https://wiki.ebrains.eu/bin/view/Collabs/collaboratory-community-apps/Community%20App%20Developer%20Guide/Use%20your%20OIDC%20client%20as%20service%20account/)
 
