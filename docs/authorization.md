@@ -31,7 +31,9 @@ All roles can be applied to one of the three granularity levels:
 This means that the given role applies globally for all spaces of the KG available
 
 #### By space
-The applied role is available for a specific space
+The applied role is available for a specific space. For spaces, it is allowed to specify a **'*'** wildcard. 
+It e.g. allows you to specify a role for a specific prefix of spaces. Please note that the wildcard will not work if used 
+in the context of a specific instance.
 
 #### By instance
 The applied role is available for a specific instance
@@ -136,6 +138,20 @@ endpoint of the authentication system) to an applied role.
 ```
 *The collab-roles to space mapping: Members of a collab receive the corresponding roles in the KG space named by the collab*
 
+
+```json
+[
+  {
+    "_key": "hdc-*:owner",
+    "roles": {
+      "group": [
+        "group-hdc-devs"
+      ]
+    }
+  }
+]
+```
+*Members of the group "hdc-devs" are owners of all spaces prefixed with "hdc-"*
 
 
 

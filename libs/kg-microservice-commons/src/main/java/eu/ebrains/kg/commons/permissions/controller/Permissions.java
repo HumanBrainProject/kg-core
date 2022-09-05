@@ -58,7 +58,12 @@ public class Permissions {
 
     private boolean checkFunctionalities(Functionality functionality, SpaceName space, UUID id, List<FunctionalityInstance> permissions) {
         Set<FunctionalityInstance> expectedRoles = getExpectedFunctionalityList(functionality, space, id);
-        return expectedRoles.stream().anyMatch(permissions::contains);
+        boolean fullMatch = expectedRoles.stream().anyMatch(permissions::contains);
+        if(fullMatch){
+            return true;
+        }
+        final Set<FunctionalityInstance> applicableWildcardRoles = permissions.stream().filter(i -> i.isWildcardRole() && i.getFunctionality() == functionality).collect(Collectors.toSet());
+        return applicableWildcardRoles.stream().anyMatch(wildcardRole -> expectedRoles.stream().anyMatch(wildcardRole::matchesWildcard));
     }
 
     public boolean hasPermission(UserWithRoles userWithRoles, Functionality functionality, SpaceName space, UUID id) {
