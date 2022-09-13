@@ -43,9 +43,9 @@ public class PermissionsControllerTest  {
     @Test
     public void testRemoveSpacesWithoutReadAccessReduce() {
         Permissions permissions = Mockito.mock(Permissions.class);
-        PermissionsController permissionsController = new PermissionsController(permissions, new IdUtils("http://test"));
+        PermissionsController permissionsController = new PermissionsController(permissions);
         Set<SpaceName> readableSpaces = Collections.singleton(new SpaceName("canRead"));
-        Mockito.when(permissions.getSpacesForPermission(Mockito.any(), Mockito.any())).thenReturn(readableSpaces);
+        Mockito.when(permissions.getSpacesForPermission(Mockito.any(), Mockito.any(), Mockito.any())).thenReturn(readableSpaces);
 
         Set<SpaceName> spaceNames = permissionsController.removeSpacesWithoutReadAccess(new HashSet<>(Arrays.asList(new SpaceName("anotherSpace"), new SpaceName("canRead"))), null, DataStage.IN_PROGRESS);
 
@@ -55,9 +55,9 @@ public class PermissionsControllerTest  {
     @Test
     public void testRemoveSpacesWithoutReadAccessNone() {
         Permissions permissions = Mockito.mock(Permissions.class);
-        PermissionsController permissionsController = new PermissionsController(permissions, new IdUtils("http://test"));
+        PermissionsController permissionsController = new PermissionsController(permissions);
         Set<SpaceName> readableSpaces = Collections.singleton(new SpaceName("canRead"));
-        Mockito.when(permissions.getSpacesForPermission(Mockito.any(), Mockito.any())).thenReturn(readableSpaces);
+        Mockito.when(permissions.getSpacesForPermission(Mockito.any(), Mockito.any(), Mockito.any())).thenReturn(readableSpaces);
 
         Set<SpaceName> spaceNames = permissionsController.removeSpacesWithoutReadAccess(new HashSet<>(Arrays.asList(new SpaceName("anotherSpace"), new SpaceName("evenAnotherSpace"))), null, DataStage.IN_PROGRESS);
 

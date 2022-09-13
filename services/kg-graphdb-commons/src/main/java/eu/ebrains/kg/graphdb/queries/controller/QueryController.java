@@ -43,6 +43,7 @@ import eu.ebrains.kg.graphdb.commons.controller.PermissionsController;
 import eu.ebrains.kg.graphdb.queries.model.spec.Specification;
 import eu.ebrains.kg.graphdb.queries.utils.DataQueryBuilder;
 import eu.ebrains.kg.graphdb.queries.utils.SpecificationToScopeQueryAdapter;
+import eu.ebrains.kg.graphdb.structure.controller.MetaDataController;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
@@ -68,15 +69,18 @@ public class QueryController {
 
     private final GraphDBArangoUtils graphDBArangoUtils;
 
+    private final MetaDataController metaDataController;
+
     private final Double maxMemoryForQuery;
 
-    public QueryController(SpecificationInterpreter specificationInterpreter, ArangoDatabases arangoDatabases, ArangoRepositoryCommons arangoRepositoryCommons, PermissionsController permissionsController, GraphDBArangoUtils graphDBArangoUtils, @Value("${eu.ebrains.kg.arango.maxMemory:#{null}}") Double maxMemoryForQuery) {
+    public QueryController(SpecificationInterpreter specificationInterpreter, ArangoDatabases arangoDatabases, ArangoRepositoryCommons arangoRepositoryCommons, PermissionsController permissionsController, GraphDBArangoUtils graphDBArangoUtils, @Value("${eu.ebrains.kg.arango.maxMemory:#{null}}") Double maxMemoryForQuery, MetaDataController metaDataController) {
         this.specificationInterpreter = specificationInterpreter;
         this.arangoDatabases = arangoDatabases;
         this.graphDBArangoUtils = graphDBArangoUtils;
         this.arangoRepositoryCommons = arangoRepositoryCommons;
         this.permissionsController = permissionsController;
         this.maxMemoryForQuery = maxMemoryForQuery;
+        this.metaDataController = metaDataController;
     }
 
     public <T> void visit(UserWithRoles userWithRoles, KgQuery query, Map<String, String> filterValues, boolean scopeMode, Consumer<T> consumer, Class<T> clazz){
@@ -124,7 +128,7 @@ public class QueryController {
             whitelistFilter = null;
         }
         else {
-            whitelistFilter = permissionsController.whitelistFilterForReadInstances(userWithRoles, query.getStage());
+            whitelistFilter = permissionsController.whitelistFilterForReadInstances(metaDataController.getSpaceNames(query.getStage(), userWithRoles), userWithRoles, query.getStage());
         }
         graphDBArangoUtils.getOrCreateArangoCollection(database, ArangoCollectionReference.fromSpace(InternalSpace.TYPE_SPACE));
         graphDBArangoUtils.getOrCreateArangoCollection(database, InternalSpace.TYPE_EDGE_COLLECTION);

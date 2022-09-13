@@ -43,6 +43,8 @@ import eu.ebrains.kg.core.controller.VirtualSpaceController;
 import eu.ebrains.kg.core.model.ExposedStage;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.ExampleObject;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import org.slf4j.Logger;
@@ -86,6 +88,7 @@ public class Instances {
     }
 
     @Operation(summary = "Create new instance with a system generated id")
+    @io.swagger.v3.oas.annotations.parameters.RequestBody(content = @Content(examples = @ExampleObject(name = "minimalistic", value = "{ \"@type\": \"https://openminds.ebrains.eu/core/Person\" }")))
     @PostMapping("/instances")
     @WritesData
     @ExposesData
@@ -206,7 +209,7 @@ public class Instances {
     @GetMapping("/instances")
     @ExposesData
     @Simple
-    public PaginatedResult<NormalizedJsonLd> listInstances(@RequestParam("stage") ExposedStage stage, @RequestParam("type") String type, @RequestParam(value = "space", required = false) @Parameter(description = "The space of the instances to be listed or \""+SpaceName.PRIVATE_SPACE+"\" for your private space") String space, @RequestParam(value = "searchByLabel", required = false) String searchByLabel, @RequestParam(value = "filterProperty", required = false) String filterProperty, @RequestParam(value = "filterValue", required = false) String filterValue, @ParameterObject ResponseConfiguration responseConfiguration, @ParameterObject PaginationParam paginationParam) {
+    public PaginatedResult<NormalizedJsonLd> listInstances(@RequestParam("stage") ExposedStage stage, @RequestParam("type") @Parameter(examples = { @ExampleObject(name="person", value = "https://openminds.ebrains.eu/core/Person", description = "An openminds person")}, @ExampleObject(name="datasetVersion", value="https://openminds.ebrains.eu/core/DatasetVersion", description = "An openminds dataset version")) String type, @RequestParam(value = "space", required = false) @Parameter(description = "The space of the instances to be listed or \""+SpaceName.PRIVATE_SPACE+"\" for your private space", examples = {@ExampleObject(name="myspace", value = "myspace"), @ExampleObject(name = "dataset", value = "dataset")}) String space, @RequestParam(value = "searchByLabel", required = false) String searchByLabel, @RequestParam(value = "filterProperty", required = false) String filterProperty, @RequestParam(value = "filterValue", required = false) String filterValue, @ParameterObject ResponseConfiguration responseConfiguration, @ParameterObject PaginationParam paginationParam) {
         PaginatedResult<NormalizedJsonLd> result;
         Date startTime = new Date();
         if(virtualSpaceController.isVirtualSpace(space)){

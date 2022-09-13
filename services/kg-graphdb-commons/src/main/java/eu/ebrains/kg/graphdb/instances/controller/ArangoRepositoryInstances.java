@@ -473,7 +473,8 @@ public class ArangoRepositoryInstances {
         }
 
         //For suggestions, we're a little more strict. We only show additional information if the user has read rights for the space - individual instance permissions are not reflected.
-        final Map<String, Object> whitelistFilter = permissionsController.whitelistFilterForReadInstances(authContext.getUserWithRoles(), stage);
+        final UserWithRoles userWithRoles = authContext.getUserWithRoles();
+        final Map<String, Object> whitelistFilter = permissionsController.whitelistFilterForReadInstances(metaDataController.getSpaceNames(stage, userWithRoles), userWithRoles, stage);
         if (whitelistFilter != null) {
             aql.addLine(AQL.trust("LET restrictedSpaces = @restrictedSpaces"));
             bindVars.put("restrictedSpaces", whitelistFilter.get(AQL.READ_ACCESS_BY_SPACE));
@@ -487,7 +488,7 @@ public class ArangoRepositoryInstances {
             aql.indent().addLine(AQL.trust(String.format("FOR v IN @@singleSpace OPTIONS {indexHint: \"%s\"}", ArangoDatabaseProxy.BROWSE_AND_SEARCH_INDEX)));
             aql.addLine(AQL.trust(String.format("FILTER @typeFilter IN v.`%s` AND v.`%s` == null", JsonLdConsts.TYPE, IndexedJsonLdDoc.EMBEDDED)));
             bindVars.put("typeFilter", type.get(0).getName());
-            bindVars.put("@singleSpace", ArangoCollectionReference.fromSpace(type.get(0).getSpacesForInternalUse(authContext.getUserWithRoles().getPrivateSpace()).iterator().next()).getCollectionName());
+            bindVars.put("@singleSpace", ArangoCollectionReference.fromSpace(type.get(0).getSpacesForInternalUse(userWithRoles.getPrivateSpace()).iterator().next()).getCollectionName());
         } else {
             aql.indent().addLine(AQL.trust("FOR v IN 1..1 OUTBOUND typeDefinition.type @@typeRelationCollection"));
             bindVars.put("@typeRelationCollection", InternalSpace.TYPE_EDGE_COLLECTION.getCollectionName());
@@ -637,6 +638,7 @@ public class ArangoRepositoryInstances {
     @ExposesData
     public Paginated<NormalizedJsonLd> getDocumentsByTypes(DataStage stage, Type typeWithLabelInfo, SpaceName space, String filterProperty, String filterValue, PaginationParam paginationParam, String search, boolean embedded, boolean alternatives, List<String> searchableProperties) {
         if (typeWithLabelInfo != null) {
+            final UserWithRoles userWithRoles = authContext.getUserWithRoles();
             //TODO find label field for type (and client) and filter by search if set.
             ArangoDatabase database = databases.getByStage(stage);
             Map<String, Object> bindVars = new HashMap<>();
@@ -651,7 +653,7 @@ public class ArangoRepositoryInstances {
                 switch (mode) {
                     case BY_ID:
                     case DYNAMIC:
-                        whitelistFilter = permissionsController.whitelistFilterForReadInstances(authContext.getUserWithRoles(), stage);
+                        whitelistFilter = permissionsController.whitelistFilterForReadInstances(metaDataController.getSpaceNames(stage, userWithRoles), userWithRoles, stage);
                         if (whitelistFilter != null) {
                             aql.specifyWhitelist();
                             bindVars.putAll(whitelistFilter);
@@ -738,7 +740,8 @@ public class ArangoRepositoryInstances {
         if (database.collection(InternalSpace.TYPE_EDGE_COLLECTION.getCollectionName()).exists()) {
             Map<String, Object> bindVars = new HashMap<>();
             AQL aql = new AQL();
-            Map<String, Object> whitelistFilter = permissionsController.whitelistFilterForReadInstances(authContext.getUserWithRoles(), stage);
+            final UserWithRoles userWithRoles = authContext.getUserWithRoles();
+            Map<String, Object> whitelistFilter = permissionsController.whitelistFilterForReadInstances(metaDataController.getSpaceNames(stage, userWithRoles), userWithRoles, stage);
             if (whitelistFilter != null) {
                 aql.specifyWhitelist();
                 bindVars.putAll(whitelistFilter);

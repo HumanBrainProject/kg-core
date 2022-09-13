@@ -31,6 +31,7 @@ import org.springframework.stereotype.Component;
 
 import java.util.*;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * The permission service allows to evaluate if a user has the permissions to execute a specific action or not.
@@ -62,7 +63,7 @@ public class Permissions {
         if(fullMatch){
             return true;
         }
-        final Set<FunctionalityInstance> applicableWildcardRoles = permissions.stream().filter(i -> i.isWildcardRole() && i.getFunctionality() == functionality).collect(Collectors.toSet());
+        final Set<FunctionalityInstance> applicableWildcardRoles = permissions.stream().filter(i -> i.getId() == null && i.getSpace() != null && i.getSpace().isWildcard() && i.getFunctionality() == functionality).collect(Collectors.toSet());
         return applicableWildcardRoles.stream().anyMatch(wildcardRole -> expectedRoles.stream().anyMatch(wildcardRole::matchesWildcard));
     }
 
@@ -77,7 +78,7 @@ public class Permissions {
         return hasPermission(userWithRoles, functionality, null, null);
     }
 
-    public Set<SpaceName> getSpacesForPermission(UserWithRoles userWithRoles, Functionality functionality) {
+    public Set<SpaceName> getSpacesForPermission(Set<SpaceName> spaces, UserWithRoles userWithRoles, Functionality functionality) {
         List<FunctionalityInstance> permissions = userWithRoles.getPermissions();
         if (functionality == null) {
             return Collections.emptySet();
@@ -85,7 +86,15 @@ public class Permissions {
         if (hasGlobalPermission(userWithRoles, functionality)) {
             return null;
         }
-        return permissions.stream().filter(f -> f.getFunctionality().equals(functionality)).map(FunctionalityInstance::getSpace).filter(Objects::nonNull).collect(Collectors.toSet());
+        final Set<FunctionalityInstance> applicableWildcardRoles = permissions.stream().filter(i -> i.getId() == null && i.getSpace() != null && i.getSpace().isWildcard() && i.getFunctionality() == functionality).collect(Collectors.toSet());
+        final Stream<SpaceName> directHits = permissions.stream().filter(f -> f.getId() == null && f.getFunctionality().equals(functionality) && spaces.contains(f.getSpace())).map(FunctionalityInstance::getSpace).filter(Objects::nonNull);
+        if(!applicableWildcardRoles.isEmpty()) {
+            final Stream<SpaceName> spacesFromWildcards = spaces.stream().filter(space -> applicableWildcardRoles.stream().anyMatch(w -> w.getSpace().matchesWildcard(space)));
+            return Stream.concat(directHits, spacesFromWildcards).collect(Collectors.toSet());
+        }
+        else {
+            return directHits.collect(Collectors.toSet());
+        }
     }
 
     public Set<UUID> getInstancesWithExplicitPermission(List<FunctionalityInstance> permissions, Functionality functionality) {

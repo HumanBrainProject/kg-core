@@ -85,8 +85,8 @@ public class StructureRepository {
         database.createCollectionIfItDoesntExist(PROPERTY_IN_TYPE);
     }
 
-    @Cacheable("reflectedSpaces")
-    public synchronized List<SpaceName> reflectSpaces(DataStage stage) {
+    @Cacheable(value = "reflectedSpaces", sync = true)
+    public List<SpaceName> reflectSpaces(DataStage stage) {
         logger.debug("Missing cache hit: Fetching space reflection from database");
         return doReflectSpaces(stage);
     }
@@ -102,7 +102,7 @@ public class StructureRepository {
         logger.debug("Cache evict: clearing cache for reflected spaces");
     }
 
-    private synchronized List<SpaceName> doReflectSpaces(DataStage stage){
+    private List<SpaceName> doReflectSpaces(DataStage stage){
         final ArangoDatabase database = arangoDatabases.getByStage(stage);
         final List<CollectionEntity> spaces = database.getCollections(new CollectionsReadOptions().excludeSystem(true)).stream().filter(c -> c.getType() == CollectionType.DOCUMENT).filter(c -> !InternalSpace.INTERNAL_SPACENAMES.contains(c.getName())).distinct().collect(Collectors.toList());
         if(spaces.isEmpty()){
@@ -131,8 +131,8 @@ public class StructureRepository {
 
 
 
-    @Cacheable("spaceSpecifications")
-    public synchronized List<Space> getSpaceSpecifications() {
+    @Cacheable(value = "spaceSpecifications", sync = true)
+    public List<Space> getSpaceSpecifications() {
         logger.debug("Missing cache hit: Fetching space specifications from database");
         return doGetSpaceSpecifications();
     }
@@ -148,7 +148,7 @@ public class StructureRepository {
         logger.debug("Cache evict: clearing cache for space specifications");
     }
 
-    private synchronized List<Space> doGetSpaceSpecifications(){
+    private List<Space> doGetSpaceSpecifications(){
         AQL aql = new AQL();
         final ArangoDatabase structureDB = arangoDatabases.getStructureDB();
         if(structureDB.collection(SPACES.getCollectionName()).exists()) {
@@ -163,8 +163,8 @@ public class StructureRepository {
     }
 
 
-    @Cacheable("typesInSpaceBySpec")
-    public synchronized List<String> getTypesInSpaceBySpecification(SpaceName spaceName) {
+    @Cacheable(value = "typesInSpaceBySpec", sync = true)
+    public List<String> getTypesInSpaceBySpecification(SpaceName spaceName) {
         logger.debug(String.format("Missing cache hit: Fetching types in space %s specifications from database", spaceName.getName()));
         return doGetTypesInSpaceBySpecification(spaceName);
     }
@@ -180,8 +180,8 @@ public class StructureRepository {
         logger.debug("Cache evict: clearing cache for type in space specifications");
     }
 
-    @Cacheable("typeSpecification")
-    public synchronized DynamicJson getTypeSpecification(String typeName) {
+    @Cacheable(value = "typeSpecification", sync = true)
+    public DynamicJson getTypeSpecification(String typeName) {
         logger.debug(String.format("Missing cache hit: Fetching type specification for %s from database", typeName));
         return doGetTypeSpecification(typeName, TYPES);
     }
@@ -197,7 +197,7 @@ public class StructureRepository {
         logger.debug(String.format("Cache evict: clearing cache for type specification %s", typeName));
     }
 
-    private synchronized List<String> doGetTypesInSpaceBySpecification(SpaceName spaceName){
+    private List<String> doGetTypesInSpaceBySpecification(SpaceName spaceName){
         final ArangoDatabase structureDB = arangoDatabases.getStructureDB();
         if(structureDB.collection(TYPE_IN_SPACE.getCollectionName()).exists()) {
             final UUID spaceUUID = spaceSpecificationRef(spaceName.getName());
@@ -212,8 +212,8 @@ public class StructureRepository {
         return Collections.emptyList();
     }
 
-    @Cacheable("clientSpecificTypeSpecification")
-    public synchronized DynamicJson getClientSpecificTypeSpecification(String typeName, SpaceName clientSpaceName) {
+    @Cacheable(value = "clientSpecificTypeSpecification", sync = true)
+    public  DynamicJson getClientSpecificTypeSpecification(String typeName, SpaceName clientSpaceName) {
         logger.debug(String.format("Missing cache hit: Fetching type specification for %s from database (client: %s)", typeName, clientSpaceName.getName()));
         return doGetTypeSpecification(typeName, clientTypesCollection(clientSpaceName.getName()));
     }
@@ -229,7 +229,7 @@ public class StructureRepository {
         logger.debug(String.format("Cache evict: clearing cache for type specification %s (client: %s)", typeName, clientSpaceName.getName()));
     }
 
-    private synchronized DynamicJson doGetTypeSpecification(String typeName, ArangoCollectionReference collectionReference) {
+    private DynamicJson doGetTypeSpecification(String typeName, ArangoCollectionReference collectionReference) {
         final ArangoDatabase structureDB = arangoDatabases.getStructureDB();
         if (structureDB.collection(collectionReference.getCollectionName()).exists()) {
             final UUID typeUUID = typeSpecificationRef(typeName);
@@ -246,8 +246,8 @@ public class StructureRepository {
         return null;
     }
 
-    @Cacheable("typesInSpace")
-    public synchronized List<TypeWithInstanceCountReflection> reflectTypesInSpace(DataStage stage, SpaceName name) {
+    @Cacheable(value = "typesInSpace", sync = true)
+    public List<TypeWithInstanceCountReflection> reflectTypesInSpace(DataStage stage, SpaceName name) {
         logger.debug(String.format("Missing cache hit: Reflecting types in space %s (stage %s)", name, stage.name()));
         return doReflectTypesInSpace(stage, name);
     }
@@ -263,7 +263,7 @@ public class StructureRepository {
         logger.debug(String.format("Cache evict: clearing cache for types in space %s (stage %s)", name, stage.name()));
     }
 
-    private synchronized List<TypeWithInstanceCountReflection> doReflectTypesInSpace(DataStage stage, SpaceName name){
+    private List<TypeWithInstanceCountReflection> doReflectTypesInSpace(DataStage stage, SpaceName name){
         AQL aql = new AQL();
         Map<String, Object> bindVars = new HashMap<>();
         aql.addLine(AQL.trust("LET typeGroups=(FOR i in @@collection"));
@@ -279,8 +279,8 @@ public class StructureRepository {
     }
 
 
-    @Cacheable("propertySpecification")
-    public synchronized DynamicJson getPropertyBySpecification(String propertyName) {
+    @Cacheable(value = "propertySpecification", sync = true)
+    public DynamicJson getPropertyBySpecification(String propertyName) {
         logger.debug(String.format("Missing cache hit: Reflecting property specification %s", propertyName));
         return doGetPropertyBySpecification(propertyName, PROPERTIES);
     }
@@ -296,8 +296,8 @@ public class StructureRepository {
         logger.debug(String.format("Cache evict: clearing cache for property %s", propertyName));
     }
 
-    @Cacheable("clientSpecificPropertySpecification")
-    public synchronized DynamicJson getClientSpecificPropertyBySpecification(String propertyName, SpaceName clientSpaceName) {
+    @Cacheable(value = "clientSpecificPropertySpecification", sync = true)
+    public DynamicJson getClientSpecificPropertyBySpecification(String propertyName, SpaceName clientSpaceName) {
         logger.debug(String.format("Missing cache hit: Reflecting property specification %s (client: %s)", propertyName, clientSpaceName.getName()));
         return doGetPropertyBySpecification(propertyName, clientTypesCollection(clientSpaceName.getName()));
     }
@@ -313,7 +313,7 @@ public class StructureRepository {
         logger.debug(String.format("Cache evict: clearing cache for property %s (client: %s)", propertyName, clientSpaceName.getName()));
     }
 
-    private synchronized DynamicJson doGetPropertyBySpecification(String propertyName, ArangoCollectionReference collectionReference) {
+    private DynamicJson doGetPropertyBySpecification(String propertyName, ArangoCollectionReference collectionReference) {
         final ArangoDatabase structureDB = arangoDatabases.getStructureDB();
         if (structureDB.collection(collectionReference.getCollectionName()).exists()) {
             final UUID propertyUUID = propertySpecificationRef(propertyName);
@@ -328,8 +328,8 @@ public class StructureRepository {
     }
 
 
-    @Cacheable("propertiesInTypeSpecification")
-    public synchronized List<DynamicJson> getPropertiesOfTypeBySpecification(String type) {
+    @Cacheable(value = "propertiesInTypeSpecification", sync = true)
+    public List<DynamicJson> getPropertiesOfTypeBySpecification(String type) {
         logger.debug(String.format("Missing cache hit: Reflecting properties for type %s", type));
         return doGetPropertiesOfTypeBySpecification(type, PROPERTY_IN_TYPE);
     }
@@ -345,8 +345,8 @@ public class StructureRepository {
         logger.debug(String.format("Cache evict: clearing cache for properties in type %s", type));
     }
 
-    @Cacheable("clientSpecificPropertiesInTypeSpecification")
-    public synchronized List<DynamicJson> getClientSpecificPropertiesOfTypeBySpecification(String type, SpaceName clientSpaceName) {
+    @Cacheable(value = "clientSpecificPropertiesInTypeSpecification", sync = true)
+    public List<DynamicJson> getClientSpecificPropertiesOfTypeBySpecification(String type, SpaceName clientSpaceName) {
         logger.debug(String.format("Missing cache hit: Reflecting properties for type %s (client: %s)", type, clientSpaceName.getName()));
         return doGetPropertiesOfTypeBySpecification(type, clientPropertyInTypeCollection(clientSpaceName.getName()));
     }
@@ -362,7 +362,7 @@ public class StructureRepository {
         logger.debug(String.format("Cache evict: clearing cache for properties in type %s (client: %s)", type, clientSpaceName.getName()));
     }
 
-    private synchronized List<DynamicJson> doGetPropertiesOfTypeBySpecification(String type, ArangoCollectionReference collectionReference) {
+    private List<DynamicJson> doGetPropertiesOfTypeBySpecification(String type, ArangoCollectionReference collectionReference) {
         final ArangoDatabase structureDB = arangoDatabases.getStructureDB();
         if (structureDB.collection(collectionReference.getCollectionName()).exists()) {
             final UUID typeUUID = typeSpecificationRef(type);
@@ -379,8 +379,8 @@ public class StructureRepository {
         return Collections.emptyList();
     }
 
-    @Cacheable("propertiesOfTypeInSpace")
-    public synchronized List<PropertyOfTypeInSpaceReflection> reflectPropertiesOfTypeInSpace(DataStage stage, SpaceName spaceName, String type) {
+    @Cacheable(value = "propertiesOfTypeInSpace", sync = true)
+    public List<PropertyOfTypeInSpaceReflection> reflectPropertiesOfTypeInSpace(DataStage stage, SpaceName spaceName, String type) {
         logger.debug(String.format("Missing cache hit: Reflecting properties of type %s in space %s (stage %s)", type, spaceName, stage.name()));
         return doReflectPropertiesOfTypeInSpace(stage, spaceName, type);
     }
@@ -396,7 +396,7 @@ public class StructureRepository {
         logger.debug(String.format("Cache evict: clearing cache for properties of type %s in space %s (stage %s)", type, spaceName, stage.name()));
     }
 
-    private synchronized List<PropertyOfTypeInSpaceReflection> doReflectPropertiesOfTypeInSpace(DataStage stage, SpaceName spaceName, String type){
+    private List<PropertyOfTypeInSpaceReflection> doReflectPropertiesOfTypeInSpace(DataStage stage, SpaceName spaceName, String type){
         AQL aql = new AQL();
         Map<String, Object> bindVars = new HashMap<>();
         aql.addLine(AQL.trust("LET attGroups = (FOR d IN @@collection"));
@@ -412,8 +412,8 @@ public class StructureRepository {
         return Collections.unmodifiableList(arangoDatabases.getByStage(stage).query(aql.build().getValue(), bindVars, PropertyOfTypeInSpaceReflection.class).asListRemaining());
     }
 
-    @Cacheable("targetTypes")
-    public synchronized List<TargetTypeReflection> reflectTargetTypes(DataStage stage, SpaceName spaceName, String type, String property) {
+    @Cacheable(value = "targetTypes", sync = true)
+    public List<TargetTypeReflection> reflectTargetTypes(DataStage stage, SpaceName spaceName, String type, String property) {
         logger.debug(String.format("Missing cache hit: Reflecting target type of property %s of type %s in space %s (stage %s)", property, type, spaceName, stage.name()));
         return doReflectTargetTypes(stage, spaceName, type, property);
     }
@@ -429,7 +429,7 @@ public class StructureRepository {
         logger.debug(String.format("Cache evict: clearing cache for target type of property %s of type %s in space %s (stage %s)", property, type, spaceName, stage.name()));
     }
 
-    private synchronized List<TargetTypeReflection> doReflectTargetTypes(DataStage stage, SpaceName spaceName, String type, String property){
+    private List<TargetTypeReflection> doReflectTargetTypes(DataStage stage, SpaceName spaceName, String type, String property){
         final ArangoCollectionReference edgeCollection = new ArangoCollectionReference(property, true);
         //It's a property which actually does have target types
         AQL aql = new AQL();

@@ -207,12 +207,14 @@ public class CacheController {
         final Set<String> updateIds = getUpdateIds(beforeTransactionById, afterTransactionById);
         final List<Space> allSpaces = this.metaDataController.getSpaces(stage, authContext.getUserWithRoles());
 
-        if (hasCreatedOrRemovedSpaces(allSpaces, beforeTransactionById, afterTransactionById, createIds, deleteIds)) {
-            structureRepository.evictReflectedSpacesCache(stage);
-        }
-        final Set<SpaceName> deferredCacheEvictionSpaces = allSpaces.stream().filter(Space::isDeferCache).map(Space::getName).collect(Collectors.toSet());
 
         final Set<SpaceName> spaceTypesForCacheEviction = findSpacesForCacheEviction(beforeTransactionById, afterTransactionById, createIds, deleteIds, updateIds);
+        final boolean forceReflectSpaces = hasCreatedOrRemovedSpaces(allSpaces, beforeTransactionById, afterTransactionById, createIds, deleteIds) || allSpaces.stream().anyMatch(s -> !s.isExistsInDB() && spaceTypesForCacheEviction.contains(s.getName()));
+        if (forceReflectSpaces) {
+            structureRepository.evictReflectedSpacesCache(stage);
+        }
+
+        final Set<SpaceName> deferredCacheEvictionSpaces = allSpaces.stream().filter(Space::isDeferCache).map(Space::getName).collect(Collectors.toSet());
         //Evict all of those which are not deferred
         spaceTypesForCacheEviction.stream().filter(s -> !deferredCacheEvictionSpaces.contains(s)).forEach(s -> structureRepository.evictTypesInSpaceCache(stage, s));
         spaceTypesForCacheEviction.stream().filter(deferredCacheEvictionSpaces::contains).forEach(s -> deferredSpaceTypesForCacheEviction.put(new Tuple<>(s, stage), LocalDateTime.now()));

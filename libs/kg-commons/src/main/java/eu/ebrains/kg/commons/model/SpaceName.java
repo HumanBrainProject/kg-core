@@ -99,4 +99,12 @@ public class SpaceName {
         }
         return originalSpace;
     }
+
+    public boolean isWildcard(){
+        return getName()!=null && getName().endsWith("*");
+    }
+
+    public boolean matchesWildcard(SpaceName space){
+        return isWildcard() && space!=null && space.getName()!=null && space.getName().startsWith(getName().substring(0, getName().length()-1));
+    }
 }

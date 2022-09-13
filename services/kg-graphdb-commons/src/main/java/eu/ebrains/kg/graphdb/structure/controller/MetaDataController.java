@@ -433,13 +433,21 @@ public class MetaDataController {
     }
 
 
+    public Set<SpaceName> getSpaceNames(DataStage stage, UserWithRoles userWithRoles){
+        return getSpaces(stage, userWithRoles).stream().map(Space::getName).collect(Collectors.toSet());
+    }
+
     public List<Space> getSpaces(DataStage stage, UserWithRoles userWithRoles) {
         final List<SpaceName> reflectedSpaces = this.structureRepository.reflectSpaces(stage);
         final List<Space> spaceSpecifications = this.structureRepository.getSpaceSpecifications();
         final Set<SpaceName> spacesWithSpecifications = spaceSpecifications.stream().map(Space::getName).collect(Collectors.toSet());
         final Stream<Space> allSpaces = Stream.concat(spaceSpecifications.stream().map(s -> new Space(s.getName(), s.isAutoRelease(), s.isClientSpace(), s.isDeferCache())), reflectedSpaces.stream().filter(s -> !spacesWithSpecifications.contains(s))
                 //These are the types without specification so they fall back to default settings.
-                .map(s -> new Space(s, false, false, false).setReflected(true)))
+                .map(s -> {
+                    final Space space = new Space(s, false, false, false);
+                    space.setReflected(true);
+                    return space;
+                }))
                 .peek(s -> {
                     if (reflectedSpaces.contains(s.getName())) {
                         s.setExistsInDB(true);
@@ -448,7 +456,8 @@ public class MetaDataController {
         Set<SpaceName> whitelistedSpaces = permissionsController.whitelistedSpaceReads(userWithRoles);
         List<Space> spaceDefinitions;
         if (whitelistedSpaces != null) {
-            spaceDefinitions = allSpaces.filter(s -> whitelistedSpaces.contains(s.getName())).collect(Collectors.toList());
+            final Set<SpaceName> wildcards = whitelistedSpaces.stream().filter(SpaceName::isWildcard).collect(Collectors.toSet());
+            spaceDefinitions = allSpaces.filter(s -> whitelistedSpaces.contains(s.getName()) || wildcards.stream().anyMatch(w -> w.matchesWildcard(s.getName()))).collect(Collectors.toList());
         } else {
             spaceDefinitions = allSpaces.collect(Collectors.toList());
         }

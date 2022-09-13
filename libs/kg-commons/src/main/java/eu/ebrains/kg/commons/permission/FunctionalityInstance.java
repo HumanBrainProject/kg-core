@@ -99,16 +99,9 @@ public class FunctionalityInstance {
         return null;
     }
 
-    public boolean isWildcardRole(){
-        return id == null && space != null && space.getName().endsWith("*");
-    }
-
     public boolean matchesWildcard(FunctionalityInstance i){
-        if(isWildcardRole() && i!=null){
-            // Only space level wildcards are allowed
-            if(i.getFunctionality().equals(getFunctionality()) && i.getId() == null && i.getSpace()!=null){
-                return i.getSpace().getName().startsWith(getSpace().getName().substring(0, getSpace().getName().length()-1));
-            }
+        if(getSpace()!=null && i!=null && i.getFunctionality().equals(getFunctionality()) && i.getId() == null){
+            return getSpace().matchesWildcard(i.getSpace());
         }
         return false;
     }

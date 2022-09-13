@@ -24,7 +24,6 @@ package eu.ebrains.kg.graphdb.commons.controller;
 
 import eu.ebrains.kg.arango.commons.aqlBuilder.AQL;
 import eu.ebrains.kg.arango.commons.model.ArangoCollectionReference;
-import eu.ebrains.kg.commons.IdUtils;
 import eu.ebrains.kg.commons.model.DataStage;
 import eu.ebrains.kg.commons.model.SpaceName;
 import eu.ebrains.kg.commons.models.UserWithRoles;
@@ -40,17 +39,15 @@ import java.util.stream.Collectors;
 public class PermissionsController {
 
     private final Permissions permissions;
-    private final IdUtils idUtils;
 
-    public PermissionsController(Permissions permissions, IdUtils idUtils) {
+    public PermissionsController(Permissions permissions) {
         this.permissions = permissions;
-        this.idUtils = idUtils;
     }
 
     public Set<SpaceName> whitelistedSpaceReads(UserWithRoles userWithRoles){
         if(!permissions.hasGlobalPermission(userWithRoles, Functionality.READ) && !permissions.hasGlobalPermission(userWithRoles, Functionality.READ_RELEASED) ){
             //We only need to filter if there is no "global" read available...
-            return userWithRoles.getPermissions().stream().filter(p -> p.getFunctionality() == Functionality.READ || p.getFunctionality() == Functionality.READ_RELEASED).map(FunctionalityInstance::getSpace).filter(Objects::nonNull).collect(Collectors.toSet());
+            return userWithRoles.getPermissions().stream().filter(p -> p.getId() == null && (p.getFunctionality() == Functionality.READ || p.getFunctionality() == Functionality.READ_RELEASED)).map(FunctionalityInstance::getSpace).filter(Objects::nonNull).collect(Collectors.toSet());
         }
         return null;
     }
@@ -70,7 +67,7 @@ public class PermissionsController {
 
     public Set<SpaceName> removeSpacesWithoutReadAccess(Set<SpaceName> spaces, UserWithRoles userWithRoles, DataStage stage){
         Functionality readFunctionality = getReadFunctionality(stage);
-        Set<SpaceName> spacesWithReadPermission = permissions.getSpacesForPermission(userWithRoles, readFunctionality);
+        Set<SpaceName> spacesWithReadPermission = permissions.getSpacesForPermission(spaces, userWithRoles, readFunctionality);
         spaces.retainAll(spacesWithReadPermission);
         return spaces;
     }
@@ -81,12 +78,12 @@ public class PermissionsController {
     }
 
 
-    public Map<String, Object> whitelistFilterForReadInstances(UserWithRoles userWithRoles, DataStage stage) {
+    public Map<String, Object> whitelistFilterForReadInstances(Set<SpaceName> possibleSpaces, UserWithRoles userWithRoles, DataStage stage) {
         Functionality readFunctionality = getReadFunctionality(stage);
         if (!permissions.hasGlobalPermission(userWithRoles, readFunctionality)){
             //We only need to filter if there is no "global" read available...
             Map<String, Object> bindVars = new HashMap<>();
-            Set<SpaceName> spacesWithReadPermission = permissions.getSpacesForPermission(userWithRoles, readFunctionality);
+            Set<SpaceName> spacesWithReadPermission = permissions.getSpacesForPermission(possibleSpaces, userWithRoles, readFunctionality);
             Set<UUID> instancesWithReadPermissions = getInstancesWithExplicitPermission(userWithRoles, stage);
             bindVars.put(AQL.READ_ACCESS_BY_SPACE, spacesWithReadPermission != null ? spacesWithReadPermission.stream().map(s -> ArangoCollectionReference.fromSpace(s).getCollectionName()).collect(Collectors.toList()) : Collections.emptyList());
             bindVars.put(AQL.READ_ACCESS_BY_INVITATION, instancesWithReadPermissions != null ? instancesWithReadPermissions.stream().collect(Collectors.toMap(k -> k, v -> Collections.emptyMap())): Collections.emptyList());
