@@ -127,12 +127,16 @@ public class ArangoRepositoryInstances {
     @ExposesData
     public NormalizedJsonLd getQuery(SpaceName space, UUID id) {
         ArangoDocument document = arangoRepositoryCommons.getDocument(DataStage.IN_PROGRESS, ArangoCollectionReference.fromSpace(space).doc(id));
+
         if (document == null || !document.getDoc().types().contains(EBRAINSVocabulary.META_QUERY_TYPE)) {
             //If it's not a query, it's not exposed...
             return null;
         }
         //We explicitly do not check for permissions because queries can be read by everyone
-        return document.getDoc();
+        final NormalizedJsonLd query = document.getDoc();
+        query.removeAllInternalProperties();
+        query.remove(EBRAINSVocabulary.META_ALTERNATIVE);
+        return query;
     }
 
 
