@@ -25,30 +25,27 @@ package eu.ebrains.kg.primaryStore.api;
 import eu.ebrains.kg.commons.jsonld.JsonLdId;
 import eu.ebrains.kg.commons.jsonld.NormalizedJsonLd;
 import eu.ebrains.kg.commons.model.Event;
-import eu.ebrains.kg.test.APITest;
+import eu.ebrains.kg.test.TestCategories;
 import eu.ebrains.kg.test.TestObjectFactory;
-import org.junit.Ignore;
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Tag;
+import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.test.context.junit4.SpringRunner;
 
 import java.util.Date;
 import java.util.UUID;
 
-@RunWith(SpringRunner.class)
 @SpringBootTest
-@Category(APITest.class)
-@Ignore //TODO fix test
+@Tag(TestCategories.API)
+@Disabled //TODO fix test
 public class PrimaryStoreTest {
 
     @Autowired
     PrimaryStoreEventsAPI primaryStore;
 
     @Test
-    @Ignore("This is an integration test - make sure you wrap it with the docker-compose context it needs.")
+    @Disabled("This is an integration test - make sure you wrap it with the docker-compose context it needs.")
     public void testRandomEvent(){
         NormalizedJsonLd data = new NormalizedJsonLd();
         data.addProperty("name", "test");

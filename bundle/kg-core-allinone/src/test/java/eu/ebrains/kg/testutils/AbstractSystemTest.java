@@ -36,20 +36,15 @@ import eu.ebrains.kg.commons.model.PaginationParam;
 import eu.ebrains.kg.commons.permission.roles.Role;
 import eu.ebrains.kg.commons.permission.roles.RoleMapping;
 import eu.ebrains.kg.core.api.instances.TestContext;
-import eu.ebrains.kg.test.APITest;
-import org.junit.experimental.categories.Category;
-import org.junit.runner.RunWith;
 import org.keycloak.admin.client.Keycloak;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.cache.CacheManager;
 import org.springframework.test.context.TestPropertySource;
-import org.springframework.test.context.junit4.SpringRunner;
 
 import java.util.List;
 
-@RunWith(SpringRunner.class)
 @SpringBootTest(classes = KgCoreAllInOne.class, webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @TestPropertySource(properties = {"KEYCLOAK_ISSUER_URI = http://invalid/", ""})
 public abstract class AbstractSystemTest {

@@ -23,18 +23,14 @@
 package eu.ebrains.kg.graphdb.types;
 
 
-import eu.ebrains.kg.test.APITest;
-import org.junit.Ignore;
-import org.junit.experimental.categories.Category;
-import org.junit.runner.RunWith;
+import eu.ebrains.kg.test.TestCategories;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Tag;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.test.context.TestPropertySource;
-import org.springframework.test.context.junit4.SpringRunner;
 
-@RunWith(SpringRunner.class)
 @SpringBootTest
-@Ignore //TODO reevaluate if the tests shall be kept
-@Category(APITest.class)
+@Disabled //TODO reevaluate if the tests shall be kept
+@Tag(TestCategories.API)
 public class StructureTest {
 
 //

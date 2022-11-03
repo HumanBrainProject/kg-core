@@ -24,21 +24,18 @@ package eu.ebrains.kg.release.api;
 
 import eu.ebrains.kg.commons.IdUtils;
 import eu.ebrains.kg.commons.model.SpaceName;
-import eu.ebrains.kg.test.APITest;
-import org.junit.Ignore;
-import org.junit.experimental.categories.Category;
-import org.junit.runner.RunWith;
+import eu.ebrains.kg.test.TestCategories;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.test.context.junit4.SpringRunner;
 
 import java.util.UUID;
 
 //FIXME - We need to transfer this to a system test (in the bundle)
-@Ignore
-@RunWith(SpringRunner.class)
+@Disabled
 @SpringBootTest
-@Category(APITest.class)
+@Tag(TestCategories.API)
 public class ReleaseApiTest {
 
     @Autowired

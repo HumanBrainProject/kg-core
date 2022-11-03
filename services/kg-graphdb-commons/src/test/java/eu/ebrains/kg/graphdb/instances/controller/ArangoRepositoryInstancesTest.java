@@ -26,25 +26,21 @@ import eu.ebrains.kg.arango.commons.model.ArangoCollectionReference;
 import eu.ebrains.kg.commons.jsonld.NormalizedJsonLd;
 import eu.ebrains.kg.commons.model.*;
 import eu.ebrains.kg.graphdb.ingestion.controller.TodoListProcessor;
-import eu.ebrains.kg.test.APITest;
+import eu.ebrains.kg.test.TestCategories;
 import eu.ebrains.kg.test.TestObjectFactory;
-import org.junit.Ignore;
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Tag;
+import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.test.context.TestPropertySource;
-import org.springframework.test.context.junit4.SpringRunner;
 
 import java.util.UUID;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 
-@RunWith(SpringRunner.class)
 @SpringBootTest
-@Category(APITest.class)
-@Ignore //TODO fix test
+@Tag(TestCategories.API)
+@Disabled //TODO fix test
 public class ArangoRepositoryInstancesTest {
 
     @Autowired
@@ -52,8 +48,6 @@ public class ArangoRepositoryInstancesTest {
 
     @Autowired
     TodoListProcessor todoListProcessor;
-
-    private final SpaceName space = TestObjectFactory.SIMPSONS;
     private final DataStage stage = DataStage.NATIVE;
 
     private final ArangoCollectionReference simpsons = ArangoCollectionReference.fromSpace(TestObjectFactory.SIMPSONS);
@@ -99,6 +93,6 @@ public class ArangoRepositoryInstancesTest {
         assertEquals(1, familyMembers.getSize());
         assertEquals(1, familyMembers.getFrom());
         assertEquals(Long.valueOf(2), familyMembers.getTotalResults());
-        assertEquals("Although the pagination is set to 1, there are more elements", 1, familyMembers.getData().size());
+        assertEquals(1, familyMembers.getData().size(), "Although the pagination is set to 1, there are more elements");
     }
 }

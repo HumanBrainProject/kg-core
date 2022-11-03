@@ -31,7 +31,7 @@ import eu.ebrains.kg.commons.model.Result;
 import eu.ebrains.kg.core.api.Instances;
 import eu.ebrains.kg.core.model.ExposedStage;
 import eu.ebrains.kg.testutils.TestDataFactory;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;

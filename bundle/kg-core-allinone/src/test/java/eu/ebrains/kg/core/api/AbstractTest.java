@@ -31,7 +31,7 @@ import eu.ebrains.kg.commons.models.UserWithRoles;
 import eu.ebrains.kg.commons.permission.roles.Role;
 import eu.ebrains.kg.commons.permission.roles.RoleMapping;
 import eu.ebrains.kg.core.api.instances.TestContext;
-import org.junit.Assert;
+import org.junit.jupiter.api.Assertions;
 import org.mockito.Mockito;
 import org.springframework.http.ResponseEntity;
 
@@ -119,7 +119,7 @@ public abstract class AbstractTest {
                 assertion.then();
             }
             if(expectedException!=null){
-                Assert.fail(String.format("Was expecting %s exception but it wasn't triggered", expectedException.getName()));
+                Assertions.fail(String.format("Was expecting %s exception but it wasn't triggered", expectedException.getName()));
             }
         } catch (Exception e) {
             if(!e.getClass().equals(expectedException)){

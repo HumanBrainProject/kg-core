@@ -35,14 +35,14 @@ import eu.ebrains.kg.core.api.Types;
 import eu.ebrains.kg.core.api.properties.test.DefinePropertyGlobalTest;
 import eu.ebrains.kg.core.model.ExposedStage;
 import eu.ebrains.kg.testutils.AbstractFunctionalityTest;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 public class PropertiesTest extends AbstractFunctionalityTest {
 

@@ -33,15 +33,16 @@ import eu.ebrains.kg.commons.params.ReleaseTreeScope;
 import eu.ebrains.kg.core.api.Instances;
 import eu.ebrains.kg.core.model.ExposedStage;
 import eu.ebrains.kg.testutils.TestDataFactory;
-import org.junit.Ignore;
-import org.junit.Test;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 
 import java.io.IOException;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
+
 public class WorkflowSystemTest extends AbstractInstancesLoadTest {
 
     @Autowired
@@ -112,7 +113,7 @@ public class WorkflowSystemTest extends AbstractInstancesLoadTest {
         assertEquals("fooEUpdated", resultResponseEntity.getBody().getData().getAs("https://core.kg.ebrains.eu/fooE", String.class));
     }
 
-    @Ignore("Failing")
+    @Disabled("Failing")
     @Test
     public void testFullCycle() throws IOException {
         //Given

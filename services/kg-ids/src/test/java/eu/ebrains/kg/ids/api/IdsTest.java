@@ -27,28 +27,23 @@ import eu.ebrains.kg.commons.jsonld.InstanceId;
 import eu.ebrains.kg.commons.model.DataStage;
 import eu.ebrains.kg.commons.model.IdWithAlternatives;
 import eu.ebrains.kg.commons.model.SpaceName;
-import eu.ebrains.kg.test.APITest;
-import org.junit.Ignore;
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
-import org.junit.runner.RunWith;
+import eu.ebrains.kg.test.TestCategories;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Tag;
+import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.test.context.TestPropertySource;
-import org.springframework.test.context.junit4.SpringRunner;
 
 import java.util.Collections;
-import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 
-@Ignore //TODO fix test
-@RunWith(SpringRunner.class)
+@Disabled //TODO fix test
 @SpringBootTest
-@Category(APITest.class)
+@Tag(TestCategories.API)
 public class IdsTest {
 
     @Autowired

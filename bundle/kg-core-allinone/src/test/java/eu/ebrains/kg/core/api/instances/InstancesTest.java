@@ -31,20 +31,19 @@ import eu.ebrains.kg.commons.semantics.vocabularies.SchemaOrgVocabulary;
 import eu.ebrains.kg.core.api.Instances;
 import eu.ebrains.kg.core.api.instances.tests.*;
 import eu.ebrains.kg.core.model.ExposedStage;
-import eu.ebrains.kg.test.APITest;
 import eu.ebrains.kg.testutils.AbstractFunctionalityTest;
 import eu.ebrains.kg.testutils.TestDataFactory;
-import org.junit.Ignore;
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 
 import java.util.List;
+import java.util.Objects;
 import java.util.UUID;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 
 public class InstancesTest extends AbstractFunctionalityTest {
@@ -149,11 +148,11 @@ public class InstancesTest extends AbstractFunctionalityTest {
             NormalizedJsonLd document = test.assureValidPayloadIncludingId(test.response);
             test.originalInstance.keySet().stream().filter(k -> k.startsWith(TestDataFactory.DYNAMIC_FIELD_PREFIX)).forEach(k -> {
                 assertNotNull(document.get(k));
-                assertNotEquals("The dynamic properties should change when doing the update", test.originalInstance.get(k), document.get(k));
+                assertNotEquals(test.originalInstance.get(k), document.get(k), "The dynamic properties should change when doing the update");
             });
             test.originalInstance.keySet().stream().filter(k -> !k.startsWith(TestDataFactory.DYNAMIC_FIELD_PREFIX) && !k.startsWith(EBRAINSVocabulary.META)).forEach(k -> {
                 assertNotNull(document.get(k));
-                assertEquals("The non-dynamic properties should remain the same when doing a contribution", test.originalInstance.get(k), document.get(k));
+                assertEquals(test.originalInstance.get(k), document.get(k), "The non-dynamic properties should remain the same when doing a contribution");
             });
         });
     }
@@ -179,15 +178,15 @@ public class InstancesTest extends AbstractFunctionalityTest {
             test.originalInstance.keySet().stream().filter(k -> k.startsWith(TestDataFactory.DYNAMIC_FIELD_PREFIX)).forEach(k -> {
                 if (k.equals(TestDataFactory.DYNAMIC_FIELD_PREFIX + "0")) {
                     assertNotNull(document.get(k));
-                    assertNotEquals("The dynamic property should change when doing the update", test.originalInstance.get(k), document.get(k));
+                    assertNotEquals(test.originalInstance.get(k), document.get(k), "The dynamic property should change when doing the update");
                 } else {
                     assertNotNull(document.get(k));
-                    assertEquals("All other dynamic properties should remain the same after a partial update", test.originalInstance.get(k), document.get(k));
+                    assertEquals(test.originalInstance.get(k), document.get(k), "All other dynamic properties should remain the same after a partial update");
                 }
             });
             test.originalInstance.keySet().stream().filter(k -> !k.startsWith(TestDataFactory.DYNAMIC_FIELD_PREFIX) && !k.startsWith(EBRAINSVocabulary.META)).forEach(k -> {
                 assertNotNull(document.get(k));
-                assertEquals("The non-dynamic properties should remain the same when doing a contribution", test.originalInstance.get(k), document.get(k));
+                assertEquals(test.originalInstance.get(k), document.get(k), "The non-dynamic properties should remain the same when doing a contribution");
             });
         });
     }
@@ -244,7 +243,7 @@ public class InstancesTest extends AbstractFunctionalityTest {
         });
     }
 
-    @Ignore("this doesn't return a forbidden exception anymore but rather minimal metadata")
+    @Disabled("this doesn't return a forbidden exception anymore but rather minimal metadata")
     @Test
     @SuppressWarnings("java:S2699") //The assertion is handled within the "execution" part.
     public void getInstanceByIdForbidden() {
@@ -273,7 +272,7 @@ public class InstancesTest extends AbstractFunctionalityTest {
     }
 
 
-    @Ignore("this doesn't return a forbidden exception anymore but rather minimal metadata")
+    @Disabled("this doesn't return a forbidden exception anymore but rather minimal metadata")
     @Test
     @SuppressWarnings("java:S2699") //The assertion is handled within the "execution" part.
     public void getInstanceScopeSimpleForbidden() {
@@ -415,7 +414,7 @@ public class InstancesTest extends AbstractFunctionalityTest {
     }
 
     @Test
-    @Ignore("this doesn't return a forbidden exception anymore but rather minimal metadata")
+    @Disabled("this doesn't return a forbidden exception anymore but rather minimal metadata")
     public void getInstancesByIdsForbidden() {
         //Given
         GetInstancesByIdsTest test = new GetInstancesByIdsTest(ctx(NON_READ_IN_PROGRESS_ROLES), instances);
@@ -447,7 +446,7 @@ public class InstancesTest extends AbstractFunctionalityTest {
             assertTrue(test.response.getData().containsKey(test.identifier));
             Result<NormalizedJsonLd> result = test.response.getData().get(test.identifier);
             assertNotNull(result.getData());
-            assertEquals(result.getData(), test.updateResult.getBody().getData());
+            assertEquals(result.getData(), Objects.requireNonNull(test.updateResult.getBody()).getData());
 
         });
 
@@ -455,7 +454,7 @@ public class InstancesTest extends AbstractFunctionalityTest {
 
 
     @Test
-    @Ignore("this doesn't return a forbidden exception anymore but rather minimal metadata")
+    @Disabled("this doesn't return a forbidden exception anymore but rather minimal metadata")
     public void getInstancesByIdentifiersForbidden() {
         //Given
         GetInstancesByIdentifiersTest test = new GetInstancesByIdentifiersTest(ctx(NON_READ_IN_PROGRESS_ROLES), instances);
@@ -481,7 +480,7 @@ public class InstancesTest extends AbstractFunctionalityTest {
         test.execute(() -> {
             //Then
             ResponseEntity<Result<NormalizedJsonLd>> instanceById = test.fetchInstance();
-            assertEquals("We expect a 404 to be returned from instanceById", HttpStatus.NOT_FOUND, instanceById.getStatusCode());
+            assertEquals(HttpStatus.NOT_FOUND, instanceById.getStatusCode(), "We expect a 404 to be returned from instanceById");
         });
     }
 
@@ -548,7 +547,7 @@ public class InstancesTest extends AbstractFunctionalityTest {
         test.execute(() -> {
             //Then
             ResponseEntity<Result<NormalizedJsonLd>> releasedInstanceById = test.fetchInstance(ExposedStage.RELEASED);
-            assertEquals("We expect a 404 to be returned from instanceById in released scope", HttpStatus.NOT_FOUND, releasedInstanceById.getStatusCode());
+            assertEquals(HttpStatus.NOT_FOUND, releasedInstanceById.getStatusCode(), "We expect a 404 to be returned from instanceById in released scope");
 
             //Just to be sure - we want to check if the instance is still available in the inferred space.
             ResponseEntity<Result<NormalizedJsonLd>> inferredInstanceById = test.fetchInstance(ExposedStage.IN_PROGRESS);

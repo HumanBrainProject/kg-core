@@ -23,12 +23,10 @@
 package eu.ebrains.kg.graphdb.commons.controller;
 
 
-import eu.ebrains.kg.commons.IdUtils;
 import eu.ebrains.kg.commons.model.DataStage;
 import eu.ebrains.kg.commons.model.SpaceName;
 import eu.ebrains.kg.commons.permissions.controller.Permissions;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
 import java.util.Arrays;
@@ -36,6 +34,7 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 
+import static org.junit.jupiter.api.Assertions.*;
 public class PermissionsControllerTest  {
 
 
@@ -49,7 +48,7 @@ public class PermissionsControllerTest  {
 
         Set<SpaceName> spaceNames = permissionsController.removeSpacesWithoutReadAccess(new HashSet<>(Arrays.asList(new SpaceName("anotherSpace"), new SpaceName("canRead"))), null, DataStage.IN_PROGRESS);
 
-        Assert.assertEquals(readableSpaces, spaceNames);
+        assertEquals(readableSpaces, spaceNames);
     }
 
     @Test
@@ -61,6 +60,6 @@ public class PermissionsControllerTest  {
 
         Set<SpaceName> spaceNames = permissionsController.removeSpacesWithoutReadAccess(new HashSet<>(Arrays.asList(new SpaceName("anotherSpace"), new SpaceName("evenAnotherSpace"))), null, DataStage.IN_PROGRESS);
 
-        Assert.assertEquals(Collections.emptySet(), spaceNames);
+        assertEquals(Collections.emptySet(), spaceNames);
     }
 }

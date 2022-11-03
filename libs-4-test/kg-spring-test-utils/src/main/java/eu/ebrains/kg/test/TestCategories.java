@@ -16,5 +16,7 @@
 
 package eu.ebrains.kg.test;
 
-public interface LoadTest {
+public class TestCategories {
+    public final static String API = "api";
+    public final static String LOAD = "load";
 }

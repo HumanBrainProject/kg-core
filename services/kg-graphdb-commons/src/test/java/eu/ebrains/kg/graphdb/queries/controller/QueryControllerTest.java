@@ -31,28 +31,25 @@ import eu.ebrains.kg.commons.model.*;
 import eu.ebrains.kg.commons.models.UserWithRoles;
 import eu.ebrains.kg.commons.query.KgQuery;
 import eu.ebrains.kg.graphdb.ingestion.controller.TodoListProcessor;
-import eu.ebrains.kg.test.APITest;
+import eu.ebrains.kg.test.TestCategories;
 import eu.ebrains.kg.test.TestObjectFactory;
-import org.junit.Assert;
-import org.junit.Ignore;
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Tag;
+import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.test.context.TestPropertySource;
-import org.springframework.test.context.junit4.SpringRunner;
 
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
-@RunWith(SpringRunner.class)
+import static org.junit.jupiter.api.Assertions.*;
+
 @SpringBootTest
-@Category(APITest.class)
-@Ignore //TODO fix test
+@Tag(TestCategories.API)
+@Disabled //TODO fix test
 public class QueryControllerTest {
 
     @Autowired
@@ -82,11 +79,11 @@ public class QueryControllerTest {
         Paginated<NormalizedJsonLd> queryResult = queryController.query(userWithRoles, kgQuery, null, null, false).getResult();
 
         //Then
-        Assert.assertEquals(1, queryResult.getSize());
-        Assert.assertEquals(Long.valueOf(1), queryResult.getTotalResults());
-        Assert.assertEquals(1, queryResult.getData().size());
-        Assert.assertEquals("Homer", queryResult.getData().get(0).getAs("http://schema.org/givenName", String.class));
-        Assert.assertEquals("Simpson", queryResult.getData().get(0).getAs("http://schema.org/familyName", String.class));
+        assertEquals(1, queryResult.getSize());
+        assertEquals(Long.valueOf(1), queryResult.getTotalResults());
+        assertEquals(1, queryResult.getData().size());
+        assertEquals("Homer", queryResult.getData().get(0).getAs("http://schema.org/givenName", String.class));
+        assertEquals("Simpson", queryResult.getData().get(0).getAs("http://schema.org/familyName", String.class));
     }
 
     @Test
@@ -103,19 +100,19 @@ public class QueryControllerTest {
 
 
         //Then
-        Assert.assertEquals(1, queryResultA.getSize());
-        Assert.assertEquals(1, queryResultA.getData().size());
+        assertEquals(1, queryResultA.getSize());
+        assertEquals(1, queryResultA.getData().size());
 
-        Assert.assertEquals(1, queryResultB.getSize());
-        Assert.assertEquals(1, queryResultB.getData().size());
+        assertEquals(1, queryResultB.getSize());
+        assertEquals(1, queryResultB.getData().size());
 
-        Assert.assertNotEquals("The results of the queries are the same - this should not be the case, since we've paginated", queryResultA.getData().get(0), queryResultB.getData().get(0));
+        assertNotEquals(queryResultA.getData().get(0), queryResultB.getData().get(0), "The results of the queries are the same - this should not be the case, since we've paginated");
 
-        Assert.assertEquals(2, queryResultC.getSize());
-        Assert.assertEquals(2, queryResultC.getData().size());
+        assertEquals(2, queryResultC.getSize());
+        assertEquals(2, queryResultC.getData().size());
 
-        Assert.assertEquals(queryResultA.getData().get(0), queryResultC.getData().get(0));
-        Assert.assertEquals(queryResultB.getData().get(0), queryResultC.getData().get(1));
+        assertEquals(queryResultA.getData().get(0), queryResultC.getData().get(0));
+        assertEquals(queryResultB.getData().get(0), queryResultC.getData().get(1));
     }
 
     @Test
@@ -128,11 +125,11 @@ public class QueryControllerTest {
         Paginated<NormalizedJsonLd> queryResult = queryController.query(userWithRoles, kgQuery, null, null, false).getResult();
 
         //Then
-        Assert.assertEquals(1, queryResult.getSize());
-        Assert.assertEquals(Long.valueOf(1), queryResult.getTotalResults());
-        Assert.assertEquals(1, queryResult.getData().size());
-        Assert.assertEquals("Homer", queryResult.getData().get(0).getAs("http://schema.org/address", String.class));
-        Assert.assertEquals("Simpson", queryResult.getData().get(0).getAs("http://schema.org/streetAddress", String.class));
+        assertEquals(1, queryResult.getSize());
+        assertEquals(Long.valueOf(1), queryResult.getTotalResults());
+        assertEquals(1, queryResult.getData().size());
+        assertEquals("Homer", queryResult.getData().get(0).getAs("http://schema.org/address", String.class));
+        assertEquals("Simpson", queryResult.getData().get(0).getAs("http://schema.org/streetAddress", String.class));
     }
 
     @Test
@@ -146,7 +143,7 @@ public class QueryControllerTest {
         Paginated<NormalizedJsonLd> queryResult = queryController.query(userWithRoles, kgQuery, null, null, false).getResult();
 
         //Then
-        Assert.assertEquals(3, queryResult.getSize());
+        assertEquals(3, queryResult.getSize());
     }
 
     private void prepareHomerMargeAndMaggie() {
@@ -173,15 +170,15 @@ public class QueryControllerTest {
         Paginated<NormalizedJsonLd> queryResult = queryController.query(userWithRoles, kgQuery, null, null, false).getResult();
 
         //Then
-        Assert.assertEquals(3, queryResult.getSize());
+        assertEquals(3, queryResult.getSize());
         NormalizedJsonLd homer = queryResult.getData().get(0);
-        Assert.assertEquals("Homer", homer.getAs("http://schema.org/givenName", String.class));
+        assertEquals("Homer", homer.getAs("http://schema.org/givenName", String.class));
         List<NormalizedJsonLd> children = homer.getAsListOf("http://schema.org/children", NormalizedJsonLd.class);
-        Assert.assertEquals(1, children.size());
+        assertEquals(1, children.size());
         NormalizedJsonLd maggie = children.get(0);
-        Assert.assertEquals("Maggie", maggie.getAs("http://schema.org/givenName", String.class));
+        assertEquals("Maggie", maggie.getAs("http://schema.org/givenName", String.class));
         String parentConcatenation = maggie.getAs("http://schema.org/parents", String.class);
-        Assert.assertEquals("Homer, Marge", parentConcatenation);
+        assertEquals("Homer, Marge", parentConcatenation);
     }
 
 
@@ -201,11 +198,11 @@ public class QueryControllerTest {
         Paginated<NormalizedJsonLd> queryResultWithoutFilter = queryController.query(userWithRoles, kgQuery, null, null, false).getResult();
 
         //Then
-        Assert.assertEquals(1, queryResultWithMargeFilter.getSize());
-        Assert.assertEquals(1, queryResultWithHomerFilter.getSize());
-        Assert.assertEquals(3, queryResultWithoutFilter.getSize());
-        Assert.assertEquals("Marge", queryResultWithMargeFilter.getData().get(0).getAs("http://schema.org/givenName", String.class));
-        Assert.assertEquals("Homer", queryResultWithHomerFilter.getData().get(0).getAs("http://schema.org/givenName", String.class));
+        assertEquals(1, queryResultWithMargeFilter.getSize());
+        assertEquals(1, queryResultWithHomerFilter.getSize());
+        assertEquals(3, queryResultWithoutFilter.getSize());
+        assertEquals("Marge", queryResultWithMargeFilter.getData().get(0).getAs("http://schema.org/givenName", String.class));
+        assertEquals("Homer", queryResultWithHomerFilter.getData().get(0).getAs("http://schema.org/givenName", String.class));
     }
 
     @Test
@@ -224,12 +221,12 @@ public class QueryControllerTest {
         Paginated<NormalizedJsonLd> queryResultWithoutFilter = queryController.query(userWithRoles, kgQuery,  null, null, false).getResult();
 
         //Then
-        Assert.assertEquals(1, queryResultWithMargeFilter.getSize());
-        Assert.assertEquals(1, queryResultWithHomerFilter.getSize());
-        Assert.assertEquals("The fallback-value is \"Homer\" - if nothing is defined, the results should therefore be filtered by this value", 1, queryResultWithoutFilter.getSize());
-        Assert.assertEquals("Marge", queryResultWithMargeFilter.getData().get(0).getAs("http://schema.org/givenName", String.class));
-        Assert.assertEquals("Homer", queryResultWithHomerFilter.getData().get(0).getAs("http://schema.org/givenName", String.class));
-        Assert.assertEquals("Homer", queryResultWithoutFilter.getData().get(0).getAs("http://schema.org/givenName", String.class));
+        assertEquals(1, queryResultWithMargeFilter.getSize());
+        assertEquals(1, queryResultWithHomerFilter.getSize());
+        assertEquals(1, queryResultWithoutFilter.getSize(), "The fallback-value is \"Homer\" - if nothing is defined, the results should therefore be filtered by this value");
+        assertEquals("Marge", queryResultWithMargeFilter.getData().get(0).getAs("http://schema.org/givenName", String.class));
+        assertEquals("Homer", queryResultWithHomerFilter.getData().get(0).getAs("http://schema.org/givenName", String.class));
+        assertEquals("Homer", queryResultWithoutFilter.getData().get(0).getAs("http://schema.org/givenName", String.class));
 
     }
 
@@ -245,15 +242,15 @@ public class QueryControllerTest {
         Paginated<NormalizedJsonLd> queryResult = queryController.query(userWithRoles, kgQuery, null, null, false).getResult();
 
         //Then
-        Assert.assertEquals("We only expect Homer to appear due to the static filter", 1, queryResult.getSize());
+        assertEquals( 1, queryResult.getSize(), "We only expect Homer to appear due to the static filter");
         NormalizedJsonLd homer = queryResult.getData().get(0);
         List<NormalizedJsonLd> children = homer.getAsListOf("http://schema.org/children", NormalizedJsonLd.class);
-        Assert.assertEquals(1, children.size());
+        assertEquals(1, children.size());
         NormalizedJsonLd maggie = children.get(0);
-        Assert.assertEquals("Maggie", maggie.getAs("http://schema.org/givenName", String.class));
+        assertEquals("Maggie", maggie.getAs("http://schema.org/givenName", String.class));
         List<String> parents = maggie.getAsListOf("http://schema.org/maleParents", String.class);
-        Assert.assertEquals("We only expect a single parent since the query includes a type filter for Man only - so it's only Homer", 1, parents.size());
-        Assert.assertEquals("Homer", parents.get(0));
+        assertEquals(1, parents.size(), "We only expect a single parent since the query includes a type filter for Man only - so it's only Homer");
+        assertEquals("Homer", parents.get(0));
     }
 
 }

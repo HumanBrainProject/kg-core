@@ -28,24 +28,22 @@ import eu.ebrains.kg.commons.model.Event;
 import eu.ebrains.kg.commons.model.SpaceName;
 import eu.ebrains.kg.inference.api.InferenceAPI;
 import eu.ebrains.kg.test.TestObjectFactory;
-import org.junit.Assert;
-import org.junit.Ignore;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.test.context.junit4.SpringRunner;
 
 import java.io.IOException;
 import java.net.URISyntaxException;
 import java.util.List;
 import java.util.UUID;
 
+import static org.junit.jupiter.api.Assertions.*;
+
 //FIXME - We need to transfer this to a system test (in the bundle)
 
-@RunWith(SpringRunner.class)
 @SpringBootTest
-@Ignore
+@Disabled
 public class InferenceTest {
 
 
@@ -58,7 +56,7 @@ public class InferenceTest {
     private final SpaceName space = TestObjectFactory.SIMPSONS;
 
     @Test
-    public void singleObjectWithEmbeddedInsertionInference() throws IOException, URISyntaxException {
+    public void singleObjectWithEmbeddedInsertionInference()  {
         //Given
         UUID homerId = UUID.randomUUID();
         NormalizedJsonLd homer = TestObjectFactory.createJsonLd( "simpsons/homer.json", idUtils.buildAbsoluteUrl(homerId));
@@ -68,10 +66,10 @@ public class InferenceTest {
         List<Event> events = inference.infer(space.getName(), homerId);
 
         //Then
-        Assert.assertNotNull(events);
-        Assert.assertEquals(1, events.size());
+        assertNotNull(events);
+        assertEquals(1, events.size());
         Event event = events.get(0);
-        Assert.assertEquals(Event.Type.INSERT, event.getType());
+        assertEquals(Event.Type.INSERT, event.getType());
     }
 
     @Test
@@ -95,17 +93,17 @@ public class InferenceTest {
 
 
         //Then
-        Assert.assertNotNull(events);
-        Assert.assertEquals(1, events.size());
+        assertNotNull(events);
+        assertEquals(1, events.size());
         Event event = events.get(0);
-        Assert.assertEquals(Event.Type.INSERT, event.getType());
+        assertEquals(Event.Type.INSERT, event.getType());
 
         //We assume there are information from both instances in the inferred element now.
-        Assert.assertNotNull(event.getData().get("http://schema.org/age"));
-        Assert.assertNotNull(event.getData().get("http://schema.org/familyName"));
+        assertNotNull(event.getData().get("http://schema.org/age"));
+        assertNotNull(event.getData().get("http://schema.org/familyName"));
 
         //And we ensure, that the updated value (the most recently inserted one) wins.
-        Assert.assertEquals("Bartholomew", event.getData().get("http://schema.org/givenName"));
+        assertEquals("Bartholomew", event.getData().get("http://schema.org/givenName"));
 
     }
 

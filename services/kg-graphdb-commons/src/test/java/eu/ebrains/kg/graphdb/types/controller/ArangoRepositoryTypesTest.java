@@ -23,31 +23,20 @@
 package eu.ebrains.kg.graphdb.types.controller;
 
 import eu.ebrains.kg.arango.commons.model.ArangoCollectionReference;
-import eu.ebrains.kg.commons.jsonld.NormalizedJsonLd;
 import eu.ebrains.kg.commons.model.DataStage;
-import eu.ebrains.kg.commons.model.Paginated;
-import eu.ebrains.kg.commons.model.SpaceName;
 import eu.ebrains.kg.graphdb.ingestion.controller.TodoListProcessor;
-import eu.ebrains.kg.test.APITest;
+import eu.ebrains.kg.test.TestCategories;
 import eu.ebrains.kg.test.TestObjectFactory;
-import org.junit.Ignore;
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Tag;
+import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.test.context.TestPropertySource;
-import org.springframework.test.context.junit4.SpringRunner;
 
-import java.util.UUID;
 
-import static org.junit.Assert.*;
-
-@RunWith(SpringRunner.class)
 @SpringBootTest
-@Category(APITest.class)
-
-@Ignore //TODO fix test
+@Tag(TestCategories.API)
+@Disabled //TODO fix test
 public class ArangoRepositoryTypesTest {
 
 

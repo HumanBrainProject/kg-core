@@ -25,11 +25,11 @@ package eu.ebrains.kg.graphdb.queries.controller;
 import eu.ebrains.kg.commons.jsonld.NormalizedJsonLd;
 import eu.ebrains.kg.graphdb.queries.model.spec.Specification;
 import eu.ebrains.kg.test.TestObjectFactory;
-import org.junit.Assert;
-import org.junit.Ignore;
-import org.junit.Test;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
 
-@Ignore //TODO fix test
+import static org.junit.jupiter.api.Assertions.*;
+@Disabled //TODO fix test
 public class SpecificationInterpreterTest {
 
     @Test
@@ -42,8 +42,8 @@ public class SpecificationInterpreterTest {
         Specification specification = specificationInterpreter.readSpecification(query);
 
         //Then
-        Assert.assertEquals(2, specification.getProperties().size());
-        Assert.assertEquals("https://thesimpsons.com/FamilyMember", specification.getRootType().getName());
+        assertEquals(2, specification.getProperties().size());
+        assertEquals("https://thesimpsons.com/FamilyMember", specification.getRootType().getName());
     }
 
 

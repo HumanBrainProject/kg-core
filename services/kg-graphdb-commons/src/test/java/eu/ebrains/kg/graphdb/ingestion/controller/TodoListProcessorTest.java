@@ -33,26 +33,20 @@ import eu.ebrains.kg.commons.model.SpaceName;
 import eu.ebrains.kg.graphdb.commons.controller.ArangoDatabases;
 import eu.ebrains.kg.graphdb.commons.controller.ArangoRepositoryCommons;
 import eu.ebrains.kg.graphdb.commons.model.ArangoDocument;
-import eu.ebrains.kg.test.APITest;
+import eu.ebrains.kg.test.TestCategories;
 import eu.ebrains.kg.test.TestObjectFactory;
-import org.junit.Assert;
-import org.junit.Ignore;
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Tag;
+import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.test.context.TestPropertySource;
-import org.springframework.test.context.junit4.SpringRunner;
 
-import java.util.Collections;
-import java.util.Map;
+import static org.junit.jupiter.api.Assertions.*;
 import java.util.UUID;
 
-@RunWith(SpringRunner.class)
 @SpringBootTest
-@Category(APITest.class)
-@Ignore //TODO fix test
+@Tag(TestCategories.API)
+@Disabled //TODO fix test
 public class TodoListProcessorTest {
 
     @Autowired
@@ -85,11 +79,11 @@ public class TodoListProcessorTest {
         ArangoDocumentReference homerId = todoListProcessor.upsertDocument(simpsons.doc(UUID.randomUUID()), homer, DataStage.NATIVE);
 
         //Then
-        Assert.assertNotNull(homerId);
+        assertNotNull(homerId);
         ArangoDocument homerDoc = repository.getDocument(DataStage.NATIVE, homerId);
-        Assert.assertNotNull(homerDoc);
-        Assert.assertEquals("Simpson", homerDoc.getDoc().get("http://schema.org/familyName"));
-        Assert.assertEquals("Homer", homerDoc.getDoc().get("http://schema.org/givenName"));
+        assertNotNull(homerDoc);
+        assertEquals("Simpson", homerDoc.getDoc().get("http://schema.org/familyName"));
+        assertEquals("Homer", homerDoc.getDoc().get("http://schema.org/givenName"));
     }
 
 
@@ -120,10 +114,10 @@ public class TodoListProcessorTest {
         todoListProcessor.upsertDocument(bartId, bartUpdate, DataStage.NATIVE);
 
         //Then
-        Assert.assertNotNull(bartId);
+        assertNotNull(bartId);
         ArangoDocument bartDoc = repository.getDocument(DataStage.NATIVE, bartId);
-        Assert.assertNotNull(bartDoc);
-        Assert.assertEquals("Simpson", bartDoc.getDoc().get("http://schema.org/familyName"));
+        assertNotNull(bartDoc);
+        assertEquals("Simpson", bartDoc.getDoc().get("http://schema.org/familyName"));
     }
 
     @Test
@@ -131,16 +125,16 @@ public class TodoListProcessorTest {
         //Given
         NormalizedJsonLd marge = TestObjectFactory.createJsonLd("simpsons/marge.json");
         ArangoDocumentReference margeId = todoListProcessor.upsertDocument(simpsons.doc(UUID.randomUUID()), marge, DataStage.NATIVE);
-        Assert.assertNotNull(margeId);
+        assertNotNull(margeId);
         ArangoDocument margeDoc = repository.getDocument(DataStage.NATIVE, margeId);
-        Assert.assertNotNull(margeDoc);
+        assertNotNull(margeDoc);
 
         //When
         todoListProcessor.deleteDocument(DataStage.NATIVE, margeId);
 
         //Then
         ArangoDocument margeDocAfterDeletion = repository.getDocument(DataStage.NATIVE, margeId);
-        Assert.assertNull(margeDocAfterDeletion);
+        assertNull(margeDocAfterDeletion);
     }
 
 
@@ -149,16 +143,16 @@ public class TodoListProcessorTest {
         //Given
         NormalizedJsonLd homer = TestObjectFactory.createJsonLd("simpsons/homer.json");
         ArangoDocumentReference homerId = todoListProcessor.upsertDocument(simpsons.doc(UUID.randomUUID()), homer, DataStage.NATIVE);
-        Assert.assertNotNull(homerId);
+        assertNotNull(homerId);
         ArangoDocument homerDoc = repository.getDocument(DataStage.NATIVE, homerId);
-        Assert.assertNotNull(homerDoc);
+        assertNotNull(homerDoc);
 
         //When
         todoListProcessor.deleteDocument(DataStage.NATIVE, homerId);
 
         //Then
         ArangoDocument margeDocAfterDeletion = repository.getDocument(DataStage.NATIVE, homerId);
-        Assert.assertNull(margeDocAfterDeletion);
+        assertNull(margeDocAfterDeletion);
     }
 
 

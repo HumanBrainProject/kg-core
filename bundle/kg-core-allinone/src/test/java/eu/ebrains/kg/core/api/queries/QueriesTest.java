@@ -32,10 +32,8 @@ import eu.ebrains.kg.core.api.Instances;
 import eu.ebrains.kg.core.api.Queries;
 import eu.ebrains.kg.core.api.queries.tests.TestSimpleQueryTest;
 import eu.ebrains.kg.core.model.ExposedStage;
-import eu.ebrains.kg.test.APITest;
 import eu.ebrains.kg.testutils.AbstractFunctionalityTest;
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
+import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import java.io.IOException;
@@ -43,7 +41,7 @@ import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 public class QueriesTest extends AbstractFunctionalityTest {
 
@@ -181,7 +179,7 @@ public class QueriesTest extends AbstractFunctionalityTest {
             //Then
             Stream<? extends Map<?, ?>> results = test.assureValidPayload(test.response);
             assertAllComplete(test, mapToListOfNormalizedJsonLds(results));
-            assertTrue("We are asking for the released instances with in progress rights -> this implies access rights for released instances too and we expect the payload to be complete", true);
+            assertTrue(true, "We are asking for the released instances with in progress rights -> this implies access rights for released instances too and we expect the payload to be complete");
         });
     }
 
@@ -196,11 +194,11 @@ public class QueriesTest extends AbstractFunctionalityTest {
         NormalizedJsonLd resultForB = normalizedJsonLds.stream().filter(n -> n.getAs(test.nameOfRoot, String.class).equals(test.instanceB.getAs(SchemaOrgVocabulary.NAME, String.class))).findFirst().orElse(null);
         assertNotNull(resultForA);
         assertNotNull(resultForARelated);
-        assertNull("We expect there not to be any result for B because the user can not read it", resultForB);
+        assertNull(resultForB, "We expect there not to be any result for B because the user can not read it");
 
         assertEquals(test.instanceArelated.getAs(SchemaOrgVocabulary.NAME, String.class), resultForA.getAs(test.nameOfARel, String.class));
 
-        assertNull("Since the user doesn't have read rights in space B, we expect this not to be returned (although it would exist in the database)", resultForA.getAs(test.nameOfB, String.class));
+        assertNull(resultForA.getAs(test.nameOfB, String.class), "Since the user doesn't have read rights in space B, we expect this not to be returned (although it would exist in the database)");
 
         assertNull(resultForARelated.getAs(test.nameOfARel, String.class));
         assertNull(resultForARelated.getAs(test.nameOfB, String.class));
@@ -297,7 +295,7 @@ public class QueriesTest extends AbstractFunctionalityTest {
         test.execute(() -> {
             //Then
             Stream<? extends Map<?, ?>> normalizedJsonLds = test.assureValidPayload(test.response);
-            assertEquals("We expect the response to be empty because we don't have any rights.", 0, normalizedJsonLds.count());
+            assertEquals(0, normalizedJsonLds.count(), "We expect the response to be empty because we don't have any rights.");
         });
     }
 
@@ -310,7 +308,7 @@ public class QueriesTest extends AbstractFunctionalityTest {
         test.execute(() -> {
             //Then
             Stream<? extends Map<?, ?>> normalizedJsonLds = test.assureValidPayload(test.response);
-            assertEquals("We expect the response to be empty because we only have released rights for space a.", 0, normalizedJsonLds.count());
+            assertEquals(0, normalizedJsonLds.count(), "We expect the response to be empty because we only have released rights for space a.");
         });
     }
 
@@ -323,7 +321,7 @@ public class QueriesTest extends AbstractFunctionalityTest {
         test.execute(() -> {
             //Then
             Stream<? extends Map<?, ?>> normalizedJsonLds = test.assureValidPayload(test.response);
-            assertEquals("We expect the response to be empty because we query in progress but only have rights for released.", 0, normalizedJsonLds.count());
+            assertEquals(0, normalizedJsonLds.count(), "We expect the response to be empty because we query in progress but only have rights for released.");
         });
     }
 
@@ -337,7 +335,7 @@ public class QueriesTest extends AbstractFunctionalityTest {
         test.execute(() -> {
             //Then
             Stream<? extends Map<?, ?>> normalizedJsonLds = test.assureValidPayload(test.response);
-            assertEquals("We were querying the released instances but have no rights. So we expect the response to be empty.", 0, normalizedJsonLds.count());
+            assertEquals(0, normalizedJsonLds.count(), "We were querying the released instances but have no rights. So we expect the response to be empty.");
         });
     }
 
@@ -355,7 +353,7 @@ public class QueriesTest extends AbstractFunctionalityTest {
         test.execute(() -> {
             //Then
             Stream<? extends Map<?, ?>> normalizedJsonLds = test.assureValidPayload(test.response);
-            assertEquals("We were querying the released instances but no instances have been released. So we expect the response to be empty.", 0, normalizedJsonLds.count());
+            assertEquals(0, normalizedJsonLds.count(), "We were querying the released instances but no instances have been released. So we expect the response to be empty.");
         });
     }
 

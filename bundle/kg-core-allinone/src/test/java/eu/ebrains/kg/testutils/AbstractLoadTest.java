@@ -22,7 +22,6 @@
 
 package eu.ebrains.kg.testutils;
 
-import com.arangodb.ArangoDB;
 import eu.ebrains.kg.arango.commons.model.ArangoDatabaseProxy;
 import eu.ebrains.kg.commons.AuthTokens;
 import eu.ebrains.kg.commons.SetupLogic;
@@ -34,18 +33,15 @@ import eu.ebrains.kg.core.api.AbstractTest;
 import eu.ebrains.kg.metrics.MethodExecution;
 import eu.ebrains.kg.metrics.PerformanceTestUtils;
 import eu.ebrains.kg.metrics.TestInformation;
-import eu.ebrains.kg.test.APITest;
-import eu.ebrains.kg.test.LoadTest;
-import org.junit.*;
-import org.junit.experimental.categories.Category;
+import eu.ebrains.kg.test.TestCategories;
+import org.junit.jupiter.api.*;
 import org.mockito.Mockito;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.mock.mockito.MockBean;
 
 import java.io.IOException;
 import java.util.*;
 
-@Category(LoadTest.class)
+@Tag(TestCategories.LOAD)
 public abstract class AbstractLoadTest extends AbstractSystemTest {
 
     protected final static int smallBatchInsertion = 10;
@@ -63,17 +59,17 @@ public abstract class AbstractLoadTest extends AbstractSystemTest {
     private Map<UUID, List<MethodExecution>> metrics;
 
 
-    @BeforeClass
+    @BeforeAll
     public static void loadResources() {
         utils = new PerformanceTestUtils();
     }
 
-    @AfterClass
+    @AfterAll
     public static void concludeReporting() throws IOException {
         utils.commitReport();
     }
 
-    @Before
+    @BeforeEach
     public void setup() {
         clearDatabase();
         setupLogics.forEach(SetupLogic::setup);
@@ -92,7 +88,7 @@ public abstract class AbstractLoadTest extends AbstractSystemTest {
         Mockito.doReturn(metrics).when(testInformation).getMethodExecutions();
     }
 
-    @After
+    @AfterEach
     public void tearDown(){
         if(!metrics.isEmpty()) {
             utils.plotMetrics(metrics);

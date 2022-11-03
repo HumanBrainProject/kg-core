@@ -31,9 +31,8 @@ import eu.ebrains.kg.graphdb.queries.model.spec.Specification;
 import eu.ebrains.kg.graphdb.queries.utils.DataQueryBuilder;
 import eu.ebrains.kg.test.JsonAdapter4Test;
 import eu.ebrains.kg.test.TestObjectFactory;
-import org.junit.Assert;
-import org.junit.Ignore;
-import org.junit.Test;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 import java.net.URISyntaxException;
@@ -44,7 +43,9 @@ import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-@Ignore //TODO reevaluate if the tests shall be kept
+import static org.junit.jupiter.api.Assertions.*;
+
+@Disabled //TODO reevaluate if the tests shall be kept
 public class DataQueryBuilderTest {
 
     @Test
@@ -73,7 +74,7 @@ public class DataQueryBuilderTest {
                 "   \"http://schema.org/givenName\": root_doc.`http://schema.org/givenName`\n" +
                 "}";
         //Then
-        Assert.assertEquals(expected, aqlQuery.getAql().build().getValue());
+        assertEquals(expected, aqlQuery.getAql().build().getValue());
     }
 
     @Test
@@ -115,7 +116,7 @@ public class DataQueryBuilderTest {
                 "   \"http://schema.org/streetAddress\": schema_org_streetaddress\n" +
                 "}";
         //Then
-        Assert.assertEquals(expected, aqlQuery.getAql().build().getValue());
+        assertEquals(expected, aqlQuery.getAql().build().getValue());
     }
 
 
@@ -142,7 +143,7 @@ public class DataQueryBuilderTest {
                 "   \"http://schema.org/givenName\": root_doc.`http://schema.org/givenName`\n" +
                 "}";
         //Then
-        Assert.assertEquals(expected, aqlQuery.getAql().build().getValue());
+        assertEquals(expected, aqlQuery.getAql().build().getValue());
     }
 
 
@@ -184,7 +185,7 @@ public class DataQueryBuilderTest {
                 "   \"http://schema.org/streetAddress\": schema_org_streetaddress\n" +
                 "}";
         //Then
-        Assert.assertEquals(expected, aqlQuery.getAql().build().getValue());
+        assertEquals(expected, aqlQuery.getAql().build().getValue());
     }
 
     @Test

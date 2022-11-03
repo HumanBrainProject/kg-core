@@ -34,16 +34,16 @@ import eu.ebrains.kg.graphdb.commons.controller.ArangoRepositoryCommons;
 import eu.ebrains.kg.graphdb.commons.controller.GraphDBArangoUtils;
 import eu.ebrains.kg.graphdb.commons.controller.PermissionsController;
 import eu.ebrains.kg.graphdb.queries.controller.QueryController;
-import eu.ebrains.kg.graphdb.structure.api.GraphDBTypesAPI;
 import eu.ebrains.kg.graphdb.structure.controller.MetaDataController;
 import eu.ebrains.kg.graphdb.structure.controller.StructureRepository;
 import eu.ebrains.kg.test.JsonAdapter4Test;
-import org.junit.Assert;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
 import java.util.HashMap;
 import java.util.Map;
+
+import static org.junit.jupiter.api.Assertions.*;
 
 public class ArangoRepositoryInstancesUnitTest {
 
@@ -62,7 +62,7 @@ public class ArangoRepositoryInstancesUnitTest {
         repository.mergeEmbeddedDocuments(original, embedded);
 
         //Then
-        Assert.assertEquals("{\"helloWorld\":{\"name\":\"foobar\"},\"@id\":\"http://foo\"}", jsonAdapter.toJson(original));
+        assertEquals("{\"helloWorld\":{\"name\":\"foobar\"},\"@id\":\"http://foo\"}", jsonAdapter.toJson(original));
     }
 
 }

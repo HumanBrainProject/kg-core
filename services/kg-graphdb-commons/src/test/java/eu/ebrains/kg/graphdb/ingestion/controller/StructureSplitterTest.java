@@ -29,7 +29,7 @@ import eu.ebrains.kg.commons.TypeUtils;
 import eu.ebrains.kg.commons.jsonld.NormalizedJsonLd;
 import eu.ebrains.kg.graphdb.commons.model.ArangoInstance;
 import eu.ebrains.kg.test.JsonAdapter4Test;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import java.util.List;
 import java.util.UUID;

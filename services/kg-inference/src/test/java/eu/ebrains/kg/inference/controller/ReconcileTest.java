@@ -28,10 +28,8 @@ import eu.ebrains.kg.commons.api.GraphDBTypes;
 import eu.ebrains.kg.commons.jsonld.IndexedJsonLdDoc;
 import eu.ebrains.kg.commons.jsonld.InferredJsonLdDoc;
 import eu.ebrains.kg.commons.jsonld.NormalizedJsonLd;
-import eu.ebrains.kg.commons.model.Event;
-import eu.ebrains.kg.commons.model.SpaceName;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
 import java.util.Arrays;
@@ -39,13 +37,13 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 public class ReconcileTest {
 
     IdUtils idUtils;
     Reconcile reconcile;
-    @Before
+    @BeforeEach
     public void setup(){
         idUtils = new IdUtils("http://foobar/");
         reconcile = new Reconcile(Mockito.mock(GraphDBInstances.Client.class), Mockito.mock(GraphDBTypes.Client.class), idUtils);

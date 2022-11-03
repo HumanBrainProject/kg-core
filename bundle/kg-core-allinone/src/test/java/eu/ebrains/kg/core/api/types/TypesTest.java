@@ -38,8 +38,8 @@ import eu.ebrains.kg.core.api.types.test.GetTypesTest;
 import eu.ebrains.kg.core.model.ExposedStage;
 import eu.ebrains.kg.testutils.AbstractFunctionalityTest;
 import eu.ebrains.kg.testutils.TestDataFactory;
-import org.junit.Ignore;
-import org.junit.Test;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.context.TestPropertySource;
 
@@ -47,10 +47,10 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
-import static org.junit.Assert.*;
+import static org.junit.jupiter.api.Assertions.*;
 
 @TestPropertySource(properties = {"eu.ebrains.kg.core.metadata.synchronous=true"})
-@Ignore //TODO fix tests
+@Disabled //TODO fix tests
 public class TypesTest extends AbstractFunctionalityTest {
 
     @Autowired

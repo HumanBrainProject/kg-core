@@ -27,30 +27,32 @@ import eu.ebrains.kg.commons.jsonld.IndexedJsonLdDoc;
 import eu.ebrains.kg.commons.jsonld.JsonLdDoc;
 import eu.ebrains.kg.commons.jsonld.JsonLdId;
 import eu.ebrains.kg.commons.jsonld.NormalizedJsonLd;
-import eu.ebrains.kg.commons.model.*;
+import eu.ebrains.kg.commons.model.ExtendedResponseConfiguration;
+import eu.ebrains.kg.commons.model.PaginationParam;
+import eu.ebrains.kg.commons.model.ResponseConfiguration;
+import eu.ebrains.kg.commons.model.Result;
 import eu.ebrains.kg.commons.model.external.types.TypeInformation;
 import eu.ebrains.kg.commons.semantics.vocabularies.SchemaOrgVocabulary;
 import eu.ebrains.kg.core.model.ExposedStage;
-import eu.ebrains.kg.test.APITest;
-import org.junit.Assert;
-import org.junit.Ignore;
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
-import org.junit.runner.RunWith;
+import eu.ebrains.kg.test.TestCategories;
+import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.Tag;
+import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.ResponseEntity;
-import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.test.context.web.WebAppConfiguration;
 
 import java.util.List;
+import java.util.Objects;
+
+import static org.junit.jupiter.api.Assertions.*;
 
 
-@Ignore //TODO fix test
-@RunWith(SpringRunner.class)
+@Disabled //TODO fix test
 @SpringBootTest
 @WebAppConfiguration
-@Category(APITest.class)
+@Tag(TestCategories.API)
 public class ConsistencyCheckTest {
 
 
@@ -77,15 +79,15 @@ public class ConsistencyCheckTest {
             doc.addTypes(type);
             doc.addProperty("http://schema.hbp.eu/foo", "instance" + i);
             ResponseEntity<Result<NormalizedJsonLd>> document = instances.createNewInstance(doc, "foo", DEFAULT_RESPONSE_CONFIG);
-            JsonLdId id = document.getBody().getData().id();
-            System.out.println(String.format("Created instance %s", id.getId()));
+            JsonLdId id = Objects.requireNonNull(document.getBody()).getData().id();
+            System.out.printf("Created instance %s%n", id.getId());
         }
-        Assert.assertEquals(createInstances, getAllInstancesFromInProgress(ExposedStage.IN_PROGRESS).size());
-        Assert.assertEquals(1, types.listTypes(ExposedStage.IN_PROGRESS, null, false, false, EMPTY_PAGINATION).getSize());
+        assertEquals(createInstances, getAllInstancesFromInProgress(ExposedStage.IN_PROGRESS).size());
+        assertEquals(1, types.listTypes(ExposedStage.IN_PROGRESS, null, false, false, EMPTY_PAGINATION).getSize());
         List<TypeInformation> typeWithPropertiesAndCounts = types.listTypes(ExposedStage.IN_PROGRESS, null, true, true, EMPTY_PAGINATION).getData();
-        Assert.assertEquals(1, typeWithPropertiesAndCounts.size());
+        assertEquals(1, typeWithPropertiesAndCounts.size());
         TypeInformation typeWithProperty = typeWithPropertiesAndCounts.get(0);
-        Assert.assertEquals(type, typeWithProperty.get(SchemaOrgVocabulary.IDENTIFIER));
+        assertEquals(type, typeWithProperty.get(SchemaOrgVocabulary.IDENTIFIER));
     }
 
     private List<NormalizedJsonLd> getAllInstancesFromInProgress(ExposedStage stage){
@@ -106,7 +108,7 @@ public class ConsistencyCheckTest {
                 updated++;
             }
         }
-        Assert.assertEquals(createInstances, getAllInstancesFromInProgress(ExposedStage.IN_PROGRESS).size());
+        assertEquals(createInstances, getAllInstancesFromInProgress(ExposedStage.IN_PROGRESS).size());
     }
 
     @Test
@@ -120,7 +122,7 @@ public class ConsistencyCheckTest {
                 released++;
             }
         }
-        Assert.assertEquals((int)Math.floor(createInstances*releaseRatio), getAllInstancesFromInProgress(ExposedStage.RELEASED).size());
+        assertEquals((int)Math.floor(createInstances*releaseRatio), getAllInstancesFromInProgress(ExposedStage.RELEASED).size());
     }
 
 
@@ -136,7 +138,7 @@ public class ConsistencyCheckTest {
                 deleted++;
             }
         }
-        Assert.assertEquals(createInstances-(int)Math.floor(createInstances*deleteRatio), getAllInstancesFromInProgress(ExposedStage.IN_PROGRESS).size());
+        assertEquals(createInstances-(int)Math.floor(createInstances*deleteRatio), getAllInstancesFromInProgress(ExposedStage.IN_PROGRESS).size());
     }
 
 
@@ -153,16 +155,15 @@ public class ConsistencyCheckTest {
                 updated++;
             }
         }
-        Assert.assertEquals(createInstances-(int)Math.floor(createInstances*updateRatio), getAllInstancesFromInProgress(ExposedStage.IN_PROGRESS).size());
+        assertEquals(createInstances-(int)Math.floor(createInstances*updateRatio), getAllInstancesFromInProgress(ExposedStage.IN_PROGRESS).size());
     }
 
     @Test
     public void testDeleteAllAfterUpdate() {
         testUpdate();
-        int deleted = 0;
         for (NormalizedJsonLd instance : getAllInstancesFromInProgress(ExposedStage.IN_PROGRESS)) {
             this.instances.deleteInstance(idUtils.getUUID(instance.id()));
         }
-        Assert.assertEquals(0, getAllInstancesFromInProgress(ExposedStage.IN_PROGRESS).size());
+        assertEquals(0, getAllInstancesFromInProgress(ExposedStage.IN_PROGRESS).size());
     }
 }

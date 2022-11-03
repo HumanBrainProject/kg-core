@@ -23,22 +23,15 @@
 package eu.ebrains.kg.core.api;
 
 import eu.ebrains.kg.commons.api.GraphDBTypes;
-import eu.ebrains.kg.commons.api.PrimaryStoreEvents;
 import eu.ebrains.kg.commons.jsonld.NormalizedJsonLd;
-import eu.ebrains.kg.commons.model.Result;
-import eu.ebrains.kg.commons.model.SpaceName;
-import eu.ebrains.kg.core.controller.CoreUtils;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
 
 public class PropertiesTest {
     Properties instance = new Properties(Mockito.mock(GraphDBTypes.Client.class));
 
-    @Before
+    @BeforeEach
     public void init(){
     }
 
