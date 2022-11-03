@@ -28,6 +28,7 @@ import eu.ebrains.kg.commons.config.openApiGroups.Admin;
 import eu.ebrains.kg.commons.jsonld.JsonLdDoc;
 import eu.ebrains.kg.commons.model.TermsOfUse;
 import eu.ebrains.kg.commons.permission.roles.RoleMapping;
+import io.swagger.v3.oas.annotations.Operation;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -43,8 +44,10 @@ public class Setup {
         this.authentication = authentication;
     }
 
+    @Operation(hidden = true)
     @PutMapping("/termsOfUse")
     @Admin
+    @Deprecated(forRemoval = true)
     public void registerTermsOfUse(@RequestBody TermsOfUse termsOfUse){
         authentication.registerTermsOfUse(termsOfUse);
     }

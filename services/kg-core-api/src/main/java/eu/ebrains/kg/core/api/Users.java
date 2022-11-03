@@ -135,7 +135,7 @@ public class Users {
         return ResponseEntity.ok(PaginatedResult.ok(users));
     }
 
-    @Operation(summary = "Retrieve a list of users from IAM")
+    @Operation(summary = "Retrieve a list of users from IAM with reduced information")
     @GetMapping("/fromIAM")
     @ExposesUserInfo
     @Extra
@@ -156,24 +156,27 @@ public class Users {
     }
 
 
-    @Operation(summary = "Get the current terms of use")
+    @Operation(summary = "Get the current terms of use", hidden = true)
     @GetMapping(value = "/termsOfUse")
     @Simple
+    @Deprecated(forRemoval = true)
     public ResponseEntity<TermsOfUseResult> getTermsOfUse() {
        return ResponseEntity.ok(authentication.getTermsOfUse());
     }
 
-    @Operation(summary = "Accept the terms of use in the given version")
+    @Operation(summary = "Accept the terms of use in the given version", hidden = true)
     @PostMapping(value = "/termsOfUse/{version}/accept")
     @Simple
+    @Deprecated(forRemoval = true)
     public void acceptTermsOfUse(@PathVariable("version") String version) {
         authentication.acceptTermsOfUse(version);
     }
 
-    @Operation(summary = "Get a pictures for a list of users (only found ones are returned)")
+    @Operation(summary = "Get a pictures for a list of users (only found ones are returned)", hidden = true)
     @PostMapping(value = "/pictures")
     @ExposesUserPicture
     @Extra
+    @Deprecated(forRemoval = true)
     public ResponseEntity<Map<UUID, String>> getUserPictures(@RequestBody List<UUID> userIds) {
         SpaceName targetSpace = InternalSpace.USERS_PICTURE_SPACE;
         Map<UUID, Result<NormalizedJsonLd>> instancesByIds = graphDBInstances.getInstancesByIds(userIds.stream().filter(Objects::nonNull).map(userId -> new InstanceId(createUserPictureId(userId), targetSpace).serialize()).collect(Collectors.toList()), DataStage.IN_PROGRESS, null, false, false, false, null);
@@ -182,10 +185,11 @@ public class Users {
     }
 
 
-    @Operation(summary = "Get a picture for a specific user")
+    @Operation(summary = "Get a picture for a specific user", hidden = true)
     @GetMapping(value = "/{id}/picture")
     @ExposesUserPicture
     @Extra
+    @Deprecated(forRemoval = true)
     public ResponseEntity<String> getUserPicture(@PathVariable("id") UUID userId) {
         SpaceName targetSpace = InternalSpace.USERS_PICTURE_SPACE;
         NormalizedJsonLd instance = graphDBInstances.getInstanceById(targetSpace.getName(), createUserPictureId(userId), DataStage.IN_PROGRESS, false, false, false, null, true);
@@ -202,9 +206,10 @@ public class Users {
         return IdUtils.createMetaRepresentationUUID(userId + "picture");
     }
 
-    @Operation(summary = "Define a picture for a specific user")
+    @Operation(summary = "Define a picture for a specific user", hidden = true)
     @PutMapping("/{id}/picture")
     @Extra
+    @Deprecated(forRemoval = true)
     public ResponseEntity<Result<Void>> defineUserPicture(@PathVariable("id") UUID userId, @RequestBody String base64encodedImage) {
         SpaceName targetSpace = InternalSpace.USERS_PICTURE_SPACE;
         NormalizedJsonLd doc = new NormalizedJsonLd();

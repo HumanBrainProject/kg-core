@@ -53,11 +53,11 @@
     <!-- Ensure this is in sync with kg-microservice -->
     <properties>
         <java.version>11</java.version>
-        <jackson.version>2.9.9</jackson.version>
+        <jackson.version>2.13.4</jackson.version>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
         <docker.image.prefix>registry.humanbrainproject.org/humanbrainproject/kg-core</docker.image.prefix>
-        <spring.version>2.3.4.RELEASE</spring.version>
+        <spring.version>2.7.4</spring.version>
         <sonar.coverage.jacoco.xmlReportPaths>${project.basedir}/../../bundle/kg-core-allinone/target/site/jacoco-aggregate/jacoco.xml</sonar.coverage.jacoco.xmlReportPaths>
     </properties>
 
@@ -70,7 +70,7 @@
         <dependency>
             <groupId>org.mockito</groupId>
             <artifactId>mockito-core</artifactId>
-            <version>2.23.4</version>
+            <version>4.8.0</version>
             <scope>test</scope>
         </dependency>
     </dependencies>
