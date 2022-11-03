@@ -64,7 +64,6 @@ public class DataQueryBuilder {
     public AQLQuery build() {
         //Define the global parameters
         ArangoAlias rootAlias = new ArangoAlias("root");
-        q.setParameter("rootFieldName", rootAlias.getArangoName());
 
         //Setup the root instance
         defineRootInstance();
@@ -75,9 +74,7 @@ public class DataQueryBuilder {
 
         addDocumentFilterWithWhitelistFilter(q, rootAlias.getArangoDocName(), whiteListFilter, spaceRestriction);
 
-        q.addLine(trust("FILTER TO_ARRAY(@idRestriction) == [] OR ${rootFieldName}_doc._key IN TO_ARRAY(@idRestriction)"));
-
-        q.add(new MergeBuilder(rootAlias, specification.getProperties()).getMergedFields());
+        q.addLine(trust("FILTER TO_ARRAY(@idRestriction) == [] OR root_doc._key IN TO_ARRAY(@idRestriction)"));
 
         //Define the complex fields (the ones with traversals)
         q.add(new TraverseBuilder(rootAlias, specification.getProperties()).getTraversedProperty());
@@ -112,7 +109,7 @@ public class DataQueryBuilder {
             this.q.specifyWhitelist();
             this.bindVars.putAll(whiteListFilter);
         }
-        this.q.addLine(trust("FOR ${rootFieldName}_doc IN 1..1 OUTBOUND DOCUMENT(@@typeCollection, @typeId) @@typeRelation"));
+        this.q.addLine(trust("FOR root_doc IN 1..1 OUTBOUND DOCUMENT(@@typeCollection, @typeId) @@typeRelation"));
         ArangoCollectionReference collectionReference = ArangoCollectionReference.fromSpace(InternalSpace.TYPE_SPACE);
         this.bindVars.put("@typeCollection", collectionReference.getCollectionName());
         this.bindVars.put("@typeRelation", InternalSpace.TYPE_EDGE_COLLECTION.getCollectionName());
@@ -133,105 +130,13 @@ public class DataQueryBuilder {
     }
 
 
-    private class MergeBuilder {
-
-        private final List<SpecProperty> fields;
-        private final ArangoAlias parentAlias;
-
-        public MergeBuilder(ArangoAlias parentAlias, List<SpecProperty> fields) {
-            this.fields = fields;
-            this.parentAlias = parentAlias;
-        }
-
-        private List<SpecProperty> fieldsWithMerge() {
-            return fields.stream().filter(SpecProperty::isMerge).collect(Collectors.toList());
-        }
-
-
-        List<SpecProperty> getSortFieldsForMerge(SpecProperty mergeField) {
-            List<SpecProperty> specFields = new ArrayList<>();
-            if (mergeField.property != null && !mergeField.property.isEmpty()) {
-                for (SpecProperty field : mergeField.property) {
-                    if (field.isSortAlphabetically()) {
-                        specFields.add(field);
-                    }
-                    specFields.addAll(field.getSubPropertiesWithSort());
-                }
-            }
-            return specFields;
-        }
-
-
-        TrustedAqlValue getMergedFields() {
-            List<SpecProperty> mergeFields = fieldsWithMerge();
-            if (!mergeFields.isEmpty()) {
-                AQL aql = new AQL();
-                for (SpecProperty mergeField : mergeFields) {
-                    aql.add(new TraverseBuilder(parentAlias, mergeField.property).getTraversedProperty());
-                    AQL merge = new AQL();
-                    merge.add(trust("LET ${alias} = "));
-
-                    List<SpecProperty> sortFieldsForMerge = getSortFieldsForMerge(mergeField);
-                    if (mergeField.property.size() == 1) {
-                        merge.add(trust("${alias}_0"));
-                    } else {
-                        if (!sortFieldsForMerge.isEmpty()) {
-                            merge.add(trust("(FOR ${alias}_sort IN "));
-                        }
-
-                        for (int i = 0; i < mergeField.property.size(); i++) {
-                            AQL append = new AQL();
-                            if (i < mergeField.property.size() - 1) {
-                                append.add(trust("(APPEND(${field},"));
-                            } else {
-                                append.add(trust("${field}"));
-                            }
-                            append.setParameter("field", fromSpecField(mergeField).getArangoName() + "_" + i);
-                            merge.add(append.build());
-                        }
-                        for (SpecProperty field : mergeField.property) {
-                            if (field != mergeField.property.get(mergeField.property.size() - 1)) {
-                                merge.add(trust(", true))"));
-                            }
-                        }
-                        if (!sortFieldsForMerge.isEmpty()) {
-                            merge.addLine(trust(""));
-                            Set<String> duplicateTracker = new HashSet<>();
-                            for (SpecProperty specField : sortFieldsForMerge) {
-                                if (!duplicateTracker.contains(specField.propertyName)) {
-                                    duplicateTracker.add(specField.propertyName);
-                                    AQL sort = new AQL();
-                                    sort.addLine(trust("SORT ${alias}_sort.`${targetField}` ASC"));
-                                    sort.setParameter("alias", fromSpecField(mergeField).getArangoName());
-                                    sort.setParameter("targetField", specField.propertyName);
-                                    merge.add(sort.build());
-                                }
-                            }
-                            merge.addLine(trust("RETURN ${alias}_sort"));
-                            merge.add(trust(")"));
-                        }
-                    }
-                    merge.setParameter("alias", fromSpecField(mergeField).getArangoName());
-                    aql.addLine(merge.build());
-                }
-                return aql.build();
-            }
-
-            return null;
-        }
-
-
-    }
-
-
-    private static AQL addDocumentFilterWithWhitelistFilter(AQL aql, TrustedAqlValue documentAlias, Map<String, Object> whitelistFilter, List<String> spaceRestriction) {
+    private static void addDocumentFilterWithWhitelistFilter(AQL aql, TrustedAqlValue documentAlias, Map<String, Object> whitelistFilter, List<String> spaceRestriction) {
         if(whitelistFilter!=null){
             aql.addDocumentFilterWithWhitelistFilter(documentAlias);
         }
         if(spaceRestriction!=null) {
             aql.addLine(trust("FILTER " + documentAlias.getValue() + "." + ArangoVocabulary.COLLECTION + " IN @spaceRestriction"));
         }
-        return aql;
     }
 
 
@@ -303,7 +208,7 @@ public class DataQueryBuilder {
         }
 
 
-        TrustedAqlValue finalizeTraversalWithSubfields(SpecProperty field, SpecTraverse lastTraverse, Stack<ArangoAlias> aliasStack) {
+        TrustedAqlValue finalizeTraversalWithSubfields(SpecProperty field, Stack<ArangoAlias> aliasStack) {
             AQL aql = new AQL();
             aql.addLine(new TraverseBuilder(aliasStack.peek(), field.property).getTraversedProperty());
             return aql.build();
@@ -337,7 +242,7 @@ public class DataQueryBuilder {
                         aliasStack.push(alias);
                         if (lastTraversal) {
                             if (traversalProperty.hasSubProperties()) {
-                                properties.add(finalizeTraversalWithSubfields(traversalProperty, traverse, aliasStack));
+                                properties.add(finalizeTraversalWithSubfields(traversalProperty, aliasStack));
                             }
                         }
                         if (lastTraversal) {
@@ -449,7 +354,7 @@ public class DataQueryBuilder {
         }
 
         private void sortGroupedFields(AQL group, List<SpecProperty> groupByFields) {
-            List<SpecProperty> groupedSortFields = groupByFields.stream().filter(f -> f.isSortAlphabetically()).collect(Collectors.toList());
+            List<SpecProperty> groupedSortFields = groupByFields.stream().filter(SpecProperty::isSortAlphabetically).collect(Collectors.toList());
             if (!groupedSortFields.isEmpty()) {
                 group.add(trust("SORT "));
                 for (SpecProperty specField : groupedSortFields) {
@@ -651,7 +556,7 @@ public class DataQueryBuilder {
                 } else {
                     TrustedAqlValue fieldFilter = createFieldFilter(field.propertyFilter);
                     if (fieldFilter != null) {
-                        aql.addLine(trust("AND LOWER(${field})${fieldFilter}"));
+                        aql.addLine(trust("AND IS_ARRAY(${field}) ? ${field}[* FILTER LOWER(CURRENT)${fieldFilter}] != [] : LOWER(${field})${fieldFilter}"));
                         aql.setTrustedParameter("fieldFilter", fieldFilter);
                     }
                 }
@@ -663,7 +568,7 @@ public class DataQueryBuilder {
 
         private TrustedAqlValue createAqlForFilter(PropertyFilter fieldFilter, boolean prefixWildcard, boolean postfixWildcard) {
             String value = null;
-            String key = null;
+            String key;
             if (fieldFilter.getParameter() != null) {
                 key = fieldFilter.getParameter().getName();
             } else {

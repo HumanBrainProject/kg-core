@@ -24,7 +24,6 @@ package eu.ebrains.kg.arango.commons.aqlBuilder;
 
 import com.arangodb.model.AqlQueryOptions;
 import eu.ebrains.kg.arango.commons.model.ArangoCollectionReference;
-import eu.ebrains.kg.commons.jsonld.JsonLdConsts;
 import eu.ebrains.kg.commons.model.PaginationParam;
 import org.apache.commons.text.StringSubstitutor;
 
@@ -44,9 +43,9 @@ public class AQL {
     private final ArangoKey INVITATION_ALIAS = new ArangoKey("invitation");
 
     final Map<String, String> parameters = new TreeMap<>();
-    private StringBuilder query = new StringBuilder();
+    private final StringBuilder query = new StringBuilder();
     private int indent = 0;
-    private AqlQueryOptions queryOptions = new AqlQueryOptions();
+    private final AqlQueryOptions queryOptions = new AqlQueryOptions();
     private PaginationParam paginationParam;
 
     /**
@@ -58,10 +57,6 @@ public class AQL {
      */
     public static TrustedAqlValue trust(String trustedString) {
         return new TrustedAqlValue(trustedString);
-    }
-
-    public static TrustedAqlValue concat(TrustedAqlValue... values) {
-        return new TrustedAqlValue(Arrays.stream(values).map(TrustedAqlValue::getValue).collect(Collectors.joining()));
     }
 
     public void specifyWhitelist() {
@@ -92,18 +87,6 @@ public class AQL {
         return this;
     }
 
-    public AQL addComment(String comment) {
-        final TrustedAqlValue trustedAqlValue = preventAqlInjection(comment, true);
-        if(trustedAqlValue!=null) {
-            query.append(createIndent()).append("\n\n/**\n* ").append(trustedAqlValue.getValue()).append("\n*/\n");
-        }
-        return this;
-    }
-
-    public AQL addNewline(){
-        query.append("\n");
-        return this;
-    }
 
     public AQL addLine(TrustedAqlValue... queryLine) {
         if (queryLine != null) {
@@ -125,9 +108,8 @@ public class AQL {
         return this;
     }
 
-    public AQL addComma() {
+    public void addComma() {
         query.append(", ");
-        return this;
     }
 
 
@@ -153,39 +135,28 @@ public class AQL {
     }
 
     public static TrustedAqlValue preventAqlInjection(String value) {
-        return preventAqlInjection(value, false);
+        return value != null ? new TrustedAqlValue(value.replaceAll("[^A-Za-z0-9\\-_:.#/@" + "]", "")) : null;
     }
-
-    private static TrustedAqlValue preventAqlInjection(String value, boolean allowWhiteSpace) {
-        return value != null ? new TrustedAqlValue(value.replaceAll("[^A-Za-z0-9\\-_:.#/@" + (allowWhiteSpace ? ' ' : "") + "]", "")) : null;
-    }
-
 
     public TrustedAqlValue build() {
         return new TrustedAqlValue(StringSubstitutor.replace(query.toString(), parameters));
     }
 
     private String createIndent() {
-        StringBuilder sb = new StringBuilder();
-        for (int i = 0; i < this.indent; i++) {
-            sb.append("   ");
-        }
-        return sb.toString();
+        return "   ".repeat(Math.max(0, this.indent));
     }
 
-    public AQL addDocumentFilter(TrustedAqlValue documentAlias) {
+    public void addDocumentFilter(TrustedAqlValue documentAlias) {
         addLine(new TrustedAqlValue("FILTER " + documentAlias.getValue() + " != NULL"));
-        return this;
     }
 
-    public AQL addDocumentFilterWithWhitelistFilter(TrustedAqlValue documentAlias) {
+    public void addDocumentFilterWithWhitelistFilter(TrustedAqlValue documentAlias) {
         addDocumentFilter(documentAlias);
         addLine(trust("FILTER " + documentAlias.getValue() + "." + ArangoVocabulary.COLLECTION + " IN " + WHITELIST_ALIAS + " OR HAS(" + INVITATION_ALIAS+", "+documentAlias.getValue() + "." + ArangoVocabulary.KEY + ")"));
-        return this;
     }
 
 
-    public AQL addPagination(PaginationParam paginationParam) {
+    public void addPagination(PaginationParam paginationParam) {
         this.paginationParam = paginationParam;
         if (paginationParam != null && paginationParam.getSize() != null ) {
             queryOptions.fullCount(paginationParam.isReturnTotalResults());
@@ -193,7 +164,6 @@ public class AQL {
         } else {
             queryOptions.count(true);
         }
-        return this;
     }
 
     public PaginationParam getPaginationParam() {
@@ -208,8 +178,7 @@ public class AQL {
         String aql = query.toString();
         for (String key : bindVars.keySet()) {
             Object value = bindVars.get(key);
-
-                String valueRep = "";
+                String valueRep;
                 if(value == null){
                     valueRep = "null";
                 }
@@ -219,7 +188,7 @@ public class AQL {
                     } else if (key.startsWith("@")) {
                         valueRep = "`" + value + "`";
                     } else {
-                        valueRep = "\"" + value.toString() + "\"";
+                        valueRep = "\"" + value + "\"";
                     }
                 }
                 aql = aql.replaceAll(String.format("@%s(?=[^a-zA-Z])", key), valueRep);

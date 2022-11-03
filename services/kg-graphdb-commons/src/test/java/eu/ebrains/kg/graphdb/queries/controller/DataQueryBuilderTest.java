@@ -26,7 +26,7 @@ import eu.ebrains.kg.arango.commons.aqlBuilder.ArangoKey;
 import eu.ebrains.kg.arango.commons.model.AQLQuery;
 import eu.ebrains.kg.arango.commons.model.ArangoCollectionReference;
 import eu.ebrains.kg.commons.jsonld.NormalizedJsonLd;
-import eu.ebrains.kg.commons.params.Pagination;
+import eu.ebrains.kg.commons.model.PaginationParam;
 import eu.ebrains.kg.graphdb.queries.model.spec.Specification;
 import eu.ebrains.kg.graphdb.queries.utils.DataQueryBuilder;
 import eu.ebrains.kg.test.JsonAdapter4Test;
@@ -51,7 +51,7 @@ public class DataQueryBuilderTest {
     public void buildSimpsonsFamilyNamesQuery(){
         //Given
         NormalizedJsonLd query = TestObjectFactory.createJsonLd(TestObjectFactory.SIMPSONS, "normalizedQueries/simpsonsFamilyNames.json");
-        Specification specification = new SpecificationInterpreter().readSpecification(query, null);
+        Specification specification = new SpecificationInterpreter().readSpecification(query);
 
         //When
         AQLQuery aqlQuery = new DataQueryBuilder(specification, null, new HashMap<>(), null, null, Collections.singletonList(ArangoCollectionReference.fromSpace(TestObjectFactory.SIMPSONS))).build();
@@ -80,7 +80,7 @@ public class DataQueryBuilderTest {
     public void buildHomerWithEmbeddedTraversal(){
         //Given
         NormalizedJsonLd query = TestObjectFactory.createJsonLd(TestObjectFactory.SIMPSONS, "normalizedQueries/homerWithEmbeddedTraversal.json");
-        Specification specification = new SpecificationInterpreter().readSpecification(query, null);
+        Specification specification = new SpecificationInterpreter().readSpecification(query);
 
         //When
         List<ArangoCollectionReference> existingCollections = Arrays.asList(ArangoCollectionReference.fromSpace(TestObjectFactory.SIMPSONS), new ArangoCollectionReference(new ArangoKey("http://schema.org/address").getValue(), true));
@@ -123,7 +123,7 @@ public class DataQueryBuilderTest {
     public void buildHomerWithPartiallyResolvedChildren(){
         //Given
         NormalizedJsonLd query = TestObjectFactory.createJsonLd(TestObjectFactory.SIMPSONS, "normalizedQueries/homerWithPartiallyResolvedChildren.json");
-        Specification specification = new SpecificationInterpreter().readSpecification(query, null);
+        Specification specification = new SpecificationInterpreter().readSpecification(query);
 
         //When
         List<ArangoCollectionReference> existingCollections = Arrays.asList(ArangoCollectionReference.fromSpace(TestObjectFactory.SIMPSONS), new ArangoCollectionReference(new ArangoKey("http://schema.org/children").getValue(), true));
@@ -151,7 +151,7 @@ public class DataQueryBuilderTest {
     public void buildHomerWithEmbeddedTraversalMissingTraversalCollection(){
         //Given
         NormalizedJsonLd query = TestObjectFactory.createJsonLd(TestObjectFactory.SIMPSONS, "normalizedQueries/homerWithEmbeddedTraversal.json");
-        Specification specification = new SpecificationInterpreter().readSpecification(query, null);
+        Specification specification = new SpecificationInterpreter().readSpecification(query);
 
         //When
         List<ArangoCollectionReference> existingCollections = Collections.singletonList(ArangoCollectionReference.fromSpace(TestObjectFactory.SIMPSONS));
@@ -189,20 +189,20 @@ public class DataQueryBuilderTest {
 
     @Test
     public void build() throws URISyntaxException, IOException {
-        Path path = Paths.get(getClass().getClassLoader()
-                .getResource("query.json").toURI());
+        Path path = Paths.get(Objects.requireNonNull(getClass().getClassLoader()
+                .getResource("query.json")).toURI());
         Stream<String> lines = Files.lines(path);
         String data = lines.collect(Collectors.joining("\n"));
         lines.close();
 
         SpecificationInterpreter interpreter = new SpecificationInterpreter();
-        Specification specification = interpreter.readSpecification(new JsonAdapter4Test().fromJson(data, NormalizedJsonLd.class), null);
+        Specification specification = interpreter.readSpecification(new JsonAdapter4Test().fromJson(data, NormalizedJsonLd.class));
         List<ArangoCollectionReference> existingCollections = new ArrayList<>();
         existingCollections.add(new ArangoCollectionReference("docs", false));
-        Pagination pagination = new Pagination();
-        pagination.setSize(10);
+        PaginationParam pagination = new PaginationParam();
+        pagination.setSize(10L);
 
-        DataQueryBuilder builder = new DataQueryBuilder(specification, null, null, null, null, existingCollections);
+        DataQueryBuilder builder = new DataQueryBuilder(specification, pagination, null, null, null, existingCollections);
 
         AQLQuery aql = builder.build();
 

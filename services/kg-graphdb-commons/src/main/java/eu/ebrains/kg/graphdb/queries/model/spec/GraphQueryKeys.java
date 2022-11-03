@@ -39,7 +39,6 @@ public enum GraphQueryKeys {
     GRAPH_QUERY_STRUCTURE("structure"),
     GRAPH_QUERY_REQUIRED("required"),
     GRAPH_QUERY_REVERSE("reverse"),
-    GRAPH_QUERY_MERGE("merge"),
     GRAPH_QUERY_SORT("sort"),
     GRAPH_QUERY_SORT_CONTENT("sortContent"),
     GRAPH_QUERY_GROUP_BY("groupBy"),

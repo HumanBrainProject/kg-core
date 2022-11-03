@@ -25,7 +25,6 @@ package eu.ebrains.kg.graphdb.queries.controller;
 import com.arangodb.ArangoDBException;
 import com.arangodb.ArangoDatabase;
 import com.arangodb.entity.CollectionType;
-import com.arangodb.model.AqlQueryOptions;
 import eu.ebrains.kg.arango.commons.ArangoQueries;
 import eu.ebrains.kg.arango.commons.model.AQLQuery;
 import eu.ebrains.kg.arango.commons.model.ArangoCollectionReference;
@@ -37,7 +36,6 @@ import eu.ebrains.kg.commons.model.StreamedQueryResult;
 import eu.ebrains.kg.commons.models.UserWithRoles;
 import eu.ebrains.kg.commons.query.KgQuery;
 import eu.ebrains.kg.graphdb.commons.controller.ArangoDatabases;
-import eu.ebrains.kg.graphdb.commons.controller.ArangoRepositoryCommons;
 import eu.ebrains.kg.graphdb.commons.controller.GraphDBArangoUtils;
 import eu.ebrains.kg.graphdb.commons.controller.PermissionsController;
 import eu.ebrains.kg.graphdb.queries.model.spec.Specification;
@@ -50,19 +48,15 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import java.util.*;
-import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
 @Component
 public class QueryController {
 
-    private final static AqlQueryOptions QUERY_OPTIONS = new AqlQueryOptions();
-
     private final Logger logger = LoggerFactory.getLogger(getClass());
 
     private final SpecificationInterpreter specificationInterpreter;
 
-    private final ArangoRepositoryCommons arangoRepositoryCommons;
     private final PermissionsController permissionsController;
 
     private final ArangoDatabases arangoDatabases;
@@ -73,27 +67,15 @@ public class QueryController {
 
     private final Double maxMemoryForQuery;
 
-    public QueryController(SpecificationInterpreter specificationInterpreter, ArangoDatabases arangoDatabases, ArangoRepositoryCommons arangoRepositoryCommons, PermissionsController permissionsController, GraphDBArangoUtils graphDBArangoUtils, @Value("${eu.ebrains.kg.arango.maxMemory:#{null}}") Double maxMemoryForQuery, MetaDataController metaDataController) {
+    public QueryController(SpecificationInterpreter specificationInterpreter, ArangoDatabases arangoDatabases, PermissionsController permissionsController, GraphDBArangoUtils graphDBArangoUtils, @Value("${eu.ebrains.kg.arango.maxMemory:#{null}}") Double maxMemoryForQuery, MetaDataController metaDataController) {
         this.specificationInterpreter = specificationInterpreter;
         this.arangoDatabases = arangoDatabases;
         this.graphDBArangoUtils = graphDBArangoUtils;
-        this.arangoRepositoryCommons = arangoRepositoryCommons;
         this.permissionsController = permissionsController;
         this.maxMemoryForQuery = maxMemoryForQuery;
         this.metaDataController = metaDataController;
     }
 
-    public <T> void visit(UserWithRoles userWithRoles, KgQuery query, Map<String, String> filterValues, boolean scopeMode, Consumer<T> consumer, Class<T> clazz){
-        ArangoDatabase database = arangoDatabases.getByStage(query.getStage());
-        final Tuple<AQLQuery, Specification> q = query(database, userWithRoles, query, null, filterValues, scopeMode);
-        try {
-            arangoRepositoryCommons.visitDocuments(database, q.getA(), consumer, clazz);
-        } catch (ArangoDBException ex) {
-            logger.error(String.format("Was not able to execute query: %s", q.getA()));
-            throw ex;
-        }
-
-    }
 
     public QueryResult query(UserWithRoles userWithRoles, KgQuery query, PaginationParam paginationParam, Map<String, String> filterValues, boolean scopeMode) {
         ArangoDatabase database = arangoDatabases.getByStage(query.getStage());
@@ -119,7 +101,7 @@ public class QueryController {
 
 
     private Tuple<AQLQuery, Specification> query(ArangoDatabase database, UserWithRoles userWithRoles, KgQuery query, PaginationParam paginationParam, Map<String, String> filterValues, boolean scopeMode) {
-        Specification specification = specificationInterpreter.readSpecification(query.getPayload(), null);
+        Specification specification = specificationInterpreter.readSpecification(query.getPayload());
         Map<String, Object> whitelistFilter;
         if(scopeMode){
             specification = new SpecificationToScopeQueryAdapter(specification).translate();

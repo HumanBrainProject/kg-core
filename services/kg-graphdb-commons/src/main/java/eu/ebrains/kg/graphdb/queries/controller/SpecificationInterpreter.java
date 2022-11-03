@@ -45,7 +45,7 @@ public class SpecificationInterpreter {
 
     protected Logger logger = LoggerFactory.getLogger(SpecificationInterpreter.class);
 
-    public Specification readSpecification(NormalizedJsonLd jsonObject, Map<String, String> allParameters) {
+    public Specification readSpecification(NormalizedJsonLd jsonObject) {
         List<SpecProperty> specFields = null;
         Type rootType = null;
         String responseVocab = null;
@@ -58,164 +58,106 @@ public class SpecificationInterpreter {
                         rootType = new Type(type);
                     }
                 }
-                if(meta.containsKey(GraphQueryKeys.GRAPH_QUERY_RESPONSE_VOCAB.getFieldName())){
+                if (meta.containsKey(GraphQueryKeys.GRAPH_QUERY_RESPONSE_VOCAB.getFieldName())) {
                     responseVocab = meta.getAs(GraphQueryKeys.GRAPH_QUERY_RESPONSE_VOCAB.getFieldName(), String.class);
                 }
             }
         }
 
         if (jsonObject.containsKey(GraphQueryKeys.GRAPH_QUERY_STRUCTURE.getFieldName())) {
-            specFields = createSpecFields(jsonObject.get(GraphQueryKeys.GRAPH_QUERY_STRUCTURE.getFieldName()), allParameters);
+            specFields = createSpecFields(jsonObject.get(GraphQueryKeys.GRAPH_QUERY_STRUCTURE.getFieldName()));
         }
         PropertyFilter fieldFilter = null;
         if (jsonObject.containsKey(GraphQueryKeys.GRAPH_QUERY_FILTER.getFieldName())) {
-            fieldFilter = createFieldFilter((Map) jsonObject.get(GraphQueryKeys.GRAPH_QUERY_FILTER.getFieldName()));
+            fieldFilter = createFieldFilter((Map<?,?>) jsonObject.get(GraphQueryKeys.GRAPH_QUERY_FILTER.getFieldName()));
         }
         return new Specification(specFields, fieldFilter, rootType, responseVocab);
     }
 
 
-    private List<SpecProperty> createSpecFields(Object origin, Map<String, String> allParameters) {
+    private List<SpecProperty> createSpecFields(Object origin) {
         List<SpecProperty> result = new ArrayList<>();
         if (origin instanceof List) {
-            List originArray = (List) origin;
-            for (int i = 0; i < originArray.size(); i++) {
-                result.addAll(createSpecFields(originArray.get(i), allParameters));
+            List<?> originArray = (List<?>) origin;
+            for (Object o : originArray) {
+                result.addAll(createSpecFields(o));
             }
         } else if (origin instanceof Map) {
-            Map originObj = (Map) origin;
-            List<Object> allRelativePaths = null;
-            if (originObj.containsKey(GraphQueryKeys.GRAPH_QUERY_MERGE.getFieldName())) {
-                allRelativePaths = getAllRelativePaths(originObj.get(GraphQueryKeys.GRAPH_QUERY_MERGE.getFieldName()));
-            } else if (originObj.containsKey(GraphQueryKeys.GRAPH_QUERY_PATH.getFieldName())) {
-                allRelativePaths = Collections.singletonList(originObj.get(GraphQueryKeys.GRAPH_QUERY_PATH.getFieldName()));
+            Map<?,?> originObj = (Map<?,?>) origin;
+            Object relativePath = null;
+            if (originObj.containsKey(GraphQueryKeys.GRAPH_QUERY_PATH.getFieldName())) {
+                relativePath = originObj.get(GraphQueryKeys.GRAPH_QUERY_PATH.getFieldName());
             }
-            if (allRelativePaths != null && !allRelativePaths.isEmpty()) {
-                List<SpecProperty> fieldsPerRelativePath = new ArrayList<>();
-                for (Object relativePath : allRelativePaths) {
-                    if (relativePath != null) {
-                        List<SpecTraverse> traversalPath = createTraversalPath(relativePath);
-                        if (traversalPath != null && !traversalPath.isEmpty()) {
-                            String fieldName = null;
-                            List<SpecProperty> specFields = null;
-                            boolean required = false;
-                            boolean sortAlphabetically = false;
-                            boolean sortContent = false;
-                            boolean groupBy = false;
-                            boolean ensureOrder = false;
-                            PropertyFilter fieldFilter = null;
-                            SpecProperty.SingleItemStrategy singleItemStrategy = null;
-                            String groupedInstances = GraphQueryKeys.GRAPH_QUERY_GROUPED_INSTANCES_DEFAULT.getFieldName();
-                            if (originObj.containsKey(GraphQueryKeys.GRAPH_QUERY_PROPERTY_NAME.getFieldName())) {
-                                fieldName = (String) ((Map) originObj.get(GraphQueryKeys.GRAPH_QUERY_PROPERTY_NAME.getFieldName())).get(JsonLdConsts.ID);
-                            }
-                            if (fieldName == null) {
-                                //Fall back to the name of the last traversal item if the fieldname is not defined.
-                                fieldName = traversalPath.get(traversalPath.size() - 1).pathName;
-                            }
-                            if (originObj.containsKey(GraphQueryKeys.GRAPH_QUERY_STRUCTURE.getFieldName())) {
-                                specFields = createSpecFields(originObj.get(GraphQueryKeys.GRAPH_QUERY_STRUCTURE.getFieldName()), allParameters);
-                            }
-                            if (originObj.containsKey(GraphQueryKeys.GRAPH_QUERY_REQUIRED.getFieldName())) {
-                                required = (Boolean) originObj.get(GraphQueryKeys.GRAPH_QUERY_REQUIRED.getFieldName());
-                            }
-                            if (originObj.containsKey(GraphQueryKeys.GRAPH_QUERY_SORT.getFieldName())) {
-                                sortAlphabetically = (Boolean) originObj.get(GraphQueryKeys.GRAPH_QUERY_SORT.getFieldName());
-                            }
-                            if (originObj.containsKey(GraphQueryKeys.GRAPH_QUERY_SORT_CONTENT.getFieldName())) {
-                                sortContent = (Boolean) originObj.get(GraphQueryKeys.GRAPH_QUERY_SORT_CONTENT.getFieldName());
-                            }
-                            if (originObj.containsKey(GraphQueryKeys.GRAPH_QUERY_ENSURE_ORDER.getFieldName())) {
-                                ensureOrder = (Boolean) originObj.get(GraphQueryKeys.GRAPH_QUERY_ENSURE_ORDER.getFieldName());
-                            }
-                            if (originObj.containsKey(GraphQueryKeys.GRAPH_QUERY_GROUPED_INSTANCES.getFieldName())) {
-                                groupedInstances = (String) ((Map) originObj.get(GraphQueryKeys.GRAPH_QUERY_GROUPED_INSTANCES.getFieldName())).get(JsonLdConsts.ID);
-                            }
-                            if (originObj.containsKey(GraphQueryKeys.GRAPH_QUERY_GROUP_BY.getFieldName())) {
-                                groupBy = (Boolean) originObj.get(GraphQueryKeys.GRAPH_QUERY_GROUP_BY.getFieldName());
-                            }
-                            if (originObj.containsKey(GraphQueryKeys.GRAPH_QUERY_FILTER.getFieldName())) {
-                                fieldFilter = createFieldFilter((Map) originObj.get(GraphQueryKeys.GRAPH_QUERY_FILTER.getFieldName()));
-                            }
-                            if (originObj.containsKey(GraphQueryKeys.GRAPH_QUERY_SINGLE_VALUE.getFieldName())) {
-                                singleItemStrategy = SpecProperty.SingleItemStrategy.valueOf((String) originObj.get(GraphQueryKeys.GRAPH_QUERY_SINGLE_VALUE.getFieldName()));
-                            }
+            if (relativePath != null) {
+                SpecProperty fieldForRelativePath = null;
+                List<SpecTraverse> traversalPath = createTraversalPath(relativePath);
+                if (!traversalPath.isEmpty()) {
+                    String fieldName = null;
+                    List<SpecProperty> specFields = null;
+                    boolean required = false;
+                    boolean sortAlphabetically = false;
+                    boolean sortContent = false;
+                    boolean groupBy = false;
+                    boolean ensureOrder = false;
+                    PropertyFilter fieldFilter = null;
+                    SpecProperty.SingleItemStrategy singleItemStrategy = null;
+                    String groupedInstances = GraphQueryKeys.GRAPH_QUERY_GROUPED_INSTANCES_DEFAULT.getFieldName();
+                    if (originObj.containsKey(GraphQueryKeys.GRAPH_QUERY_PROPERTY_NAME.getFieldName())) {
+                        fieldName = (String) ((Map<?,?>) originObj.get(GraphQueryKeys.GRAPH_QUERY_PROPERTY_NAME.getFieldName())).get(JsonLdConsts.ID);
+                    }
+                    if (fieldName == null) {
+                        //Fall back to the name of the last traversal item if the fieldname is not defined.
+                        fieldName = traversalPath.get(traversalPath.size() - 1).pathName;
+                    }
+                    if (originObj.containsKey(GraphQueryKeys.GRAPH_QUERY_STRUCTURE.getFieldName())) {
+                        specFields = createSpecFields(originObj.get(GraphQueryKeys.GRAPH_QUERY_STRUCTURE.getFieldName()));
+                    }
+                    if (originObj.containsKey(GraphQueryKeys.GRAPH_QUERY_REQUIRED.getFieldName())) {
+                        required = (Boolean) originObj.get(GraphQueryKeys.GRAPH_QUERY_REQUIRED.getFieldName());
+                    }
+                    if (originObj.containsKey(GraphQueryKeys.GRAPH_QUERY_SORT.getFieldName())) {
+                        sortAlphabetically = (Boolean) originObj.get(GraphQueryKeys.GRAPH_QUERY_SORT.getFieldName());
+                    }
+                    if (originObj.containsKey(GraphQueryKeys.GRAPH_QUERY_SORT_CONTENT.getFieldName())) {
+                        sortContent = (Boolean) originObj.get(GraphQueryKeys.GRAPH_QUERY_SORT_CONTENT.getFieldName());
+                    }
+                    if (originObj.containsKey(GraphQueryKeys.GRAPH_QUERY_ENSURE_ORDER.getFieldName())) {
+                        ensureOrder = (Boolean) originObj.get(GraphQueryKeys.GRAPH_QUERY_ENSURE_ORDER.getFieldName());
+                    }
+                    if (originObj.containsKey(GraphQueryKeys.GRAPH_QUERY_GROUPED_INSTANCES.getFieldName())) {
+                        groupedInstances = (String) ((Map<?,?>) originObj.get(GraphQueryKeys.GRAPH_QUERY_GROUPED_INSTANCES.getFieldName())).get(JsonLdConsts.ID);
+                    }
+                    if (originObj.containsKey(GraphQueryKeys.GRAPH_QUERY_GROUP_BY.getFieldName())) {
+                        groupBy = (Boolean) originObj.get(GraphQueryKeys.GRAPH_QUERY_GROUP_BY.getFieldName());
+                    }
+                    if (originObj.containsKey(GraphQueryKeys.GRAPH_QUERY_FILTER.getFieldName())) {
+                        fieldFilter = createFieldFilter((Map<?,?>) originObj.get(GraphQueryKeys.GRAPH_QUERY_FILTER.getFieldName()));
+                    }
+                    if (originObj.containsKey(GraphQueryKeys.GRAPH_QUERY_SINGLE_VALUE.getFieldName())) {
+                        singleItemStrategy = SpecProperty.SingleItemStrategy.valueOf((String) originObj.get(GraphQueryKeys.GRAPH_QUERY_SINGLE_VALUE.getFieldName()));
+                    }
 
-                            Map<String, Object> customDirectives = new TreeMap<>();
-                            for (Object key : originObj.keySet()) {
-                                if (key instanceof String && !GraphQueryKeys.isKey((String) key)) {
-                                    customDirectives.put((String) key, originObj.get((String) key));
-                                }
-                            }
-                            fieldsPerRelativePath.add(new SpecProperty(fieldName, specFields, traversalPath, groupedInstances, required, sortAlphabetically, sortContent, groupBy, ensureOrder, fieldFilter, singleItemStrategy, customDirectives));
+                    Map<String, Object> customDirectives = new TreeMap<>();
+                    for (Object key : originObj.keySet()) {
+                        if (key instanceof String && !GraphQueryKeys.isKey((String) key)) {
+                            customDirectives.put((String) key, originObj.get(key));
                         }
                     }
+                    fieldForRelativePath = new SpecProperty(fieldName, specFields, traversalPath, groupedInstances, required, sortAlphabetically, sortContent, groupBy, ensureOrder, fieldFilter, singleItemStrategy, customDirectives);
                 }
-                if (fieldsPerRelativePath.size() > 1) {
-                    SpecProperty rootField = null;
-                    for (int i = 0; i < fieldsPerRelativePath.size(); i++) {
-                        SpecProperty specField = fieldsPerRelativePath.get(i);
-                        if (rootField == null) {
-                            rootField = new SpecProperty(specField.propertyName, fieldsPerRelativePath, Collections.emptyList(), specField.groupedInstances, specField.required, specField.sortAlphabetically, specField.sortContent, specField.groupBy, specField.ensureOrder, specField.propertyFilter, specField.singleItem);
-                        }
-                        specField.sortAlphabetically = false;
-                        specField.groupBy = false;
-                        specField.required = false;
-                        specField.propertyName = String.format("%s_%d", specField.propertyName, i);
-                    }
-                    return Collections.singletonList(rootField);
-                } else if (!fieldsPerRelativePath.isEmpty()) {
-                    return Collections.singletonList(fieldsPerRelativePath.get(0));
+                if (fieldForRelativePath != null) {
+                    return Collections.singletonList(fieldForRelativePath);
                 }
-
             }
         }
         return result;
     }
 
-    private Object removeAtId(Object object) {
-        if (object instanceof Map && ((Map) object).containsKey(JsonLdConsts.ID)) {
-            return ((Map) object).get(JsonLdConsts.ID);
-        }
-        return object;
-
-    }
-
-    private boolean hasMultipleRelativePaths(List relativePath) {
-        for (int i = 0; i < relativePath.size(); i++) {
-            if (relativePath.get(i) instanceof List) {
-                return true;
-            }
-        }
-        return false;
-    }
-
-
-    private List<Object> getAllRelativePaths(Object merge) {
-        if (merge instanceof List) {
-            List mergeArray = (List) merge;
-            List<Object> result = new ArrayList<>();
-            for (int i = 0; i < mergeArray.size(); i++) {
-                if (mergeArray.get(i) instanceof Map) {
-                    Map jsonObject = (Map) mergeArray.get(i);
-                    if (jsonObject.containsKey(GraphQueryKeys.GRAPH_QUERY_PATH.getFieldName())) {
-                        result.add(jsonObject.get(GraphQueryKeys.GRAPH_QUERY_PATH.getFieldName()));
-                    }
-                }
-            }
-            return result;
-        } else {
-            return Collections.emptyList();
-        }
-    }
-
-
     private List<SpecTraverse> createTraversalPath(Object relativePath) {
         List<SpecTraverse> result = new ArrayList<>();
         if (relativePath instanceof List) {
-            List relativePathArray = (List) relativePath;
-            for (int i = 0; i < relativePathArray.size(); i++) {
-                Object relativePathElement = relativePathArray.get(i);
+            List<?> relativePathArray = (List<?>) relativePath;
+            for (Object relativePathElement : relativePathArray) {
                 if (relativePathElement != null) {
                     result.add(createSpecTraverse(relativePathElement));
                 }
@@ -227,20 +169,20 @@ public class SpecificationInterpreter {
     }
 
     private SpecTraverse createSpecTraverse(Object relativePathElement) {
-        String path = null;
+        String path;
         boolean reverse = false;
         List<Type> types = null;
-        if (relativePathElement instanceof Map && ((Map) relativePathElement).containsKey(JsonLdConsts.ID)) {
-            path = (String) ((Map) relativePathElement).get(JsonLdConsts.ID);
-            if (((Map) relativePathElement).containsKey(GraphQueryKeys.GRAPH_QUERY_REVERSE.getFieldName())) {
-                reverse = (Boolean) ((Map) relativePathElement).get(GraphQueryKeys.GRAPH_QUERY_REVERSE.getFieldName());
+        if (relativePathElement instanceof Map && ((Map<?,?>) relativePathElement).containsKey(JsonLdConsts.ID)) {
+            path = (String) ((Map<?,?>) relativePathElement).get(JsonLdConsts.ID);
+            if (((Map<?,?>) relativePathElement).containsKey(GraphQueryKeys.GRAPH_QUERY_REVERSE.getFieldName())) {
+                reverse = (Boolean) ((Map<?,?>) relativePathElement).get(GraphQueryKeys.GRAPH_QUERY_REVERSE.getFieldName());
             }
-            if (((Map) relativePathElement).containsKey(GraphQueryKeys.GRAPH_QUERY_TYPE_FILTER.getFieldName())) {
-                Object typeFilter = ((Map) relativePathElement).get(GraphQueryKeys.GRAPH_QUERY_TYPE_FILTER.getFieldName());
+            if (((Map<?,?>) relativePathElement).containsKey(GraphQueryKeys.GRAPH_QUERY_TYPE_FILTER.getFieldName())) {
+                Object typeFilter = ((Map<?,?>) relativePathElement).get(GraphQueryKeys.GRAPH_QUERY_TYPE_FILTER.getFieldName());
                 if (typeFilter instanceof Collection) {
                     types = ((Collection<?>) typeFilter).stream().filter(t -> t instanceof Map).map(t -> ((Map<?, ?>) t).get(JsonLdConsts.ID)).filter(id -> id instanceof String).map(id -> new Type((String) id)).collect(Collectors.toList());
                 } else if (typeFilter instanceof Map) {
-                    Object id = ((Map) typeFilter).get(JsonLdConsts.ID);
+                    Object id = ((Map<?,?>) typeFilter).get(JsonLdConsts.ID);
                     if (id instanceof String) {
                         types = Collections.singletonList(new Type((String) id));
                     }
@@ -253,7 +195,7 @@ public class SpecificationInterpreter {
     }
 
 
-    public static PropertyFilter createFieldFilter(Map fieldFilter) {
+    public static PropertyFilter createFieldFilter(Map<?,?> fieldFilter) {
         if (fieldFilter.containsKey(GraphQueryKeys.GRAPH_QUERY_FILTER_OP.getFieldName())) {
             String stringOp = (String) fieldFilter.get(GraphQueryKeys.GRAPH_QUERY_FILTER_OP.getFieldName());
             if (stringOp != null) {

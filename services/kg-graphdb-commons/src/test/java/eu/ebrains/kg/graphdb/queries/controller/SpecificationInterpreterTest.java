@@ -39,7 +39,7 @@ public class SpecificationInterpreterTest {
         NormalizedJsonLd query = TestObjectFactory.createJsonLd(TestObjectFactory.SIMPSONS, "normalizedQueries/simpsonsFamilyNames.json");
 
         //When
-        Specification specification = specificationInterpreter.readSpecification(query, null);
+        Specification specification = specificationInterpreter.readSpecification(query);
 
         //Then
         Assert.assertEquals(2, specification.getProperties().size());
