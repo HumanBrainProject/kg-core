@@ -1,4 +1,4 @@
-FROM docker.kg.ebrains.eu/openjdk:11-jre-slim
+FROM openjdk:11-jre-slim
 VOLUME /tmp
 COPY target/kg-core-allinone.jar kg-core-allinone.jar
 ENV JAVA_OPTS=""
