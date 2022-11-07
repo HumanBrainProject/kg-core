@@ -79,7 +79,7 @@ public interface GraphDBInstances {
     ReleaseStatus getReleaseStatus(String space, UUID id, ReleaseTreeScope treeScope);
 
     @ExposesReleaseStatus
-    Map<UUID, ReleaseStatus> getIndividualReleaseStatus(List<InstanceId> instanceIds);
+    Map<UUID, ReleaseStatus> getIndividualReleaseStatus(List<InstanceId> instanceIds, ReleaseTreeScope releaseTreeScope);
 
     @ExposesMinimalData
     SuggestionResult getSuggestedLinksForProperty(NormalizedJsonLd payload, DataStage stage, String space, UUID id, String propertyName, String sourceType, String targetType, String search, PaginationParam paginationParam);

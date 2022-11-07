@@ -369,7 +369,7 @@ public class Instances {
     public Result<Map<UUID, Result<ReleaseStatus>>> getReleaseStatusByIds(@RequestBody List<UUID> listOfIds, @RequestParam("releaseTreeScope") ReleaseTreeScope releaseTreeScope) {
         List<InstanceId> instanceIds = idsController.resolveIdsByUUID(DataStage.IN_PROGRESS, listOfIds, false);
         Map<UUID, Result<ReleaseStatus>> result = new HashMap<>();
-        final Map<UUID, ReleaseStatus> releaseStatus = release.getIndividualReleaseStatus(instanceIds);
+        final Map<UUID, ReleaseStatus> releaseStatus = release.getIndividualReleaseStatus(instanceIds, releaseTreeScope);
         releaseStatus.keySet().forEach(id -> result.put(id, Result.ok(releaseStatus.get(id))));
         return Result.ok(result);
     }

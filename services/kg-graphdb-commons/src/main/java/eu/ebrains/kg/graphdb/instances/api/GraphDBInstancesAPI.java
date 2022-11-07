@@ -164,8 +164,8 @@ public class GraphDBInstancesAPI implements GraphDBInstances.Client {
 
     @Override
     @ExposesReleaseStatus
-    public Map<UUID, ReleaseStatus> getIndividualReleaseStatus(List<InstanceId> instanceIds) {
-        return repository.getIndividualReleaseStatus(instanceIds);
+    public Map<UUID, ReleaseStatus> getIndividualReleaseStatus(List<InstanceId> instanceIds, ReleaseTreeScope releaseTreeScope) {
+        return repository.getIndividualReleaseStatus(instanceIds, releaseTreeScope);
     }
 
 

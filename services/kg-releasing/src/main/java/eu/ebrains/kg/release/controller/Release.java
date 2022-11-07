@@ -72,8 +72,8 @@ public class Release {
         return graphDBInstances.getReleaseStatus(space!=null ? space.getName() : null, id, treeScope);
     }
 
-    public Map<UUID, ReleaseStatus> getIndividualInstanceStatuses(List<InstanceId> instanceIds) {
-        return graphDBInstances.getIndividualReleaseStatus(instanceIds);
+    public Map<UUID, ReleaseStatus> getIndividualInstanceStatuses(List<InstanceId> instanceIds, ReleaseTreeScope releaseTreeScope) {
+        return graphDBInstances.getIndividualReleaseStatus(instanceIds, releaseTreeScope);
     }
 
     private IndexedJsonLdDoc getInstance(DataStage stage, SpaceName space, UUID id) {

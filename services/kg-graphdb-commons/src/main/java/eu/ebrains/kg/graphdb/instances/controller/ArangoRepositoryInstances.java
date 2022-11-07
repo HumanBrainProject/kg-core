@@ -968,7 +968,7 @@ public class ArangoRepositoryInstances {
     }
 
     @ExposesReleaseStatus
-    public Map<UUID, ReleaseStatus> getIndividualReleaseStatus(List<InstanceId> instanceIds) {
+    public Map<UUID, ReleaseStatus> getIndividualReleaseStatus(List<InstanceId> instanceIds, ReleaseTreeScope releaseTreeScope) {
         final UserWithRoles userWithRoles = authContext.getUserWithRoles();
         // Depending on the number of i nstance ids, the permission check can take a while. To make things faster,
         // we memorize if there are space permissions available and only do explicit checks for individual instances if needed.
@@ -984,7 +984,12 @@ public class ArangoRepositoryInstances {
                 }
             }
         });
-        return TypeUtils.splitList(instanceIds, 2000).stream().map(chunk -> getTopInstanceReleaseStatus(chunk).entrySet()).flatMap(Collection::stream).collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+        if(releaseTreeScope == ReleaseTreeScope.TOP_INSTANCE_ONLY){
+            return TypeUtils.splitList(instanceIds, 2000).stream().map(chunk -> getTopInstanceReleaseStatus(chunk).entrySet()).flatMap(Collection::stream).collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
+        }
+        //TODO optimize in terms of bulk queries
+        return instanceIds.stream().collect(Collectors.toMap(InstanceId::getUuid, i -> getReleaseStatus(i.getSpace(), i.getUuid(), releaseTreeScope)));
+
     }
 
 
@@ -1017,7 +1022,7 @@ public class ArangoRepositoryInstances {
                 aql.addLine(AQL.trust("RETURN status"));
                 ArangoDatabase db = databases.getByStage(DataStage.IN_PROGRESS);
                 List<String> status = db.query(aql.build().getValue(), bindVars, String.class).asListRemaining();
-                if (status.contains("null") || status.contains(ReleaseStatus.UNRELEASED.name())) {
+                if (status.contains(null) || status.contains(ReleaseStatus.UNRELEASED.name())) {
                     return ReleaseStatus.UNRELEASED;
                 } else if (status.contains(ReleaseStatus.HAS_CHANGED.name())) {
                     return ReleaseStatus.HAS_CHANGED;

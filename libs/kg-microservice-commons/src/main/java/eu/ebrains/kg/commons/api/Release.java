@@ -40,5 +40,5 @@ public interface Release {
 
     ReleaseStatus getReleaseStatus(String space, UUID id, ReleaseTreeScope releaseTreeScope);
 
-    Map<UUID, ReleaseStatus> getIndividualReleaseStatus(List<InstanceId> instanceIds);
+    Map<UUID, ReleaseStatus> getIndividualReleaseStatus(List<InstanceId> instanceIds, ReleaseTreeScope releaseTreeScope);
 }

@@ -60,8 +60,8 @@ public class ReleaseAPI implements eu.ebrains.kg.commons.api.Release.Client {
     }
 
     @Override
-    public Map<UUID, ReleaseStatus> getIndividualReleaseStatus(List<InstanceId> instanceIds){
-        return release.getIndividualInstanceStatuses(instanceIds);
+    public Map<UUID, ReleaseStatus> getIndividualReleaseStatus(List<InstanceId> instanceIds, ReleaseTreeScope releaseTreeScope){
+        return release.getIndividualInstanceStatuses(instanceIds, releaseTreeScope);
     }
 
 }
