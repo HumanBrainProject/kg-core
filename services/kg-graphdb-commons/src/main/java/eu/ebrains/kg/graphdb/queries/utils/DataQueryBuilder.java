@@ -33,6 +33,7 @@ import eu.ebrains.kg.graphdb.queries.model.fieldFilter.PropertyFilter;
 import eu.ebrains.kg.graphdb.queries.model.spec.SpecProperty;
 import eu.ebrains.kg.graphdb.queries.model.spec.SpecTraverse;
 import eu.ebrains.kg.graphdb.queries.model.spec.Specification;
+import org.apache.commons.lang3.StringUtils;
 
 import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
@@ -556,7 +557,7 @@ public class DataQueryBuilder {
                 } else {
                     TrustedAqlValue fieldFilter = createFieldFilter(field.propertyFilter);
                     if (fieldFilter != null) {
-                        aql.addLine(trust("AND IS_ARRAY(${field}) ? ${field}[* FILTER LOWER(CURRENT)${fieldFilter}] != [] : LOWER(${field})${fieldFilter}"));
+                        aql.addLine(trust("AND (IS_ARRAY(${field}) ? ${field}[* FILTER LOWER(CURRENT)${fieldFilter}] != [] : LOWER(${field})${fieldFilter})"));
                         aql.setTrustedParameter("fieldFilter", fieldFilter);
                     }
                 }
@@ -581,7 +582,7 @@ public class DataQueryBuilder {
             if (value == null && fieldFilter.getValue() != null) {
                 value = fieldFilter.getValue().getValue();
             }
-            if (value != null && key != null) {
+            if (StringUtils.isNotBlank(value) && key != null) {
                 if (prefixWildcard && !value.startsWith("%")) {
                     value = "%" + value;
                 }
