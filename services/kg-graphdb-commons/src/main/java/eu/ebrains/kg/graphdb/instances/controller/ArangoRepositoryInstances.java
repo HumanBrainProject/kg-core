@@ -988,7 +988,12 @@ public class ArangoRepositoryInstances {
             return TypeUtils.splitList(instanceIds, 2000).stream().map(chunk -> getTopInstanceReleaseStatus(chunk).entrySet()).flatMap(Collection::stream).collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
         }
         //TODO optimize in terms of bulk queries
-        return instanceIds.stream().collect(Collectors.toMap(InstanceId::getUuid, i -> getReleaseStatus(i.getSpace(), i.getUuid(), releaseTreeScope)));
+        Map<UUID, ReleaseStatus> result = new HashMap<>();
+        instanceIds.forEach(i -> {
+            ReleaseStatus releaseStatus = getReleaseStatus(i.getSpace(), i.getUuid(), releaseTreeScope);
+            result.put(i.getUuid(), releaseStatus);
+        });
+        return result;
 
     }
 
