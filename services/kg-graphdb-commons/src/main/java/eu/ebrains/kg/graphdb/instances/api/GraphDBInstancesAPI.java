@@ -43,6 +43,7 @@ import eu.ebrains.kg.graphdb.instances.model.ArangoRelation;
 import eu.ebrains.kg.graphdb.structure.api.GraphDBTypesAPI;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Component;
+import org.springframework.util.CollectionUtils;
 
 import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
@@ -210,6 +211,28 @@ public class GraphDBInstancesAPI implements GraphDBInstances.Client {
         });
         final List<Type> targetTypes = suggestionResult.getTypes().values().stream().map(Type::fromPayload).collect(Collectors.toList());
         Paginated<SuggestedLink> documentsByTypes = repository.getSuggestionsByTypes(stage, paginationParam, targetTypes, searchablePropertiesByType, search, existingLinks);
+
+        //We check for those instances that do not have additional information, if we can get something from the released endpoint
+        final List<InstanceId> instancesWithoutAdditionalInfo = documentsByTypes.getData().stream().filter(d -> d.getAdditionalInformation() == null).map(d -> {
+            if (!CollectionUtils.isEmpty(searchablePropertiesByType.get(d.getType()))) {
+                return new InstanceId(d.getId(), SpaceName.fromString(d.getSpace()));
+            }
+            return null;
+        }).filter(Objects::nonNull).distinct().collect(Collectors.toList());
+        final Map<UUID, Result<NormalizedJsonLd>> documentsByIdList = repository.getDocumentsByIdList(DataStage.RELEASED, instancesWithoutAdditionalInfo, null, false, false, false, null);
+        documentsByTypes.getData().stream().filter(d -> d.getAdditionalInformation() == null).forEach(d -> {
+            final List<String> searchableProperties = searchablePropertiesByType.get(d.getType());
+            if (!CollectionUtils.isEmpty(searchableProperties)) {
+                final Result<NormalizedJsonLd> document = documentsByIdList.get(d.getId());
+                if(document!=null && document.getData()!=null){
+                    final String additionalInformation = searchableProperties.stream().map(p -> document.getData().get(p)).filter(Objects::nonNull).map(Object::toString).collect(Collectors.joining(", "));
+                    if(StringUtils.isNotBlank(additionalInformation)){
+                        d.setAdditionalInformation(additionalInformation.trim());
+                    }
+                }
+            }
+        });
+
         suggestionResult.setSuggestions(documentsByTypes);
         suggestionResult.getTypes().values().forEach( t -> {
             t.clearProperties();

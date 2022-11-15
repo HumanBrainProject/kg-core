@@ -87,41 +87,51 @@ public class Instances {
         this.jsonLd = jsonLd;
     }
 
-    @Operation(summary = "Create new instance with a system generated id")
-    @io.swagger.v3.oas.annotations.parameters.RequestBody(content = @Content(examples = @ExampleObject(name = "minimalistic", value = "{ \"@type\": \"https://openminds.ebrains.eu/core/Person\" }")))
+    @Operation(summary = "Create new instance with a system generated id", description = "The invocation of this endpoint causes the ingestion of the payload (if valid) in the KG by assigning a new \"@id\" to it.\n\n" +
+            "Please note that any \"@id\" specified in the payload will be interpreted as an additional identifier and therefore added to the \"http://schema.org/identifier\" array.")
+    @io.swagger.v3.oas.annotations.parameters.RequestBody(content = @Content(examples = {
+            @ExampleObject(name = "minimalistic", description = "The most minimal payload you could think of only contains an @type.", value = "{ \"@type\": \"https://openminds.ebrains.eu/core/Person\" }"),
+            @ExampleObject(name = "with property", description = "A payload can contain - next to the @type additional properties.", value = "{ \"@type\": \"https://openminds.ebrains.eu/core/Person\"\n,  \"https://openminds.ebrains.eu/vocab/givenName\": \"Bob\"\n}"),
+            @ExampleObject(name = "with link", description = "To link to other instances, the JSON-LD notation can be used. Please note that you can use any \"@id\" or \"http://schema.org/identifier\" of the targeted resource to link it", value = "{ \"@type\": \"https://openminds.ebrains.eu/core/Person\"\n,  \"https://openminds.ebrains.eu/vocab/affiliation\": [ { \"@id\": \"http://someQualifiedIdentifier/ACME_orporation\" } ]\n}")
+    }))
     @PostMapping("/instances")
     @WritesData
     @ExposesData
     @Simple
-    public ResponseEntity<Result<NormalizedJsonLd>> createNewInstance(@RequestBody JsonLdDoc jsonLdDoc, @RequestParam(value = "space") @Parameter(description = "The space name the instance shall be stored in or \""+SpaceName.PRIVATE_SPACE+"\" if you want to store it to your private space") String space, @ParameterObject ExtendedResponseConfiguration responseConfiguration) {
+    public ResponseEntity<Result<NormalizedJsonLd>> createNewInstance(@RequestBody JsonLdDoc jsonLdDoc, @RequestParam(value = "space") @Parameter(description = "The space name the instance shall be stored in or \"" + SpaceName.PRIVATE_SPACE + "\" if you want to store it to your private space") String space, @ParameterObject ExtendedResponseConfiguration responseConfiguration) {
         return createNewInstanceWithId(jsonLdDoc, UUID.randomUUID(), space, responseConfiguration);
     }
 
-  
-    @Operation(summary = "Create new instance with a client defined id")
+
+    @Operation(summary = "Create new instance with a client defined id", description = "The invocation of this endpoint causes the ingestion of the payload (if valid) in the KG by using the specified UUID" +
+            "Please note that any \"@id\" specified in the payload will be interpreted as an additional identifier and therefore added to the \"http://schema.org/identifier\" array.")
     @PostMapping("/instances/{id}")
     @ExposesData
     @WritesData
+    @io.swagger.v3.oas.annotations.parameters.RequestBody(content = @Content(examples = {
+            @ExampleObject(name = "minimalistic", description = "The most minimal payload you could think of only contains an @type.", value = "{ \"@type\": \"https://openminds.ebrains.eu/core/Person\" }"),
+            @ExampleObject(name = "with property", description = "A payload can contain - next to the @type additional properties.", value = "{ \"@type\": \"https://openminds.ebrains.eu/core/Person\"\n,  \"https://openminds.ebrains.eu/vocab/givenName\": \"Bob\"\n}"),
+            @ExampleObject(name = "with link", description = "To link to other instances, the JSON-LD notation can be used. Please note that you can use any \"@id\" or \"http://schema.org/identifier\" of the targeted resource to link it", value = "{ \"@type\": \"https://openminds.ebrains.eu/core/Person\"\n,  \"https://openminds.ebrains.eu/vocab/affiliation\": [ { \"@id\": \"http://someQualifiedIdentifier/ACME_orporation\" } ]\n}")
+    }))
     @Simple
-    public ResponseEntity<Result<NormalizedJsonLd>> createNewInstanceWithId(@RequestBody JsonLdDoc jsonLdDoc, @PathVariable("id") UUID id, @RequestParam(value = "space") @Parameter(description = "The space name the instance shall be stored in or \""+SpaceName.PRIVATE_SPACE+"\" if you want to store it to your private space") String space, @ParameterObject ExtendedResponseConfiguration responseConfiguration) {
-	    Date startTime = new Date();
+    public ResponseEntity<Result<NormalizedJsonLd>> createNewInstanceWithId(@RequestBody JsonLdDoc jsonLdDoc, @PathVariable("id") UUID id, @RequestParam(value = "space") @Parameter(description = "The space name the instance shall be stored in or \"" + SpaceName.PRIVATE_SPACE + "\" if you want to store it to your private space") String space, @ParameterObject ExtendedResponseConfiguration responseConfiguration) {
+        Date startTime = new Date();
         SpaceName spaceName = authContext.resolveSpaceName(space);
         logger.debug(String.format("Creating new instance with id %s", id));
         ResponseEntity<Result<NormalizedJsonLd>> newInstance = instanceController.createNewInstance(normalizePayload(jsonLdDoc, true), id, spaceName, responseConfiguration);
         logger.debug(String.format("Done creating new instance with id %s", id));
         final Result<NormalizedJsonLd> body = newInstance.getBody();
-        if(body !=null){
+        if (body != null) {
             body.setExecutionDetails(startTime, new Date());
         }
         return newInstance;
     }
 
-    private NormalizedJsonLd normalizePayload(JsonLdDoc jsonLdDoc, boolean requiresTypeAtRootLevel){
-        try{
+    private NormalizedJsonLd normalizePayload(JsonLdDoc jsonLdDoc, boolean requiresTypeAtRootLevel) {
+        try {
             jsonLdDoc.normalizeTypes();
             jsonLdDoc.validate(requiresTypeAtRootLevel);
-        }
-        catch (InvalidRequestException e){
+        } catch (InvalidRequestException e) {
             //There have been validation errors -> we're going to normalize and validate again...
             final NormalizedJsonLd normalized = jsonLd.normalize(jsonLdDoc, true);
             normalized.validate(requiresTypeAtRootLevel);
@@ -141,19 +151,19 @@ public class Instances {
         ResponseEntity<Result<NormalizedJsonLd>> resultResponseEntity = instanceController.contributeToInstance(normalizedJsonLd, instanceId, removeNonDeclaredFields, responseConfiguration);
         logger.debug(String.format("Done contributing to instance with id %s", id));
         Result<NormalizedJsonLd> body = resultResponseEntity.getBody();
-        if(body!=null){
+        if (body != null) {
             body.setExecutionDetails(startTime, new Date());
         }
         return resultResponseEntity;
     }
 
-    @Operation(summary =  "Replace contribution to an existing instance")
+    @Operation(summary = "Replace contribution to an existing instance")
     @PutMapping("/instances/{id}")
     @ExposesData
     @WritesData
     @Simple
     public ResponseEntity<Result<NormalizedJsonLd>> contributeToInstanceFullReplacement(@RequestBody JsonLdDoc jsonLdDoc, @PathVariable("id") UUID id, @ParameterObject ExtendedResponseConfiguration responseConfiguration) {
-        return contributeToInstance(normalizePayload(jsonLdDoc, true), id, responseConfiguration,  true);
+        return contributeToInstance(normalizePayload(jsonLdDoc, true), id, responseConfiguration, true);
     }
 
     @Operation(summary = "Partially update contribution to an existing instance")
@@ -180,7 +190,7 @@ public class Instances {
     @ExposesData
     @Advanced
     public PaginatedResult<NormalizedJsonLd> getIncomingLinks(@PathVariable("id") UUID id, @RequestParam("stage") ExposedStage stage, @RequestParam("property") String property, @RequestParam("type") String type, @ParameterObject PaginationParam paginationParam) {
-        return PaginatedResult.ok(instanceController.getIncomingLinks(id, stage.getStage(), URLDecoder.decode(property, StandardCharsets.UTF_8), type!=null ? new Type(type) : null, paginationParam));
+        return PaginatedResult.ok(instanceController.getIncomingLinks(id, stage.getStage(), URLDecoder.decode(property, StandardCharsets.UTF_8), type != null ? new Type(type) : null, paginationParam));
     }
 
 
@@ -209,19 +219,18 @@ public class Instances {
     @GetMapping("/instances")
     @ExposesData
     @Simple
-    public PaginatedResult<NormalizedJsonLd> listInstances(@RequestParam("stage") ExposedStage stage, @RequestParam("type") @Parameter(examples = { @ExampleObject(name="person", value = "https://openminds.ebrains.eu/core/Person", description = "An openminds person"), @ExampleObject(name="datasetVersion", value="https://openminds.ebrains.eu/core/DatasetVersion", description = "An openminds dataset version")}) String type, @RequestParam(value = "space", required = false) @Parameter(description = "The space of the instances to be listed or \""+SpaceName.PRIVATE_SPACE+"\" for your private space", examples = {@ExampleObject(name="myspace", value = "myspace"), @ExampleObject(name = "dataset", value = "dataset")}) String space, @RequestParam(value = "searchByLabel", required = false) String searchByLabel, @RequestParam(value = "filterProperty", required = false) String filterProperty, @RequestParam(value = "filterValue", required = false) String filterValue, @ParameterObject ResponseConfiguration responseConfiguration, @ParameterObject PaginationParam paginationParam) {
+    public PaginatedResult<NormalizedJsonLd> listInstances(@RequestParam("stage") ExposedStage stage, @RequestParam("type") @Parameter(examples = {@ExampleObject(name = "person", value = "https://openminds.ebrains.eu/core/Person", description = "An openminds person"), @ExampleObject(name = "datasetVersion", value = "https://openminds.ebrains.eu/core/DatasetVersion", description = "An openminds dataset version")}) String type, @RequestParam(value = "space", required = false) @Parameter(description = "The space of the instances to be listed or \"" + SpaceName.PRIVATE_SPACE + "\" for your private space", examples = {@ExampleObject(name = "myspace", value = "myspace"), @ExampleObject(name = "dataset", value = "dataset")}) String space, @RequestParam(value = "searchByLabel", required = false) String searchByLabel, @RequestParam(value = "filterProperty", required = false) String filterProperty, @RequestParam(value = "filterValue", required = false) String filterValue, @ParameterObject ResponseConfiguration responseConfiguration, @ParameterObject PaginationParam paginationParam) {
         PaginatedResult<NormalizedJsonLd> result;
         Date startTime = new Date();
-        if(virtualSpaceController.isVirtualSpace(space)){
+        if (virtualSpaceController.isVirtualSpace(space)) {
             List<NormalizedJsonLd> instancesByInvitation = virtualSpaceController.getInstancesByInvitation(responseConfiguration, stage.getStage(), type);
             int total = instancesByInvitation.size();
-            if(paginationParam.getFrom()!=0 || paginationParam.getSize()!=null){
-                int lastIndex = paginationParam.getSize() == null ? instancesByInvitation.size() : Math.min(instancesByInvitation.size(), (int)(paginationParam.getFrom()+paginationParam.getSize()));
-                instancesByInvitation = instancesByInvitation.subList((int)paginationParam.getFrom(), lastIndex);
+            if (paginationParam.getFrom() != 0 || paginationParam.getSize() != null) {
+                int lastIndex = paginationParam.getSize() == null ? instancesByInvitation.size() : Math.min(instancesByInvitation.size(), (int) (paginationParam.getFrom() + paginationParam.getSize()));
+                instancesByInvitation = instancesByInvitation.subList((int) paginationParam.getFrom(), lastIndex);
             }
             return PaginatedResult.ok(new Paginated<>(instancesByInvitation, (long) instancesByInvitation.size(), total, paginationParam.getFrom()));
-        }
-        else{
+        } else {
             searchByLabel = enrichSearchTermIfItIsAUUID(searchByLabel);
             result = PaginatedResult.ok(instanceController.getInstances(stage.getStage(), new Type(type), SpaceName.fromString(space), searchByLabel, filterProperty, filterValue, responseConfiguration, paginationParam));
         }
@@ -253,10 +262,9 @@ public class Instances {
         Map<String, Result<NormalizedJsonLd>> result = new HashMap<>();
         identifiers.forEach(identifier -> {
             InstanceId instanceId = identifierToInstanceIdLookup.get(identifier);
-            if(instanceId!=null){
+            if (instanceId != null) {
                 result.put(identifier, instancesByIds.get(instanceId.getUuid().toString()));
-            }
-            else{
+            } else {
                 result.put(identifier, Result.nok(HttpStatus.NOT_FOUND.value(), HttpStatus.NOT_FOUND.getReasonPhrase()));
             }
         });
@@ -322,7 +330,7 @@ public class Instances {
         return ResponseEntity.ok(Result.<Void>ok().setExecutionDetails(startTime, new Date()));
     }
 
-    @Operation(summary =  "Unrelease an instance")
+    @Operation(summary = "Unrelease an instance")
     @ApiResponses({@ApiResponse(responseCode = "200", description = "The instance that has been unreleased"), @ApiResponse(responseCode = "404", description = "Instance not found")})
     @DeleteMapping("/instances/{id}/release")
     //It only indirectly exposes the ids due to its status codes (you can tell if an id exists based on the return code this method provides)
@@ -339,7 +347,7 @@ public class Instances {
         return ResponseEntity.ok(Result.<Void>ok().setExecutionDetails(startTime, new Date()));
     }
 
-    @Operation(summary="Get the release status for an instance")
+    @Operation(summary = "Get the release status for an instance")
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200", description = "The release status of the instance"),
             @ApiResponse(responseCode = "404", description = "Instance not found")})
@@ -375,16 +383,15 @@ public class Instances {
     }
 
 
-
-    @Operation(summary = "Returns suggestions for an instance to be linked by the given property (e.g. for the KG Editor)")
+    @Operation(summary = "Returns suggestions for an instance to be linked by the given property (e.g. for the KG Editor). Please note: This service will return released values for \"additionalValue\" in case a user only has minimal read rights")
     @GetMapping("/instances/{id}/suggestedLinksForProperty")
     @ExposesMinimalData
     @Extra
-    public Result<SuggestionResult> getSuggestedLinksForProperty(@RequestParam("stage") ExposedStage stage, @PathVariable("id") UUID id, @RequestParam(value = "property") String propertyName, @RequestParam(value = "sourceType", required = false) @Parameter(description = "The source type for which the given property shall be evaluated. If not provided, the API tries to figure out the type by analyzing the type of the root object of the persisted instance. Please note, that this parameter is mandatory for embedded structures.") String sourceType, @RequestParam(value = "targetType", required = false) @Parameter(description = "The target type of the suggestions. If not provided, suggestions of all possible target types will be returned.") String targetType, @RequestParam(value = "search", required = false) String search, @ParameterObject PaginationParam paginationParam) {
+    public Result<SuggestionResult> getSuggestedLinksForProperty(@RequestParam("stage") ExposedStage stage, @PathVariable("id") UUID id, @RequestParam(value = "property") String propertyName, @RequestParam(value = "sourceType", required = false) @Parameter(description = "The source type for which the given property shall be evaluated. If not provided, the API tries to figure out the type by analyzing the type of the root object of the persisted instance. Please note, that this parameter is mandatory for embedded structures.") String sourceType, @RequestParam(value = "targetType", required = false) @Parameter(description = "The target type of the suggestions. If not provided, suggestions of all possible target types will be returned." ) String targetType, @RequestParam(value = "search", required = false) String search, @ParameterObject PaginationParam paginationParam) {
         return getSuggestedLinksForProperty(null, stage, propertyName, id, sourceType, targetType, search, paginationParam);
     }
 
-    @Operation(summary = "Returns suggestions for an instance to be linked by the given property (e.g. for the KG Editor) - and takes into account the passed payload (already chosen values, reflection on dependencies between properties - e.g. providing only parcellations for an already chosen brain atlas)")
+    @Operation(summary = "Returns suggestions for an instance to be linked by the given property (e.g. for the KG Editor) - and takes into account the passed payload (already chosen values, reflection on dependencies between properties - e.g. providing only parcellations for an already chosen brain atlas). Please note: This service will return released values for \"additionalValue\" in case a user only has minimal read rights")
     @PostMapping("/instances/{id}/suggestedLinksForProperty")
     @ExposesMinimalData
     @Extra
@@ -392,20 +399,19 @@ public class Instances {
         Date start = new Date();
         InstanceId instanceId = idsController.resolveId(DataStage.IN_PROGRESS, id);
         search = enrichSearchTermIfItIsAUUID(search);
-        return Result.ok(graphDBInstances.getSuggestedLinksForProperty(payload, stage.getStage(), instanceId!=null && instanceId.getSpace()!=null ? instanceId.getSpace().getName() : null, id, propertyName, sourceType != null && !sourceType.isBlank() ? new Type(sourceType).getName() : null, targetType != null && !targetType.isBlank() ? new Type(targetType).getName() : null, search, paginationParam)).setExecutionDetails(start, new Date());
+        return Result.ok(graphDBInstances.getSuggestedLinksForProperty(payload, stage.getStage(), instanceId != null && instanceId.getSpace() != null ? instanceId.getSpace().getName() : null, id, propertyName, sourceType != null && !sourceType.isBlank() ? new Type(sourceType).getName() : null, targetType != null && !targetType.isBlank() ? new Type(targetType).getName() : null, search, paginationParam)).setExecutionDetails(start, new Date());
     }
 
-    private String enrichSearchTermIfItIsAUUID(String search){
-        if(search!=null) {
+    private String enrichSearchTermIfItIsAUUID(String search) {
+        if (search != null) {
             try {
                 //The search string is a UUID -> let's try to resolve it - if we're successful, we can shortcut the lookup process.
                 UUID uuid = UUID.fromString(search);
                 InstanceId resolvedSearchId = idsController.resolveId(DataStage.IN_PROGRESS, uuid);
-                if(resolvedSearchId!=null){
+                if (resolvedSearchId != null) {
                     return resolvedSearchId.serialize();
                 }
-            }
-            catch(IllegalArgumentException e){
+            } catch (IllegalArgumentException e) {
                 //The search string is not an id -> we therefore don't treat it.
             }
         }
