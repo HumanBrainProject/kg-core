@@ -26,14 +26,11 @@ import eu.ebrains.kg.commons.api.Authentication;
 import eu.ebrains.kg.commons.model.internal.spaces.Space;
 import eu.ebrains.kg.commons.model.SpaceName;
 import eu.ebrains.kg.commons.models.UserWithRoles;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
 @Component
 public class AuthContext {
 
-    private final static Logger logger = LoggerFactory.getLogger(AuthContext.class); ;
 
     private final AuthTokenContext authTokenContext;
     private final Authentication.Client authentication;

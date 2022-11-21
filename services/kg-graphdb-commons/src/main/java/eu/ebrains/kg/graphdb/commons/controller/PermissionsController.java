@@ -94,14 +94,8 @@ public class PermissionsController {
 
 
     public Functionality getMinimalReadFunctionality(DataStage stage) {
-        switch (stage) {
-            case IN_PROGRESS:
-                return Functionality.MINIMAL_READ;
-            case RELEASED:
-                //In the released section, we don't allow the minimal read
-                return null;
-        }
-        return null;
+        return stage == DataStage.IN_PROGRESS ? Functionality.MINIMAL_READ : null;
+
     }
 
     public Functionality getReadFunctionality(DataStage stage) {
@@ -110,8 +104,9 @@ public class PermissionsController {
                 return Functionality.READ;
             case RELEASED:
                 return Functionality.READ_RELEASED;
+            default:
+                return null;
         }
-        return null;
     }
 
 

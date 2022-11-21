@@ -27,14 +27,15 @@ import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import com.fasterxml.jackson.databind.ser.std.ToStringSerializer;
 import eu.ebrains.kg.commons.serializer.SpaceNameDeserializer;
 
+import java.io.Serializable;
 import java.util.Objects;
 
 @JsonSerialize(using = ToStringSerializer.class)
 @JsonDeserialize(using = SpaceNameDeserializer.class)
-public class SpaceName {
+public class SpaceName implements Serializable {
 
-    public transient static final String PRIVATE_SPACE = "myspace";
-    public transient static final String REVIEW_SPACE = "review";
+    public static final String PRIVATE_SPACE = "myspace";
+    public static final String REVIEW_SPACE = "review";
 
     private String name;
 
@@ -56,7 +57,7 @@ public class SpaceName {
     }
 
     private String normalizeName(String name) {
-        return name!=null ? name.toLowerCase().replaceAll("_", "-") : null;
+        return name!=null ? name.toLowerCase().replace("_", "-") : null;
     }
 
     @Override

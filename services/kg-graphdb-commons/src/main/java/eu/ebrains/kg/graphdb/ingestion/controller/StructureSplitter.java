@@ -27,10 +27,7 @@ import eu.ebrains.kg.arango.commons.model.ArangoDocumentReference;
 import eu.ebrains.kg.arango.commons.model.InternalSpace;
 import eu.ebrains.kg.commons.IdUtils;
 import eu.ebrains.kg.commons.TypeUtils;
-import eu.ebrains.kg.commons.jsonld.InferredJsonLdDoc;
-import eu.ebrains.kg.commons.jsonld.JsonLdDoc;
-import eu.ebrains.kg.commons.jsonld.JsonLdId;
-import eu.ebrains.kg.commons.jsonld.NormalizedJsonLd;
+import eu.ebrains.kg.commons.jsonld.*;
 import eu.ebrains.kg.commons.model.SpaceName;
 import eu.ebrains.kg.commons.semantics.vocabularies.EBRAINSVocabulary;
 import eu.ebrains.kg.graphdb.commons.model.ArangoDocument;
@@ -73,13 +70,13 @@ public class StructureSplitter {
         }
         parent.setOriginalDocument(originalDocumentReference);
         collector.add(parent);
-        for (Object key : subTree.keySet()) {
+        for (String key : subTree.keySet()) {
             if(EBRAINSVocabulary.META_ALTERNATIVE.equals(key)){
                 //It's an alternative - we treat it somewhat different. We want to prevent the alternatives to become multiple documents although they are nested
                 handleAlternative(parent, subTree, originalDocumentReference, collector);
             }
-            else if (!EBRAINSVocabulary.META_PROPERTYUPDATES.equals(key) && !NormalizedJsonLd.isInternalKey((String) key)) {
-                keyStack.push((String) key);
+            else if (!EBRAINSVocabulary.META_PROPERTYUPDATES.equals(key) && !DynamicJson.isInternalKey(key)) {
+                keyStack.push(key);
                 Object value = subTree.get(key);
                 int i = 0;
                 if (value instanceof Collection) {
@@ -96,7 +93,7 @@ public class StructureSplitter {
                             newList.add(individualValue);
                         }
                     }
-                    parent.getDoc().put((String) key, newList);
+                    parent.getDoc().put(key, newList);
                 } else {
                     ArangoEdge arangoEdge = null;
                     if (value instanceof JsonLdId || value instanceof Map) {
@@ -109,7 +106,7 @@ public class StructureSplitter {
                     }
                 }
                 keyStack.pop();
-            } else if (InferredJsonLdDoc.isInferenceOfKey((String) key)) {
+            } else if (InferredJsonLdDoc.isInferenceOfKey(key)) {
                 List<String> originalTos = (List<String>) parent.getDoc().get(key);
                 originalTos.forEach(originalTo -> handleInferenceOfReference(originalDocumentReference, collector, new JsonLdId(originalTo)));
             }

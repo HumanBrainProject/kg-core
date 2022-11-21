@@ -45,6 +45,8 @@ import java.util.stream.Collectors;
 @Component
 public class KeycloakController {
 
+    private static final String PREFERRED_USERNAME = "preferred_username";
+
     private final KeycloakClient keycloakClient;
 
     private final AuthTokenContext authTokenContext;
@@ -133,7 +135,7 @@ public class KeycloakController {
 
     public String getClientInfoFromKeycloak(Map<String, Claim> authClientInfo) {
         if (authClientInfo != null) {
-            Claim preferred_username = authClientInfo.get("preferred_username");
+            Claim preferred_username = authClientInfo.get(PREFERRED_USERNAME);
             return preferred_username != null ? preferred_username.asString().substring("service-account-".length()) : null;
         } else {
             return null;
@@ -141,12 +143,12 @@ public class KeycloakController {
     }
 
     public boolean isServiceAccount(Map<String, Claim> claims) {
-        Claim userName = claims.get("preferred_username");
+        Claim userName = claims.get(PREFERRED_USERNAME);
         return userName!=null && userName.asString().startsWith("service-account-");
     }
 
     public User buildUserInfoFromKeycloak(Map<String, Claim> claims) {
-        Claim userName = claims.get("preferred_username");
+        Claim userName = claims.get(PREFERRED_USERNAME);
         Claim nativeId = claims.get("sub");
         Claim name = claims.get("name");
         Claim givenName = claims.get("given_name");

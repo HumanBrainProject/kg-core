@@ -295,7 +295,7 @@ public class ArangoRepositoryInstances {
         final Set<UUID> userIdsToResolve = documents.stream().map(document -> {
             final NormalizedJsonLd alternative = document.getAs(EBRAINSVocabulary.META_ALTERNATIVE, NormalizedJsonLd.class);
             if (alternative != null) {
-                return alternative.keySet().stream().filter(key -> !NormalizedJsonLd.isInternalKey(key) && !JsonLdConsts.isJsonLdConst(key)).map(key -> {
+                return alternative.keySet().stream().filter(key -> !DynamicJson.isInternalKey(key) && !JsonLdConsts.isJsonLdConst(key)).map(key -> {
                     List<NormalizedJsonLd> alt;
                     try {
                         alt = alternative.getAsListOf(key, NormalizedJsonLd.class);
@@ -312,7 +312,7 @@ public class ArangoRepositoryInstances {
         documents.forEach(document -> {
             final NormalizedJsonLd alternative = document.getAs(EBRAINSVocabulary.META_ALTERNATIVE, NormalizedJsonLd.class);
             if (alternative != null) {
-                alternative.keySet().stream().filter(key -> !NormalizedJsonLd.isInternalKey(key) && !JsonLdConsts.isJsonLdConst(key)).forEach(key -> {
+                alternative.keySet().stream().filter(key -> !DynamicJson.isInternalKey(key) && !JsonLdConsts.isJsonLdConst(key)).forEach(key -> {
                     alternative.put(key, alternative.getAsListOf(key, NormalizedJsonLd.class, true).stream().peek(a -> {
                         List<Object> users = a.getAsListOf(EBRAINSVocabulary.META_USER, String.class).stream().map(id -> {
                                     UUID uuid = idUtils.getUUID(new JsonLdId(id));

@@ -36,14 +36,14 @@ import java.util.UUID;
 
 public class StructureSplitterTest {
 
-    private String testJson= "{ \"@id\": \"https://kg.ebrains.eu/api/instances/minds/helloWorld\", \"https://schema.hbp.eu/foo\": \"bar\", \"https://schema.hbp.eu/embedded\": {\"https://schema.hbp.eu/embeddedKey\": \"embeddedValue\"}, \"https://schema.hbp.eu/link\": {\"@id\": \"https://kg.ebrains.eu/api/instances/minds/related\"}}";
+    private final String testJson= "{ \"@id\": \"https://kg.ebrains.eu/api/instances/minds/helloWorld\", \"https://schema.hbp.eu/foo\": \"bar\", \"https://schema.hbp.eu/embedded\": {\"https://schema.hbp.eu/embeddedKey\": \"embeddedValue\"}, \"https://schema.hbp.eu/link\": {\"@id\": \"https://kg.ebrains.eu/api/instances/minds/related\"}}";
 
     @Test
     public void extractRelations() {
         JsonAdapter jsonAdapter = new JsonAdapter4Test();
         NormalizedJsonLd jsonld = jsonAdapter.fromJson(testJson, NormalizedJsonLd.class);
         StructureSplitter structureSplitter = new StructureSplitter(new IdUtils("https://kg.ebrains.eu/api/instances/"), new TypeUtils(jsonAdapter));
-        List<ArangoInstance> indexedNormalizedJsonLdDocs = structureSplitter.extractRelations(ArangoDocumentReference.fromArangoId("minds/"+ UUID.randomUUID().toString(), false), jsonld);
+        List<ArangoInstance> indexedNormalizedJsonLdDocs = structureSplitter.extractRelations(ArangoDocumentReference.fromArangoId("minds/"+ UUID.randomUUID(), false), jsonld);
         System.out.println(indexedNormalizedJsonLdDocs);
     }
 }

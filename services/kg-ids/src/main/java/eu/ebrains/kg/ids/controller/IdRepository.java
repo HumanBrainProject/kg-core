@@ -168,6 +168,8 @@ public class IdRepository {
             case 1:
                 final PersistedId persistedId = persistedIds.get(0);
                 return new InstanceId(persistedId.getUUID(), persistedId.getSpace());
+            default:
+                break;
         }
         throw new AmbiguousException(StringUtils.joinWith(", ", persistedIds.stream().map(p -> new InstanceId(p.getUUID(), p.getSpace()).serialize()).collect(Collectors.toList())));
     }

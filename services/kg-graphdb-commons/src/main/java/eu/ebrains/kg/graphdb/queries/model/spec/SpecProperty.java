@@ -33,7 +33,7 @@ import java.util.stream.Collectors;
 public class SpecProperty {
 
     public enum SingleItemStrategy{
-        FIRST, CONCAT;
+        FIRST, CONCAT
     }
 
     public final SingleItemStrategy singleItem;

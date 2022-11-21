@@ -50,7 +50,7 @@ public class UserInfoMapping {
 
     @CacheEvict("userRoleMapping")
     public void evictUserOrClientProfile(String token){
-
+        // This is for cache eviction only
     }
 
 }

@@ -28,7 +28,7 @@ import java.util.stream.Collectors;
 
 public class Paginated<T> {
 
-    private List<T> data;
+    private final List<T> data;
     private Long totalResults;
     private long size;
     private long from;

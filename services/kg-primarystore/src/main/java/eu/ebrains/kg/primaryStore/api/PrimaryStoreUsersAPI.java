@@ -38,7 +38,7 @@ import java.util.UUID;
 @Component
 public class PrimaryStoreUsersAPI implements PrimaryStoreUsers.Client {
 
-    private UsersRepository usersRepository;
+    private final UsersRepository usersRepository;
 
     public PrimaryStoreUsersAPI(UsersRepository usersRepository) {
         this.usersRepository = usersRepository;

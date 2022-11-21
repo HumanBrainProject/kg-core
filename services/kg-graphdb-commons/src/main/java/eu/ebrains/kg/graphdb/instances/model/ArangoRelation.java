@@ -24,7 +24,7 @@ package eu.ebrains.kg.graphdb.instances.model;
 
 public class ArangoRelation {
 
-    private String relationField;
+    private final String relationField;
 
     public ArangoRelation(String relationField) {
         this.relationField = relationField;

@@ -47,7 +47,7 @@ public class PerformanceTestUtils {
     private final GoogleCharts plotter = new GoogleCharts();
 
     public enum Link {
-        PREVIOUS, NEXT;
+        PREVIOUS, NEXT
     }
 
 

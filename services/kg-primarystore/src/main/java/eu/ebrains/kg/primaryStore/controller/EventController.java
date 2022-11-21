@@ -153,6 +153,8 @@ public class EventController {
                 case RELEASED:
                     ids.createOrUpdateId(new IdWithAlternatives(persistedEvent.getDocumentId(), persistedEvent.getSpaceName(), persistedEvent.getData().identifiers()), dataStage);
                     break;
+                default:
+                    break;
             }
             addMetaInformationToData(dataStage, persistedEvent);
         }

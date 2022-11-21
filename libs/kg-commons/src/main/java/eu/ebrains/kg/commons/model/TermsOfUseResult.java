@@ -27,7 +27,7 @@ import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 @JsonPropertyOrder({ "accepted" })
 public class TermsOfUseResult extends TermsOfUse {
 
-    private Boolean accepted;
+    private final Boolean accepted;
 
     public TermsOfUseResult(TermsOfUse termsOfUse, Boolean accepted) {
         super(termsOfUse.getVersion(), termsOfUse.getData());

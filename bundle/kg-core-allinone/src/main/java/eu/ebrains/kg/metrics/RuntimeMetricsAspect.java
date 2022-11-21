@@ -49,7 +49,7 @@ public class RuntimeMetricsAspect {
             throw throwable;
         } finally {
             long duration = new Date().getTime() - start;
-            if(duration>0) {
+            if(duration>0 && logger.isDebugEnabled()) {
                 logger.debug(String.format("%s#%s executed in %dms", proceedingJoinPoint.getSignature().getDeclaringType().getSimpleName(), proceedingJoinPoint.getSignature().getName(), duration));
             }
         }

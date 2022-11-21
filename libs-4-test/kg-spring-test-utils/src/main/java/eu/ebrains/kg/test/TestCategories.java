@@ -17,6 +17,9 @@
 package eu.ebrains.kg.test;
 
 public class TestCategories {
+    private TestCategories() {
+    }
+
     public final static String API = "api";
     public final static String LOAD = "load";
 }

@@ -35,6 +35,6 @@ public enum DataStage {
     /**
      * The released space contains instances looking similar to the inferred, but "copied-away" in the specific released revision. Typically, data is moved from the inferred to the released stage when its content has been validated.
      */
-    RELEASED;
+    RELEASED
 
 }

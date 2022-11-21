@@ -25,7 +25,7 @@ package eu.ebrains.kg.graphdb.queries.model.fieldFilter;
 import java.util.Objects;
 
 public class Value extends Exp {
-    private String value;
+    private final String value;
     public Value(String v) {
         this.value = v;
     }

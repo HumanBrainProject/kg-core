@@ -97,7 +97,7 @@ public class KeycloakUsers {
         UserRepresentation userRepresentation;
         try {
             UUID uuid = UUID.fromString(id);
-            logger.trace(String.format("Found uuid: %s", uuid.toString()));
+            logger.trace(String.format("Found uuid: %s", uuid));
             userRepresentation = getUsers().get(id).toRepresentation();
         } catch (IllegalArgumentException e) {
             logger.trace("Resolving by user name");
@@ -135,6 +135,6 @@ public class KeycloakUsers {
     @CacheEvict(allEntries = true, cacheNames = "allUsers")
     @Scheduled(fixedDelay = 24 * 60 * 60 * 1000)
     public void clearUsersCache() {
-
+        //This is for cache eviction only
     }
 }

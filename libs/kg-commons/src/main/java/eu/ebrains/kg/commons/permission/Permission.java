@@ -37,7 +37,7 @@ public class Permission {
     }
 
     private Level level;
-    private Functionality functionality;
+    private final Functionality functionality;
 
     public Permission(Level level, Functionality functionality) {
         if(functionality.getAllowedPermissionLevels()==null || !functionality.getAllowedPermissionLevels().contains(level)){

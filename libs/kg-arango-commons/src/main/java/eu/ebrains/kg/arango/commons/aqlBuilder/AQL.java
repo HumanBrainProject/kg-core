@@ -176,22 +176,23 @@ public class AQL {
 
     public String buildSimpleDebugQuery(Map<String, Object> bindVars) {
         String aql = query.toString();
-        for (String key : bindVars.keySet()) {
-            Object value = bindVars.get(key);
-                String valueRep;
-                if(value == null){
-                    valueRep = "null";
+        for (Map.Entry<String,Object> entry : bindVars.entrySet()) {
+            String key = entry.getKey();
+            Object value = entry.getValue();
+            String valueRep;
+            if(value == null){
+                valueRep = "null";
+            }
+            else {
+                if (value instanceof Collection) {
+                    valueRep = "[\"" + ((Collection<?>) value).stream().filter(Objects::nonNull).map(Object::toString).collect(Collectors.joining("\",\"")) + "\"]";
+                } else if (key.startsWith("@")) {
+                    valueRep = "`" + value + "`";
+                } else {
+                    valueRep = "\"" + value + "\"";
                 }
-                else {
-                    if (value instanceof Collection) {
-                        valueRep = "[\"" + ((Collection<?>) value).stream().filter(Objects::nonNull).map(Object::toString).collect(Collectors.joining("\",\"")) + "\"]";
-                    } else if (key.startsWith("@")) {
-                        valueRep = "`" + value + "`";
-                    } else {
-                        valueRep = "\"" + value + "\"";
-                    }
-                }
-                aql = aql.replaceAll(String.format("@%s(?=[^a-zA-Z])", key), valueRep);
+            }
+            aql = aql.replaceAll(String.format("@%s(?=[^a-zA-Z])", key), valueRep);
         }
         return aql;
     }

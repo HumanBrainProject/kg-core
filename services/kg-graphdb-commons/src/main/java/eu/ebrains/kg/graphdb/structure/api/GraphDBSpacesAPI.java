@@ -39,6 +39,7 @@ import java.util.Optional;
 public class GraphDBSpacesAPI implements GraphDBSpaces.Client {
 
 
+    private static final String NO_RIGHTS_TO_MANAGE_SPACES = "You don't have the required rights to manage spaces";
     private final StructureRepository structureRepository;
     private final MetaDataController metaDataController;
     private final PermissionsController permissionsController;
@@ -92,12 +93,14 @@ public class GraphDBSpacesAPI implements GraphDBSpaces.Client {
                     throw new InvalidRequestException("You can't provide a definition for your private space");
                 case SpaceName.REVIEW_SPACE:
                     throw new InvalidRequestException("You can't provide a definition for the invitation space");
+                default:
+                    break;
             }
             structureRepository.createOrUpdateSpaceDocument(spaceSpecification);
             structureRepository.evictSpaceSpecificationCache();
         }
         else{
-            throw new ForbiddenException("You don't have the required rights to manage spaces");
+            throw new ForbiddenException(NO_RIGHTS_TO_MANAGE_SPACES);
         }
     }
 
@@ -109,12 +112,14 @@ public class GraphDBSpacesAPI implements GraphDBSpaces.Client {
                     throw new InvalidRequestException("You can't remove your private space");
                 case SpaceName.REVIEW_SPACE:
                     throw new InvalidRequestException("You can't remove the invitation space");
+                default:
+                    break;
             }
             structureRepository.removeSpaceDocument(spaceName);
             structureRepository.evictSpaceSpecificationCache();
         }
         else{
-            throw new ForbiddenException("You don't have the required rights to manage spaces");
+            throw new ForbiddenException(NO_RIGHTS_TO_MANAGE_SPACES);
         }
     }
 
@@ -125,7 +130,7 @@ public class GraphDBSpacesAPI implements GraphDBSpaces.Client {
             structureRepository.evictTypesInSpaceBySpecification(spaceName);
         }
         else{
-            throw new ForbiddenException("You don't have the required rights to manage spaces");
+            throw new ForbiddenException(NO_RIGHTS_TO_MANAGE_SPACES);
         }
     }
 
@@ -136,7 +141,7 @@ public class GraphDBSpacesAPI implements GraphDBSpaces.Client {
             structureRepository.evictTypesInSpaceBySpecification(spaceName);
         }
         else{
-            throw new ForbiddenException("You don't have the required rights to manage spaces");
+            throw new ForbiddenException(NO_RIGHTS_TO_MANAGE_SPACES);
         }
     }
 }

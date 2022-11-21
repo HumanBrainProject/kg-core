@@ -132,11 +132,8 @@ public class TodoListProcessor {
 
 
     private boolean hasChangedReleaseStatus(DataStage stage, ArangoDocumentReference documentReference) {
-        if (stage == DataStage.IN_PROGRESS) {
-            //TODO analyze payload for change by comparison with current instance - ignore alternatives
-            return true;
-        }
-        return false;
+        //TODO analyze payload for change by comparison with current instance - ignore alternatives
+        return stage == DataStage.IN_PROGRESS;
     }
 
     public ArangoDocumentReference upsertDocument(ArangoDocumentReference rootDocumentRef, NormalizedJsonLd payload, DataStage stage) {

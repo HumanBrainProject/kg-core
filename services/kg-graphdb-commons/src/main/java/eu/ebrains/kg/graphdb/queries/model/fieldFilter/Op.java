@@ -28,7 +28,7 @@ public enum Op {
 
     private final String name;
     private final String example;
-    private boolean instanceFilter;
+    private final boolean instanceFilter;
 
     Op(String name, String example, boolean instanceFilter){
           this.name = name;
@@ -39,7 +39,7 @@ public enum Op {
     public static Op valueCaseInsensitive(String value){
         if(value!=null) {
             for (Op op : values()) {
-                if (op.toString().toLowerCase().equals(value.toLowerCase())) {
+                if (op.toString().equalsIgnoreCase(value)) {
                     return op;
                 }
             }

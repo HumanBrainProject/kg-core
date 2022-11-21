@@ -35,7 +35,7 @@ public class EBRAINSVocabulary {
     public static final String LABEL = NAMESPACE+"label";
 
     private static String stripHttp(String name){
-        return name.replaceAll("http://", "").replaceAll("https://", "");
+        return name.replace("http://", "").replace("https://", "");
     }
 
     public static JsonLdId createIdForStructureDefinition(String... names){

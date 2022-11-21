@@ -53,9 +53,9 @@ public class GoogleCharts {
             "    </script>\n";
     private static final String PLOTLY_FOOTER= "</body></html>";
 
-    private StringBuilder source = new StringBuilder();
-    private List<String> plots = new ArrayList<>();
-    private JsonAdapter json = new JsonAdapter4Test();
+    private final StringBuilder source = new StringBuilder();
+    private final List<String> plots = new ArrayList<>();
+    private final JsonAdapter json = new JsonAdapter4Test();
 
     public synchronized void addSection(String title){
         this.plots.add(String.format("<h2>%s</h2>", title));
@@ -67,8 +67,8 @@ public class GoogleCharts {
     }
 
     public static class Column{
-        private String type;
-        private String id;
+        private final String type;
+        private final String id;
 
         public Column(String type, String id) {
             this.type = type;
@@ -78,9 +78,9 @@ public class GoogleCharts {
 
     public static class Value{
         private String row;
-        private String name;
-        private Long start;
-        private Long end;
+        private final String name;
+        private final Long start;
+        private final Long end;
 
         public List<Object> asSimpleList(){
             return Arrays.asList(row, name, start, end);

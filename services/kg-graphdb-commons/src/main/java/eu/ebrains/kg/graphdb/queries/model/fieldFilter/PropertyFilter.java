@@ -23,9 +23,9 @@
 package eu.ebrains.kg.graphdb.queries.model.fieldFilter;
 
 public class PropertyFilter {
-    private Op op;
-    private Value value;
-    private Parameter parameter;
+    private final Op op;
+    private final Value value;
+    private final Parameter parameter;
     public PropertyFilter(Op op, Value value, Parameter parameter) {
         this.op = op;
         this.value = value;

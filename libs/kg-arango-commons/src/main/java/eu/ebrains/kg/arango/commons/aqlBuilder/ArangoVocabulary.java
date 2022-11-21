@@ -24,6 +24,8 @@ package eu.ebrains.kg.arango.commons.aqlBuilder;
 
 
 public class ArangoVocabulary {
+    private ArangoVocabulary() {
+    }
 
     //Arango owned
     public static final String ID = "_id";

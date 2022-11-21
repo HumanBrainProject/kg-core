@@ -38,6 +38,7 @@ import java.util.Map;
 @Component
 public class GraphDBTypesAPI implements GraphDBTypes.Client {
 
+    private static final String NO_RIGHTS_TO_DEFINE_TYPES = "You don't have the required rights to define types";
     private final AuthContext authContext;
     private final StructureRepository structureRepository;
     private final MetaDataController metaDataController;
@@ -82,7 +83,7 @@ public class GraphDBTypesAPI implements GraphDBTypes.Client {
                 structureRepository.evictClientSpecificTypeSpecification(typeName.getId(), clientSpace);
             }
         } else {
-            throw new ForbiddenException("You don't have the required rights to define types");
+            throw new ForbiddenException(NO_RIGHTS_TO_DEFINE_TYPES);
         }
     }
 
@@ -100,7 +101,7 @@ public class GraphDBTypesAPI implements GraphDBTypes.Client {
                 structureRepository.evictClientSpecificTypeSpecification(typeName.getId(), clientSpace);
             }
         } else {
-            throw new ForbiddenException("You don't have the required rights to define types");
+            throw new ForbiddenException(NO_RIGHTS_TO_DEFINE_TYPES);
         }
     }
 
@@ -126,7 +127,7 @@ public class GraphDBTypesAPI implements GraphDBTypes.Client {
                 structureRepository.evictClientSpecificPropertySpecificationCache(propertyName.getId(), clientSpace);
             }
         } else {
-            throw new ForbiddenException("You don't have the required rights to define types");
+            throw new ForbiddenException(NO_RIGHTS_TO_DEFINE_TYPES);
         }
     }
 
@@ -143,7 +144,7 @@ public class GraphDBTypesAPI implements GraphDBTypes.Client {
                 structureRepository.evictClientSpecificPropertySpecificationCache(propertyName.getId(), clientSpace);
             }
         } else {
-            throw new ForbiddenException("You don't have the required rights to define types");
+            throw new ForbiddenException(NO_RIGHTS_TO_DEFINE_TYPES);
         }
     }
 
@@ -161,7 +162,7 @@ public class GraphDBTypesAPI implements GraphDBTypes.Client {
                 structureRepository.evictClientSpecificPropertiesInTypeBySpecificationCache(typeName, clientSpace);
             }
         } else {
-            throw new ForbiddenException("You don't have the required rights to define types");
+            throw new ForbiddenException(NO_RIGHTS_TO_DEFINE_TYPES);
         }
     }
 
@@ -178,7 +179,7 @@ public class GraphDBTypesAPI implements GraphDBTypes.Client {
                 structureRepository.evictClientSpecificPropertiesInTypeBySpecificationCache(typeName, clientSpace);
             }
         } else {
-            throw new ForbiddenException("You don't have the required rights to define types");
+            throw new ForbiddenException(NO_RIGHTS_TO_DEFINE_TYPES);
         }
     }
 }

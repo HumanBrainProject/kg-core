@@ -63,7 +63,7 @@ public class DataController {
     private final ReleasingController releasingController;
     private final TypeUtils typeUtils;
 
-    public static final ArangoDocumentReference UNKNOWN_TARGET = ArangoDocumentReference.fromArangoId("unknown/" + UUID.nameUUIDFromBytes("unknown".getBytes(StandardCharsets.UTF_8)).toString(), false);
+    public static final ArangoDocumentReference UNKNOWN_TARGET = ArangoDocumentReference.fromArangoId("unknown/" + UUID.nameUUIDFromBytes("unknown".getBytes(StandardCharsets.UTF_8)), false);
 
 
     public DataController(IdUtils idUtils, ArangoRepositoryCommons repository, EntryHookDocuments entryHookDocuments, Ids.Client ids, ReleasingController releasingController, TypeUtils typeUtils) {

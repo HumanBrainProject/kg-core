@@ -52,7 +52,7 @@ public enum RoleMapping {
         this.globalRestrictedUserListing = globalRestrictedUserListing;
         this.globalMinimalRead = globalMinimalRead;
         this.globalMinimalReadReleased = globalMinimalReadReleased;
-        this.name = name().toLowerCase().replaceAll("_", "-");
+        this.name = name().toLowerCase().replace("_", "-");
         this.functionality = new HashSet<>(Arrays.asList(functionality));
         this.childRole = childRole;
     }

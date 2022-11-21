@@ -296,7 +296,7 @@ public class Reconcile {
     }
 
     private JsonLdDoc createAlternative(String key, Object value, boolean selected, List<JsonLdId> users) {
-        if (!NormalizedJsonLd.isInternalKey(key) && !JsonLdConsts.isJsonLdConst(key) && !SchemaOrgVocabulary.IDENTIFIER.equals(key) && !EBRAINSVocabulary.META_USER.equals(key) && !EBRAINSVocabulary.META_SPACE.equals(key) && !EBRAINSVocabulary.META_PROPERTYUPDATES.equals(key)) {
+        if (!DynamicJson.isInternalKey(key) && !JsonLdConsts.isJsonLdConst(key) && !SchemaOrgVocabulary.IDENTIFIER.equals(key) && !EBRAINSVocabulary.META_USER.equals(key) && !EBRAINSVocabulary.META_SPACE.equals(key) && !EBRAINSVocabulary.META_PROPERTYUPDATES.equals(key)) {
             JsonLdDoc alternative = new JsonLdDoc();
             alternative.put(EBRAINSVocabulary.META_SELECTED, selected);
             //We always save the users of an alternative as string only to prevent links to be created - the resolution happens lazily.
@@ -310,7 +310,7 @@ public class Reconcile {
     private InferredJsonLdDoc merge(Set<IndexedJsonLdDoc> originalInstances) {
         if (originalInstances != null && !originalInstances.isEmpty()) {
             InferredJsonLdDoc inferredDocument = InferredJsonLdDoc.create();
-            Set<String> keys = originalInstances.stream().map(i -> i.getDoc().keySet()).flatMap(Set::stream).filter(k -> !NormalizedJsonLd.isInternalKey(k)).collect(Collectors.toSet());
+            Set<String> keys = originalInstances.stream().map(i -> i.getDoc().keySet()).flatMap(Set::stream).filter(k -> !DynamicJson.isInternalKey(k)).collect(Collectors.toSet());
             JsonLdDoc alternatives = new JsonLdDoc();
             inferredDocument.setAlternatives(alternatives);
             for (String key : keys) {

@@ -62,6 +62,7 @@ import java.util.stream.Collectors;
 @RequestMapping(Version.API+"/users")
 public class Users {
 
+    private static final String ENDPOINT = "endpoint";
     private final Authentication.Client authentication;
     private final PrimaryStoreUsers.Client primaryStoreUsers;
     private final GraphDBInstances.Client graphDBInstances;
@@ -82,7 +83,7 @@ public class Users {
     @Extra
     public Result<JsonLdDoc> getAuthEndpoint() {
         JsonLdDoc ld = new JsonLdDoc();
-        ld.addProperty("endpoint", authentication.authEndpoint());
+        ld.addProperty(ENDPOINT, authentication.authEndpoint());
         return Result.ok(ld);
     }
 
@@ -92,7 +93,7 @@ public class Users {
     @Advanced
     public Result<JsonLdDoc> getOpenIdConfigUrl() {
         JsonLdDoc ld = new JsonLdDoc();
-        ld.addProperty("endpoint", authentication.openIdConfigUrl());
+        ld.addProperty(ENDPOINT, authentication.openIdConfigUrl());
         return Result.ok(ld);
     }
 
@@ -102,7 +103,7 @@ public class Users {
     @Extra
     public Result<JsonLdDoc> getTokenEndpoint() {
         JsonLdDoc ld = new JsonLdDoc();
-        ld.addProperty("endpoint", authentication.tokenEndpoint());
+        ld.addProperty(ENDPOINT, authentication.tokenEndpoint());
         return Result.ok(ld);
     }
 

@@ -45,13 +45,7 @@ public class VirtualSpaceController {
     }
 
     public boolean isVirtualSpace(String spaceName){
-        if(spaceName != null) {
-            switch (spaceName) {
-                case SpaceName.REVIEW_SPACE:
-                    return true;
-            }
-        }
-        return false;
+        return SpaceName.REVIEW_SPACE.equals(spaceName);
     }
 
 

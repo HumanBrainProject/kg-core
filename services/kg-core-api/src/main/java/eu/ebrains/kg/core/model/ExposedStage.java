@@ -31,7 +31,7 @@ public enum ExposedStage {
 
     IN_PROGRESS(DataStage.IN_PROGRESS), RELEASED(DataStage.RELEASED);
 
-    private DataStage stage;
+    private final DataStage stage;
 
     ExposedStage(DataStage stage) {
         this.stage = stage;

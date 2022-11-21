@@ -27,8 +27,8 @@ import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 @JsonPropertyOrder({ "error", "howToFix" })
 public class TermsOfUseError extends TermsOfUse {
 
-    private String error;
-    private String howToFix;
+    private final String error;
+    private final String howToFix;
 
     public TermsOfUseError(TermsOfUse termsOfUse) {
         super(termsOfUse.getVersion(), termsOfUse.getData());
