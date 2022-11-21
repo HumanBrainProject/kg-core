@@ -30,7 +30,7 @@ import java.util.stream.Collectors;
 
 public class InferredJsonLdDoc {
     //FOR INFERENCE
-    public final static String INFERENCE_OF = "_inferenceOf";
+    public static final String INFERENCE_OF = "_inferenceOf";
 
     private final IndexedJsonLdDoc indexedJsonLdDoc;
 

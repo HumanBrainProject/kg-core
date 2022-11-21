@@ -43,7 +43,7 @@ public class JsonLdDoc extends DynamicJson {
     public JsonLdDoc() {
     }
 
-    public JsonLdDoc(Map<? extends String, ?> m) {
+    public JsonLdDoc(Map<String, ?> m) {
         super(m);
     }
 
@@ -133,7 +133,7 @@ public class JsonLdDoc extends DynamicJson {
         return hasType(this);
     }
 
-    private boolean hasType(Map<?,?> object) {
+    private boolean hasType(Map<?, ?> object) {
         return object.containsKey(JsonLdConsts.TYPE);
     }
 
@@ -149,58 +149,57 @@ public class JsonLdDoc extends DynamicJson {
         return false;
     }
 
-    private void validateEmbeddedInstances(String key, Object value){
-        if(value instanceof Collection){
+    private void validateEmbeddedInstances(String key, Object value) {
+        if (value instanceof Collection) {
             for (Object o : ((Collection<?>) value)) {
                 doValidateEmbeddedInstance(key, o);
             }
-        }
-        else{
+        } else {
             doValidateEmbeddedInstance(key, value);
         }
     }
 
-    private void doValidateEmbeddedInstance(String key, Object o){
-        if(o instanceof Map && !((Map<?, ?>) o).containsKey(JsonLdConsts.ID)){
+    private void doValidateEmbeddedInstance(String key, Object o) {
+        if (o instanceof Map && !((Map<?, ?>) o).containsKey(JsonLdConsts.ID)) {
             //It's an embedded instance
-            final Map<?,?> embeddedInstance = (Map<?,?>) o;
-            if(!embeddedInstance.containsKey(JsonLdConsts.TYPE)){
+            final Map<?, ?> embeddedInstance = (Map<?, ?>) o;
+            if (!embeddedInstance.containsKey(JsonLdConsts.TYPE)) {
                 throw new InvalidRequestException(String.format("The embedded structure of %s needs to provide an @type", key));
             }
         }
     }
 
-    public void validate(boolean requiresTypeAtRootLevel){
-        visitKeys((map, key)->{
+    public void validate(boolean requiresTypeAtRootLevel) {
+        visitKeys((map, key) -> {
             boolean rootLevel = map == this;
             final Object value = map.get(key);
-            if(requiresTypeAtRootLevel && rootLevel){
+            if (requiresTypeAtRootLevel && rootLevel) {
                 final Object type = map.get(JsonLdConsts.TYPE);
-                if(type==null){
+                if (type == null) {
                     throw new InvalidRequestException("A payload needs to provide the @type argument");
                 }
             }
-            switch (key){
+            switch (key) {
                 case JsonLdConsts.ID:
-                    if(!isValidIRI(value)){
+                    if (!isValidIRI(value)) {
                         throw new InvalidRequestException(String.format("Payload contains at least one invalid @id: %s", value));
                     }
-                    if(!rootLevel && map.keySet().size()>1){
+                    if (!rootLevel && map.keySet().size() > 1) {
                         //If we're not at the root level, the "@id" should be the only element in a map
                         throw new InvalidRequestException(String.format("The reference to %s contained additional fields -> this is not allowed", value));
                     }
                     break;
                 case JsonLdConsts.TYPE:
-                    if(!isValidType(value)){
+                    if (!isValidType(value)) {
                         throw new InvalidRequestException("@type should contain a list of valid urls");
                     }
                     break;
                 default:
-                    if(!isInternalKey(key)) {
+                    if (!isInternalKey(key)) {
                         if (!isValidIRI(key)) {
                             throw new InvalidRequestException(String.format("The property %s is not fully qualified", key));
                         }
-                        if(isKgMetaProperty(key)){
+                        if (isKgMetaProperty(key)) {
                             throw new InvalidRequestException(String.format("The property %s is a meta property of the EBRAINS KG. You are not supposed to set this value yourself - this is handled internally.", key));
                         }
                         validateEmbeddedInstances(key, value);
@@ -210,8 +209,8 @@ public class JsonLdDoc extends DynamicJson {
         });
     }
 
-    private boolean isKgMetaProperty(String key){
-        return key!=null && key.startsWith(EBRAINSVocabulary.META);
+    private boolean isKgMetaProperty(String key) {
+        return key != null && key.startsWith(EBRAINSVocabulary.META);
     }
 
     private boolean isValidIRI(Object value) {
@@ -297,14 +296,12 @@ public class JsonLdDoc extends DynamicJson {
     private void replaceNamespace(String oldNamespace, String newNamespace, Map currentMap) {
         HashSet keyList = new HashSet<>(currentMap.keySet());
         for (Object key : keyList) {
-            if (key instanceof String) {
-                if (((String) key).startsWith(oldNamespace)) {
-                    Object value = currentMap.remove(key);
-                    if (value instanceof Map) {
-                        replaceNamespace(oldNamespace, newNamespace, (Map) value);
-                    }
-                    currentMap.put(newNamespace + ((String) key).substring(oldNamespace.length()), value);
+            if (key instanceof String && ((String) key).startsWith(oldNamespace)) {
+                Object value = currentMap.remove(key);
+                if (value instanceof Map) {
+                    replaceNamespace(oldNamespace, newNamespace, (Map) value);
                 }
+                currentMap.put(newNamespace + ((String) key).substring(oldNamespace.length()), value);
             }
         }
     }

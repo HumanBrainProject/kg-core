@@ -26,7 +26,7 @@ import eu.ebrains.kg.commons.model.Result;
 
 public class CancelProcessException extends RuntimeException {
 
-    private final Result<?> result;
+    private final transient Result<?> result;
     private final int status;
 
     public CancelProcessException(Result<?> result, int status) {

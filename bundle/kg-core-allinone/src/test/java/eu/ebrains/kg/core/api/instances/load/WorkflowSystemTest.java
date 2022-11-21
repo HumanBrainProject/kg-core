@@ -43,7 +43,7 @@ import java.io.IOException;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-public class WorkflowSystemTest extends AbstractInstancesLoadTest {
+class WorkflowSystemTest extends AbstractInstancesLoadTest {
 
     @Autowired
     private Instances instances;
@@ -53,7 +53,7 @@ public class WorkflowSystemTest extends AbstractInstancesLoadTest {
 
 
     @Test
-    public void testReleaseAndUnreleaseAndReReleaseInstance() {
+    void testReleaseAndUnreleaseAndReReleaseInstance() {
         //Given
         JsonLdDoc payload = TestDataFactory.createTestData(smallPayload, true, 0, null);
         ResponseEntity<Result<NormalizedJsonLd>> instance = instances.createNewInstance(payload, "test", DEFAULT_RESPONSE_CONFIG);
@@ -78,7 +78,7 @@ public class WorkflowSystemTest extends AbstractInstancesLoadTest {
     }
 
     @Test
-    public void testInsertAndDeleteInstance() throws IOException {
+    void testInsertAndDeleteInstance() throws IOException {
         //Given
         JsonLdDoc payload = TestDataFactory.createTestData(smallPayload, true, 0, null);
         ResponseEntity<Result<NormalizedJsonLd>> instance = instances.createNewInstance(payload, "test", DEFAULT_RESPONSE_CONFIG);
@@ -97,7 +97,7 @@ public class WorkflowSystemTest extends AbstractInstancesLoadTest {
     }
 
     @Test
-    public void testInsertAndUpdateInstance() throws IOException {
+    void testInsertAndUpdateInstance() throws IOException {
         //Given
         JsonLdDoc payload = TestDataFactory.createTestData(smallPayload, true, 0, null);
 
@@ -115,7 +115,7 @@ public class WorkflowSystemTest extends AbstractInstancesLoadTest {
 
     @Disabled("Failing")
     @Test
-    public void testFullCycle() throws IOException {
+    void testFullCycle() throws IOException {
         //Given
         JsonLdDoc payload = TestDataFactory.createTestData(smallPayload, true, 0, null);
         ResponseEntity<Result<NormalizedJsonLd>> instance = instances.createNewInstance(payload, "test", DEFAULT_RESPONSE_CONFIG);

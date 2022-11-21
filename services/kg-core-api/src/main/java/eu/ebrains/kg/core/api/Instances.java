@@ -67,7 +67,6 @@ import java.util.stream.Collectors;
 public class Instances {
     private final CoreInstanceController instanceController;
     private final Release.Client release;
-    private final IdUtils idUtils;
     private final AuthContext authContext;
     private final GraphDBInstances.Client graphDBInstances;
     private final IdsController idsController;
@@ -76,10 +75,9 @@ public class Instances {
 
     private final Logger logger = LoggerFactory.getLogger(getClass());
 
-    public Instances(CoreInstanceController instanceController, Release.Client release, IdUtils idUtils, AuthContext authContext, GraphDBInstances.Client graphDBInstances, IdsController idsController, VirtualSpaceController virtualSpaceController, JsonLd.Client jsonLd) {
+    public Instances(CoreInstanceController instanceController, Release.Client release, AuthContext authContext, GraphDBInstances.Client graphDBInstances, IdsController idsController, VirtualSpaceController virtualSpaceController, JsonLd.Client jsonLd) {
         this.instanceController = instanceController;
         this.release = release;
-        this.idUtils = idUtils;
         this.authContext = authContext;
         this.graphDBInstances = graphDBInstances;
         this.idsController = idsController;

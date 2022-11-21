@@ -26,6 +26,9 @@ import java.util.Arrays;
 import java.util.List;
 
 public class JsonLdConsts {
+    private JsonLdConsts() {
+    }
+
     public static final String ID = "@id";
     public static final String VOCAB = "@vocab";
     public static final String BASE = "@base";
@@ -33,7 +36,7 @@ public class JsonLdConsts {
     public static final String TYPE = "@type";
     public static final String CONTEXT = "@context";
 
-    private static List<String> CONSTANTS = Arrays.asList(ID, VOCAB, BASE, LIST, TYPE, CONTEXT);
+    private static final List<String> CONSTANTS = Arrays.asList(ID, VOCAB, BASE, LIST, TYPE, CONTEXT);
 
     public static boolean isJsonLdConst(String key){
         return CONSTANTS.contains(key);

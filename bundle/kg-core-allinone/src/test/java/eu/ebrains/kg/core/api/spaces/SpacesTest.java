@@ -42,7 +42,7 @@ import java.util.List;
 import static org.junit.jupiter.api.Assertions.*;
 
 @TestPropertySource(properties = {"eu.ebrains.kg.core.metadata.synchronous=true"})
-public class SpacesTest extends AbstractFunctionalityTest {
+class SpacesTest extends AbstractFunctionalityTest {
 
     @Autowired
     Spaces spaces;
@@ -55,7 +55,7 @@ public class SpacesTest extends AbstractFunctionalityTest {
 
     @Test
     @Disabled //TODO fix test
-    public void getSpaceWithPermissionsOk() {
+    void getSpaceWithPermissionsOk() {
         //Given
         GetSpaceWithPermissionsTest test = new GetSpaceWithPermissionsTest(ctx(READ_SPACE_ROLES), instances, spaces);
 
@@ -70,7 +70,7 @@ public class SpacesTest extends AbstractFunctionalityTest {
     @Test
     @Disabled //TODO fix test
     @SuppressWarnings("java:S2699") //The assertion is handled within the "execution" part.
-    public void getSpaceWithPermissionsForbidden() {
+    void getSpaceWithPermissionsForbidden() {
         //Given
         GetSpaceWithPermissionsTest test = new GetSpaceWithPermissionsTest(ctx(NON_READ_SPACE_ROLES), instances, spaces);
 
@@ -81,7 +81,7 @@ public class SpacesTest extends AbstractFunctionalityTest {
 
     @Test
     @Disabled //TODO fix test
-    public void getSpacesWithPermissionsOk() {
+    void getSpacesWithPermissionsOk() {
         //Given
         GetSpacesWithPermissionsTest test = new GetSpacesWithPermissionsTest(ctx(READ_SPACE_ROLES), instances, spaces);
 
@@ -97,7 +97,7 @@ public class SpacesTest extends AbstractFunctionalityTest {
 
     @Test
     @Disabled //TODO fix test
-    public void getSpacesWithPermissionsForbidden() {
+    void getSpacesWithPermissionsForbidden() {
         //Given
         GetSpacesWithPermissionsTest test = new GetSpacesWithPermissionsTest(ctx(NON_READ_SPACE_ROLES), instances, spaces);
 

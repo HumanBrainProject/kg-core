@@ -24,21 +24,19 @@ package eu.ebrains.kg.commons.jsonld;
 
 import eu.ebrains.kg.commons.model.SpaceName;
 
+import java.io.Serializable;
 import java.util.Objects;
 import java.util.UUID;
 
 /**
  * This is the id of an instance. An instance represents an entity in a specific space and can be created out of multiple documents
  */
-public class InstanceId {
+public class InstanceId implements Serializable {
     public InstanceId() {
     }
 
-    public InstanceId(UUID id, SpaceName space){
-        this(id, space, false);
-    }
 
-    public InstanceId(UUID id, SpaceName space, boolean deprecated) {
+    public InstanceId(UUID id, SpaceName space) {
         this.uuid = id;
         this.space = space;
     }

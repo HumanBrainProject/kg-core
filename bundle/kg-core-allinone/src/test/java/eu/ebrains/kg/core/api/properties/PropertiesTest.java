@@ -44,7 +44,7 @@ import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-public class PropertiesTest extends AbstractFunctionalityTest {
+class PropertiesTest extends AbstractFunctionalityTest {
 
     @Autowired
     Types types;
@@ -60,7 +60,7 @@ public class PropertiesTest extends AbstractFunctionalityTest {
 
 
     @Test
-    public void definePropertyGlobalOk() {
+    void definePropertyGlobalOk() {
         //Given
         DefinePropertyGlobalTest test = new DefinePropertyGlobalTest(ctx(PROPERTY_DEFINITION_ROLES), instances, properties);
 
@@ -78,7 +78,7 @@ public class PropertiesTest extends AbstractFunctionalityTest {
 
     @Test
     @SuppressWarnings("java:S2699") //The assertion is handled within the "execution" part.
-    public void definePropertyGlobalForbidden() {
+    void definePropertyGlobalForbidden() {
         //Given
         DefinePropertyGlobalTest test = new DefinePropertyGlobalTest(ctx(NON_PROPERTY_DEFINITION_ROLES), instances, properties);
 

@@ -27,7 +27,7 @@ import eu.ebrains.kg.commons.model.TermsOfUseError;
 
 public class NotAcceptedTermsOfUseException extends RuntimeException {
 
-    private TermsOfUseError termsOfUseError;
+    private final transient TermsOfUseError termsOfUseError;
 
     public NotAcceptedTermsOfUseException(TermsOfUse termsOfUse) {
         super(String.format("You didn't accept the current terms of use yet (version %s).", termsOfUse.getVersion()));

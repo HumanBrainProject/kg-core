@@ -41,7 +41,7 @@ public class NormalizedJsonLd extends JsonLdDoc {
     }
 
 
-    public NormalizedJsonLd(Map<? extends String, ?> m) {
+    public NormalizedJsonLd(Map<String, ?> m) {
         super(m);
     }
 

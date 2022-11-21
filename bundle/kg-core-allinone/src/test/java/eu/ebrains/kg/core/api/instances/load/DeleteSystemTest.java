@@ -33,13 +33,13 @@ import org.springframework.http.ResponseEntity;
 
 import java.io.IOException;
 import java.util.List;
-public class DeleteSystemTest extends AbstractInstancesLoadTest {
+class DeleteSystemTest extends AbstractInstancesLoadTest {
 
     @Autowired
     private IdUtils idUtils;
 
     @Test
-    public void testDeleteSingleAverageNoLink() throws IOException {
+    void testDeleteSingleAverageNoLink() {
         //Given
         testInsert(averagePayload, 1, false, false, null);
         List<NormalizedJsonLd> allInstancesFromInProgress = getAllInstancesFromInProgress(ExposedStage.IN_PROGRESS);

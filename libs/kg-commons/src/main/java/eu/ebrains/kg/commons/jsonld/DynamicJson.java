@@ -37,7 +37,7 @@ public class DynamicJson extends LinkedHashMap<String, Object> {
     public DynamicJson() {
     }
 
-    public DynamicJson(Map<? extends String, ?> m) {
+    public DynamicJson(Map<String, ?> m) {
         super(m);
     }
 
@@ -95,9 +95,10 @@ public class DynamicJson extends LinkedHashMap<String, Object> {
     }
 
     public void visitPublicKeys(BiConsumer<String, Object> consumer) {
-        for (Object key : keySet()) {
-            if (key instanceof String && !isInternalKey((String) key)) {
-                consumer.accept((String) key, get(key));
+        for (Map.Entry<String, Object> entry : entrySet()) {
+            String key = entry.getKey();
+            if (!isInternalKey(key)) {
+                consumer.accept(key, entry.getValue());
             }
         }
     }

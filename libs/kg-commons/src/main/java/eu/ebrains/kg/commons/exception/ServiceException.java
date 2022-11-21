@@ -24,10 +24,7 @@ package eu.ebrains.kg.commons.exception;
 
 public class ServiceException extends RuntimeException {
 
-    private int statusCode;
-
-    public ServiceException() {
-    }
+    private final int statusCode;
 
     public ServiceException(int statusCode, String message) {
         super(message);

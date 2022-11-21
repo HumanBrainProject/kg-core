@@ -29,22 +29,22 @@ import org.springframework.test.context.TestPropertySource;
 import java.io.IOException;
 
 @TestPropertySource(properties = {"eu.ebrains.kg.metrics=true", "logging.level.eu.ebrains.kg=WARN"})
-public class InsertMethodInspectionTest extends AbstractInstancesLoadTest {
+class InsertMethodInspectionTest extends AbstractInstancesLoadTest {
 
     @Test
-    public void methodInspectionInsertSmallNoLink() throws IOException {
+    void methodInspectionInsertSmallNoLink() throws IOException {
         testInsert(smallPayload, batchInsertion, false, false,  null);
 
     }
 
     @Test
-    public void methodInspectionInsertSmallNoLinkNormalize() throws IOException {
+    void methodInspectionInsertSmallNoLinkNormalize() throws IOException {
         testInsert(smallPayload, batchInsertion, false, true, null);
 
     }
 
     @Test
-    public void methodInspectionInsertAverageImmediateLink() throws IOException {
+    void methodInspectionInsertAverageImmediateLink() throws IOException {
         testInsert(averagePayload, batchInsertion, false,  true, PerformanceTestUtils.Link.PREVIOUS);
     }
 

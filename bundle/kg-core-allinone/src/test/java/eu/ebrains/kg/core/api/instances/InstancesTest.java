@@ -46,7 +46,7 @@ import java.util.UUID;
 import static org.junit.jupiter.api.Assertions.*;
 
 
-public class InstancesTest extends AbstractFunctionalityTest {
+class InstancesTest extends AbstractFunctionalityTest {
 
     @Autowired
     Instances instances;
@@ -65,7 +65,7 @@ public class InstancesTest extends AbstractFunctionalityTest {
 
     @Test
     @SuppressWarnings("java:S2699") //The assertion is handled within the "execution" part.
-    public void createInstanceOk() {
+    void createInstanceOk() {
         //Given
         CreateInstanceTest test = new CreateInstanceTest(ctx(WRITE_ROLES), instances);
 
@@ -79,7 +79,7 @@ public class InstancesTest extends AbstractFunctionalityTest {
 
     @Test
     @SuppressWarnings("java:S2699") //The assertion is handled within the "execution" part.
-    public void createInstanceForbidden() {
+    void createInstanceForbidden() {
         //Given
         CreateInstanceTest test = new CreateInstanceTest(ctx(NON_WRITE_ROLES), instances);
 
@@ -89,7 +89,7 @@ public class InstancesTest extends AbstractFunctionalityTest {
 
     @Test
     @SuppressWarnings("java:S2699") //The assertion is handled within the "execution" part.
-    public void createInstanceWithSpecifiedUUIDOk() {
+    void createInstanceWithSpecifiedUUIDOk() {
         //Given
         CreateInstanceWithSpecifiedUUIDTest test = new CreateInstanceWithSpecifiedUUIDTest(ctx(WRITE_ROLES), instances);
 
@@ -103,7 +103,7 @@ public class InstancesTest extends AbstractFunctionalityTest {
 
     @Test
     @SuppressWarnings("java:S2699") //The assertion is handled within the "execution" part.
-    public void createInstanceWithSpecifiedUUIDOkForbidden() {
+    void createInstanceWithSpecifiedUUIDOkForbidden() {
         //Given
         CreateInstanceWithSpecifiedUUIDTest test = new CreateInstanceWithSpecifiedUUIDTest(ctx(NON_WRITE_ROLES), instances);
 
@@ -113,7 +113,7 @@ public class InstancesTest extends AbstractFunctionalityTest {
 
     @Test
     @SuppressWarnings("java:S2699") //The assertion is handled within the "execution" part.
-    public void createInstanceWithNewSpaceOk() {
+    void createInstanceWithNewSpaceOk() {
         //Given
         CreateInstanceWithNewSpaceTest test = new CreateInstanceWithNewSpaceTest(ctx(OWNER_ROLES), instances);
 
@@ -129,7 +129,7 @@ public class InstancesTest extends AbstractFunctionalityTest {
      */
     @Test
     @SuppressWarnings("java:S2699") //The assertion is handled within the "execution" part.
-    public void createInstanceWithNewSpaceForbidden() {
+    void createInstanceWithNewSpaceForbidden() {
         //Given
         CreateInstanceWithNewSpaceTest test = new CreateInstanceWithNewSpaceTest(ctx(NON_OWNER_ROLES), instances);
 
@@ -138,7 +138,7 @@ public class InstancesTest extends AbstractFunctionalityTest {
     }
 
     @Test
-    public void contributeToInstanceFullReplacementOk() {
+    void contributeToInstanceFullReplacementOk() {
         //Given
         ContributeToInstanceFullReplacementTest test = new ContributeToInstanceFullReplacementTest(ctx(WRITE_ROLES), instances);
 
@@ -159,7 +159,7 @@ public class InstancesTest extends AbstractFunctionalityTest {
 
     @Test
     @SuppressWarnings("java:S2699") //The assertion is handled within the "execution" part.
-    public void contributeToInstanceFullReplacementForbidden() {
+    void contributeToInstanceFullReplacementForbidden() {
         //Given
         ContributeToInstanceFullReplacementTest test = new ContributeToInstanceFullReplacementTest(ctx(NON_WRITE_ROLES), instances);
 
@@ -168,7 +168,7 @@ public class InstancesTest extends AbstractFunctionalityTest {
     }
 
     @Test
-    public void contributeToInstancePartialReplacementOk() {
+    void contributeToInstancePartialReplacementOk() {
         //Given
         ContributeToInstancePartialReplacementTest test = new ContributeToInstancePartialReplacementTest(ctx(WRITE_ROLES), instances);
 
@@ -193,7 +193,7 @@ public class InstancesTest extends AbstractFunctionalityTest {
 
     @Test
     @SuppressWarnings("java:S2699") //The assertion is handled within the "execution" part.
-    public void contributeToInstanceAlternatives() {
+    void contributeToInstanceAlternatives() {
         //Given
         final ExtendedResponseConfiguration extendedResponseConfiguration = new ExtendedResponseConfiguration();
         extendedResponseConfiguration.setReturnAlternatives(true);
@@ -221,7 +221,7 @@ public class InstancesTest extends AbstractFunctionalityTest {
 
     @Test
     @SuppressWarnings("java:S2699") //The assertion is handled within the "execution" part.
-    public void contributeToInstancePartialReplacementForbidden() {
+    void contributeToInstancePartialReplacementForbidden() {
         //Given
         ContributeToInstancePartialReplacementTest test = new ContributeToInstancePartialReplacementTest(ctx(NON_WRITE_ROLES), instances);
 
@@ -231,7 +231,7 @@ public class InstancesTest extends AbstractFunctionalityTest {
 
 
     @Test
-    public void getInstanceByIdOk() {
+    void getInstanceByIdOk() {
         //Given
         GetInstanceByIdTest test = new GetInstanceByIdTest(ctx(READ_IN_PROGRESS_ROLES), instances);
 
@@ -246,7 +246,7 @@ public class InstancesTest extends AbstractFunctionalityTest {
     @Disabled("this doesn't return a forbidden exception anymore but rather minimal metadata")
     @Test
     @SuppressWarnings("java:S2699") //The assertion is handled within the "execution" part.
-    public void getInstanceByIdForbidden() {
+    void getInstanceByIdForbidden() {
         //Given
         GetInstanceByIdTest test = new GetInstanceByIdTest(ctx(NON_READ_IN_PROGRESS_ROLES), instances);
 
@@ -256,7 +256,7 @@ public class InstancesTest extends AbstractFunctionalityTest {
     }
 
     @Test
-    public void getInstanceScopeSimpleOk() {
+    void getInstanceScopeSimpleOk() {
         //Given
         GetInstanceScopeSimpleTest test = new GetInstanceScopeSimpleTest(ctx(READ_IN_PROGRESS_ROLES), instances);
 
@@ -275,7 +275,7 @@ public class InstancesTest extends AbstractFunctionalityTest {
     @Disabled("this doesn't return a forbidden exception anymore but rather minimal metadata")
     @Test
     @SuppressWarnings("java:S2699") //The assertion is handled within the "execution" part.
-    public void getInstanceScopeSimpleForbidden() {
+    void getInstanceScopeSimpleForbidden() {
         //Given
         GetInstanceScopeSimpleTest test = new GetInstanceScopeSimpleTest(ctx(NON_READ_IN_PROGRESS_ROLES), instances);
         //TODO update assertion
@@ -283,7 +283,7 @@ public class InstancesTest extends AbstractFunctionalityTest {
     }
 
     @Test
-    public void getInstanceNeighborsSimpleOk() {
+    void getInstanceNeighborsSimpleOk() {
 
         //Given
         GetInstanceNeighborsSimpleTest test = new GetInstanceNeighborsSimpleTest(ctx(READ_IN_PROGRESS_ROLES), instances);
@@ -305,7 +305,7 @@ public class InstancesTest extends AbstractFunctionalityTest {
 
     @Test
     @SuppressWarnings("java:S2699") //The assertion is handled within the "execution" part.
-    public void getInstanceNeighborsSimpleForbidden() {
+    void getInstanceNeighborsSimpleForbidden() {
 
         //Given
         GetInstanceNeighborsSimpleTest test = new GetInstanceNeighborsSimpleTest(ctx(NON_READ_IN_PROGRESS_ROLES), instances);
@@ -316,7 +316,7 @@ public class InstancesTest extends AbstractFunctionalityTest {
 
 
     @Test
-    public void getInstancesOk() {
+    void getInstancesOk() {
         //Given
         GetInstancesTest test = GetInstancesTest.getInstancesWithExistingType(ctx(READ_IN_PROGRESS_ROLES), instances);
 
@@ -337,7 +337,7 @@ public class InstancesTest extends AbstractFunctionalityTest {
     }
 
     @Test
-    public void getInstancesForbidden() {
+    void getInstancesForbidden() {
         //Given
         GetInstancesTest test = GetInstancesTest.getInstancesWithExistingType(ctx(NON_READ_IN_PROGRESS_ROLES), instances);
 
@@ -350,7 +350,7 @@ public class InstancesTest extends AbstractFunctionalityTest {
     }
 
     @Test
-    public void getInstancesWithNonExistingType() {
+    void getInstancesWithNonExistingType() {
         //Given
         GetInstancesTest test = GetInstancesTest.getInstancesByType(ctx(READ_IN_PROGRESS_ROLES), instances, "http://aTypeThatDoesntExist");
 
@@ -363,7 +363,7 @@ public class InstancesTest extends AbstractFunctionalityTest {
     }
 
     @Test
-    public void getInstancesWithNonExistingTypeInExistingSpace() {
+    void getInstancesWithNonExistingTypeInExistingSpace() {
         //Given
         GetInstancesTest test = GetInstancesTest.getInstancesByTypeAndSpace(ctx(READ_IN_PROGRESS_ROLES), instances, "http://aTypeThatDoesntExist", "functionalityTest");
 
@@ -376,7 +376,7 @@ public class InstancesTest extends AbstractFunctionalityTest {
     }
 
     @Test
-    public void getInstancesWithNonExistingTypeInNonExistingSpace() {
+    void getInstancesWithNonExistingTypeInNonExistingSpace() {
         //Given
         GetInstancesTest test = GetInstancesTest.getInstancesByTypeAndSpace(ctx(READ_IN_PROGRESS_ROLES), instances, "http://aTypeThatDoesntExist", "aSpaceThatDoesntExist");
 
@@ -390,7 +390,7 @@ public class InstancesTest extends AbstractFunctionalityTest {
 
 
     @Test
-    public void getInstancesByIdsOk() {
+    void getInstancesByIdsOk() {
         //Given
         GetInstancesByIdsTest test = new GetInstancesByIdsTest(ctx(READ_IN_PROGRESS_ROLES), instances);
 
@@ -415,7 +415,7 @@ public class InstancesTest extends AbstractFunctionalityTest {
 
     @Test
     @Disabled("this doesn't return a forbidden exception anymore but rather minimal metadata")
-    public void getInstancesByIdsForbidden() {
+    void getInstancesByIdsForbidden() {
         //Given
         GetInstancesByIdsTest test = new GetInstancesByIdsTest(ctx(NON_READ_IN_PROGRESS_ROLES), instances);
 
@@ -432,7 +432,7 @@ public class InstancesTest extends AbstractFunctionalityTest {
     }
 
     @Test
-    public void getInstancesByIdentifiersOk() {
+    void getInstancesByIdentifiersOk() {
         //Given
         GetInstancesByIdentifiersTest test = new GetInstancesByIdentifiersTest(ctx(READ_IN_PROGRESS_ROLES), instances);
 
@@ -455,7 +455,7 @@ public class InstancesTest extends AbstractFunctionalityTest {
 
     @Test
     @Disabled("this doesn't return a forbidden exception anymore but rather minimal metadata")
-    public void getInstancesByIdentifiersForbidden() {
+    void getInstancesByIdentifiersForbidden() {
         //Given
         GetInstancesByIdentifiersTest test = new GetInstancesByIdentifiersTest(ctx(NON_READ_IN_PROGRESS_ROLES), instances);
 
@@ -472,7 +472,7 @@ public class InstancesTest extends AbstractFunctionalityTest {
 
 
     @Test
-    public void deleteInstanceOk() {
+    void deleteInstanceOk() {
         //Given
         DeleteInstanceTest test = new DeleteInstanceTest(ctx(WRITE_ROLES), instances);
 
@@ -486,7 +486,7 @@ public class InstancesTest extends AbstractFunctionalityTest {
 
     @Test
     @SuppressWarnings("java:S2699") //The assertion is handled within the "execution" part.
-    public void deleteInstanceForbidden() {
+    void deleteInstanceForbidden() {
         //Given
         DeleteInstanceTest test = new DeleteInstanceTest(ctx(NON_WRITE_ROLES), instances);
 
@@ -496,7 +496,7 @@ public class InstancesTest extends AbstractFunctionalityTest {
 
 
     @Test
-    public void releaseInstanceOk() {
+    void releaseInstanceOk() {
         //Given
         ReleaseInstanceTest test = new ReleaseInstanceTest(ctx(OWNER_ROLES), instances);
 
@@ -530,7 +530,8 @@ public class InstancesTest extends AbstractFunctionalityTest {
 
 
     @Test
-    public void releaseInstanceForbidden() {
+    @SuppressWarnings("java:S2699") //The assertion is handled within the "execution" part.
+    void releaseInstanceForbidden() {
         //Given
         ReleaseInstanceTest test = new ReleaseInstanceTest(ctx(NON_OWNER_ROLES), instances);
 
@@ -539,7 +540,7 @@ public class InstancesTest extends AbstractFunctionalityTest {
     }
 
     @Test
-    public void unreleaseInstanceOk() {
+    void unreleaseInstanceOk() {
         //Given
         UnreleaseInstanceTest test = new UnreleaseInstanceTest(ctx(OWNER_ROLES), instances);
 
@@ -556,7 +557,8 @@ public class InstancesTest extends AbstractFunctionalityTest {
     }
 
     @Test
-    public void unreleaseInstanceForbidden() {
+    @SuppressWarnings("java:S2699") //The assertion is handled within the "execution" part.
+    void unreleaseInstanceForbidden() {
         //Given
         UnreleaseInstanceTest test = new UnreleaseInstanceTest(ctx(NON_OWNER_ROLES), instances);
 
@@ -566,7 +568,7 @@ public class InstancesTest extends AbstractFunctionalityTest {
 
 
     @Test
-    public void getReleaseStatusOk() {
+    void getReleaseStatusOk() {
         //Given
         GetReleaseStatusTest test = new GetReleaseStatusTest(ctx(RELEASE_STATUS_ROLES), instances);
 
@@ -581,7 +583,8 @@ public class InstancesTest extends AbstractFunctionalityTest {
     }
 
     @Test
-    public void getReleaseStatusForbidden() {
+    @SuppressWarnings("java:S2699") //The assertion is handled within the "execution" part.
+    void getReleaseStatusForbidden() {
         //Given
         GetReleaseStatusTest test = new GetReleaseStatusTest(ctx(NON_RELEASE_STATUS_ROLES), instances);
 
@@ -590,7 +593,7 @@ public class InstancesTest extends AbstractFunctionalityTest {
     }
 
     @Test
-    public void getReleaseStatusByIdsOk() {
+    void getReleaseStatusByIdsOk() {
         //Given
         GetReleaseStatusByIdsTest test = new GetReleaseStatusByIdsTest(ctx(RELEASE_STATUS_ROLES), instances);
 
@@ -607,7 +610,8 @@ public class InstancesTest extends AbstractFunctionalityTest {
     }
 
     @Test
-    public void getReleaseStatusByIdsForbidden() {
+    @SuppressWarnings("java:S2699") //The assertion is handled within the "execution" part.
+    void getReleaseStatusByIdsForbidden() {
         //Given
         GetReleaseStatusByIdsTest test = new GetReleaseStatusByIdsTest(ctx(NON_RELEASE_STATUS_ROLES), instances);
 
@@ -617,7 +621,7 @@ public class InstancesTest extends AbstractFunctionalityTest {
 
 
     @Test
-    public void getSuggestions() {
+    void getSuggestions() {
         //Given
         GetSuggestionsTest test = new GetSuggestionsTest(ctx(NON_RELEASE_STATUS_ROLES), instances);
 

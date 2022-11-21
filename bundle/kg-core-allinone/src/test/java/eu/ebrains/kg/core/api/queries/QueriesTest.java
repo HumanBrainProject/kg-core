@@ -43,7 +43,7 @@ import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-public class QueriesTest extends AbstractFunctionalityTest {
+class QueriesTest extends AbstractFunctionalityTest {
 
     @Autowired
     Instances instances;
@@ -74,7 +74,7 @@ public class QueriesTest extends AbstractFunctionalityTest {
     public final List<List<Role>> rolesSpaceAReleasedSpaceBInProgress;
     public final List<List<Role>> noRights;
 
-    public QueriesTest() {
+    QueriesTest() {
         List<RoleMapping> noReadRights = Collections.singletonList(null);
         List<RoleMapping> readReleaseOnlyRights = Collections.singletonList(RoleMapping.CONSUMER);
         List<RoleMapping> inProgressRights = Arrays.asList(RoleMapping.getRemainingUserRoles(new RoleMapping[]{null, RoleMapping.CONSUMER}).clone());
@@ -116,7 +116,7 @@ public class QueriesTest extends AbstractFunctionalityTest {
     // Happy cases (complete payloads)
     // *******************************
     @Test
-    public void simpleTestQueryInProgressWithAllInProgressRights() throws IOException {
+    void simpleTestQueryInProgressWithAllInProgressRights() throws IOException {
         //Given
         TestSimpleQueryTest test = new TestSimpleQueryTest(ctx(rolesAllSpacesInProgress), queries, instances, ExposedStage.IN_PROGRESS, false);
 
@@ -130,7 +130,7 @@ public class QueriesTest extends AbstractFunctionalityTest {
 
 
     @Test
-    public void simpleTestQueryReleasedWithReleasedRights() throws IOException {
+    void simpleTestQueryReleasedWithReleasedRights() throws IOException {
         //Given
         TestSimpleQueryTest test = new TestSimpleQueryTest(ctx(rolesAllSpacesReleased), queries, instances, ExposedStage.RELEASED, true);
 
@@ -143,7 +143,7 @@ public class QueriesTest extends AbstractFunctionalityTest {
     }
 
     @Test
-    public void simpleTestQueryReleasedWithSpaceAInProgressAndSpaceBReleasedRights() throws IOException {
+    void simpleTestQueryReleasedWithSpaceAInProgressAndSpaceBReleasedRights() throws IOException {
         //Given
         TestSimpleQueryTest test = new TestSimpleQueryTest(ctx(rolesSpaceAInProgressSpaceBReleasedOnly), queries, instances, ExposedStage.RELEASED, true);
 
@@ -156,7 +156,7 @@ public class QueriesTest extends AbstractFunctionalityTest {
     }
 
     @Test
-    public void simpleTestQueryReleasedWithSpaceAReleasedAndSpaceBInProgressRights() throws IOException {
+    void simpleTestQueryReleasedWithSpaceAReleasedAndSpaceBInProgressRights() throws IOException {
         //Given
         TestSimpleQueryTest test = new TestSimpleQueryTest(ctx(rolesSpaceAReleasedSpaceBInProgress), queries, instances, ExposedStage.RELEASED, true);
 
@@ -170,7 +170,7 @@ public class QueriesTest extends AbstractFunctionalityTest {
 
 
     @Test
-    public void simpleTestQueryReleasedWithInProgressRights() throws IOException {
+    void simpleTestQueryReleasedWithInProgressRights() throws IOException {
         //Given
         TestSimpleQueryTest test = new TestSimpleQueryTest(ctx(rolesAllSpacesInProgress), queries, instances, ExposedStage.RELEASED, true);
 
@@ -218,7 +218,7 @@ public class QueriesTest extends AbstractFunctionalityTest {
 
 
     @Test
-    public void simpleTestQueryInProgressSpaceAInProgressOnly() throws IOException {
+    void simpleTestQueryInProgressSpaceAInProgressOnly() throws IOException {
         //Given
         TestSimpleQueryTest test = new TestSimpleQueryTest(ctx(rolesSpaceAInProgressOnly), queries, instances, ExposedStage.IN_PROGRESS, false);
 
@@ -231,7 +231,7 @@ public class QueriesTest extends AbstractFunctionalityTest {
     }
 
     @Test
-    public void simpleTestQueryReleasedSpaceAReleasedOnly() throws IOException {
+    void simpleTestQueryReleasedSpaceAReleasedOnly() throws IOException {
         //Given
         TestSimpleQueryTest test = new TestSimpleQueryTest(ctx(rolesSpaceAReleasedOnly), queries, instances, ExposedStage.RELEASED, true);
 
@@ -244,7 +244,7 @@ public class QueriesTest extends AbstractFunctionalityTest {
     }
 
     @Test
-    public void simpleTestQueryReleasedSpaceAInProgressOnly() throws IOException {
+    void simpleTestQueryReleasedSpaceAInProgressOnly() throws IOException {
         //Given
         TestSimpleQueryTest test = new TestSimpleQueryTest(ctx(rolesSpaceAInProgressOnly), queries, instances, ExposedStage.RELEASED, true);
 
@@ -257,7 +257,7 @@ public class QueriesTest extends AbstractFunctionalityTest {
     }
 
     @Test
-    public void simpleTestQueryInProgressSpaceAInProgressSpaceBReleasedOnly() throws IOException {
+    void simpleTestQueryInProgressSpaceAInProgressSpaceBReleasedOnly() throws IOException {
         //Given
         TestSimpleQueryTest test = new TestSimpleQueryTest(ctx(rolesSpaceAInProgressSpaceBReleasedOnly), queries, instances, ExposedStage.IN_PROGRESS, false);
 
@@ -270,7 +270,7 @@ public class QueriesTest extends AbstractFunctionalityTest {
     }
 
     @Test
-    public void simpleTestQueryInProgressSpaceAReleasedSpaceBInProgress() throws IOException {
+    void simpleTestQueryInProgressSpaceAReleasedSpaceBInProgress() throws IOException {
         //Given
         TestSimpleQueryTest test = new TestSimpleQueryTest(ctx(rolesSpaceAReleasedSpaceBInProgress), queries, instances, ExposedStage.IN_PROGRESS, false);
 
@@ -287,7 +287,7 @@ public class QueriesTest extends AbstractFunctionalityTest {
     // Empty results due to no rights
     // *******************************
     @Test
-    public void simpleTestQueryInProgressNoRights() throws IOException {
+    void simpleTestQueryInProgressNoRights() throws IOException {
         //Given
         TestSimpleQueryTest test = new TestSimpleQueryTest(ctx(noRights), queries, instances, ExposedStage.IN_PROGRESS, false);
 
@@ -300,7 +300,7 @@ public class QueriesTest extends AbstractFunctionalityTest {
     }
 
     @Test
-    public void simpleTestQueryInProgressSpaceAReleasedOnly() throws IOException {
+    void simpleTestQueryInProgressSpaceAReleasedOnly() throws IOException {
         //Given
         TestSimpleQueryTest test = new TestSimpleQueryTest(ctx(rolesSpaceAReleasedOnly), queries, instances, ExposedStage.IN_PROGRESS, false);
 
@@ -313,7 +313,7 @@ public class QueriesTest extends AbstractFunctionalityTest {
     }
 
     @Test
-    public void simpleTestQueryInProgressOnlyReleasedRights() throws IOException {
+    void simpleTestQueryInProgressOnlyReleasedRights() throws IOException {
         //Given
         TestSimpleQueryTest test = new TestSimpleQueryTest(ctx(rolesAllSpacesReleased), queries, instances, ExposedStage.IN_PROGRESS, false);
 
@@ -327,7 +327,7 @@ public class QueriesTest extends AbstractFunctionalityTest {
 
 
     @Test
-    public void simpleTestQueryReleasedNoRights() throws IOException {
+    void simpleTestQueryReleasedNoRights() throws IOException {
         //Given
         TestSimpleQueryTest test = new TestSimpleQueryTest(ctx(noRights), queries, instances, ExposedStage.RELEASED, true);
 
@@ -345,7 +345,7 @@ public class QueriesTest extends AbstractFunctionalityTest {
     // *************************************
 
     @Test
-    public void simpleTestQueryAllReleasedNoData() throws IOException {
+    void simpleTestQueryAllReleasedNoData() throws IOException {
         //Given
         TestSimpleQueryTest test = new TestSimpleQueryTest(ctx(allRoles), queries, instances, ExposedStage.RELEASED, false);
 

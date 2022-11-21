@@ -30,41 +30,41 @@ import java.io.IOException;
 
 
 @TestPropertySource(properties = {"logging.level.eu.ebrains.kg=WARN"})
-public class InsertSystemTest extends AbstractInstancesLoadTest {
+class InsertSystemTest extends AbstractInstancesLoadTest {
 
     @Test
-    public void testInsertSmallNoLink() throws IOException {
+    void testInsertSmallNoLink() throws IOException {
         testInsert(smallPayload, batchInsertion, true,  false, null);
     }
 
     @Test
-    public void testInsertSmallImmediateLink() throws IOException {
+    void testInsertSmallImmediateLink() throws IOException {
         testInsert(smallPayload, batchInsertion, true,  false, PerformanceTestUtils.Link.PREVIOUS);
     }
 
     @Test
-    public void testInsertSmallNoLinkNormalize() throws IOException {
+    void testInsertSmallNoLinkNormalize() throws IOException {
         testInsert(smallPayload, batchInsertion, true,  true, null);
     }
 
     @Test
-    public void testInsertAverageNoLink() throws IOException {
+    void testInsertAverageNoLink() throws IOException {
         testInsert(averagePayload, batchInsertion, true,  false, null);
     }
 
     @Test
-    public void testInsertAverageNoLinkNormalize() throws IOException {
+    void testInsertAverageNoLinkNormalize() throws IOException {
         testInsert(averagePayload, batchInsertion, true,  true, null);
     }
 
 
     @Test
-    public void testInsertBigNoLinkInference() throws IOException {
+    void testInsertBigNoLinkInference() throws IOException {
         testInsert(bigPayload, batchInsertion, true,  false, null);
     }
 
     @Test
-    public void testInsertBigNoLinkInferenceNormalize() throws IOException {
+    void testInsertBigNoLinkInferenceNormalize() throws IOException {
         testInsert(bigPayload, batchInsertion, true, true, null);
     }
 

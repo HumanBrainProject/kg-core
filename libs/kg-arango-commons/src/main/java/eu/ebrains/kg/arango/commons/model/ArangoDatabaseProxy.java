@@ -44,10 +44,7 @@ public class ArangoDatabaseProxy {
     public static final String BROWSE_AND_SEARCH_INDEX = "browseAndSearch";
     private static final Logger logger = LoggerFactory.getLogger(ArangoDatabaseProxy.class);
 
-    public final static int ARANGO_TIMEOUT = 10 * 60 * 1000;
-    public final static int ARANGO_MAX_CONNECTIONS = 10;
-
-    private final static int ARANGO_CONNECTION_RETRIES = 5;
+    private static final int ARANGO_CONNECTION_RETRIES = 5;
 
     private final ArangoDB arangoDB;
     private final String databaseName;
@@ -60,7 +57,7 @@ public class ArangoDatabaseProxy {
 
     public synchronized void removeDatabase() {
         if (arangoDB.db(databaseName).exists()) {
-            logger.info(String.format("Removing database %s", databaseName));
+            logger.info("Removing database {}", databaseName);
             arangoDB.db(databaseName).drop();
         }
         exists = false;
@@ -121,7 +118,7 @@ public class ArangoDatabaseProxy {
         final ArangoDatabase db = get();
         ArangoCollection c = db.collection(collection.getCollectionName());
         if (!c.exists()) {
-            db.createCollection(collection.getCollectionName(), new CollectionCreateOptions().type(collection.isEdge() ? CollectionType.EDGES : CollectionType.DOCUMENT));
+            db.createCollection(collection.getCollectionName(), new CollectionCreateOptions().type(collection.isEdge() != null && collection.isEdge() ? CollectionType.EDGES : CollectionType.DOCUMENT));
         }
     }
 
@@ -144,7 +141,7 @@ public class ArangoDatabaseProxy {
         ArangoCollection collection = db.collection(c.getCollectionName());
         //We check again, if the collection has been created in the meantime
         if (!collection.exists()) {
-            logger.debug(String.format("Creating collection %s", c.getCollectionName()));
+            logger.debug("Creating collection {}", c.getCollectionName());
             db.createCollection(c.getCollectionName(), new CollectionCreateOptions().waitForSync(true).type(c.isEdge() != null && c.isEdge() ? CollectionType.EDGES : CollectionType.DOCUMENT));
             ensureIndicesOnCollection(collection);
         }
@@ -153,7 +150,7 @@ public class ArangoDatabaseProxy {
 
 
     public static void ensureIndicesOnCollection(ArangoCollection collection) {
-        logger.debug(String.format("Ensuring indices properly set for collection %s", collection.name()));
+        logger.debug("Ensuring indices properly set for collection {}", collection.name());
         collection.ensureHashIndex(Collections.singleton(ArangoVocabulary.COLLECTION), new HashIndexOptions());
         collection.ensureSkiplistIndex(Collections.singletonList(JsonLdConsts.ID), new SkiplistIndexOptions());
         if (collection.getInfo().getType() == CollectionType.EDGES) {

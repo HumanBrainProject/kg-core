@@ -30,6 +30,9 @@ import java.security.NoSuchAlgorithmException;
 
 public class HashUtils {
 
+    private HashUtils() {
+    }
+
     public static String hashId(String id) {
         try {
             MessageDigest digest = MessageDigest.getInstance("SHA-256");

@@ -51,7 +51,7 @@ import static org.junit.jupiter.api.Assertions.*;
 
 @TestPropertySource(properties = {"eu.ebrains.kg.core.metadata.synchronous=true"})
 @Disabled //TODO fix tests
-public class TypesTest extends AbstractFunctionalityTest {
+class TypesTest extends AbstractFunctionalityTest {
 
     @Autowired
     Types types;
@@ -68,7 +68,7 @@ public class TypesTest extends AbstractFunctionalityTest {
 
 
     @Test
-    public void defineTypeOk() {
+    void defineTypeOk() {
         //Given
         DefineTypeTest test = new DefineTypeTest(ctx(TYPE_DEFINITION_ROLES), types);
 
@@ -84,7 +84,7 @@ public class TypesTest extends AbstractFunctionalityTest {
 
     @Test
     @SuppressWarnings("java:S2699") //The assertion is handled within the "execution" part.
-    public void defineTypeForbidden() {
+    void defineTypeForbidden() {
         //Given
         DefineTypeTest test = new DefineTypeTest(ctx(NON_TYPE_DEFINITION_ROLES), types);
 
@@ -94,7 +94,7 @@ public class TypesTest extends AbstractFunctionalityTest {
 
 
     @Test
-    public void getTypesOk() {
+    void getTypesOk() {
         //Given
         GetTypesTest test = new GetTypesTest(ctx(READ_TYPES_IN_PROGRESS_ROLES), null, false, false, false, types, instances);
 
@@ -107,7 +107,7 @@ public class TypesTest extends AbstractFunctionalityTest {
     }
 
     @Test
-    public void getTypesForbidden() {
+    void getTypesForbidden() {
         //Given
         GetTypesTest test = new GetTypesTest(ctx(NON_READ_TYPES_IN_PROGRESS_ROLES), null, false, false, false, types, instances);
 
@@ -121,7 +121,7 @@ public class TypesTest extends AbstractFunctionalityTest {
 
 
     @Test
-    public void getTypesBySpaceOk() {
+    void getTypesBySpaceOk() {
         //Given
         GetTypesTest test = new GetTypesTest(ctx(NON_READ_TYPES_IN_PROGRESS_ROLES), new SpaceName("functionalityTest"), false, false,false,  types, instances);
 
@@ -136,7 +136,7 @@ public class TypesTest extends AbstractFunctionalityTest {
     }
 
     @Test
-    public void getTypesBySpaceForbidden() {
+    void getTypesBySpaceForbidden() {
         //Given
         GetTypesTest test = new GetTypesTest(ctx(NON_READ_TYPES_IN_PROGRESS_ROLES), new SpaceName("functionalityTest"), false, false,false, types, instances);
 
@@ -151,7 +151,7 @@ public class TypesTest extends AbstractFunctionalityTest {
 
 
     @Test
-    public void getTypesWithPropertiesOk() {
+    void getTypesWithPropertiesOk() {
         //Given
         GetTypesTest test = new GetTypesTest(ctx(READ_TYPES_IN_PROGRESS_ROLES), null, true, false, true, types, instances);
 
@@ -168,7 +168,7 @@ public class TypesTest extends AbstractFunctionalityTest {
     }
 
     @Test
-    public void getTypesWithPropertiesForbidden() {
+    void getTypesWithPropertiesForbidden() {
         //Given
         GetTypesTest test = new GetTypesTest(ctx(NON_READ_TYPES_IN_PROGRESS_ROLES), null, true, false, true, types, instances);
 
@@ -182,7 +182,7 @@ public class TypesTest extends AbstractFunctionalityTest {
     }
 
     @Test
-    public void getTypesBySpaceWithPropertiesOk() {
+    void getTypesBySpaceWithPropertiesOk() {
         //Given
         GetTypesTest test = new GetTypesTest(ctx(READ_TYPES_IN_PROGRESS_ROLES), new SpaceName("functionalityTest"), true, false, true, types, instances);
 
@@ -196,7 +196,7 @@ public class TypesTest extends AbstractFunctionalityTest {
     }
 
     @Test
-    public void getTypesBySpaceWithPropertiesForbidden() {
+    void getTypesBySpaceWithPropertiesForbidden() {
         //Given
         GetTypesTest test = new GetTypesTest(ctx(NON_READ_TYPES_IN_PROGRESS_ROLES), new SpaceName("functionalityTest"), true, false, true, types, instances);
 
@@ -213,7 +213,7 @@ public class TypesTest extends AbstractFunctionalityTest {
 
     @Test
     @SuppressWarnings("java:S2699") //The assertion is handled within the "execution" part.
-    public void getTypesByNameOk() {
+    void getTypesByNameOk() {
         //Given
         GetTypesByNameTest test = new GetTypesByNameTest(ctx(READ_TYPES_IN_PROGRESS_ROLES), null, false, types, instances);
 
@@ -227,7 +227,7 @@ public class TypesTest extends AbstractFunctionalityTest {
     }
 
     @Test
-    public void getTypesByNameForbidden() {
+    void getTypesByNameForbidden() {
         //Given
         GetTypesByNameTest test = new GetTypesByNameTest(ctx(NON_READ_TYPES_IN_PROGRESS_ROLES),  null, false, types, instances);
 
@@ -241,7 +241,7 @@ public class TypesTest extends AbstractFunctionalityTest {
     }
 
     @Test
-    public void getTypesForInvitationInReviewSpace() {
+    void getTypesForInvitationInReviewSpace() {
         //Given
         GetTypesForInvitation test = new GetTypesForInvitation(ctx(NON_READ_TYPES_IN_PROGRESS_ROLES),  false, false, types, SpaceName.REVIEW_SPACE, instances);
 
@@ -254,7 +254,7 @@ public class TypesTest extends AbstractFunctionalityTest {
     }
 
     @Test
-    public void getTypesForInvitation() {
+    void getTypesForInvitation() {
         //Given
         GetTypesForInvitation test = new GetTypesForInvitation(ctx(NON_READ_TYPES_IN_PROGRESS_ROLES),  false, false, types, null, instances);
 

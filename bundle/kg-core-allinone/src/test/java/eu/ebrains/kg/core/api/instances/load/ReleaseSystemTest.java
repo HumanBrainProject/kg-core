@@ -43,7 +43,7 @@ import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
-public class ReleaseSystemTest extends AbstractInstancesLoadTest {
+class ReleaseSystemTest extends AbstractInstancesLoadTest {
 
     @Autowired
     private Instances instances;
@@ -53,7 +53,7 @@ public class ReleaseSystemTest extends AbstractInstancesLoadTest {
 
     // RELEASING
     @Test
-    public void testReleaseSingleAverageNoLink() throws IOException {
+    void testReleaseSingleAverageNoLink() throws IOException {
         //Given
         testInsert(averagePayload, 1, false, false, null);
         List<NormalizedJsonLd> allInstancesFromInProgress = getAllInstancesFromInProgress(ExposedStage.IN_PROGRESS).subList(0, batchInsertion);
@@ -69,7 +69,7 @@ public class ReleaseSystemTest extends AbstractInstancesLoadTest {
     }
 
     @Test
-    public void testReleaseSingleAverageNoLinkfullParallelism() throws IOException, InterruptedException {
+    void testReleaseSingleAverageNoLinkfullParallelism() throws IOException, InterruptedException {
         //Given
         testInsert(averagePayload, 1, false,  false, null);
         List<NormalizedJsonLd> allInstancesFromInProgress = getAllInstancesFromInProgress(ExposedStage.IN_PROGRESS).subList(0, batchInsertion);
@@ -92,7 +92,7 @@ public class ReleaseSystemTest extends AbstractInstancesLoadTest {
 
 
     @Test
-    public void testReleaseSingleBigNoLink() {
+    void testReleaseSingleBigNoLink() {
         //Given
         JsonLdDoc payload = TestDataFactory.createTestData(bigPayload, true, 0, null);
         List<ResponseEntity<Result<NormalizedJsonLd>>> l = new ArrayList<>();
@@ -114,7 +114,7 @@ public class ReleaseSystemTest extends AbstractInstancesLoadTest {
     }
 
     @Test
-    public void testUnReleaseSingleAverageNoLink() {
+    void testUnReleaseSingleAverageNoLink() {
         //Given
         TestDataFactory.createTestData(averagePayload, true, 0, null);
         List<NormalizedJsonLd> allInstancesFromInProgress = getAllInstancesFromInProgress(ExposedStage.IN_PROGRESS).subList(0, batchInsertion);
