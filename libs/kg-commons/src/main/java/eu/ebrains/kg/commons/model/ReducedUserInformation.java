@@ -29,6 +29,9 @@ import eu.ebrains.kg.commons.semantics.vocabularies.SchemaOrgVocabulary;
 import java.util.List;
 
 public class ReducedUserInformation extends NormalizedJsonLd {
+    /** Used for serialization **/
+    private ReducedUserInformation() {
+    }
 
     public ReducedUserInformation(String fullName, String userName, List<String> identifier, String id){
         put(SchemaOrgVocabulary.NAME, fullName!=null ? fullName : "Unknown");
