@@ -53,6 +53,17 @@ public class ArangoDatabases {
         this.structureDB = structureDB;
     }
 
+    /**
+     * Attention! This method wipes all databases and is accordingly meant to be used very carefully!
+     */
+    public void clearAll(){
+        structureDB.removeDatabase();
+        releasedDB.removeDatabase();
+        nativeDB.removeDatabase();
+        inProgressDB.removeDatabase();
+    }
+
+
     @Async
     public void setup(){
         structureDB.createIfItDoesntExist();

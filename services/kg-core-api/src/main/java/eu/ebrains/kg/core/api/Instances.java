@@ -23,7 +23,6 @@
 package eu.ebrains.kg.core.api;
 
 import eu.ebrains.kg.commons.AuthContext;
-import eu.ebrains.kg.commons.IdUtils;
 import eu.ebrains.kg.commons.Version;
 import eu.ebrains.kg.commons.api.GraphDBInstances;
 import eu.ebrains.kg.commons.api.JsonLd;

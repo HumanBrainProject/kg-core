@@ -35,12 +35,12 @@ import java.util.HashSet;
 import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.*;
-public class PermissionsControllerTest  {
+class PermissionsControllerTest  {
 
 
 
     @Test
-    public void testRemoveSpacesWithoutReadAccessReduce() {
+    void testRemoveSpacesWithoutReadAccessReduce() {
         Permissions permissions = Mockito.mock(Permissions.class);
         PermissionsController permissionsController = new PermissionsController(permissions);
         Set<SpaceName> readableSpaces = Collections.singleton(new SpaceName("canRead"));
@@ -52,7 +52,7 @@ public class PermissionsControllerTest  {
     }
 
     @Test
-    public void testRemoveSpacesWithoutReadAccessNone() {
+    void testRemoveSpacesWithoutReadAccessNone() {
         Permissions permissions = Mockito.mock(Permissions.class);
         PermissionsController permissionsController = new PermissionsController(permissions);
         Set<SpaceName> readableSpaces = Collections.singleton(new SpaceName("canRead"));

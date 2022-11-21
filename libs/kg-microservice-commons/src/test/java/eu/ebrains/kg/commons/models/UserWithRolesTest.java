@@ -34,7 +34,7 @@ import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-public class UserWithRolesTest {
+class UserWithRolesTest {
 
     List<String> adminClientRoles = Collections.singletonList(RoleMapping.ADMIN.toRole(null).getName());
 
@@ -47,7 +47,7 @@ public class UserWithRolesTest {
     }
 
     @Test
-    public void testEvaluatePermissionsFullUserAccess(){
+    void testEvaluatePermissionsFullUserAccess(){
         //Given
         UserWithRoles userWithRoles = new UserWithRoles(user, getUserRoles(RoleMapping.ADMIN, null), adminClientRoles,  "testClient");
 
@@ -62,7 +62,7 @@ public class UserWithRolesTest {
     }
 
     @Test
-    public void testEvaluatePermissionsFullServiceAccountAccess(){
+    void testEvaluatePermissionsFullServiceAccountAccess(){
         //Given
         UserWithRoles userWithRoles = new UserWithRoles(user, adminRole, adminClientRoles, "testClient");
 
@@ -77,7 +77,7 @@ public class UserWithRolesTest {
     }
 
     @Test
-    public void testEvaluatePermissionsSpaceUserAccess(){
+    void testEvaluatePermissionsSpaceUserAccess(){
         //Given
         UserWithRoles userWithRoles = new UserWithRoles(user, getUserRoles(RoleMapping.ADMIN, space), adminClientRoles,  "testClient");
 
@@ -98,7 +98,7 @@ public class UserWithRolesTest {
     }
 
     @Test
-    public void testEvaluatePermissionsSpaceReviewUserAccess(){
+    void testEvaluatePermissionsSpaceReviewUserAccess(){
         //Given
         UserWithRoles userWithRoles = new UserWithRoles(user, getUserRoles(RoleMapping.REVIEWER, space), adminClientRoles, "testClient");
 

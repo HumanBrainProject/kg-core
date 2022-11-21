@@ -22,26 +22,26 @@
 
 package eu.ebrains.kg.core.api.spaces;
 
-import eu.ebrains.kg.commons.exception.ForbiddenException;
+import eu.ebrains.kg.commons.exception.InstanceNotFoundException;
+import eu.ebrains.kg.commons.model.SpaceName;
 import eu.ebrains.kg.commons.model.external.spaces.SpaceInformation;
 import eu.ebrains.kg.commons.permission.roles.RoleMapping;
+import eu.ebrains.kg.commons.semantics.vocabularies.EBRAINSVocabulary;
 import eu.ebrains.kg.commons.semantics.vocabularies.SchemaOrgVocabulary;
 import eu.ebrains.kg.core.api.Instances;
 import eu.ebrains.kg.core.api.Spaces;
 import eu.ebrains.kg.core.api.spaces.test.GetSpaceWithPermissionsTest;
 import eu.ebrains.kg.core.api.spaces.test.GetSpacesWithPermissionsTest;
 import eu.ebrains.kg.testutils.AbstractFunctionalityTest;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.test.context.TestPropertySource;
 
+import java.util.Comparator;
 import java.util.List;
 
 
 import static org.junit.jupiter.api.Assertions.*;
 
-@TestPropertySource(properties = {"eu.ebrains.kg.core.metadata.synchronous=true"})
 class SpacesTest extends AbstractFunctionalityTest {
 
     @Autowired
@@ -54,7 +54,6 @@ class SpacesTest extends AbstractFunctionalityTest {
     private final static RoleMapping[] READ_SPACE_ROLES = RoleMapping.getRemainingUserRoles(NON_READ_SPACE_ROLES);
 
     @Test
-    @Disabled //TODO fix test
     void getSpaceWithPermissionsOk() {
         //Given
         GetSpaceWithPermissionsTest test = new GetSpaceWithPermissionsTest(ctx(READ_SPACE_ROLES), instances, spaces);
@@ -64,23 +63,26 @@ class SpacesTest extends AbstractFunctionalityTest {
             //Then
             SpaceInformation spaceInformation = test.assureValidPayload(test.space);
             assertNotNull(spaceInformation);
+            assertEquals("functionalitytest", spaceInformation.getName());
+            assertFalse(spaceInformation.getAs(EBRAINSVocabulary.META_AUTORELEASE_SPACE, Boolean.class));
+            assertFalse(spaceInformation.getAs(EBRAINSVocabulary.META_CLIENT_SPACE, Boolean.class));
+            assertFalse(spaceInformation.getAs(EBRAINSVocabulary.META_DEFER_CACHE_SPACE, Boolean.class));
+            assertNotNull(spaceInformation.getPermissions());
         });
     }
 
     @Test
-    @Disabled //TODO fix test
     @SuppressWarnings("java:S2699") //The assertion is handled within the "execution" part.
     void getSpaceWithPermissionsForbidden() {
         //Given
         GetSpaceWithPermissionsTest test = new GetSpaceWithPermissionsTest(ctx(NON_READ_SPACE_ROLES), instances, spaces);
 
         //When
-        test.execute(ForbiddenException.class);
+        test.execute(InstanceNotFoundException.class);
     }
 
 
     @Test
-    @Disabled //TODO fix test
     void getSpacesWithPermissionsOk() {
         //Given
         GetSpacesWithPermissionsTest test = new GetSpacesWithPermissionsTest(ctx(READ_SPACE_ROLES), instances, spaces);
@@ -90,13 +92,14 @@ class SpacesTest extends AbstractFunctionalityTest {
             //Then
             List<SpaceInformation> spaceInformations = test.assureValidPayload(test.response);
             assertNotNull(spaceInformations);
-            assertEquals(1, spaceInformations.size());
+            assertEquals(2, spaceInformations.size());
+            spaceInformations.sort(Comparator.comparing(SpaceInformation::getName));
             assertEquals(test.space, spaceInformations.get(0).getAs(SchemaOrgVocabulary.NAME, String.class));
+            assertEquals(SpaceName.PRIVATE_SPACE, spaceInformations.get(1).getAs(SchemaOrgVocabulary.NAME, String.class));
         });
     }
 
     @Test
-    @Disabled //TODO fix test
     void getSpacesWithPermissionsForbidden() {
         //Given
         GetSpacesWithPermissionsTest test = new GetSpacesWithPermissionsTest(ctx(NON_READ_SPACE_ROLES), instances, spaces);
@@ -105,7 +108,8 @@ class SpacesTest extends AbstractFunctionalityTest {
         test.execute(()->{
             assertNotNull(test.response);
             assertNotNull(test.response.getData());
-            assertTrue(test.response.getData().isEmpty());
+            assertEquals(1, test.response.getData().size());
+            assertEquals(SpaceName.PRIVATE_SPACE, test.response.getData().get(0).getName());
         });
     }
 

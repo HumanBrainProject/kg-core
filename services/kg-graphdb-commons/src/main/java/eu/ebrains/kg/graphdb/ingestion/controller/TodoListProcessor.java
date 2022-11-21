@@ -113,9 +113,12 @@ public class TodoListProcessor {
 
     private List<ArangoDocumentReference> getNativeDocumentsByInferredInstance(ArangoDocumentReference rootDocumentReference) {
         final ArangoDocument document = repository.getDocument(DataStage.IN_PROGRESS, rootDocumentReference);
-        final NormalizedJsonLd doc = document.asIndexedDoc().getDoc();
-        final List<String> inferenceSourceDocs = doc.getAsListOf(InferredJsonLdDoc.INFERENCE_OF, String.class);
-        return inferenceSourceDocs.stream().map(inferenceSourceDoc -> new ArangoDocumentReference(document.getId().getArangoCollectionReference(), idUtils.getUUID(new JsonLdId(inferenceSourceDoc)))).collect(Collectors.toList());
+        if(document!=null){
+            final NormalizedJsonLd doc = document.asIndexedDoc().getDoc();
+            final List<String> inferenceSourceDocs = doc.getAsListOf(InferredJsonLdDoc.INFERENCE_OF, String.class);
+            return inferenceSourceDocs.stream().map(inferenceSourceDoc -> new ArangoDocumentReference(document.getId().getArangoCollectionReference(), idUtils.getUUID(new JsonLdId(inferenceSourceDoc)))).collect(Collectors.toList());
+        }
+        return Collections.emptyList();
     }
 
 

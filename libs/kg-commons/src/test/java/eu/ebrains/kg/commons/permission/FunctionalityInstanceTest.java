@@ -27,10 +27,10 @@ import eu.ebrains.kg.commons.model.SpaceName;
 import static org.junit.jupiter.api.Assertions.*;
 import org.junit.jupiter.api.Test;
 
-public class FunctionalityInstanceTest {
+class FunctionalityInstanceTest {
 
     @Test
-    public void getRolePatternForSpace() {
+    void getRolePatternForSpace() {
         SpaceName space = new SpaceName("bar");
         assertTrue("bar:foo".matches(FunctionalityInstance.getRolePatternForSpace(space)));
         assertTrue("bar:foobar:foo".matches(FunctionalityInstance.getRolePatternForSpace(space)));

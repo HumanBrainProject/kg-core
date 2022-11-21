@@ -24,10 +24,10 @@ package eu.ebrains.kg.commons;
 import static org.junit.jupiter.api.Assertions.*;
 import org.junit.jupiter.api.Test;
 
-public class HashUtilsTest {
+class HashUtilsTest {
 
     @Test
-    public void needsHashing() {
+    void needsHashing() {
         assertFalse(HashUtils.needsHashing("abcdef-gh-ij-123-KLMNOP"));
         assertTrue(HashUtils.needsHashing("hello world"));
         assertTrue(HashUtils.needsHashing("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"));

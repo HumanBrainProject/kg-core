@@ -25,20 +25,20 @@ package eu.ebrains.kg.commons.model;
 import static org.junit.jupiter.api.Assertions.*;
 import org.junit.jupiter.api.Test;
 
-public class TypeUnitTest {
+class TypeUnitTest {
 
     @Test
-    public void labelFromNameNull() {
+    void labelFromNameNull() {
         assertNull(Type.labelFromName(null));
     }
 
     @Test
-    public void labelFromNameWithPath(){
+    void labelFromNameWithPath(){
         assertEquals("foo", Type.labelFromName("http://somepath/foo"));
     }
 
     @Test
-    public void labelFromNameWithHash(){
+    void labelFromNameWithHash(){
         assertEquals("bar", Type.labelFromName("http://somepath/foo#bar"));
     }
 

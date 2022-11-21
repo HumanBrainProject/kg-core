@@ -53,26 +53,20 @@ import static org.junit.jupiter.api.Assertions.*;
 @SpringBootTest
 @WebAppConfiguration
 @Tag(TestCategories.API)
-public class ConsistencyCheckTest {
-
-
+class ConsistencyCheckTest {
     @Autowired
     Instances instances;
-
     @Autowired
     IdUtils idUtils;
-
     @Autowired
     Types types;
-
     PaginationParam EMPTY_PAGINATION = new PaginationParam();
     ExtendedResponseConfiguration DEFAULT_RESPONSE_CONFIG = new ExtendedResponseConfiguration();
-
     int createInstances = 10;
     String type = "http://schema.org/Test";
 
     @Test
-    public void testInsert() {
+    void testInsert() {
         //Given
         for (int i = 0; i < createInstances; i++) {
             JsonLdDoc doc = new JsonLdDoc();
@@ -95,7 +89,7 @@ public class ConsistencyCheckTest {
     }
 
     @Test
-    public void testUpdate() {
+    void testUpdate() {
         float updateRatio = 0.5f;
         testInsert();
         int updated = 0;
@@ -112,7 +106,7 @@ public class ConsistencyCheckTest {
     }
 
     @Test
-    public void testRelease() {
+    void testRelease() {
         float releaseRatio = 0.2f;
         testInsert();
         int released = 0;
@@ -128,7 +122,7 @@ public class ConsistencyCheckTest {
 
 
     @Test
-    public void testExplicitDelete() {
+    void testExplicitDelete() {
         float deleteRatio = 0.2f;
         testInsert();
         int deleted = 0;
@@ -143,7 +137,7 @@ public class ConsistencyCheckTest {
 
 
     @Test
-    public void testImplicitDeleteByTypeRemoval() {
+    void testImplicitDeleteByTypeRemoval() {
         float updateRatio = 0.2f;
         testInsert();
         int updated = 0;
@@ -159,7 +153,7 @@ public class ConsistencyCheckTest {
     }
 
     @Test
-    public void testDeleteAllAfterUpdate() {
+    void testDeleteAllAfterUpdate() {
         testUpdate();
         for (NormalizedJsonLd instance : getAllInstancesFromInProgress(ExposedStage.IN_PROGRESS)) {
             this.instances.deleteInstance(idUtils.getUUID(instance.id()));

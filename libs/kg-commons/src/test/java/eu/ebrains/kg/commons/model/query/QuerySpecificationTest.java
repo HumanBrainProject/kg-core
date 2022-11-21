@@ -29,7 +29,7 @@ class QuerySpecificationTest {
 
 
     @Test
-    public void deserializePayloadWithSimplePath(){
+    void deserializePayloadWithSimplePath(){
         //given
         String payload = "{\"structure\": [{\"propertyName\": \"id\", \"path\": \"@id\"}]}";
 
@@ -44,7 +44,7 @@ class QuerySpecificationTest {
     }
 
     @Test
-    public void deserializePayloadWithReversePath(){
+    void deserializePayloadWithReversePath(){
         //given
         String payload = "{\"structure\": [{\"propertyName\": \"id\", \"path\": { \"@id\": \"http://aReverseProperty\", \"reverse\": true}}]}";
 
@@ -59,7 +59,7 @@ class QuerySpecificationTest {
     }
 
     @Test
-    public void deserializePayloadWithFlattenedPath(){
+    void deserializePayloadWithFlattenedPath(){
         //given
         String payload = "{\"structure\": [{\"propertyName\": \"id\", \"path\": [ {\"@id\": \"id\"}, { \"@id\": \"http://aReverseProperty\", \"reverse\": true}]}]}";
 

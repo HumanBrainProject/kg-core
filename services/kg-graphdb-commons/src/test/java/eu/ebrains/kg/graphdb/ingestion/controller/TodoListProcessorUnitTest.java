@@ -28,6 +28,7 @@ import eu.ebrains.kg.commons.jsonld.NormalizedJsonLd;
 import eu.ebrains.kg.commons.model.*;
 import eu.ebrains.kg.commons.model.internal.spaces.Space;
 import eu.ebrains.kg.graphdb.commons.controller.ArangoRepositoryCommons;
+import eu.ebrains.kg.test.factory.UserFactory;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
@@ -42,17 +43,18 @@ public class TodoListProcessorUnitTest {
     private final TodoListProcessor processor = Mockito.spy(new TodoListProcessor(Mockito.mock(ArangoRepositoryCommons.class), Mockito.mock(StructureSplitter.class), Mockito.mock(MainEventTracker.class), Mockito.mock(IdUtils.class), Mockito.mock(DataController.class), Mockito.mock(ReleasingController.class)));
 
     @Test
-    @Disabled //TODO fix test
     public void doProcessTodoList() {
 
         //Given
         UUID id1 = UUID.randomUUID();
         SpaceName spaceName = new SpaceName("foo");
         Space space = new Space(spaceName, false, false, false);
+        User user = UserFactory.globalAdmin().getUserWithRoles().getUser();
+
         List<TodoItem> todoItems = Arrays.asList(
-                TodoItem.fromEvent(new PersistedEvent(Event.createDeleteEvent(spaceName, id1, new JsonLdId("http://foobar/"+id1)), DataStage.NATIVE, null, space)),
-                TodoItem.fromEvent(new PersistedEvent(Event.createUpsertEvent(spaceName, UUID.randomUUID(), Event.Type.INSERT, Mockito.mock(NormalizedJsonLd.class)), DataStage.NATIVE, null, space)),
-                TodoItem.fromEvent(new PersistedEvent(Event.createUpsertEvent(spaceName, UUID.randomUUID(), Event.Type.UPDATE, Mockito.mock(NormalizedJsonLd.class)), DataStage.NATIVE, null, space))
+                TodoItem.fromEvent(new PersistedEvent(Event.createDeleteEvent(spaceName, id1, new JsonLdId("http://foobar/"+id1)), DataStage.NATIVE, user, space)),
+                TodoItem.fromEvent(new PersistedEvent(Event.createUpsertEvent(spaceName, UUID.randomUUID(), Event.Type.INSERT, Mockito.mock(NormalizedJsonLd.class)), DataStage.NATIVE, user, space)),
+                TodoItem.fromEvent(new PersistedEvent(Event.createUpsertEvent(spaceName, UUID.randomUUID(), Event.Type.UPDATE, Mockito.mock(NormalizedJsonLd.class)), DataStage.NATIVE, user, space))
         );
 
         //When

@@ -34,12 +34,12 @@ import org.junit.jupiter.api.Test;
 import java.util.List;
 import java.util.UUID;
 
-public class StructureSplitterTest {
+class StructureSplitterTest {
 
     private final String testJson= "{ \"@id\": \"https://kg.ebrains.eu/api/instances/minds/helloWorld\", \"https://schema.hbp.eu/foo\": \"bar\", \"https://schema.hbp.eu/embedded\": {\"https://schema.hbp.eu/embeddedKey\": \"embeddedValue\"}, \"https://schema.hbp.eu/link\": {\"@id\": \"https://kg.ebrains.eu/api/instances/minds/related\"}}";
 
     @Test
-    public void extractRelations() {
+    void extractRelations() {
         JsonAdapter jsonAdapter = new JsonAdapter4Test();
         NormalizedJsonLd jsonld = jsonAdapter.fromJson(testJson, NormalizedJsonLd.class);
         StructureSplitter structureSplitter = new StructureSplitter(new IdUtils("https://kg.ebrains.eu/api/instances/"), new TypeUtils(jsonAdapter));

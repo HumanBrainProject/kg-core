@@ -25,6 +25,7 @@ package eu.ebrains.kg.graphdb.instances.controller;
 import eu.ebrains.kg.arango.commons.model.ArangoCollectionReference;
 import eu.ebrains.kg.commons.jsonld.NormalizedJsonLd;
 import eu.ebrains.kg.commons.model.*;
+import eu.ebrains.kg.graphdb.AbstractGraphTest;
 import eu.ebrains.kg.graphdb.ingestion.controller.TodoListProcessor;
 import eu.ebrains.kg.test.TestCategories;
 import eu.ebrains.kg.test.TestObjectFactory;
@@ -38,24 +39,24 @@ import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-@SpringBootTest
 @Tag(TestCategories.API)
-@Disabled //TODO fix test
-public class ArangoRepositoryInstancesTest {
+@Disabled("We do have an issue here regarding the space reflection - we need to investigate further why this is")
+class ArangoRepositoryInstancesTest extends AbstractGraphTest {
 
     @Autowired
     ArangoRepositoryInstances arangoRepository;
 
     @Autowired
     TodoListProcessor todoListProcessor;
-    private final DataStage stage = DataStage.NATIVE;
+    private final DataStage stage = DataStage.IN_PROGRESS;
 
     private final ArangoCollectionReference simpsons = ArangoCollectionReference.fromSpace(TestObjectFactory.SIMPSONS);
 
 
     @Test
-    public void getDocumentsByType() {
+    void getDocumentsByType() {
         //Given
+
         todoListProcessor.upsertDocument(simpsons.doc(UUID.randomUUID()), TestObjectFactory.createJsonLd( "simpsons/homer.json"), stage);
         todoListProcessor.upsertDocument(simpsons.doc(UUID.randomUUID()), TestObjectFactory.createJsonLd( "simpsons/maggie.json"), stage);
 
@@ -78,7 +79,7 @@ public class ArangoRepositoryInstancesTest {
     }
 
     @Test
-    public void getDocumentsByTypePaginated() {
+    void getDocumentsByTypePaginated() {
         //Given
         todoListProcessor.upsertDocument(simpsons.doc(UUID.randomUUID()), TestObjectFactory.createJsonLd( "simpsons/homer.json"), stage);
         todoListProcessor.upsertDocument(simpsons.doc(UUID.randomUUID()), TestObjectFactory.createJsonLd( "simpsons/maggie.json"), stage);

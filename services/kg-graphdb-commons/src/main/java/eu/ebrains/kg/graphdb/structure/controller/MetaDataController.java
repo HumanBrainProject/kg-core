@@ -53,7 +53,7 @@ public class MetaDataController {
 
     private final Logger logger = LoggerFactory.getLogger(getClass());
 
-    public MetaDataController(StructureRepository structureRepository, PermissionsController permissionsController, Ids.Client ids, IdUtils idUtils) {
+    public MetaDataController(StructureRepository structureRepository, PermissionsController permissionsController) {
         this.structureRepository = structureRepository;
         this.permissionsController = permissionsController;
     }

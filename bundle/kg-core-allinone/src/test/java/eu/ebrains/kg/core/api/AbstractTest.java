@@ -123,7 +123,7 @@ public abstract class AbstractTest {
             }
         } catch (Exception e) {
             if(!e.getClass().equals(expectedException)){
-                throw new RuntimeException(String.format("Failing test with role %s", currentRoles.stream().map(Role::getName).collect(Collectors.joining(", "))), e);
+                throw new RuntimeException(String.format("Failing test with role %s", currentRoles!=null ? currentRoles.stream().map(Role::getName).collect(Collectors.joining(", ")) : "None"), e);
             }
         }
     }

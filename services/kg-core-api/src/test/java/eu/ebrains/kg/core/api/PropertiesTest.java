@@ -28,7 +28,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
-public class PropertiesTest {
+class PropertiesTest {
     Properties instance = new Properties(Mockito.mock(GraphDBTypes.Client.class));
 
     @BeforeEach
@@ -36,7 +36,7 @@ public class PropertiesTest {
     }
 
     @Test
-    public void testPropertyDefinitionOk() {
+    void testPropertyDefinitionOk() {
         NormalizedJsonLd ld = new NormalizedJsonLd();
         instance.defineProperty(ld, false, "http://foobar");
     }

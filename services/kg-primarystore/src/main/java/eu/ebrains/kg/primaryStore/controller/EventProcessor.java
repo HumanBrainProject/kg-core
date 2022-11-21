@@ -22,7 +22,6 @@
 
 package eu.ebrains.kg.primaryStore.controller;
 
-import eu.ebrains.kg.commons.JsonAdapter;
 import eu.ebrains.kg.commons.api.Indexing;
 import eu.ebrains.kg.commons.jsonld.InstanceId;
 import eu.ebrains.kg.commons.jsonld.NormalizedJsonLd;
