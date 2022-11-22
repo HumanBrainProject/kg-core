@@ -23,11 +23,12 @@
 package eu.ebrains.kg.inference;
 
 import eu.ebrains.kg.commons.IdUtils;
+import eu.ebrains.kg.commons.JsonAdapter;
 import eu.ebrains.kg.commons.jsonld.NormalizedJsonLd;
 import eu.ebrains.kg.commons.model.Event;
 import eu.ebrains.kg.commons.model.SpaceName;
 import eu.ebrains.kg.inference.api.InferenceAPI;
-import eu.ebrains.kg.test.TestObjectFactory;
+import eu.ebrains.kg.test.Simpsons;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -46,6 +47,8 @@ import static org.junit.jupiter.api.Assertions.*;
 @Disabled
 public class InferenceTest {
 
+    @Autowired
+    JsonAdapter jsonAdapter;
 
     @Autowired
     InferenceAPI inference;
@@ -53,14 +56,15 @@ public class InferenceTest {
     @Autowired
     IdUtils idUtils;
 
-    private final SpaceName space = TestObjectFactory.SIMPSONS;
+    private final SpaceName space = Simpsons.SPACE_NAME;
 
     @Test
     public void singleObjectWithEmbeddedInsertionInference()  {
         //Given
         UUID homerId = UUID.randomUUID();
-        NormalizedJsonLd homer = TestObjectFactory.createJsonLd( "simpsons/homer.json", idUtils.buildAbsoluteUrl(homerId));
-//        graphDBSvc.upsert(homer, DataStage.NATIVE, homerId, space);
+        NormalizedJsonLd homer = jsonAdapter.fromJson(Simpsons.Characters.HOMER, NormalizedJsonLd.class);
+        homer.setId(idUtils.buildAbsoluteUrl(homerId));
+        //graphDBSvc.upsert(homer, DataStage.NATIVE, homerId, space);
 
         //When
         List<Event> events = inference.infer(space.getName(), homerId);
@@ -76,15 +80,18 @@ public class InferenceTest {
     public void twoInstancesInsertInference() throws IOException, URISyntaxException {
         //Given
         UUID bartId = UUID.randomUUID();
-        NormalizedJsonLd bart = TestObjectFactory.createJsonLd( "simpsons/bart.json", idUtils.buildAbsoluteUrl(bartId));
+        NormalizedJsonLd bart = jsonAdapter.fromJson(Simpsons.Characters.BART, NormalizedJsonLd.class);
+        bart.setId(idUtils.buildAbsoluteUrl(bartId));
 //        graphDBSvc.upsert(bart, DataStage.NATIVE, bartId, space);
 
 
         UUID bartId2 = UUID.randomUUID();
-        NormalizedJsonLd bart2 =TestObjectFactory.createJsonLd( "simpsons/bart2.json", idUtils.buildAbsoluteUrl(bartId2));
+        NormalizedJsonLd bart2 =  jsonAdapter.fromJson(Simpsons.Characters.BART_2, NormalizedJsonLd.class);
+        bart2.setId(idUtils.buildAbsoluteUrl(bartId2));
 //        graphDBSvc.upsert(bart2, DataStage.NATIVE, bartId2, space);
 
-        NormalizedJsonLd bartUpdate = TestObjectFactory.createJsonLd( "simpsons/bartUpdate.json", idUtils.buildAbsoluteUrl(bartId));
+        NormalizedJsonLd bartUpdate = jsonAdapter.fromJson(Simpsons.Characters.BART_UPDATE, NormalizedJsonLd.class);
+        bartUpdate.setId(idUtils.buildAbsoluteUrl(bartId));
 //        graphDBSvc.upsert(bartUpdate, DataStage.NATIVE, bartId, space);
 
 

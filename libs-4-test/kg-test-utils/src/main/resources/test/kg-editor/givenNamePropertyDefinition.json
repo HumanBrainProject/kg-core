@@ -1,6 +1,0 @@
-{
-  "@id": "https://kg.ebrains.eu/testobjects/client/kgeditor/givenNameProperty",
-  "@type": "https://kg.ebrains.eu/vocab/meta/PropertyDefinition",
-  "https://kg.ebrains.eu/vocab/meta/property": {"@id": "http://schema.org/givenName"},
-  "http://schema.org/name": "Given name for editor"
-}

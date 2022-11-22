@@ -25,8 +25,8 @@ package eu.ebrains.kg.graphdb.types.controller;
 import eu.ebrains.kg.arango.commons.model.ArangoCollectionReference;
 import eu.ebrains.kg.commons.model.DataStage;
 import eu.ebrains.kg.graphdb.ingestion.controller.TodoListProcessor;
+import eu.ebrains.kg.test.Simpsons;
 import eu.ebrains.kg.test.TestCategories;
-import eu.ebrains.kg.test.TestObjectFactory;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
@@ -48,7 +48,7 @@ public class ArangoRepositoryTypesTest {
     private static final String CLIENT = "kgeditor";
 
 
-    private final ArangoCollectionReference simpsons = ArangoCollectionReference.fromSpace(TestObjectFactory.SIMPSONS);
+    private final ArangoCollectionReference simpsons = ArangoCollectionReference.fromSpace(Simpsons.SPACE_NAME);
 
 
     @Test

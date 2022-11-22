@@ -1,8 +1,0 @@
-{
-  "@type": [
-    "http://schema.org/Kid"
-  ],
-  "http://schema.org/identifier": ["http://simpsons/bart2", "http://simpsons/bart"],
-  "http://schema.org/age": 10,
-  "http://schema.org/givenName": "Bartholomew"
-}

@@ -25,32 +25,30 @@ package eu.ebrains.kg.graphdb.queries.controller;
 import eu.ebrains.kg.arango.commons.model.ArangoCollectionReference;
 import eu.ebrains.kg.arango.commons.model.ArangoDocumentReference;
 import eu.ebrains.kg.commons.IdUtils;
+import eu.ebrains.kg.commons.JsonAdapter;
 import eu.ebrains.kg.commons.api.Ids;
 import eu.ebrains.kg.commons.jsonld.NormalizedJsonLd;
 import eu.ebrains.kg.commons.model.*;
 import eu.ebrains.kg.commons.models.UserWithRoles;
 import eu.ebrains.kg.commons.query.KgQuery;
+import eu.ebrains.kg.graphdb.AbstractGraphTest;
 import eu.ebrains.kg.graphdb.ingestion.controller.TodoListProcessor;
+import eu.ebrains.kg.test.Simpsons;
 import eu.ebrains.kg.test.TestCategories;
-import eu.ebrains.kg.test.TestObjectFactory;
+import eu.ebrains.kg.test.factory.UserFactory;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
-import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
 
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-@SpringBootTest
 @Tag(TestCategories.API)
-@Disabled //TODO fix test
-public class QueryControllerTest {
+public class QueryControllerTest extends AbstractGraphTest {
 
     @Autowired
     QueryController queryController;
@@ -64,18 +62,21 @@ public class QueryControllerTest {
     @Autowired
     IdUtils idUtils;
 
-    private final SpaceName space = TestObjectFactory.SIMPSONS;
+    @Autowired
+    JsonAdapter jsonAdapter;
+
+    private final SpaceName space = Simpsons.SPACE_NAME;
     private final DataStage stage = DataStage.IN_PROGRESS;
-    private final ArangoCollectionReference simpsons = ArangoCollectionReference.fromSpace(TestObjectFactory.SIMPSONS);
-    private final UserWithRoles userWithRoles = Mockito.mock(UserWithRoles.class);
+    private final ArangoCollectionReference simpsons = ArangoCollectionReference.fromSpace(Simpsons.SPACE_NAME);
+    private final UserWithRoles userWithRoles = UserFactory.globalAdmin().getUserWithRoles();
 
     @Test
     public void querySimple() {
         //Given
-        todoListProcessor.upsertDocument(simpsons.doc(UUID.randomUUID()), TestObjectFactory.createJsonLd("simpsons/homer.json"), stage);
+       upsert(Simpsons.SPACE_NAME, jsonAdapter.fromJson(Simpsons.Characters.HOMER, NormalizedJsonLd.class), stage);
 
         //When
-        KgQuery kgQuery = new KgQuery(TestObjectFactory.createJsonLd(space, "normalizedQueries/simpsonsFamilyNames.json"), stage);
+        KgQuery kgQuery = new KgQuery(jsonAdapter.fromJson(Simpsons.Queries.FAMILY_NAMES_NORMALIZED, NormalizedJsonLd.class), stage);
         Paginated<NormalizedJsonLd> queryResult = queryController.query(userWithRoles, kgQuery, null, null, false).getResult();
 
         //Then
@@ -89,9 +90,9 @@ public class QueryControllerTest {
     @Test
     public void querySimpleWithPagination() {
         //Given
-        todoListProcessor.upsertDocument(simpsons.doc(UUID.randomUUID()), TestObjectFactory.createJsonLd("simpsons/homer.json"), stage);
-        todoListProcessor.upsertDocument(simpsons.doc(UUID.randomUUID()), TestObjectFactory.createJsonLd("simpsons/maggie.json"), stage);
-        KgQuery kgQuery = new KgQuery(TestObjectFactory.createJsonLd(space, "normalizedQueries/simpsonsFamilyNames.json"), stage);
+        upsert(Simpsons.SPACE_NAME, jsonAdapter.fromJson(Simpsons.Characters.HOMER, NormalizedJsonLd.class), stage);
+        upsert(Simpsons.SPACE_NAME, jsonAdapter.fromJson(Simpsons.Characters.MAGGIE, NormalizedJsonLd.class), stage);
+        KgQuery kgQuery = new KgQuery(jsonAdapter.fromJson(Simpsons.Queries.FAMILY_NAMES_NORMALIZED, NormalizedJsonLd.class), stage);
 
         //When
         Paginated<NormalizedJsonLd> queryResultA = queryController.query(userWithRoles, kgQuery, new PaginationParam().setSize(1L), null, false).getResult();
@@ -116,10 +117,11 @@ public class QueryControllerTest {
     }
 
     @Test
+    @Disabled("Fix me")
     public void queryEmbedded() {
         //Given
-        todoListProcessor.upsertDocument(simpsons.doc(UUID.randomUUID()), TestObjectFactory.createJsonLd("simpsons/homer.json"), stage);
-        KgQuery kgQuery = new KgQuery(TestObjectFactory.createJsonLd(space, "normalizedQueries/homerWithEmbeddedTraversal.json"), stage);
+        upsert(Simpsons.SPACE_NAME, jsonAdapter.fromJson(Simpsons.Characters.HOMER, NormalizedJsonLd.class), stage);
+        KgQuery kgQuery = new KgQuery(jsonAdapter.fromJson(Simpsons.Queries.HOMER_WITH_EMBEDDED_TRAVERSAL, NormalizedJsonLd.class), stage);
 
         //When
         Paginated<NormalizedJsonLd> queryResult = queryController.query(userWithRoles, kgQuery, null, null, false).getResult();
@@ -137,7 +139,7 @@ public class QueryControllerTest {
         //Given
         prepareHomerMargeAndMaggie();
 
-        KgQuery kgQuery = new KgQuery(TestObjectFactory.createJsonLd("simpsons/normalizedQueries/multiLevelQuery.json"), stage);
+        KgQuery kgQuery = new KgQuery(jsonAdapter.fromJson(Simpsons.Queries.MULTI_LEVEL_QUERY, NormalizedJsonLd.class), stage);
 
         //When
         Paginated<NormalizedJsonLd> queryResult = queryController.query(userWithRoles, kgQuery, null, null, false).getResult();
@@ -147,24 +149,25 @@ public class QueryControllerTest {
     }
 
     private void prepareHomerMargeAndMaggie() {
-        NormalizedJsonLd homer = TestObjectFactory.createJsonLd("simpsons/homer.json");
-        ArangoDocumentReference homerDocumentId = todoListProcessor.upsertDocument(simpsons.doc(UUID.randomUUID()), homer, stage);
-        ids.createOrUpdateId(new IdWithAlternatives().setId(homerDocumentId.getDocumentId()).setSpace(TestObjectFactory.SIMPSONS.getName()).setAlternatives(homer.identifiers()), stage);
-        NormalizedJsonLd maggie = TestObjectFactory.createJsonLd("simpsons/maggie.json");
-        ArangoDocumentReference maggieDocumentId = todoListProcessor.upsertDocument(simpsons.doc(UUID.randomUUID()), maggie, stage);
-        ids.createOrUpdateId(new IdWithAlternatives().setId(maggieDocumentId.getDocumentId()).setSpace(TestObjectFactory.SIMPSONS.getName()).setAlternatives(maggie.identifiers()), stage);
-        NormalizedJsonLd marge = TestObjectFactory.createJsonLd("simpsons/marge.json");
-        ArangoDocumentReference margeDocumentId = todoListProcessor.upsertDocument(simpsons.doc(UUID.randomUUID()), marge, stage);
-        ids.createOrUpdateId(new IdWithAlternatives().setId(margeDocumentId.getDocumentId()).setSpace(TestObjectFactory.SIMPSONS.getName()).setAlternatives(marge.identifiers()), stage);
+        NormalizedJsonLd homer = jsonAdapter.fromJson(Simpsons.Characters.HOMER, NormalizedJsonLd.class);
+        ArangoDocumentReference homerDocumentId = upsert(Simpsons.SPACE_NAME, homer, stage);
+        ids.createOrUpdateId(new IdWithAlternatives().setId(homerDocumentId.getDocumentId()).setSpace(Simpsons.SPACE_NAME.getName()).setAlternatives(homer.identifiers()), stage);
+        NormalizedJsonLd maggie = jsonAdapter.fromJson(Simpsons.Characters.MAGGIE, NormalizedJsonLd.class);
+        ArangoDocumentReference maggieDocumentId = upsert(Simpsons.SPACE_NAME, maggie, stage);
+        ids.createOrUpdateId(new IdWithAlternatives().setId(maggieDocumentId.getDocumentId()).setSpace(Simpsons.SPACE_NAME.getName()).setAlternatives(maggie.identifiers()), stage);
+        NormalizedJsonLd marge = jsonAdapter.fromJson(Simpsons.Characters.MARGE, NormalizedJsonLd.class);
+        ArangoDocumentReference margeDocumentId = upsert(Simpsons.SPACE_NAME, marge, stage);
+        ids.createOrUpdateId(new IdWithAlternatives().setId(margeDocumentId.getDocumentId()).setSpace(Simpsons.SPACE_NAME.getName()).setAlternatives(marge.identifiers()), stage);
     }
 
 
     @Test
-    public void queryMultiLevelNestedWithConcat() {
+    @Disabled("Fix me")
+    public void queryMultiLevelNested() {
         //Given
         prepareHomerMargeAndMaggie();
 
-        KgQuery kgQuery = new KgQuery(TestObjectFactory.createJsonLd("simpsons/normalizedQueries/multiLevelQueryNestedWithConcat.json"), stage);
+        KgQuery kgQuery = new KgQuery(jsonAdapter.fromJson(Simpsons.Queries.MULTI_LEVEL_QUERY_NESTED, NormalizedJsonLd.class), stage);
 
         //When
         Paginated<NormalizedJsonLd> queryResult = queryController.query(userWithRoles, kgQuery, null, null, false).getResult();
@@ -187,7 +190,7 @@ public class QueryControllerTest {
         //Given
         prepareHomerMargeAndMaggie();
 
-        KgQuery kgQuery = new KgQuery(TestObjectFactory.createJsonLd("simpsons/normalizedQueries/queryDynamicFilter.json"), stage);
+        KgQuery kgQuery = new KgQuery(jsonAdapter.fromJson(Simpsons.Queries.QUERY_DYNAMIC_FILTER, NormalizedJsonLd.class), stage);
         Map<String, String> filterValues = new HashMap<>();
 
         //When
@@ -210,7 +213,7 @@ public class QueryControllerTest {
         //Given
         prepareHomerMargeAndMaggie();
 
-        KgQuery kgQuery = new KgQuery(TestObjectFactory.createJsonLd("simpsons/normalizedQueries/queryDynamicFilterWithFallback.json"), stage);
+        KgQuery kgQuery = new KgQuery(jsonAdapter.fromJson(Simpsons.Queries.QUERY_DYNAMIC_FILTER_WITH_FALLBACK, NormalizedJsonLd.class), stage);
         Map<String, String> filterValues = new HashMap<>();
 
         //When
@@ -236,7 +239,7 @@ public class QueryControllerTest {
         //Given
         prepareHomerMargeAndMaggie();
 
-        KgQuery kgQuery = new KgQuery(TestObjectFactory.createJsonLd("simpsons/normalizedQueries/multiLevelQueryWithStaticAndNestedTypeFilter.json"), stage);
+        KgQuery kgQuery = new KgQuery(jsonAdapter.fromJson(Simpsons.Queries.MULTI_LEVEL_QUERY_WITH_STATIC_AND_NESTED_TYPE_FILTER, NormalizedJsonLd.class), stage);
 
         //When
         Paginated<NormalizedJsonLd> queryResult = queryController.query(userWithRoles, kgQuery, null, null, false).getResult();

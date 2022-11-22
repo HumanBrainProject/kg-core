@@ -1,4 +1,4 @@
-FROM openjdk:11-jre-slim
+FROM eclipse-temurin:17-jre-alpine
 VOLUME /tmp
 COPY target/kg-ids.jar kg-ids.jar
 ENV JAVA_OPTS=""

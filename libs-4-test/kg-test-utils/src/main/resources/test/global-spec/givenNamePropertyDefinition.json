@@ -1,7 +1,0 @@
-{
-  "@id": "https://kg.ebrains.eu/testobjects/client/admin/givenNameProperty",
-  "@type": "https://kg.ebrains.eu/vocab/meta/PropertyDefinition",
-  "https://kg.ebrains.eu/vocab/meta/property": {"@id": "http://schema.org/givenName"},
-  "http://schema.org/name": "Global givenName",
-  "https://kg.ebrains.eu/vocab/meta/property/label": true
-}

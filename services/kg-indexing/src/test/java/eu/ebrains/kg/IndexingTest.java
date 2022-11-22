@@ -23,6 +23,7 @@
 package eu.ebrains.kg;
 
 import eu.ebrains.kg.commons.IdUtils;
+import eu.ebrains.kg.commons.JsonAdapter;
 import eu.ebrains.kg.commons.jsonld.NormalizedJsonLd;
 import eu.ebrains.kg.commons.model.DataStage;
 import eu.ebrains.kg.commons.model.Event;
@@ -30,7 +31,7 @@ import eu.ebrains.kg.commons.model.PersistedEvent;
 import eu.ebrains.kg.commons.model.SpaceName;
 import eu.ebrains.kg.commons.model.internal.spaces.Space;
 import eu.ebrains.kg.indexing.api.IndexingAPI;
-import eu.ebrains.kg.test.TestObjectFactory;
+import eu.ebrains.kg.test.Simpsons;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -49,13 +50,15 @@ public class IndexingTest {
     @Autowired
     IdUtils idUtils;
 
-    private final SpaceName spaceName = TestObjectFactory.SIMPSONS;
+    @Autowired
+    JsonAdapter jsonAdapter;
+
+    private final SpaceName spaceName = Simpsons.SPACE_NAME;
 
     @Test
     public void synchronouslyIndexSingleInstance() {
         //Given
-
-        NormalizedJsonLd homer = TestObjectFactory.createJsonLd(spaceName, "homer.json");
+        final NormalizedJsonLd homer = jsonAdapter.fromJson(Simpsons.Characters.HOMER, NormalizedJsonLd.class);
 
         Event event = new Event(spaceName, UUID.randomUUID(), homer, Event.Type.INSERT, new Date());
 
@@ -65,22 +68,4 @@ public class IndexingTest {
         //Then
 
     }
-//
-//    @Test
-//    public void synchronouslyIndexTwoInstancesWithInference() {
-//        //Given
-//
-//        NormalizedJsonLd bart = TestObjectFactory.createJsonLd(space, "bart.json");
-//        Event event = new Event(bart, Event.Type.INSERT, "user", new Date());
-//        indexing.indexEvent(new PersistedEvent(event, DataStage.NATIVE));
-//
-//        NormalizedJsonLd bart2 = TestObjectFactory.createJsonLd(space, "bart2.json");
-//        Event event2 = new Event(bart2, Event.Type.INSERT, "user", new Date());
-//        //When
-//        indexing.indexEvent(new PersistedEvent(event2, DataStage.NATIVE));
-//
-//        //Then
-//
-//    }
-
 }

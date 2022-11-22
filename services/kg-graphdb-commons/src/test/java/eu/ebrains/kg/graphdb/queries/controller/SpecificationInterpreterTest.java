@@ -22,21 +22,24 @@
 
 package eu.ebrains.kg.graphdb.queries.controller;
 
+import eu.ebrains.kg.commons.JsonAdapter;
 import eu.ebrains.kg.commons.jsonld.NormalizedJsonLd;
 import eu.ebrains.kg.graphdb.queries.model.spec.Specification;
-import eu.ebrains.kg.test.TestObjectFactory;
+import eu.ebrains.kg.test.JsonAdapter4Test;
+import eu.ebrains.kg.test.Simpsons;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.*;
-@Disabled //TODO fix test
 public class SpecificationInterpreterTest {
+
+    JsonAdapter jsonAdapter = new JsonAdapter4Test();
 
     @Test
     public void testReadSpecification(){
         //Given
         SpecificationInterpreter specificationInterpreter = new SpecificationInterpreter();
-        NormalizedJsonLd query = TestObjectFactory.createJsonLd(TestObjectFactory.SIMPSONS, "normalizedQueries/simpsonsFamilyNames.json");
+        NormalizedJsonLd query = jsonAdapter.fromJson(Simpsons.Queries.FAMILY_NAMES_NORMALIZED, NormalizedJsonLd.class);
 
         //When
         Specification specification = specificationInterpreter.readSpecification(query);

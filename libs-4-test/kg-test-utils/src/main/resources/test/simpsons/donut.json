@@ -1,8 +1,0 @@
-{
-  "http://schema.org/identifier": "http://simpsons/donut",
-  "@type": [
-    "http://www.w3.org/ns/prov#Entity"
-  ],
-  "http://schema.org/name": "Donut",
-  "http://schema.org/calories": 452
-}

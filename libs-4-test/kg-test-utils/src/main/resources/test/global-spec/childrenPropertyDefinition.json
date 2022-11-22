@@ -1,9 +1,0 @@
-{
-  "@id": "https://kg.ebrains.eu/testobjects/client/admin/childrenProperty",
-  "@type": "https://kg.ebrains.eu/vocab/meta/PropertyDefinition",
-  "https://kg.ebrains.eu/vocab/meta/property": {"@id": "http://schema.org/children"},
-  "https://kg.ebrains.eu/vocab/meta/targetTypes": [
-    "http://schema.org/Child"
-  ],
-  "http://schema.org/name": "Global children"
-}

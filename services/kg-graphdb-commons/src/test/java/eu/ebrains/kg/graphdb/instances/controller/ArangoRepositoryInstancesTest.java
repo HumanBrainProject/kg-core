@@ -27,20 +27,19 @@ import eu.ebrains.kg.commons.jsonld.NormalizedJsonLd;
 import eu.ebrains.kg.commons.model.*;
 import eu.ebrains.kg.graphdb.AbstractGraphTest;
 import eu.ebrains.kg.graphdb.ingestion.controller.TodoListProcessor;
+import eu.ebrains.kg.test.Simpsons;
 import eu.ebrains.kg.test.TestCategories;
-import eu.ebrains.kg.test.TestObjectFactory;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
 
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.*;
 
 @Tag(TestCategories.API)
-@Disabled("We do have an issue here regarding the space reflection - we need to investigate further why this is")
+@Disabled("Fix me")
 class ArangoRepositoryInstancesTest extends AbstractGraphTest {
 
     @Autowired
@@ -50,15 +49,15 @@ class ArangoRepositoryInstancesTest extends AbstractGraphTest {
     TodoListProcessor todoListProcessor;
     private final DataStage stage = DataStage.IN_PROGRESS;
 
-    private final ArangoCollectionReference simpsons = ArangoCollectionReference.fromSpace(TestObjectFactory.SIMPSONS);
+    private final ArangoCollectionReference simpsons = ArangoCollectionReference.fromSpace(Simpsons.SPACE_NAME);
 
 
     @Test
     void getDocumentsByType() {
         //Given
 
-        todoListProcessor.upsertDocument(simpsons.doc(UUID.randomUUID()), TestObjectFactory.createJsonLd( "simpsons/homer.json"), stage);
-        todoListProcessor.upsertDocument(simpsons.doc(UUID.randomUUID()), TestObjectFactory.createJsonLd( "simpsons/maggie.json"), stage);
+        upsert(Simpsons.SPACE_NAME, jsonAdapter.fromJson(Simpsons.Characters.HOMER, NormalizedJsonLd.class), stage);
+        upsert(Simpsons.SPACE_NAME, jsonAdapter.fromJson(Simpsons.Characters.MAGGIE, NormalizedJsonLd.class), stage);
 
         //When
         Paginated<NormalizedJsonLd> kids = arangoRepository.getDocumentsByTypes(stage, new Type("http://schema.org/Kid"), null, null, null, null, null, false, false,  null);
@@ -81,8 +80,8 @@ class ArangoRepositoryInstancesTest extends AbstractGraphTest {
     @Test
     void getDocumentsByTypePaginated() {
         //Given
-        todoListProcessor.upsertDocument(simpsons.doc(UUID.randomUUID()), TestObjectFactory.createJsonLd( "simpsons/homer.json"), stage);
-        todoListProcessor.upsertDocument(simpsons.doc(UUID.randomUUID()), TestObjectFactory.createJsonLd( "simpsons/maggie.json"), stage);
+        upsert(Simpsons.SPACE_NAME, jsonAdapter.fromJson(Simpsons.Characters.HOMER, NormalizedJsonLd.class), stage);
+        upsert(Simpsons.SPACE_NAME, jsonAdapter.fromJson(Simpsons.Characters.MAGGIE, NormalizedJsonLd.class), stage);
         PaginationParam pagination = new PaginationParam();
         pagination.setSize(1L);
         pagination.setFrom(1L);

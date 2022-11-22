@@ -25,54 +25,49 @@ package eu.ebrains.kg.graphdb.queries.controller;
 import eu.ebrains.kg.arango.commons.aqlBuilder.ArangoKey;
 import eu.ebrains.kg.arango.commons.model.AQLQuery;
 import eu.ebrains.kg.arango.commons.model.ArangoCollectionReference;
+import eu.ebrains.kg.commons.JsonAdapter;
 import eu.ebrains.kg.commons.jsonld.NormalizedJsonLd;
-import eu.ebrains.kg.commons.model.PaginationParam;
 import eu.ebrains.kg.graphdb.queries.model.spec.Specification;
 import eu.ebrains.kg.graphdb.queries.utils.DataQueryBuilder;
 import eu.ebrains.kg.test.JsonAdapter4Test;
-import eu.ebrains.kg.test.TestObjectFactory;
+import eu.ebrains.kg.test.Simpsons;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
-import java.io.IOException;
-import java.net.URISyntaxException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.*;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-@Disabled //TODO reevaluate if the tests shall be kept
 public class DataQueryBuilderTest {
+
+    JsonAdapter jsonAdapter = new JsonAdapter4Test();
 
     @Test
     public void buildSimpsonsFamilyNamesQuery(){
         //Given
-        NormalizedJsonLd query = TestObjectFactory.createJsonLd(TestObjectFactory.SIMPSONS, "normalizedQueries/simpsonsFamilyNames.json");
+        NormalizedJsonLd query = jsonAdapter.fromJson(Simpsons.Queries.FAMILY_NAMES_NORMALIZED, NormalizedJsonLd.class);
         Specification specification = new SpecificationInterpreter().readSpecification(query);
 
         //When
-        AQLQuery aqlQuery = new DataQueryBuilder(specification, null, new HashMap<>(), null, null, Collections.singletonList(ArangoCollectionReference.fromSpace(TestObjectFactory.SIMPSONS))).build();
+        AQLQuery aqlQuery = new DataQueryBuilder(specification, null, new HashMap<>(), null, null, Collections.singletonList(ArangoCollectionReference.fromSpace(Simpsons.SPACE_NAME))).build();
 
         //Then
 
-        String expected = "\n" +
-                "LET whitelist=@readAccessBySpace\n" +
-                "LET invitation=@readAccessByInvitation\n" +
-                "FOR root_doc IN 1..1 OUTBOUND DOCUMENT(@@typeCollection, @typeId) @@typeRelation\n" +
-                "\n" +
-                "FILTER root_doc != NULL\n" +
-                "FILTER root_doc._collection IN whitelist OR root_doc.`@id` IN invitation\n" +
-                "FILTER @idRestriction == [] OR root_doc._key IN @idRestriction\n" +
-                "FILTER root_doc != NULL\n" +
-                "\n" +
-                "RETURN {\n" +
-                "   \"http://schema.org/familyName\": root_doc.`http://schema.org/familyName`, \n" +
-                "   \"http://schema.org/givenName\": root_doc.`http://schema.org/givenName`\n" +
-                "}";
+        String expected = """
+                
+                LET whitelist=@readAccessBySpace
+                LET invitation=@readAccessByInvitation
+                FOR root_doc IN 1..1 OUTBOUND DOCUMENT(@@typeCollection, @typeId) @@typeRelation
+
+                FILTER root_doc != NULL
+                FILTER root_doc._collection IN whitelist OR HAS(invitation, root_doc._key)
+                FILTER TO_ARRAY(@idRestriction) == [] OR root_doc._key IN TO_ARRAY(@idRestriction)
+                FILTER root_doc != NULL
+
+                RETURN {
+                   "http://schema.org/familyName": root_doc.`http://schema.org/familyName`,\s
+                   "http://schema.org/givenName": root_doc.`http://schema.org/givenName`
+                }""";
         //Then
         assertEquals(expected, aqlQuery.getAql().build().getValue());
     }
@@ -80,41 +75,40 @@ public class DataQueryBuilderTest {
     @Test
     public void buildHomerWithEmbeddedTraversal(){
         //Given
-        NormalizedJsonLd query = TestObjectFactory.createJsonLd(TestObjectFactory.SIMPSONS, "normalizedQueries/homerWithEmbeddedTraversal.json");
+        NormalizedJsonLd query = jsonAdapter.fromJson(Simpsons.Queries.HOMER_WITH_EMBEDDED_TRAVERSAL, NormalizedJsonLd.class);
         Specification specification = new SpecificationInterpreter().readSpecification(query);
 
         //When
-        List<ArangoCollectionReference> existingCollections = Arrays.asList(ArangoCollectionReference.fromSpace(TestObjectFactory.SIMPSONS), new ArangoCollectionReference(new ArangoKey("http://schema.org/address").getValue(), true));
+        List<ArangoCollectionReference> existingCollections = Arrays.asList(ArangoCollectionReference.fromSpace(Simpsons.SPACE_NAME), new ArangoCollectionReference(new ArangoKey("http://schema.org/address").getValue(), true));
         AQLQuery aqlQuery = new DataQueryBuilder(specification, null,null,  null, null, existingCollections).build();
 
         //Then
 
-        String expected = "\n" +
-                "FOR root_doc IN 1..1 OUTBOUND DOCUMENT(@@typeCollection, @typeId) @@typeRelation\n" +
-                "\n" +
-                "FILTER root_doc != NULL\n" +
-                "FILTER root_doc._collection IN whitelist OR root_doc.`@id` IN invitation\n" +
-                "FILTER @idRestriction == [] OR root_doc._key IN @idRestriction\n" +
-                "LET schema_org_streetaddress = (FOR schema_org_streetaddress_sort IN UNIQUE(FLATTEN(FOR schema_org_streetaddress_doc \n" +
-                "    IN 1..1 OUTBOUND root_doc `schema_org_address`\n" +
-                "      FILTER schema_org_streetaddress_doc != NULL\n" +
-                "       FILTER  \"http://schema.org/PostalAddress\" IN schema_org_streetaddress_doc.`@type`\n" +
-                "FILTER schema_org_streetaddress_doc != NULL\n" +
-                "\n" +
-                "FILTER schema_org_streetaddress_doc.`http://schema.org/streetAddress` != NULL\n" +
-                "RETURN DISTINCT schema_org_streetaddress_doc.`http://schema.org/streetAddress`\n" +
-                "))\n" +
-                "\n" +
-                "   SORT schema_org_streetaddress_sort ASC\n" +
-                "   RETURN schema_org_streetaddress_sort\n" +
-                ")\n" +
-                "FILTER root_doc != NULL\n" +
-                "SORT schema_org_streetaddress\n" +
-                " ASC\n" +
-                "RETURN {\n" +
-                "   \"http://schema.org/givenName\": root_doc.`http://schema.org/givenName`, \n" +
-                "   \"http://schema.org/streetAddress\": schema_org_streetaddress\n" +
-                "}";
+        String expected = """            
+                     
+                FOR root_doc IN 1..1 OUTBOUND DOCUMENT(@@typeCollection, @typeId) @@typeRelation
+                 
+                FILTER TO_ARRAY(@idRestriction) == [] OR root_doc._key IN TO_ARRAY(@idRestriction)
+                LET schema_org_streetaddress_1 = FIRST((FOR schema_org_streetaddress_1_sort IN UNIQUE(FLATTEN(FOR schema_org_streetaddress_1_doc\s
+                    IN 1..1 OUTBOUND root_doc `schema_org_address`
+                    FILTER  "http://schema.org/PostalAddress" IN schema_org_streetaddress_1_doc.`@type`
+                FILTER schema_org_streetaddress_1_doc != NULL
+                 
+                FILTER schema_org_streetaddress_1_doc.`http://schema.org/streetAddress` != NULL
+                RETURN DISTINCT schema_org_streetaddress_1_doc.`http://schema.org/streetAddress`
+                ))
+                 
+                   SORT schema_org_streetaddress_1_sort ASC
+                   RETURN schema_org_streetaddress_1_sort
+                )
+                )
+                FILTER root_doc != NULL
+                SORT schema_org_streetaddress_1
+                 ASC
+                RETURN {
+                   "http://schema.org/givenName": root_doc.`http://schema.org/givenName`,\s
+                   "http://schema.org/streetAddress": schema_org_streetaddress_1
+                }""";
         //Then
         assertEquals(expected, aqlQuery.getAql().build().getValue());
     }
@@ -123,25 +117,32 @@ public class DataQueryBuilderTest {
     @Test
     public void buildHomerWithPartiallyResolvedChildren(){
         //Given
-        NormalizedJsonLd query = TestObjectFactory.createJsonLd(TestObjectFactory.SIMPSONS, "normalizedQueries/homerWithPartiallyResolvedChildren.json");
+        NormalizedJsonLd query = jsonAdapter.fromJson(Simpsons.Queries.HOMER_WITH_PARTIALLY_RESOLVED_CHILDREN, NormalizedJsonLd.class);
         Specification specification = new SpecificationInterpreter().readSpecification(query);
 
         //When
-        List<ArangoCollectionReference> existingCollections = Arrays.asList(ArangoCollectionReference.fromSpace(TestObjectFactory.SIMPSONS), new ArangoCollectionReference(new ArangoKey("http://schema.org/children").getValue(), true));
+        List<ArangoCollectionReference> existingCollections = Arrays.asList(ArangoCollectionReference.fromSpace(Simpsons.SPACE_NAME), new ArangoCollectionReference(new ArangoKey("http://schema.org/children").getValue(), true));
         AQLQuery aqlQuery = new DataQueryBuilder(specification, null, null, null, null, existingCollections).build();
 
         //Then
-        String expected = "\n" +
-                "FOR root_doc IN 1..1 OUTBOUND DOCUMENT(@@typeCollection, @typeId) @@typeRelation\n" +
-                "\n" +
-                "FILTER root_doc != NULL\n" +
-                "FILTER @idRestriction == [] OR root_doc._key IN @idRestriction\n" +
-                "FILTER root_doc != NULL\n" +
-                "\n" +
-                "RETURN {\n" +
-                "   \"http://schema.org/familyName\": root_doc.`http://schema.org/familyName`, \n" +
-                "   \"http://schema.org/givenName\": root_doc.`http://schema.org/givenName`\n" +
-                "}";
+        String expected = """
+
+                FOR root_doc IN 1..1 OUTBOUND DOCUMENT(@@typeCollection, @typeId) @@typeRelation
+
+                FILTER TO_ARRAY(@idRestriction) == [] OR root_doc._key IN TO_ARRAY(@idRestriction)
+                LET schema_org_children_1 = UNIQUE(FLATTEN(FOR schema_org_children_1_doc\s
+                    IN 1..1 OUTBOUND root_doc `schema_org_children`
+                FILTER schema_org_children_1_doc != NULL
+
+                FILTER schema_org_children_1_doc.`http://schema.org/givenName` != NULL
+                RETURN DISTINCT schema_org_children_1_doc.`http://schema.org/givenName`
+                ))
+                FILTER root_doc != NULL
+
+                RETURN {
+                   "http://schema.org/givenName": root_doc.`http://schema.org/givenName`,\s
+                   "http://schema.org/children": schema_org_children_1
+                }""";
         //Then
         assertEquals(expected, aqlQuery.getAql().build().getValue());
     }
@@ -151,64 +152,42 @@ public class DataQueryBuilderTest {
     @Test
     public void buildHomerWithEmbeddedTraversalMissingTraversalCollection(){
         //Given
-        NormalizedJsonLd query = TestObjectFactory.createJsonLd(TestObjectFactory.SIMPSONS, "normalizedQueries/homerWithEmbeddedTraversal.json");
+        NormalizedJsonLd query = jsonAdapter.fromJson(Simpsons.Queries.HOMER_WITH_EMBEDDED_TRAVERSAL, NormalizedJsonLd.class);
         Specification specification = new SpecificationInterpreter().readSpecification(query);
 
         //When
-        List<ArangoCollectionReference> existingCollections = Collections.singletonList(ArangoCollectionReference.fromSpace(TestObjectFactory.SIMPSONS));
+        List<ArangoCollectionReference> existingCollections = Collections.singletonList(ArangoCollectionReference.fromSpace(Simpsons.SPACE_NAME));
         AQLQuery aqlQuery = new DataQueryBuilder(specification, null,null,  null, null, existingCollections).build();
 
         //Then
 
-        String expected = "\n" +
-                "FOR root_doc IN 1..1 OUTBOUND DOCUMENT(@@typeCollection, @typeId) @@typeRelation\n" +
-                "\n" +
-                "FILTER @idRestriction == [] OR root_doc._key IN @idRestriction\n" +
-                "LET schema_org_streetaddress = FIRST((FOR schema_org_streetaddress_sort IN UNIQUE(FLATTEN(FOR schema_org_streetaddress_doc \n" +
-                "    IN [] \n" +
-                "    FILTER  \"http://schema.org/PostalAddress\" IN schema_org_streetaddress_doc.`@type`\n" +
-                "FILTER schema_org_streetaddress_doc != NULL\n" +
-                "\n" +
-                "FILTER schema_org_streetaddress_doc.`http://schema.org/streetAddress` != NULL\n" +
-                "RETURN DISTINCT schema_org_streetaddress_doc.`http://schema.org/streetAddress`\n" +
-                "))\n" +
-                "\n" +
-                "   SORT schema_org_streetaddress_sort ASC\n" +
-                "   RETURN schema_org_streetaddress_sort\n" +
-                ")\n" +
-                ")\n" +
-                "FILTER root_doc != NULL\n" +
-                "SORT schema_org_streetaddress\n" +
-                " ASC\n" +
-                "RETURN {\n" +
-                "   \"http://schema.org/givenName\": root_doc.`http://schema.org/givenName`, \n" +
-                "   \"http://schema.org/streetAddress\": schema_org_streetaddress\n" +
-                "}";
+        String expected = """
+
+                FOR root_doc IN 1..1 OUTBOUND DOCUMENT(@@typeCollection, @typeId) @@typeRelation
+
+                FILTER TO_ARRAY(@idRestriction) == [] OR root_doc._key IN TO_ARRAY(@idRestriction)
+                LET schema_org_streetaddress_1 = FIRST((FOR schema_org_streetaddress_1_sort IN UNIQUE(FLATTEN(FOR schema_org_streetaddress_1_doc\s
+                    IN []\s
+                    FILTER  "http://schema.org/PostalAddress" IN schema_org_streetaddress_1_doc.`@type`
+                FILTER schema_org_streetaddress_1_doc != NULL
+
+                FILTER schema_org_streetaddress_1_doc.`http://schema.org/streetAddress` != NULL
+                RETURN DISTINCT schema_org_streetaddress_1_doc.`http://schema.org/streetAddress`
+                ))
+
+                   SORT schema_org_streetaddress_1_sort ASC
+                   RETURN schema_org_streetaddress_1_sort
+                )
+                )
+                FILTER root_doc != NULL
+                SORT schema_org_streetaddress_1
+                 ASC
+                RETURN {
+                   "http://schema.org/givenName": root_doc.`http://schema.org/givenName`,\s
+                   "http://schema.org/streetAddress": schema_org_streetaddress_1
+                }""";
         //Then
         assertEquals(expected, aqlQuery.getAql().build().getValue());
     }
 
-    @Test
-    public void build() throws URISyntaxException, IOException {
-        Path path = Paths.get(Objects.requireNonNull(getClass().getClassLoader()
-                .getResource("query.json")).toURI());
-        Stream<String> lines = Files.lines(path);
-        String data = lines.collect(Collectors.joining("\n"));
-        lines.close();
-
-        SpecificationInterpreter interpreter = new SpecificationInterpreter();
-        Specification specification = interpreter.readSpecification(new JsonAdapter4Test().fromJson(data, NormalizedJsonLd.class));
-        List<ArangoCollectionReference> existingCollections = new ArrayList<>();
-        existingCollections.add(new ArangoCollectionReference("docs", false));
-        PaginationParam pagination = new PaginationParam();
-        pagination.setSize(10L);
-
-        DataQueryBuilder builder = new DataQueryBuilder(specification, pagination, null, null, null, existingCollections);
-
-        AQLQuery aql = builder.build();
-
-        System.out.println(aql.getAql());
-
-
-    }
 }

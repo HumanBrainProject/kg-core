@@ -1,7 +1,0 @@
-{
-  "@id": "https://kg.ebrains.eu/testobjects/client/kgeditor/personType",
-  "@type": "https://kg.ebrains.eu/vocab/meta/TypeDefinition",
-  "https://kg.ebrains.eu/vocab/meta/type": {"@id":  "http://schema.org/Person"},
-  "https://kg.ebrains.eu/vocab/meta/visible": true,
-  "http://schema.org/name": "Person for editor"
-}

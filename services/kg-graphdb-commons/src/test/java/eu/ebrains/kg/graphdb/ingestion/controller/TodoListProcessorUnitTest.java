@@ -62,7 +62,7 @@ public class TodoListProcessorUnitTest {
 
         //Then
         Mockito.verify(processor, Mockito.times(1)).deleteDocument(Mockito.any(), Mockito.any());
-        Mockito.verify(processor, Mockito.times(2)).upsertDocument(Mockito.any(), Mockito.any(), Mockito.any());
+        Mockito.verify(processor, Mockito.times(2)).upsertDocument(Mockito.any(), Mockito.any(), Mockito.any(), Mockito.any());
 
     }
 }

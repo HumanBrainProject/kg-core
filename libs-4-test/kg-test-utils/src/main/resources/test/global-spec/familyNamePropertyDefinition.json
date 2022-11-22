@@ -1,7 +1,0 @@
-{
-  "@id": "https://kg.ebrains.eu/testobjects/client/admin/familyNameProperty",
-  "@type": "https://kg.ebrains.eu/vocab/meta/PropertyDefinition",
-  "https://kg.ebrains.eu/vocab/meta/property": {"@id": "http://schema.org/familyName"},
-  "http://schema.org/name": "Global family name",
-  "https://kg.ebrains.eu/vocab/meta/property/label": true
-}

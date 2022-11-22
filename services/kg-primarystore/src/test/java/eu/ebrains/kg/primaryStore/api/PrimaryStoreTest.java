@@ -25,8 +25,8 @@ package eu.ebrains.kg.primaryStore.api;
 import eu.ebrains.kg.commons.jsonld.JsonLdId;
 import eu.ebrains.kg.commons.jsonld.NormalizedJsonLd;
 import eu.ebrains.kg.commons.model.Event;
+import eu.ebrains.kg.test.Simpsons;
 import eu.ebrains.kg.test.TestCategories;
-import eu.ebrains.kg.test.TestObjectFactory;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
@@ -50,7 +50,7 @@ public class PrimaryStoreTest {
         NormalizedJsonLd data = new NormalizedJsonLd();
         data.addProperty("name", "test");
         data.setId(new JsonLdId("https://kg.ebrains.eu/api/instances/foo/bar"));
-        Event e = new Event(TestObjectFactory.SIMPSONS, UUID.randomUUID(), data, Event.Type.INSERT, new Date());
+        Event e = new Event(Simpsons.SPACE_NAME, UUID.randomUUID(), data, Event.Type.INSERT, new Date());
         primaryStore.postEvent(e);
     }
 

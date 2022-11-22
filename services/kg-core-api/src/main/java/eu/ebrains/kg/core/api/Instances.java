@@ -36,6 +36,7 @@ import eu.ebrains.kg.commons.jsonld.*;
 import eu.ebrains.kg.commons.markers.*;
 import eu.ebrains.kg.commons.model.*;
 import eu.ebrains.kg.commons.params.ReleaseTreeScope;
+import eu.ebrains.kg.core.api.examples.InstancesExamples;
 import eu.ebrains.kg.core.controller.CoreInstanceController;
 import eu.ebrains.kg.core.controller.IdsController;
 import eu.ebrains.kg.core.controller.VirtualSpaceController;
@@ -84,12 +85,18 @@ public class Instances {
         this.jsonLd = jsonLd;
     }
 
-    @Operation(summary = "Create new instance with a system generated id", description = "The invocation of this endpoint causes the ingestion of the payload (if valid) in the KG by assigning a new \"@id\" to it.\n\n" +
-            "Please note that any \"@id\" specified in the payload will be interpreted as an additional identifier and therefore added to the \"http://schema.org/identifier\" array.")
+
+    @Operation(
+            summary = "Create new instance with a system generated id",
+            description = """
+            The invocation of this endpoint causes the ingestion of the payload (if valid) in the KG by assigning a new "@id" to it.
+                        
+            Please note that any "@id" specified in the payload will be interpreted as an additional identifier and therefore added to the "http://schema.org/identifier" array.
+            """)
     @io.swagger.v3.oas.annotations.parameters.RequestBody(content = @Content(examples = {
-            @ExampleObject(name = "minimalistic", description = "The most minimal payload you could think of only contains an @type.", value = "{ \"@type\": \"https://openminds.ebrains.eu/core/Person\" }"),
-            @ExampleObject(name = "with property", description = "A payload can contain - next to the @type additional properties.", value = "{ \"@type\": \"https://openminds.ebrains.eu/core/Person\"\n,  \"https://openminds.ebrains.eu/vocab/givenName\": \"Bob\"\n}"),
-            @ExampleObject(name = "with link", description = "To link to other instances, the JSON-LD notation can be used. Please note that you can use any \"@id\" or \"http://schema.org/identifier\" of the targeted resource to link it", value = "{ \"@type\": \"https://openminds.ebrains.eu/core/Person\"\n,  \"https://openminds.ebrains.eu/vocab/affiliation\": [ { \"@id\": \"http://someQualifiedIdentifier/ACME_orporation\" } ]\n}")
+            @ExampleObject(name = InstancesExamples.PAYLOAD_MINIMAL_NAME, description = InstancesExamples.PAYLOAD_MINIMAL_DESC, value = InstancesExamples.PAYLOAD_MINIMAL),
+            @ExampleObject(name = InstancesExamples.PAYLOAD_WITH_PROPERTY_NAME, description = InstancesExamples.PAYLOAD_WITH_PROPERTY_DESC, value = InstancesExamples.PAYLOAD_WITH_PROPERTY),
+            @ExampleObject(name = InstancesExamples.PAYLOAD_WITH_LINK_NAME, description = InstancesExamples.PAYLOAD_WITH_LINK_DESC, value = InstancesExamples.PAYLOAD_WITH_LINK)
     }))
     @PostMapping("/instances")
     @WritesData
@@ -100,15 +107,20 @@ public class Instances {
     }
 
 
-    @Operation(summary = "Create new instance with a client defined id", description = "The invocation of this endpoint causes the ingestion of the payload (if valid) in the KG by using the specified UUID" +
-            "Please note that any \"@id\" specified in the payload will be interpreted as an additional identifier and therefore added to the \"http://schema.org/identifier\" array.")
+    @Operation(
+            summary = "Create new instance with a client defined id",
+            description = """
+            The invocation of this endpoint causes the ingestion of the payload (if valid) in the KG by using the specified UUID
+            
+            Please note that any "@id" specified in the payload will be interpreted as an additional identifier and therefore added to the "http://schema.org/identifier" array.
+            """)
     @PostMapping("/instances/{id}")
     @ExposesData
     @WritesData
     @io.swagger.v3.oas.annotations.parameters.RequestBody(content = @Content(examples = {
-            @ExampleObject(name = "minimalistic", description = "The most minimal payload you could think of only contains an @type.", value = "{ \"@type\": \"https://openminds.ebrains.eu/core/Person\" }"),
-            @ExampleObject(name = "with property", description = "A payload can contain - next to the @type additional properties.", value = "{ \"@type\": \"https://openminds.ebrains.eu/core/Person\"\n,  \"https://openminds.ebrains.eu/vocab/givenName\": \"Bob\"\n}"),
-            @ExampleObject(name = "with link", description = "To link to other instances, the JSON-LD notation can be used. Please note that you can use any \"@id\" or \"http://schema.org/identifier\" of the targeted resource to link it", value = "{ \"@type\": \"https://openminds.ebrains.eu/core/Person\"\n,  \"https://openminds.ebrains.eu/vocab/affiliation\": [ { \"@id\": \"http://someQualifiedIdentifier/ACME_orporation\" } ]\n}")
+            @ExampleObject(name = InstancesExamples.PAYLOAD_MINIMAL_NAME, description = InstancesExamples.PAYLOAD_MINIMAL_DESC, value = InstancesExamples.PAYLOAD_MINIMAL),
+            @ExampleObject(name = InstancesExamples.PAYLOAD_WITH_PROPERTY_NAME, description = InstancesExamples.PAYLOAD_WITH_PROPERTY_DESC, value = InstancesExamples.PAYLOAD_WITH_PROPERTY),
+            @ExampleObject(name = InstancesExamples.PAYLOAD_WITH_LINK_NAME, description = InstancesExamples.PAYLOAD_WITH_LINK_DESC, value = InstancesExamples.PAYLOAD_WITH_LINK)
     }))
     @Simple
     public ResponseEntity<Result<NormalizedJsonLd>> createNewInstanceWithId(@RequestBody JsonLdDoc jsonLdDoc, @PathVariable("id") UUID id, @RequestParam(value = "space") @Parameter(description = "The space name the instance shall be stored in or \"" + SpaceName.PRIVATE_SPACE + "\" if you want to store it to your private space") String space, @ParameterObject ExtendedResponseConfiguration responseConfiguration) {
@@ -384,7 +396,7 @@ public class Instances {
     @GetMapping("/instances/{id}/suggestedLinksForProperty")
     @ExposesMinimalData
     @Extra
-    public Result<SuggestionResult> getSuggestedLinksForProperty(@RequestParam("stage") ExposedStage stage, @PathVariable("id") UUID id, @RequestParam(value = "property") String propertyName, @RequestParam(value = "sourceType", required = false) @Parameter(description = "The source type for which the given property shall be evaluated. If not provided, the API tries to figure out the type by analyzing the type of the root object of the persisted instance. Please note, that this parameter is mandatory for embedded structures.") String sourceType, @RequestParam(value = "targetType", required = false) @Parameter(description = "The target type of the suggestions. If not provided, suggestions of all possible target types will be returned." ) String targetType, @RequestParam(value = "search", required = false) String search, @ParameterObject PaginationParam paginationParam) {
+    public Result<SuggestionResult> getSuggestedLinksForProperty(@RequestParam("stage") ExposedStage stage, @PathVariable("id") UUID id, @RequestParam(value = "property") String propertyName, @RequestParam(value = "sourceType", required = false) @Parameter(description = "The source type for which the given property shall be evaluated. If not provided, the API tries to figure out the type by analyzing the type of the root object of the persisted instance. Please note, that this parameter is mandatory for embedded structures.") String sourceType, @RequestParam(value = "targetType", required = false) @Parameter(description = "The target type of the suggestions. If not provided, suggestions of all possible target types will be returned.") String targetType, @RequestParam(value = "search", required = false) String search, @ParameterObject PaginationParam paginationParam) {
         return getSuggestedLinksForProperty(null, stage, propertyName, id, sourceType, targetType, search, paginationParam);
     }
 

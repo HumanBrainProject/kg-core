@@ -29,6 +29,7 @@ import eu.ebrains.kg.commons.jsonld.InferredJsonLdDoc;
 import eu.ebrains.kg.commons.jsonld.JsonLdId;
 import eu.ebrains.kg.commons.jsonld.NormalizedJsonLd;
 import eu.ebrains.kg.commons.model.DataStage;
+import eu.ebrains.kg.commons.model.SpaceName;
 import eu.ebrains.kg.commons.model.TodoItem;
 import eu.ebrains.kg.commons.model.User;
 import eu.ebrains.kg.commons.semantics.vocabularies.EBRAINSVocabulary;
@@ -76,35 +77,28 @@ public class TodoListProcessor {
     }
 
     public void doProcessTodoList(List<TodoItem> todoList, DataStage stage) {
-        //TODO can we make this transactional?
-        Set<User> handledUsers = new HashSet<>();
         for (TodoItem todoItem : todoList) {
             ArangoDocumentReference rootDocumentReference = ArangoCollectionReference.fromSpace(todoItem.getSpace()).doc(todoItem.getDocumentId());
-            if(todoItem.getPayload()!=null && todoItem.getSpace()!=null){
-                todoItem.getPayload().put(EBRAINSVocabulary.META_SPACE, todoItem.getSpace());
-            }
             switch (todoItem.getType()) {
-                case UPDATE:
-                case INSERT:
+                case UPDATE, INSERT -> {
                     logger.info("Upserting a document");
-                    upsertDocument(rootDocumentReference, todoItem.getPayload(), stage);
-                    break;
-                case DELETE:
+                    upsertDocument(rootDocumentReference, todoItem.getPayload(), stage, todoItem.getSpace());
+                }
+                case DELETE -> {
                     logger.info("Removing an instance");
                     //Since we're going to do a "hard" delete, we also have to remove all instances that have been contributing to it.
                     final List<ArangoDocumentReference> nativeDocumentsByInferredInstance = getNativeDocumentsByInferredInstance(rootDocumentReference);
                     repository.executeTransactional(DataStage.NATIVE, dataController.createDeleteOperations(stage, nativeDocumentsByInferredInstance));
                     deleteDocument(DataStage.IN_PROGRESS, rootDocumentReference);
-                    break;
-                case UNRELEASE:
+                }
+                case UNRELEASE -> {
                     logger.info("Unreleasing a document");
                     unreleaseDocument(rootDocumentReference);
-                    break;
-                case RELEASE:
+                }
+                case RELEASE -> {
                     logger.info("Releasing a document");
-                    releaseDocument(rootDocumentReference, todoItem.getPayload());
-                    break;
-
+                    releaseDocument(rootDocumentReference, todoItem.getPayload(), todoItem.getSpace());
+                }
             }
             logger.debug("Updating last seen event id");
             eventTracker.updateLastSeenEventId(stage, todoItem.getEventId());
@@ -127,9 +121,9 @@ public class TodoListProcessor {
         repository.executeTransactional(DataStage.IN_PROGRESS, Collections.singletonList(new RemoveReleaseStateOperation(releasingController.getReleaseStatusEdgeId(rootDocumentReference))));
     }
 
-    private void releaseDocument(ArangoDocumentReference rootDocumentReference, NormalizedJsonLd payload) {
+    private void releaseDocument(ArangoDocumentReference rootDocumentReference, NormalizedJsonLd payload, SpaceName spaceName) {
         // Releasing a specific revision
-        upsertDocument(rootDocumentReference, payload, DataStage.RELEASED);
+        upsertDocument(rootDocumentReference, payload, DataStage.RELEASED, spaceName);
         repository.executeTransactional(DataStage.IN_PROGRESS, Collections.singletonList(releasingController.getReleaseStatusUpdateOperation(rootDocumentReference, true)));
     }
 
@@ -139,7 +133,10 @@ public class TodoListProcessor {
         return stage == DataStage.IN_PROGRESS;
     }
 
-    public ArangoDocumentReference upsertDocument(ArangoDocumentReference rootDocumentRef, NormalizedJsonLd payload, DataStage stage) {
+    public ArangoDocumentReference upsertDocument(ArangoDocumentReference rootDocumentRef, NormalizedJsonLd payload, DataStage stage, SpaceName spaceName) {
+        if(payload!=null && spaceName!=null){
+            payload.put(EBRAINSVocabulary.META_SPACE, spaceName);
+        }
         List<ArangoInstance> arangoInstances = splitter.extractRelations(rootDocumentRef, payload);
         List<DBOperation> upsertOperationsForDocument = dataController.createUpsertOperations(rootDocumentRef, stage, arangoInstances, hasChangedReleaseStatus(stage, rootDocumentRef));
         repository.executeTransactional(stage, upsertOperationsForDocument);

@@ -22,11 +22,12 @@
 
 package eu.ebrains.kg.primaryStore.api;
 
+import eu.ebrains.kg.commons.JsonAdapter;
 import eu.ebrains.kg.commons.jsonld.NormalizedJsonLd;
 import eu.ebrains.kg.commons.model.Event;
 import eu.ebrains.kg.commons.model.SpaceName;
+import eu.ebrains.kg.test.Simpsons;
 import eu.ebrains.kg.test.TestCategories;
-import eu.ebrains.kg.test.TestObjectFactory;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
@@ -44,61 +45,20 @@ public class PSTest {
     @Autowired
     PrimaryStoreEventsAPI primaryStore;
 
-    private final SpaceName space = TestObjectFactory.SIMPSONS;
+    @Autowired
+    JsonAdapter jsonAdapter;
+
+    private final SpaceName space = Simpsons.SPACE_NAME;
 
     @Test
     public void postInsertionEvent() {
         //Given
-        NormalizedJsonLd carl = TestObjectFactory.createJsonLd(space, "carl_external.json");
+        NormalizedJsonLd carl = jsonAdapter.fromJson(Simpsons.Characters.CARL_WITH_EXTERNAL_ID, NormalizedJsonLd.class);
         Event event = new Event(space, UUID.randomUUID(), carl, Event.Type.INSERT, new Date());
 
         //When
         primaryStore.postEvent(event);
 
         //Then
-    }
-
-    private void createMilhouseInfra() {
-        NormalizedJsonLd milhouse1 = TestObjectFactory.createJsonLd(space, "milhouse1.json");
-        Event milhouse1Event = new Event(space, UUID.randomUUID(), milhouse1, Event.Type.INSERT, new Date());
-        primaryStore.postEvent(milhouse1Event);
-
-        NormalizedJsonLd milhouse2 = TestObjectFactory.createJsonLd(space, "milhouse2.json");
-
-        Event milhouse2Event = new Event(space, UUID.randomUUID(), milhouse2, Event.Type.INSERT, new Date());
-        primaryStore.postEvent(milhouse2Event);
-    }
-
-    @Test
-    public void triggerMergeUpdate() {
-        //Given
-        createMilhouseInfra();
-
-        //When
-        NormalizedJsonLd milhouseMerge = TestObjectFactory.createJsonLd(space, "milhouseMergeUpdate.json");
-
-        Event milhouseMergeEvent = new Event(space, UUID.randomUUID(), milhouseMerge, Event.Type.UPDATE, new Date());
-        primaryStore.postEvent(milhouseMergeEvent);
-
-        //Then
-        System.out.println("Hello world");
-
-        //TODO assert only one instance is left in inProgress
-    }
-
-    @Test
-    public void triggerMergeInsert() {
-        //Given
-        createMilhouseInfra();
-
-        //When
-        NormalizedJsonLd milhouseMerge = TestObjectFactory.createJsonLd(space, "milhouseMergeInsert.json");
-        Event milhouseMergeEvent = new Event(space, UUID.randomUUID(), milhouseMerge, Event.Type.INSERT, new Date());
-        primaryStore.postEvent(milhouseMergeEvent);
-
-        //Then
-        System.out.println("Hello world");
-
-        //TODO assert only one instance is left in inProgress
     }
 }

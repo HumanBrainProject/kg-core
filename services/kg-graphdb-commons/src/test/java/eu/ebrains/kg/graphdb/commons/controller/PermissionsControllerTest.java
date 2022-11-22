@@ -37,8 +37,6 @@ import java.util.Set;
 import static org.junit.jupiter.api.Assertions.*;
 class PermissionsControllerTest  {
 
-
-
     @Test
     void testRemoveSpacesWithoutReadAccessReduce() {
         Permissions permissions = Mockito.mock(Permissions.class);

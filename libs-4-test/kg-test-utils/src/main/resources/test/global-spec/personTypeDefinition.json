@@ -1,7 +1,0 @@
-{
-  "@id": "https://kg.ebrains.eu/testobjects/client/admin/personType",
-  "@type": "https://kg.ebrains.eu/vocab/meta/TypeDefinition",
-  "https://kg.ebrains.eu/vocab/meta/type": {"@id":  "http://schema.org/Person"},
-  "http://schema.org/name": "Global Person",
-  "https://kg.ebrains.eu/vocab/meta/color": "#B22222"
-}

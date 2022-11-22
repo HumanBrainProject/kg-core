@@ -52,9 +52,20 @@ public class ArangoRepositoryInstancesUnitTest {
         //Given
         ArangoRepositoryInstances repository = new ArangoRepositoryInstances(Mockito.mock(ArangoRepositoryCommons.class), Mockito.mock(PermissionsController.class), Mockito.mock(Permissions.class), Mockito.mock(AuthContext.class), Mockito.mock(GraphDBArangoUtils.class), Mockito.mock(QueryController.class), Mockito.mock(ArangoDatabases.class), Mockito.mock(IdUtils.class), Mockito.mock(JsonAdapter.class), Mockito.mock(MetaDataController.class), Mockito.mock(StructureRepository.class), Mockito.mock(Ids.Client.class), Mockito.mock(PrimaryStoreUsers.Client.class));
         JsonAdapter jsonAdapter = new JsonAdapter4Test();
-        String originalDoc = "{\"helloWorld\": {\"@id\": \"http://foobar\"}, \"@id\": \"http://foo\"}";
+        String originalDoc = """
+           {
+              "helloWorld": {
+                 "@id": "http://foobar"
+              },
+              "@id": "http://foo"
+           }
+           """;
         NormalizedJsonLd original = jsonAdapter.fromJson(originalDoc, NormalizedJsonLd.class);
-        String embeddedDoc = "{\"name\": \"foobar\"}";
+        String embeddedDoc = """
+           { 
+              "name": "foobar"
+           }
+           """;
         Map<String, NormalizedJsonLd> embedded = new HashMap<>();
         embedded.put("http://foobar", jsonAdapter.fromJson(embeddedDoc, NormalizedJsonLd.class));
 
