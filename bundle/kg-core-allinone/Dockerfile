@@ -1,4 +1,4 @@
-FROM  eclipse-temurin:17-jre-alpine
+FROM eclipse-temurin:17-jre-alpine
 VOLUME /tmp
 COPY target/kg-core-allinone.jar kg-core-allinone.jar
 ENV JAVA_OPTS=""
