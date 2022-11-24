@@ -24,21 +24,18 @@ import eu.ebrains.kg.commons.api.Ids;
 import eu.ebrains.kg.commons.api.PrimaryStoreUsers;
 import eu.ebrains.kg.commons.jsonld.NormalizedJsonLd;
 import eu.ebrains.kg.commons.model.DataStage;
-import eu.ebrains.kg.commons.model.Event;
 import eu.ebrains.kg.commons.model.SpaceName;
-import eu.ebrains.kg.commons.model.TodoItem;
 import eu.ebrains.kg.graphdb.commons.controller.ArangoDatabases;
 import eu.ebrains.kg.graphdb.ingestion.controller.TodoListProcessor;
-import eu.ebrains.kg.test.Simpsons;
 import eu.ebrains.kg.test.factory.UserFactory;
 import org.junit.jupiter.api.BeforeEach;
 import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
-import org.springframework.core.io.ResourceLoader;
 import org.springframework.test.context.TestPropertySource;
 
+import javax.validation.constraints.NotNull;
 import java.util.UUID;
 
 @SpringBootTest
@@ -68,22 +65,11 @@ public class AbstractGraphTest {
     @MockBean
     protected PrimaryStoreUsers.Client primaryStoreUsers;
 
-    protected TodoItem createDeletionItem(UUID documentId, SpaceName spaceName){
-        return new TodoItem(UUID.randomUUID().toString(), documentId, spaceName, Event.Type.DELETE, null);
-    }
-
-    protected TodoItem createUpdateItem(UUID documentId, SpaceName spaceName, NormalizedJsonLd payload){
-        return new TodoItem(UUID.randomUUID().toString(), documentId, spaceName, Event.Type.UPDATE, payload);
-    }
-    protected TodoItem createInsertItem(UUID documentId, SpaceName spaceName, NormalizedJsonLd payload){
-        return new TodoItem(UUID.randomUUID().toString(), documentId, spaceName, Event.Type.INSERT, payload);
-    }
-
     protected ArangoDocumentReference upsert(SpaceName spaceName, NormalizedJsonLd payload, DataStage stage){
         return upsert(spaceName, UUID.randomUUID(), payload, stage);
     }
 
-    protected ArangoDocumentReference upsert(SpaceName spaceName, UUID uuid, NormalizedJsonLd payload, DataStage stage){
+    protected ArangoDocumentReference upsert(SpaceName spaceName, UUID uuid, @NotNull NormalizedJsonLd payload, DataStage stage){
         return todoListProcessor.upsertDocument(ArangoCollectionReference.fromSpace(spaceName).doc(uuid),payload, stage, spaceName);
     }
 }

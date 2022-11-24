@@ -59,7 +59,7 @@ public class InferredJsonLdDoc {
     }
 
     public List<JsonLdId> getInferenceOf(){
-        return indexedJsonLdDoc.getDoc().getAsListOf(INFERENCE_OF, String.class).stream().filter(Objects::nonNull).map(JsonLdId::new).collect(Collectors.toList());
+        return indexedJsonLdDoc.getDoc().getAsListOf(INFERENCE_OF, String.class).stream().filter(Objects::nonNull).map(JsonLdId::new).toList();
     }
 
     public void setInferenceOf(List<String> jsonLdIds){

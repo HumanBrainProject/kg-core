@@ -22,7 +22,7 @@
 
 package eu.ebrains.kg.graphdb.queries.utils;
 
-import eu.ebrains.kg.arango.commons.aqlBuilder.*;
+import eu.ebrains.kg.arango.commons.aqlbuilder.*;
 import eu.ebrains.kg.arango.commons.model.AQLQuery;
 import eu.ebrains.kg.arango.commons.model.ArangoCollectionReference;
 import eu.ebrains.kg.arango.commons.model.InternalSpace;
@@ -40,7 +40,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.stream.Collectors;
 
-import static eu.ebrains.kg.arango.commons.aqlBuilder.AQL.*;
+import static eu.ebrains.kg.arango.commons.aqlbuilder.AQL.*;
 
 public class DataQueryBuilder {
 

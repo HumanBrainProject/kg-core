@@ -43,6 +43,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
+import javax.validation.constraints.NotNull;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
@@ -121,7 +122,7 @@ public class TodoListProcessor {
         repository.executeTransactional(DataStage.IN_PROGRESS, Collections.singletonList(new RemoveReleaseStateOperation(releasingController.getReleaseStatusEdgeId(rootDocumentReference))));
     }
 
-    private void releaseDocument(ArangoDocumentReference rootDocumentReference, NormalizedJsonLd payload, SpaceName spaceName) {
+    private void releaseDocument(ArangoDocumentReference rootDocumentReference, @NotNull NormalizedJsonLd payload, SpaceName spaceName) {
         // Releasing a specific revision
         upsertDocument(rootDocumentReference, payload, DataStage.RELEASED, spaceName);
         repository.executeTransactional(DataStage.IN_PROGRESS, Collections.singletonList(releasingController.getReleaseStatusUpdateOperation(rootDocumentReference, true)));
@@ -133,8 +134,8 @@ public class TodoListProcessor {
         return stage == DataStage.IN_PROGRESS;
     }
 
-    public ArangoDocumentReference upsertDocument(ArangoDocumentReference rootDocumentRef, NormalizedJsonLd payload, DataStage stage, SpaceName spaceName) {
-        if(payload!=null && spaceName!=null){
+    public ArangoDocumentReference upsertDocument(ArangoDocumentReference rootDocumentRef, @NotNull NormalizedJsonLd payload, DataStage stage, SpaceName spaceName) {
+        if(spaceName!=null){
             payload.put(EBRAINSVocabulary.META_SPACE, spaceName);
         }
         List<ArangoInstance> arangoInstances = splitter.extractRelations(rootDocumentRef, payload);

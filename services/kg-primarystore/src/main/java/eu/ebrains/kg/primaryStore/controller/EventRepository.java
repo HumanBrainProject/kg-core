@@ -26,7 +26,7 @@ import com.arangodb.ArangoCollection;
 import com.arangodb.model.HashIndexOptions;
 import com.arangodb.model.PersistentIndexOptions;
 import com.arangodb.model.SkiplistIndexOptions;
-import eu.ebrains.kg.arango.commons.aqlBuilder.AQL;
+import eu.ebrains.kg.arango.commons.aqlbuilder.AQL;
 import eu.ebrains.kg.arango.commons.model.ArangoCollectionReference;
 import eu.ebrains.kg.arango.commons.model.ArangoDatabaseProxy;
 import eu.ebrains.kg.commons.JsonAdapter;

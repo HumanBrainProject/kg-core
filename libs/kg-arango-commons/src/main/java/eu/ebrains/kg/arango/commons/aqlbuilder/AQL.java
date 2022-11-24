@@ -20,7 +20,7 @@
  * (Human Brain Project SGA1, SGA2 and SGA3).
  */
 
-package eu.ebrains.kg.arango.commons.aqlBuilder;
+package eu.ebrains.kg.arango.commons.aqlbuilder;
 
 import com.arangodb.model.AqlQueryOptions;
 import eu.ebrains.kg.arango.commons.model.ArangoCollectionReference;
@@ -39,8 +39,8 @@ public class AQL {
     public static final String READ_ACCESS_BY_SPACE = "readAccessBySpace";
     public static final String READ_ACCESS_BY_INVITATION = "readAccessByInvitation";
 
-    private final ArangoKey WHITELIST_ALIAS = new ArangoKey("whitelist");
-    private final ArangoKey INVITATION_ALIAS = new ArangoKey("invitation");
+    private final static ArangoKey WHITELIST_ALIAS = new ArangoKey("whitelist");
+    private final static ArangoKey INVITATION_ALIAS = new ArangoKey("invitation");
 
     final Map<String, String> parameters = new TreeMap<>();
     private final StringBuilder query = new StringBuilder();
@@ -126,7 +126,7 @@ public class AQL {
 
 
     private <T> TrustedAqlValue listValuesWithQuote(Character quote, Collection<T> values, Function<T, String> transform) {
-        if (values != null && values.size() > 0) {
+        if (values != null && !values.isEmpty()) {
             String q = quote != null ? String.valueOf(quote) : "";
             return new TrustedAqlValue(q + String.join(q + "," + q, values.stream().map(transform).map(v -> preventAqlInjection(v).getValue()).collect(Collectors.toSet())) + q);
         } else {

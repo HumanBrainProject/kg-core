@@ -20,7 +20,7 @@
  * (Human Brain Project SGA1, SGA2 and SGA3).
  */
 
-package eu.ebrains.kg.arango.commons.aqlBuilder;
+package eu.ebrains.kg.arango.commons.aqlbuilder;
 
 public class ArangoAlias extends ArangoKey {
 

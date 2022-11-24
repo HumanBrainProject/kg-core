@@ -28,8 +28,8 @@ import com.arangodb.entity.CollectionEntity;
 import com.arangodb.entity.CollectionType;
 import com.arangodb.entity.StreamTransactionEntity;
 import com.arangodb.model.*;
-import eu.ebrains.kg.arango.commons.aqlBuilder.AQL;
-import eu.ebrains.kg.arango.commons.aqlBuilder.ArangoVocabulary;
+import eu.ebrains.kg.arango.commons.aqlbuilder.AQL;
+import eu.ebrains.kg.arango.commons.aqlbuilder.ArangoVocabulary;
 import eu.ebrains.kg.arango.commons.model.AQLQuery;
 import eu.ebrains.kg.arango.commons.model.ArangoCollectionReference;
 import eu.ebrains.kg.arango.commons.model.ArangoDocumentReference;
@@ -40,8 +40,6 @@ import eu.ebrains.kg.commons.jsonld.IndexedJsonLdDoc;
 import eu.ebrains.kg.commons.jsonld.JsonLdConsts;
 import eu.ebrains.kg.commons.jsonld.NormalizedJsonLd;
 import eu.ebrains.kg.commons.model.DataStage;
-import eu.ebrains.kg.commons.model.Paginated;
-import eu.ebrains.kg.commons.model.PaginatedStream;
 import eu.ebrains.kg.commons.semantics.vocabularies.EBRAINSVocabulary;
 import eu.ebrains.kg.graphdb.commons.model.ArangoDocument;
 import eu.ebrains.kg.graphdb.commons.model.ArangoEdge;
@@ -51,15 +49,12 @@ import eu.ebrains.kg.graphdb.structure.controller.CacheController;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import java.util.*;
 import java.util.function.Consumer;
-import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import java.util.stream.StreamSupport;
 
 @Component
 public class ArangoRepositoryCommons {

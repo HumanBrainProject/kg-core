@@ -20,21 +20,41 @@
  * (Human Brain Project SGA1, SGA2 and SGA3).
  */
 
-package eu.ebrains.kg.arango.commons.aqlBuilder;
-
+package eu.ebrains.kg.arango.commons.aqlbuilder;
 
 import org.apache.commons.codec.digest.DigestUtils;
 
-public class ArangoNamingHelper {
+import java.util.Objects;
 
+/**
+ * The arango key is a wrapper which ensures that the passed value is a valid arango key.
+ */
+public class ArangoKey extends TrustedAqlValue {
 
     private static final int MAX_CHARACTERS = 60;
-    private static final String VALID_CHARS = "a-z0-9\\-_";
+    private static final String VALID_CHARS = "a-z0-9_";
 
-    public static String asArangoKey(String value){
+    private final String originalValue;
+
+    public ArangoKey(String value) {
+        super(asArangoKey(value));
+        this.originalValue = value;
+    }
+
+
+    public String getOriginalValue() {
+        return originalValue;
+    }
+
+    @Override
+    public String toString() {
+        return getValue();
+    }
+
+    private static String asArangoKey(String value){
         if(value!=null && value.length()<=MAX_CHARACTERS && value.matches("["+VALID_CHARS+"]*")){
             //Value is valid - no change needed
-            return value;
+            return !value.matches("[a-zA-Z].*") ? "a" + value.toLowerCase() : value.toLowerCase();
         }
         else if(value!=null){
             return reduceStringToMaxSizeByHashing(replaceSpecialCharacters(removeTrailingHttps(value.toLowerCase())));
@@ -45,16 +65,28 @@ public class ArangoNamingHelper {
     }
 
     private static String replaceSpecialCharacters(String value) {
-        return value != null ? value.replaceAll("\\.", "_").replaceAll("[^"+VALID_CHARS+"]", "-") : null;
+        return value != null ? value.replaceAll("[^"+VALID_CHARS+"]", "_") : null;
     }
 
     @SuppressWarnings("java:S4790") // The hashing functionality is not used to hide sensitive information but for reduction of length instead.
     private static String reduceStringToMaxSizeByHashing(String string) {
-        return string == null || string.length() <= MAX_CHARACTERS ? string : String.format("#%s", DigestUtils.md5Hex(string));
+        return string == null || string.length() <= MAX_CHARACTERS ? string : String.format("h%s", DigestUtils.md5Hex(string));
     }
 
     private static String removeTrailingHttps(String value){
         return value!=null ? value.toLowerCase().replaceAll("http(s)?://", "") : value;
     }
 
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        ArangoKey arangoKey = (ArangoKey) o;
+        return Objects.equals(originalValue, arangoKey.originalValue);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(originalValue);
+    }
 }

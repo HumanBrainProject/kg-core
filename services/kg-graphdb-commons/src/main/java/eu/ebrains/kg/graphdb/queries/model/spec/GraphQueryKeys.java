@@ -22,7 +22,7 @@
 
 package eu.ebrains.kg.graphdb.queries.model.spec;
 
-import eu.ebrains.kg.arango.commons.aqlBuilder.ArangoVocabulary;
+import eu.ebrains.kg.arango.commons.aqlbuilder.ArangoVocabulary;
 import eu.ebrains.kg.commons.semantics.vocabularies.EBRAINSVocabulary;
 
 public enum GraphQueryKeys {

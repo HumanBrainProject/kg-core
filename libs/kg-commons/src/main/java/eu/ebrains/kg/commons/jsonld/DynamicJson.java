@@ -60,7 +60,7 @@ public class DynamicJson extends LinkedHashMap<String, Object> {
             return fallback;
         }
         if(o instanceof Collection){
-            return ((Collection<?>) o).stream().map(i -> castType(clazz, i, !skipWrongTypes)).filter(Objects::nonNull).collect(Collectors.toList());
+            return ((Collection<?>) o).stream().map(i -> castType(clazz, i, !skipWrongTypes)).filter(Objects::nonNull).toList();
         }
         else{
             T singleInstance = castType(clazz, o, !skipWrongTypes);
@@ -137,12 +137,12 @@ public class DynamicJson extends LinkedHashMap<String, Object> {
         if (clazz.isInstance(o)) {
             return (T) o;
         }
-        if(o instanceof Map){
+        if(o instanceof Map map){
             if(clazz == Map.class){
                 return (T)o;
             }
             if(clazz == JsonLdId.class){
-                Object id = ((Map) o).get(JsonLdConsts.ID);
+                Object id = map.get(JsonLdConsts.ID);
                 try {
                     return id instanceof String ? (T) new JsonLdId((String) id) : null;
                 }
@@ -154,7 +154,7 @@ public class DynamicJson extends LinkedHashMap<String, Object> {
                 }
             }
             if(clazz == DynamicJson.class){
-                return (T)new DynamicJson((Map)o);
+                return (T)new DynamicJson(map);
             }
             else if(clazz == NormalizedJsonLd.class){
                 return (T) new NormalizedJsonLd((Map)o);
@@ -169,25 +169,25 @@ public class DynamicJson extends LinkedHashMap<String, Object> {
             }
         }
         if(clazz == Long.class){
-            if(o instanceof String){
-                return (T)Long.valueOf((String)o);
+            if(o instanceof String string){
+                return (T)Long.valueOf(string);
             }
-            if(o instanceof BigInteger){
-                return (T)(Long)((BigInteger)o).longValue();
+            if(o instanceof BigInteger bigint){
+                return (T)(Long)(bigint).longValue();
             }
-            if(o instanceof Integer){
-                return (T)(Long)((Integer)o).longValue();
+            if(o instanceof Integer integer){
+                return (T)(Long)(integer).longValue();
             }
         }
-        if(clazz == UUID.class && o instanceof String){
-            return (T)UUID.fromString((String)o);
+        if(clazz == UUID.class && o instanceof String string){
+            return (T)UUID.fromString(string);
         }
-        if(clazz == SpaceName.class && o instanceof String){
-            return (T)new SpaceName((String)o);
+        if(clazz == SpaceName.class && o instanceof String string){
+            return (T)new SpaceName(string);
         }
-        if(clazz.isEnum() && o instanceof String){
+        if(clazz.isEnum() && o instanceof String string){
             try {
-                return (T) Enum.valueOf((Class<? extends Enum>) clazz, (String) o);
+                return (T) Enum.valueOf((Class<? extends Enum>) clazz, string);
             }
             catch (IllegalArgumentException e){
                 if(throwException){

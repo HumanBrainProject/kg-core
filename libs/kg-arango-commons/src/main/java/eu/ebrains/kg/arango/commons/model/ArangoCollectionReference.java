@@ -22,7 +22,7 @@
 
 package eu.ebrains.kg.arango.commons.model;
 
-import eu.ebrains.kg.arango.commons.aqlBuilder.ArangoKey;
+import eu.ebrains.kg.arango.commons.aqlbuilder.ArangoKey;
 import eu.ebrains.kg.commons.model.SpaceName;
 
 import java.nio.charset.StandardCharsets;

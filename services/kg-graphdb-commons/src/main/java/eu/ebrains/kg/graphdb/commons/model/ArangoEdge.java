@@ -23,7 +23,7 @@
 package eu.ebrains.kg.graphdb.commons.model;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import eu.ebrains.kg.arango.commons.aqlBuilder.ArangoVocabulary;
+import eu.ebrains.kg.arango.commons.aqlbuilder.ArangoVocabulary;
 import eu.ebrains.kg.arango.commons.model.ArangoDocumentReference;
 import eu.ebrains.kg.commons.jsonld.IndexedJsonLdDoc;
 import eu.ebrains.kg.commons.jsonld.JsonLdId;

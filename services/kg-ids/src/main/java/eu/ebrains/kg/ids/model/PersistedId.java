@@ -23,7 +23,7 @@
 package eu.ebrains.kg.ids.model;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import eu.ebrains.kg.arango.commons.aqlBuilder.ArangoVocabulary;
+import eu.ebrains.kg.arango.commons.aqlbuilder.ArangoVocabulary;
 import eu.ebrains.kg.commons.model.SpaceName;
 
 import java.util.HashSet;

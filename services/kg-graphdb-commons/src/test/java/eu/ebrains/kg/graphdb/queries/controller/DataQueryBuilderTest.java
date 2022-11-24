@@ -22,7 +22,7 @@
 
 package eu.ebrains.kg.graphdb.queries.controller;
 
-import eu.ebrains.kg.arango.commons.aqlBuilder.ArangoKey;
+import eu.ebrains.kg.arango.commons.aqlbuilder.ArangoKey;
 import eu.ebrains.kg.arango.commons.model.AQLQuery;
 import eu.ebrains.kg.arango.commons.model.ArangoCollectionReference;
 import eu.ebrains.kg.commons.JsonAdapter;
@@ -31,7 +31,6 @@ import eu.ebrains.kg.graphdb.queries.model.spec.Specification;
 import eu.ebrains.kg.graphdb.queries.utils.DataQueryBuilder;
 import eu.ebrains.kg.test.JsonAdapter4Test;
 import eu.ebrains.kg.test.Simpsons;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import java.util.*;

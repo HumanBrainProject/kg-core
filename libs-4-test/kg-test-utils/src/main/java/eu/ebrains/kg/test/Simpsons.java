@@ -19,10 +19,14 @@ package eu.ebrains.kg.test;
 import eu.ebrains.kg.commons.model.SpaceName;
 
 public class Simpsons {
+    private Simpsons() {
+    }
 
     public static final SpaceName SPACE_NAME = new SpaceName("simpsons");
 
     public static class Activities {
+        private Activities() {
+        }
 
         public static final String HOMER_EATS_DONUTS = """
             {
@@ -55,6 +59,8 @@ public class Simpsons {
     }
 
     public static class Characters {
+        private Characters() {
+        }
 
         public static final String BART = """
             {
@@ -231,6 +237,8 @@ public class Simpsons {
     }
 
     public static class Things {
+        private Things() {
+        }
 
         public static final String BIG_BELLY = """
             {
@@ -256,6 +264,8 @@ public class Simpsons {
     }
 
     public static class Queries {
+        private Queries() {
+        }
 
         public static final String FAMILY_NAMES = """
             {

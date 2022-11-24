@@ -27,7 +27,7 @@ import com.arangodb.ArangoDatabase;
 import com.arangodb.model.AqlQueryOptions;
 import com.arangodb.model.DocumentCreateOptions;
 import com.arangodb.model.SkiplistIndexOptions;
-import eu.ebrains.kg.arango.commons.aqlBuilder.AQL;
+import eu.ebrains.kg.arango.commons.aqlbuilder.AQL;
 import eu.ebrains.kg.arango.commons.model.ArangoCollectionReference;
 import eu.ebrains.kg.arango.commons.model.ArangoDatabaseProxy;
 import eu.ebrains.kg.commons.IdUtils;

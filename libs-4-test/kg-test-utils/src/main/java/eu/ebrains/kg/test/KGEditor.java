@@ -17,6 +17,8 @@
 package eu.ebrains.kg.test;
 
 public class KGEditor {
+    private KGEditor() {
+    }
 
     public static final String GIVEN_NAME_IN_PERSON_PROPERY_DEFINITION = """
             {

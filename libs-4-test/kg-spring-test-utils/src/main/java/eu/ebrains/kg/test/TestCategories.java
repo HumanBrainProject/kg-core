@@ -20,6 +20,6 @@ public class TestCategories {
     private TestCategories() {
     }
 
-    public final static String API = "api";
-    public final static String LOAD = "load";
+    public static final String API = "api";
+    public static final String LOAD = "load";
 }

@@ -22,7 +22,7 @@
 
 package eu.ebrains.kg.graphdb.queries.utils;
 
-import eu.ebrains.kg.arango.commons.aqlBuilder.ArangoVocabulary;
+import eu.ebrains.kg.arango.commons.aqlbuilder.ArangoVocabulary;
 import eu.ebrains.kg.commons.jsonld.IndexedJsonLdDoc;
 import eu.ebrains.kg.commons.jsonld.JsonLdConsts;
 import eu.ebrains.kg.commons.semantics.vocabularies.EBRAINSVocabulary;

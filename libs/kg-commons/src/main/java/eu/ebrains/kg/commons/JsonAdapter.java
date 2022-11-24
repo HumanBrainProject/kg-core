@@ -22,7 +22,6 @@
 
 package eu.ebrains.kg.commons;
 
-import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.json.JsonReadFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -42,8 +41,8 @@ public class JsonAdapter {
         try {
             if (object == null) {
                 return null;
-            } else if (object instanceof String) {
-                return (String) object;
+            } else if (object instanceof String string) {
+                return string;
             }
             return objectMapper.writer().writeValueAsString(object);
         } catch (JsonProcessingException e) {

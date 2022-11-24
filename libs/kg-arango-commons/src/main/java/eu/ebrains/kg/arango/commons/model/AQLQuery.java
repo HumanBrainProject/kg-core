@@ -22,7 +22,7 @@
 
 package eu.ebrains.kg.arango.commons.model;
 
-import eu.ebrains.kg.arango.commons.aqlBuilder.AQL;
+import eu.ebrains.kg.arango.commons.aqlbuilder.AQL;
 
 import java.util.HashMap;
 import java.util.Map;

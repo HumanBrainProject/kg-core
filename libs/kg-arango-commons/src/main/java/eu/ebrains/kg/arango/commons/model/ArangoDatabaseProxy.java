@@ -30,7 +30,7 @@ import com.arangodb.entity.CollectionType;
 import com.arangodb.model.CollectionCreateOptions;
 import com.arangodb.model.HashIndexOptions;
 import com.arangodb.model.SkiplistIndexOptions;
-import eu.ebrains.kg.arango.commons.aqlBuilder.ArangoVocabulary;
+import eu.ebrains.kg.arango.commons.aqlbuilder.ArangoVocabulary;
 import eu.ebrains.kg.commons.jsonld.IndexedJsonLdDoc;
 import eu.ebrains.kg.commons.jsonld.JsonLdConsts;
 import org.slf4j.Logger;
@@ -150,7 +150,9 @@ public class ArangoDatabaseProxy {
 
 
     public static void ensureIndicesOnCollection(ArangoCollection collection) {
-        logger.debug("Ensuring indices properly set for collection {}", collection.name());
+        if(logger.isDebugEnabled()) {
+            logger.debug("Ensuring indices properly set for collection {}", collection.name());
+        }
         collection.ensureHashIndex(Collections.singleton(ArangoVocabulary.COLLECTION), new HashIndexOptions());
         collection.ensureSkiplistIndex(Collections.singletonList(JsonLdConsts.ID), new SkiplistIndexOptions());
         if (collection.getInfo().getType() == CollectionType.EDGES) {

@@ -18,7 +18,7 @@ package eu.ebrains.kg.arango.commons;
 
 import com.arangodb.ArangoCursor;
 import com.arangodb.ArangoDatabase;
-import eu.ebrains.kg.arango.commons.aqlBuilder.AQL;
+import eu.ebrains.kg.arango.commons.aqlbuilder.AQL;
 import eu.ebrains.kg.arango.commons.model.AQLQuery;
 import eu.ebrains.kg.commons.jsonld.NormalizedJsonLd;
 import eu.ebrains.kg.commons.model.Paginated;
@@ -37,7 +37,7 @@ public class ArangoQueries {
     private ArangoQueries() {
     }
 
-    private final static Logger logger = LoggerFactory.getLogger(ArangoQueries.class);
+    private static final Logger logger = LoggerFactory.getLogger(ArangoQueries.class);
 
 
     public static <T> PaginatedStream<T> queryDocuments(ArangoDatabase db, AQLQuery aqlQuery, Function<NormalizedJsonLd, T> mapper, Double maxMemoryForQuery) {

@@ -22,7 +22,7 @@
 
 package eu.ebrains.kg.graphdb.commons.controller;
 
-import eu.ebrains.kg.arango.commons.aqlBuilder.AQL;
+import eu.ebrains.kg.arango.commons.aqlbuilder.AQL;
 import eu.ebrains.kg.arango.commons.model.ArangoCollectionReference;
 import eu.ebrains.kg.commons.model.DataStage;
 import eu.ebrains.kg.commons.model.SpaceName;
