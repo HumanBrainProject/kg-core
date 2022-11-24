@@ -1,5 +1,6 @@
 /*
  * Copyright 2018 - 2021 Swiss Federal Institute of Technology Lausanne (EPFL)
+ * Copyright 2021 - 2022 EBRAINS AISBL
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,7 +29,7 @@ import eu.ebrains.kg.commons.model.*;
 import eu.ebrains.kg.commons.permission.roles.RoleMapping;
 import eu.ebrains.kg.commons.semantics.vocabularies.EBRAINSVocabulary;
 import eu.ebrains.kg.commons.semantics.vocabularies.SchemaOrgVocabulary;
-import eu.ebrains.kg.core.api.Instances;
+import eu.ebrains.kg.core.api.v3.InstancesV3;
 import eu.ebrains.kg.core.api.instances.tests.*;
 import eu.ebrains.kg.core.model.ExposedStage;
 import eu.ebrains.kg.testutils.AbstractFunctionalityTest;
@@ -49,7 +50,7 @@ import static org.junit.jupiter.api.Assertions.*;
 class InstancesTest extends AbstractFunctionalityTest {
 
     @Autowired
-    Instances instances;
+    InstancesV3 instances;
 
     private static final RoleMapping[] WRITE_ROLES = {RoleMapping.ADMIN, RoleMapping.OWNER, RoleMapping.EDITOR};
     private static final RoleMapping[] NON_WRITE_ROLES = RoleMapping.getRemainingUserRoles(WRITE_ROLES);

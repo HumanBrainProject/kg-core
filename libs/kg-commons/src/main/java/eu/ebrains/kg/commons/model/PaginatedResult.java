@@ -1,5 +1,6 @@
 /*
  * Copyright 2018 - 2021 Swiss Federal Institute of Technology Lausanne (EPFL)
+ * Copyright 2021 - 2022 EBRAINS AISBL
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -40,6 +41,16 @@ public class PaginatedResult<T> extends Result<List<T>> {
         result.size = data.getSize();
         return result;
     }
+
+    public static <T> PaginatedResult<T> nokPaginated(int errorCode, String message) {
+        PaginatedResult<T> result = new PaginatedResult<>();
+        Error error = new Error();
+        error.setCode(errorCode);
+        error.setMessage(message);
+        result.error = error;
+        return result;
+    }
+
 
     public Long getTotal() {
         return total;

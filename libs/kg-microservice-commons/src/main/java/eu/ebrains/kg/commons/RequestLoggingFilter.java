@@ -1,5 +1,6 @@
 /*
  * Copyright 2018 - 2021 Swiss Federal Institute of Technology Lausanne (EPFL)
+ * Copyright 2021 - 2022 EBRAINS AISBL
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -51,7 +52,7 @@ public class RequestLoggingFilter extends OncePerRequestFilter {
 
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
-        boolean publicAPI = request.getRequestURI().startsWith(String.format("/%s", Version.API));
+        boolean publicAPI = request.getRequestURI().startsWith(String.format("/%s", Version.V3_BETA)) || request.getRequestURI().startsWith(String.format("/%s", Version.V3));;
         UUID apiRequestId = UUID.randomUUID();
         if (publicAPI) {
             UserWithRoles userWithRoles;

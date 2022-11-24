@@ -1,5 +1,6 @@
 /*
  * Copyright 2018 - 2021 Swiss Federal Institute of Technology Lausanne (EPFL)
+ * Copyright 2021 - 2022 EBRAINS AISBL
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,7 +21,7 @@
  * (Human Brain Project SGA1, SGA2 and SGA3).
  */
 
-package eu.ebrains.kg.core.api;
+package eu.ebrains.kg.core.api.v3beta;
 
 import eu.ebrains.kg.commons.AuthContext;
 import eu.ebrains.kg.commons.Version;
@@ -48,14 +49,14 @@ import org.springframework.web.bind.annotation.*;
  * The spaces API provides information about existing KG spaces
  */
 @RestController
-@RequestMapping(Version.API + "/spaces")
-public class Spaces {
+@RequestMapping(Version.V3_BETA + "/spaces")
+public class SpacesV3Beta {
 
     private final CoreInferenceController inferenceController;
     private final AuthContext authContext;
     private final CoreSpaceController spaceController;
 
-    public Spaces(CoreInferenceController inferenceController, AuthContext authContext, CoreSpaceController spaceController) {
+    public SpacesV3Beta(CoreInferenceController inferenceController, AuthContext authContext, CoreSpaceController spaceController) {
         this.inferenceController = inferenceController;
         this.authContext = authContext;
         this.spaceController = spaceController;

@@ -1,5 +1,6 @@
 /*
  * Copyright 2018 - 2021 Swiss Federal Institute of Technology Lausanne (EPFL)
+ * Copyright 2021 - 2022 EBRAINS AISBL
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,7 +27,7 @@ import eu.ebrains.kg.commons.jsonld.JsonLdDoc;
 import eu.ebrains.kg.commons.jsonld.NormalizedJsonLd;
 import eu.ebrains.kg.commons.model.ExtendedResponseConfiguration;
 import eu.ebrains.kg.commons.model.Result;
-import eu.ebrains.kg.core.api.Instances;
+import eu.ebrains.kg.core.api.v3.InstancesV3;
 import eu.ebrains.kg.core.api.instances.TestContext;
 import eu.ebrains.kg.testutils.TestDataFactory;
 import org.springframework.http.ResponseEntity;
@@ -40,12 +41,12 @@ public class ContributeToInstancePartialReplacementTest extends AbstractInstance
     private final ExtendedResponseConfiguration responseConfiguration;
     public static final String MANIPULATED_PROPERTY = TestDataFactory.DYNAMIC_FIELD_PREFIX + "0";
 
-    public ContributeToInstancePartialReplacementTest(TestContext testContext, Instances instances) {
+    public ContributeToInstancePartialReplacementTest(TestContext testContext, InstancesV3 instances) {
         super(testContext, instances);
         this.responseConfiguration = defaultResponseConfiguration;
     }
 
-    public ContributeToInstancePartialReplacementTest(TestContext testContext, Instances instances, ExtendedResponseConfiguration responseConfiguration) {
+    public ContributeToInstancePartialReplacementTest(TestContext testContext, InstancesV3 instances, ExtendedResponseConfiguration responseConfiguration) {
         super(testContext, instances);
         this.responseConfiguration = responseConfiguration;
     }

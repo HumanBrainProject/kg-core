@@ -1,5 +1,6 @@
 /*
  * Copyright 2018 - 2021 Swiss Federal Institute of Technology Lausanne (EPFL)
+ * Copyright 2021 - 2022 EBRAINS AISBL
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,10 +21,10 @@
  * (Human Brain Project SGA1, SGA2 and SGA3).
  */
 
-package eu.ebrains.kg.core.api;
+package eu.ebrains.kg.core.api.v3;
 
-import eu.ebrains.kg.commons.AuthContext;
 import eu.ebrains.kg.commons.Version;
+import eu.ebrains.kg.commons.api.APINaming;
 import eu.ebrains.kg.commons.api.GraphDBTypes;
 import eu.ebrains.kg.commons.config.openApiGroups.Admin;
 import eu.ebrains.kg.commons.config.openApiGroups.Advanced;
@@ -32,32 +33,34 @@ import eu.ebrains.kg.commons.jsonld.JsonLdId;
 import eu.ebrains.kg.commons.jsonld.NormalizedJsonLd;
 import eu.ebrains.kg.commons.markers.ExposesType;
 import eu.ebrains.kg.commons.markers.WritesData;
-import eu.ebrains.kg.commons.model.*;
+import eu.ebrains.kg.commons.model.PaginatedResult;
+import eu.ebrains.kg.commons.model.PaginationParam;
+import eu.ebrains.kg.commons.model.Result;
+import eu.ebrains.kg.commons.model.SpaceName;
 import eu.ebrains.kg.commons.model.external.types.TypeInformation;
 import eu.ebrains.kg.commons.semantics.vocabularies.EBRAINSVocabulary;
 import eu.ebrains.kg.core.model.ExposedStage;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springdoc.api.annotations.ParameterObject;
 import org.springframework.web.bind.annotation.*;
 
 import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
-import java.util.*;
+import java.util.List;
+import java.util.Map;
 
 /**
  * The types API allows to get information about the available types of instances including statistical values
  */
 @RestController
-@RequestMapping(Version.API)
-public class Types {
-
+@RequestMapping(Version.V3)
+public class TypesV3 {
     private final GraphDBTypes.Client graphDBTypes;
-    private final AuthContext authContext;
 
-    public Types(GraphDBTypes.Client graphDBTypes, AuthContext authContext) {
+    public TypesV3(GraphDBTypes.Client graphDBTypes) {
         this.graphDBTypes = graphDBTypes;
-        this.authContext = authContext;
     }
 
     @Operation(summary = "Returns the types available - either with property information or without")
@@ -66,11 +69,6 @@ public class Types {
     @Simple
     public PaginatedResult<TypeInformation> listTypes(@RequestParam("stage") ExposedStage stage, @RequestParam(value = "space", required = false) @Parameter(description = "The space by which the types should be filtered or \"" + SpaceName.PRIVATE_SPACE + "\" for your private space.") String space, @RequestParam(value = "withProperties", defaultValue = "false") boolean withProperties, @RequestParam(value = "withIncomingLinks", defaultValue = "false") boolean withIncomingLinks, @ParameterObject PaginationParam paginationParam) {
         return PaginatedResult.ok(graphDBTypes.listTypes(stage.getStage(), space, withProperties, withIncomingLinks, paginationParam));
-    }
-
-    private String getResolvedSpaceName(String space){
-        SpaceName spaceName = authContext.resolveSpaceName(space);
-        return spaceName!=null ? spaceName.getName() : null;
     }
 
     @Operation(summary = "Returns the types according to the list of names - either with property information or without")

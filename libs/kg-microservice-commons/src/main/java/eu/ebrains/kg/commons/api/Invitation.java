@@ -1,5 +1,6 @@
 /*
  * Copyright 2018 - 2021 Swiss Federal Institute of Technology Lausanne (EPFL)
+ * Copyright 2021 - 2022 EBRAINS AISBL
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,8 +23,6 @@
 
 package eu.ebrains.kg.commons.api;
 
-import eu.ebrains.kg.commons.model.ReducedUserInformation;
-
 import java.util.List;
 import java.util.UUID;
 
@@ -35,7 +34,7 @@ public interface Invitation {
 
     void revokeUserInvitation(UUID id, UUID userId);
 
-    List<ReducedUserInformation> listInvitations(UUID id);
+    List<String> listInvitedUserIds(UUID id);
 
     List<UUID> listInstances();
 

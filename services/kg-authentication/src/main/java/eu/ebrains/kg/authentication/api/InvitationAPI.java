@@ -1,5 +1,6 @@
 /*
  * Copyright 2018 - 2021 Swiss Federal Institute of Technology Lausanne (EPFL)
+ * Copyright 2021 - 2022 EBRAINS AISBL
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -59,10 +60,9 @@ public class InvitationAPI implements eu.ebrains.kg.commons.api.Invitation.Clien
     }
 
     @Override
-    public List<ReducedUserInformation> listInvitations(UUID id) {
+    public List<String> listInvitedUserIds(UUID id) {
         if(id!=null){
-            final List<Invitation> allInvitationsByInstanceId = authenticationRepository.getAllInvitationsByInstanceId(id.toString());
-            return allInvitationsByInstanceId.stream().map(i -> keycloakController.getUserById(i.getUserId())).filter(Objects::nonNull).toList();
+            return authenticationRepository.getAllInvitationsByInstanceId(id.toString()).stream().map(Invitation::getUserId).toList();
         }
         return Collections.emptyList();
     }

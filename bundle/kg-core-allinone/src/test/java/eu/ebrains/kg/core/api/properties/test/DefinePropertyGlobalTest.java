@@ -1,5 +1,6 @@
 /*
  * Copyright 2018 - 2021 Swiss Federal Institute of Technology Lausanne (EPFL)
+ * Copyright 2021 - 2022 EBRAINS AISBL
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,23 +26,23 @@ package eu.ebrains.kg.core.api.properties.test;
 import eu.ebrains.kg.commons.jsonld.NormalizedJsonLd;
 import eu.ebrains.kg.commons.model.ExtendedResponseConfiguration;
 import eu.ebrains.kg.core.api.AbstractTest;
-import eu.ebrains.kg.core.api.Instances;
-import eu.ebrains.kg.core.api.Properties;
+import eu.ebrains.kg.core.api.v3.InstancesV3;
+import eu.ebrains.kg.core.api.v3.PropertiesV3;
 import eu.ebrains.kg.core.api.instances.TestContext;
 import eu.ebrains.kg.testutils.TestDataFactory;
 
 @SuppressWarnings("java:S2187") //We don't add "tests" to these classes because they are test abstractions and are used in other tests
 public class DefinePropertyGlobalTest extends AbstractTest {
 
-    private final Instances instances;
-    private final Properties properties;
+    private final InstancesV3 instances;
+    private final PropertiesV3 properties;
 
     public NormalizedJsonLd instance;
     public String property;
     public String type;
 
 
-    public DefinePropertyGlobalTest(TestContext testContext, Instances instances, Properties properties) {
+    public DefinePropertyGlobalTest(TestContext testContext, InstancesV3 instances, PropertiesV3 properties) {
         super(testContext);
         this.instances = instances;
         this.properties = properties;

@@ -1,5 +1,6 @@
 /*
  * Copyright 2018 - 2021 Swiss Federal Institute of Technology Lausanne (EPFL)
+ * Copyright 2021 - 2022 EBRAINS AISBL
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,19 +27,19 @@ import eu.ebrains.kg.commons.model.ExtendedResponseConfiguration;
 import eu.ebrains.kg.commons.model.Result;
 import eu.ebrains.kg.commons.model.external.spaces.SpaceInformation;
 import eu.ebrains.kg.core.api.AbstractTest;
-import eu.ebrains.kg.core.api.Instances;
-import eu.ebrains.kg.core.api.Spaces;
+import eu.ebrains.kg.core.api.v3.InstancesV3;
+import eu.ebrains.kg.core.api.v3.SpacesV3;
 import eu.ebrains.kg.core.api.instances.TestContext;
 import eu.ebrains.kg.testutils.TestDataFactory;
 
 @SuppressWarnings("java:S2187") //We don't add "tests" to these classes because they are test abstractions and are used in other tests
 public class GetSpaceWithPermissionsTest extends AbstractTest {
 
-    private final Instances instances;
-    private final Spaces spaces;
+    private final InstancesV3 instances;
+    private final SpacesV3 spaces;
     public Result<SpaceInformation> space;
 
-    public GetSpaceWithPermissionsTest(TestContext testContext, Instances instances, Spaces spaces) {
+    public GetSpaceWithPermissionsTest(TestContext testContext, InstancesV3 instances, SpacesV3 spaces) {
         super(testContext);
         this.instances = instances;
         this.spaces = spaces;

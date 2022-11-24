@@ -1,5 +1,6 @@
 /*
  * Copyright 2018 - 2021 Swiss Federal Institute of Technology Lausanne (EPFL)
+ * Copyright 2021 - 2022 EBRAINS AISBL
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,12 +25,13 @@ package eu.ebrains.kg.core.api;
 
 import eu.ebrains.kg.commons.api.GraphDBTypes;
 import eu.ebrains.kg.commons.jsonld.NormalizedJsonLd;
+import eu.ebrains.kg.core.api.v3.PropertiesV3;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 
 class PropertiesTest {
-    Properties instance = new Properties(Mockito.mock(GraphDBTypes.Client.class));
+    PropertiesV3 instance = new PropertiesV3(Mockito.mock(GraphDBTypes.Client.class));
 
     @BeforeEach
     public void init(){

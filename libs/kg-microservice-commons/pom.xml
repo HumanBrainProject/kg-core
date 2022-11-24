@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
   ~ Copyright 2018 - 2021 Swiss Federal Institute of Technology Lausanne (EPFL)
+  ~ Copyright 2021 - 2022 EBRAINS AISBL
   ~
   ~ Licensed under the Apache License, Version 2.0 (the "License");
   ~ you may not use this file except in compliance with the License.
@@ -72,7 +73,7 @@
         <dependency>
             <groupId>org.springdoc</groupId>
             <artifactId>springdoc-openapi-ui</artifactId>
-            <version>1.6.12</version>
+            <version>1.6.13</version>
         </dependency>
         <dependency>
             <groupId>eu.ebrains.kg</groupId>

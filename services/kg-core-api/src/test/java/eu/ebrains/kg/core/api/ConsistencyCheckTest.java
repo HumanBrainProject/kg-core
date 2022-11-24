@@ -1,5 +1,6 @@
 /*
  * Copyright 2018 - 2021 Swiss Federal Institute of Technology Lausanne (EPFL)
+ * Copyright 2021 - 2022 EBRAINS AISBL
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -33,6 +34,8 @@ import eu.ebrains.kg.commons.model.ResponseConfiguration;
 import eu.ebrains.kg.commons.model.Result;
 import eu.ebrains.kg.commons.model.external.types.TypeInformation;
 import eu.ebrains.kg.commons.semantics.vocabularies.SchemaOrgVocabulary;
+import eu.ebrains.kg.core.api.v3.InstancesV3;
+import eu.ebrains.kg.core.api.v3.TypesV3;
 import eu.ebrains.kg.core.model.ExposedStage;
 import eu.ebrains.kg.test.TestCategories;
 import org.junit.jupiter.api.Disabled;
@@ -55,11 +58,11 @@ import static org.junit.jupiter.api.Assertions.*;
 @Tag(TestCategories.API)
 class ConsistencyCheckTest {
     @Autowired
-    Instances instances;
+    InstancesV3 instances;
     @Autowired
     IdUtils idUtils;
     @Autowired
-    Types types;
+    TypesV3 types;
     PaginationParam EMPTY_PAGINATION = new PaginationParam();
     ExtendedResponseConfiguration DEFAULT_RESPONSE_CONFIG = new ExtendedResponseConfiguration();
     int createInstances = 10;

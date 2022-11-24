@@ -1,5 +1,6 @@
 /*
  * Copyright 2018 - 2021 Swiss Federal Institute of Technology Lausanne (EPFL)
+ * Copyright 2021 - 2022 EBRAINS AISBL
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,10 +21,11 @@
  * (Human Brain Project SGA1, SGA2 and SGA3).
  */
 
-package eu.ebrains.kg.core.api;
+package eu.ebrains.kg.core.api.v3;
 
 import eu.ebrains.kg.commons.AuthContext;
 import eu.ebrains.kg.commons.Version;
+import eu.ebrains.kg.commons.api.APINaming;
 import eu.ebrains.kg.commons.api.GraphDBInstances;
 import eu.ebrains.kg.commons.api.JsonLd;
 import eu.ebrains.kg.commons.api.Release;
@@ -32,7 +34,9 @@ import eu.ebrains.kg.commons.config.openApiGroups.Advanced;
 import eu.ebrains.kg.commons.config.openApiGroups.Extra;
 import eu.ebrains.kg.commons.config.openApiGroups.Simple;
 import eu.ebrains.kg.commons.exception.InvalidRequestException;
-import eu.ebrains.kg.commons.jsonld.*;
+import eu.ebrains.kg.commons.jsonld.InstanceId;
+import eu.ebrains.kg.commons.jsonld.JsonLdDoc;
+import eu.ebrains.kg.commons.jsonld.NormalizedJsonLd;
 import eu.ebrains.kg.commons.markers.*;
 import eu.ebrains.kg.commons.model.*;
 import eu.ebrains.kg.commons.params.ReleaseTreeScope;
@@ -43,10 +47,13 @@ import eu.ebrains.kg.core.controller.VirtualSpaceController;
 import eu.ebrains.kg.core.model.ExposedStage;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.extensions.Extension;
+import io.swagger.v3.oas.annotations.extensions.ExtensionProperty;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.ExampleObject;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springdoc.api.annotations.ParameterObject;
@@ -63,8 +70,9 @@ import java.util.stream.Collectors;
  * The instance API manages the CCRUD (Create, Contribute, Read, Update, Delete) operations for individual entity representations
  */
 @RestController
-@RequestMapping(Version.API)
-public class Instances {
+@RequestMapping(Version.V3)
+public class InstancesV3 {
+
     private final CoreInstanceController instanceController;
     private final Release.Client release;
     private final AuthContext authContext;
@@ -75,7 +83,7 @@ public class Instances {
 
     private final Logger logger = LoggerFactory.getLogger(getClass());
 
-    public Instances(CoreInstanceController instanceController, Release.Client release, AuthContext authContext, GraphDBInstances.Client graphDBInstances, IdsController idsController, VirtualSpaceController virtualSpaceController, JsonLd.Client jsonLd) {
+    public InstancesV3(CoreInstanceController instanceController, Release.Client release, AuthContext authContext, GraphDBInstances.Client graphDBInstances, IdsController idsController, VirtualSpaceController virtualSpaceController, JsonLd.Client jsonLd) {
         this.instanceController = instanceController;
         this.release = release;
         this.authContext = authContext;
@@ -444,8 +452,8 @@ public class Instances {
     @Operation(summary = "List invitations for review for the given instance")
     @GetMapping("/instances/{id}/invitedUsers")
     @Advanced
-    public Result<List<ReducedUserInformation>> listInvitations(@PathVariable("id") UUID id) {
-        return Result.ok(instanceController.listInvitations(id));
+    public Result<List<String>> listInvitations(@PathVariable("id") UUID id) {
+        return Result.ok(instanceController.listInvitedUserIds(id));
     }
 
     @Operation(summary = "Update invitation scope for this instance")

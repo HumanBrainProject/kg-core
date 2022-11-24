@@ -1,5 +1,6 @@
 /*
  * Copyright 2018 - 2021 Swiss Federal Institute of Technology Lausanne (EPFL)
+ * Copyright 2021 - 2022 EBRAINS AISBL
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,7 +25,7 @@ package eu.ebrains.kg.core.api.instances.tests;
 
 import eu.ebrains.kg.commons.jsonld.NormalizedJsonLd;
 import eu.ebrains.kg.commons.model.PaginatedResult;
-import eu.ebrains.kg.core.api.Instances;
+import eu.ebrains.kg.core.api.v3.InstancesV3;
 import eu.ebrains.kg.core.api.instances.TestContext;
 import eu.ebrains.kg.core.model.ExposedStage;
 
@@ -37,22 +38,22 @@ public class GetInstancesTest extends AbstractInstanceTest {
     private String type;
     private String space = null;
 
-    private GetInstancesTest(TestContext testContext, Instances instances) {
+    private GetInstancesTest(TestContext testContext, InstancesV3 instances) {
         super(testContext, instances);
     }
 
-    public static GetInstancesTest getInstancesWithExistingType(TestContext testContext, Instances instances){
+    public static GetInstancesTest getInstancesWithExistingType(TestContext testContext, InstancesV3 instances){
         return new GetInstancesTest(testContext, instances);
     }
 
 
-    public static GetInstancesTest getInstancesByType(TestContext testContext, Instances instances, String type){
+    public static GetInstancesTest getInstancesByType(TestContext testContext, InstancesV3 instances, String type){
         final GetInstancesTest test = getInstancesWithExistingType(testContext, instances);
         test.type = type;
         return test;
     }
 
-    public static GetInstancesTest getInstancesByTypeAndSpace(TestContext testContext, Instances instances, String type, String space){
+    public static GetInstancesTest getInstancesByTypeAndSpace(TestContext testContext, InstancesV3 instances, String type, String space){
         final GetInstancesTest test = getInstancesByType(testContext, instances, type);
         test.space = space;
         return test;

@@ -1,5 +1,6 @@
 /*
  * Copyright 2018 - 2021 Swiss Federal Institute of Technology Lausanne (EPFL)
+ * Copyright 2021 - 2022 EBRAINS AISBL
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -36,7 +37,6 @@ import eu.ebrains.kg.commons.model.PaginationParam;
 import eu.ebrains.kg.commons.permission.roles.Role;
 import eu.ebrains.kg.commons.permission.roles.RoleMapping;
 import eu.ebrains.kg.core.api.instances.TestContext;
-import org.keycloak.admin.client.Keycloak;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
@@ -61,13 +61,9 @@ public abstract class AbstractSystemTest {
     @MockBean
     protected AuthTokenContext authTokenContext;
 
-
     @MockBean
     protected AuthenticationAPI authenticationAPI;
 
-    //We mock the keycloak bean to prevent it to initialize
-    @MockBean
-    Keycloak keycloak;
 
     //We mock the keycloak controller bean to prevent it to initialize
     @MockBean

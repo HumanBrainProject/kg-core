@@ -1,5 +1,6 @@
 /*
  * Copyright 2018 - 2021 Swiss Federal Institute of Technology Lausanne (EPFL)
+ * Copyright 2021 - 2022 EBRAINS AISBL
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -48,7 +49,7 @@ public class DefaultPage {
 
     @GetMapping("/")
     public String defaultPage(Model model) {
-        model.addAttribute("appname", this.applicationName + " " + Version.API);
+        model.addAttribute("appname", this.applicationName);
         model.addAttribute("currentYear", ZonedDateTime.now().getYear());
         return "defaultPage";
     }

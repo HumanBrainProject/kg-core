@@ -1,5 +1,6 @@
 /*
  * Copyright 2018 - 2021 Swiss Federal Institute of Technology Lausanne (EPFL)
+ * Copyright 2021 - 2022 EBRAINS AISBL
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,7 +21,7 @@
  * (Human Brain Project SGA1, SGA2 and SGA3).
  */
 
-package eu.ebrains.kg.core.api;
+package eu.ebrains.kg.core.api.v3beta;
 
 import eu.ebrains.kg.commons.Version;
 import eu.ebrains.kg.commons.api.GraphDBTypes;
@@ -40,12 +41,12 @@ import java.nio.charset.StandardCharsets;
  * The property API allows to add meta information about semantic properties either globally or by type for the requesting client.
  */
 @RestController
-@RequestMapping(Version.API)
+@RequestMapping(Version.V3_BETA)
 @Admin
-public class Properties {
+public class PropertiesV3Beta {
     private final GraphDBTypes.Client graphDBTypes;
 
-    public Properties(GraphDBTypes.Client graphDBTypes) {
+    public PropertiesV3Beta(GraphDBTypes.Client graphDBTypes) {
         this.graphDBTypes = graphDBTypes;
     }
 

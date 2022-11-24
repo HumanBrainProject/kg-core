@@ -1,5 +1,6 @@
 /*
  * Copyright 2018 - 2021 Swiss Federal Institute of Technology Lausanne (EPFL)
+ * Copyright 2021 - 2022 EBRAINS AISBL
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,8 +29,8 @@ import eu.ebrains.kg.commons.model.SpaceName;
 import eu.ebrains.kg.commons.permission.roles.Role;
 import eu.ebrains.kg.commons.permission.roles.RoleMapping;
 import eu.ebrains.kg.commons.semantics.vocabularies.SchemaOrgVocabulary;
-import eu.ebrains.kg.core.api.Instances;
-import eu.ebrains.kg.core.api.Queries;
+import eu.ebrains.kg.core.api.v3.InstancesV3;
+import eu.ebrains.kg.core.api.v3.QueriesV3;
 import eu.ebrains.kg.core.api.queries.tests.TestSimpleQueryTest;
 import eu.ebrains.kg.core.model.ExposedStage;
 import eu.ebrains.kg.testutils.AbstractFunctionalityTest;
@@ -46,10 +47,10 @@ import static org.junit.jupiter.api.Assertions.*;
 class QueriesTest extends AbstractFunctionalityTest {
 
     @Autowired
-    Instances instances;
+    InstancesV3 instances;
 
     @Autowired
-    Queries queries;
+    QueriesV3 queries;
 
     private static List<Tuple<RoleMapping, RoleMapping>> roleCombinations(List<RoleMapping> roleMappingsA, List<RoleMapping> roleMappingsB) {
         List<Tuple<RoleMapping, RoleMapping>> result = new ArrayList<>();

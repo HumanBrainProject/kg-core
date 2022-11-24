@@ -1,5 +1,6 @@
 /*
  * Copyright 2018 - 2021 Swiss Federal Institute of Technology Lausanne (EPFL)
+ * Copyright 2021 - 2022 EBRAINS AISBL
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,22 +29,8 @@ import org.springframework.context.annotation.Configuration;
 @Configuration
 public class KeycloakConfig {
 
-    @Value("${eu.ebrains.kg.authentication.keycloak.kgCore.clientSecret}")
-    String kgCoreClientSecret;
-
-    @Value("${eu.ebrains.kg.authentication.keycloak.kgCore.clientId}")
-    String kgCoreClientId;
-
     @Value("${eu.ebrains.kg.authentication.keycloak.configUrl}")
     String configUrl;
-
-    public String getKgCoreClientSecret() {
-        return kgCoreClientSecret;
-    }
-
-    public String getKgCoreClientId() {
-        return kgCoreClientId;
-    }
 
     public String getConfigUrl() {
         return configUrl;

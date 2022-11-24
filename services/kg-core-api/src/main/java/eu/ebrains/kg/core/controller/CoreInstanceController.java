@@ -1,5 +1,6 @@
 /*
  * Copyright 2018 - 2021 Swiss Federal Institute of Technology Lausanne (EPFL)
+ * Copyright 2021 - 2022 EBRAINS AISBL
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -101,13 +102,13 @@ public class CoreInstanceController {
         this.invitation.revokeUserInvitation(instanceId, userId);
     }
 
-    public List<ReducedUserInformation> listInvitations(UUID instanceId) {
+    public List<String> listInvitedUserIds(UUID instanceId) {
         //TODO move permission check to authentication module
         final InstanceId resolvedInstanceId = resolveIdOrThrowException(instanceId);
         if (!permissions.hasPermission(authContext.getUserWithRoles(), Functionality.INVITE_FOR_REVIEW, resolvedInstanceId.getSpace(), instanceId)) {
             throw new UnauthorizedException("You don't have the right to list the invitations for this instance");
         }
-        return this.invitation.listInvitations(instanceId);
+        return this.invitation.listInvitedUserIds(instanceId);
     }
 
     public List<UUID> listInstancesWithInvitations() {

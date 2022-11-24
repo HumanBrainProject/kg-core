@@ -1,5 +1,6 @@
 /*
  * Copyright 2018 - 2021 Swiss Federal Institute of Technology Lausanne (EPFL)
+ * Copyright 2021 - 2022 EBRAINS AISBL
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -135,23 +136,6 @@ public class AuthenticationAPI implements Authentication.Client {
         }
     }
 
-    @Override
-    public User getOtherUserInfo(String nativeId) {
-        return keycloakController.getOtherUserInfo(nativeId);
-    }
-
-    @Override
-    public List<User> getUsersByAttribute(String attribute, String value) {
-        return keycloakController.getUsersByAttribute(attribute, value);
-    }
-
-    @Override
-    public List<ReducedUserInformation> findUsers(String search) {
-        if(!permissions.hasGlobalPermission(this.getRoles(false), Functionality.LIST_USERS_LIMITED)){
-            throw new UnauthorizedException("You don't have the rights to list users");
-        }
-        return keycloakController.findUsers(search);
-    }
 
     @Override
     public TermsOfUseResult getTermsOfUse() {

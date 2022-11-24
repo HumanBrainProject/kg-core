@@ -1,5 +1,6 @@
 /*
  * Copyright 2018 - 2021 Swiss Federal Institute of Technology Lausanne (EPFL)
+ * Copyright 2021 - 2022 EBRAINS AISBL
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,9 +30,9 @@ import eu.ebrains.kg.commons.model.external.types.TypeInformation;
 import eu.ebrains.kg.commons.permission.roles.RoleMapping;
 import eu.ebrains.kg.commons.semantics.vocabularies.EBRAINSVocabulary;
 import eu.ebrains.kg.commons.semantics.vocabularies.SchemaOrgVocabulary;
-import eu.ebrains.kg.core.api.Instances;
-import eu.ebrains.kg.core.api.Properties;
-import eu.ebrains.kg.core.api.Types;
+import eu.ebrains.kg.core.api.v3.InstancesV3;
+import eu.ebrains.kg.core.api.v3.PropertiesV3;
+import eu.ebrains.kg.core.api.v3.TypesV3;
 import eu.ebrains.kg.core.api.properties.test.DefinePropertyGlobalTest;
 import eu.ebrains.kg.core.model.ExposedStage;
 import eu.ebrains.kg.testutils.AbstractFunctionalityTest;
@@ -47,13 +48,13 @@ import static org.junit.jupiter.api.Assertions.*;
 class PropertiesTest extends AbstractFunctionalityTest {
 
     @Autowired
-    Types types;
+    TypesV3 types;
 
     @Autowired
-    Properties properties;
+    PropertiesV3 properties;
 
     @Autowired
-    Instances instances;
+    InstancesV3 instances;
 
     private final static RoleMapping[] PROPERTY_DEFINITION_ROLES = new RoleMapping[]{RoleMapping.ADMIN};
     private final static RoleMapping[] NON_PROPERTY_DEFINITION_ROLES = RoleMapping.getRemainingUserRoles(PROPERTY_DEFINITION_ROLES);

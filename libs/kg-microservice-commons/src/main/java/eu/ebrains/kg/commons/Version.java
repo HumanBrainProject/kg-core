@@ -1,5 +1,6 @@
 /*
  * Copyright 2018 - 2021 Swiss Federal Institute of Technology Lausanne (EPFL)
+ * Copyright 2021 - 2022 EBRAINS AISBL
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,5 +30,6 @@ public class Version {
     private Version() {
     }
 
-    public final static String API = "v3-beta";
+    public final static String V3_BETA = "v3-beta";
+    public final static String V3 = "v3";
 }

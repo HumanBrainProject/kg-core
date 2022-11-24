@@ -1,5 +1,6 @@
 /*
  * Copyright 2018 - 2021 Swiss Federal Institute of Technology Lausanne (EPFL)
+ * Copyright 2021 - 2022 EBRAINS AISBL
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,15 +21,17 @@
  * (Human Brain Project SGA1, SGA2 and SGA3).
  */
 
-package eu.ebrains.kg.core.api;
+package eu.ebrains.kg.core.api.v3;
 
 import eu.ebrains.kg.commons.Version;
+import eu.ebrains.kg.commons.api.APINaming;
 import eu.ebrains.kg.commons.api.JsonLd;
 import eu.ebrains.kg.commons.config.openApiGroups.Simple;
 import eu.ebrains.kg.commons.jsonld.JsonLdDoc;
 import eu.ebrains.kg.commons.jsonld.NormalizedJsonLd;
 import eu.ebrains.kg.commons.markers.ExposesInputWithoutEnrichedSensitiveData;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -38,11 +41,12 @@ import org.springframework.web.bind.annotation.RestController;
  * The spaces API provides information about existing KG spaces
  */
 @RestController
-@RequestMapping(Version.API + "/jsonld")
-public class JsonLD {
+@RequestMapping(Version.V3 + "/jsonld")
+public class JsonLDV3 {
+
     private final JsonLd.Client jsonLd;
 
-    public JsonLD(JsonLd.Client jsonLd) {
+    public JsonLDV3(JsonLd.Client jsonLd) {
         this.jsonLd = jsonLd;
     }
 

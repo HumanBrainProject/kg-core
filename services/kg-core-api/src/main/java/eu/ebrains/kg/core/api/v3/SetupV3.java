@@ -1,5 +1,6 @@
 /*
  * Copyright 2018 - 2021 Swiss Federal Institute of Technology Lausanne (EPFL)
+ * Copyright 2021 - 2022 EBRAINS AISBL
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,36 +21,34 @@
  * (Human Brain Project SGA1, SGA2 and SGA3).
  */
 
-package eu.ebrains.kg.core.api;
+package eu.ebrains.kg.core.api.v3;
 
 import eu.ebrains.kg.commons.Version;
+import eu.ebrains.kg.commons.api.APINaming;
 import eu.ebrains.kg.commons.api.Authentication;
 import eu.ebrains.kg.commons.config.openApiGroups.Admin;
+import eu.ebrains.kg.commons.config.openApiGroups.Simple;
 import eu.ebrains.kg.commons.jsonld.JsonLdDoc;
-import eu.ebrains.kg.commons.model.TermsOfUse;
+import eu.ebrains.kg.commons.markers.ExposesConfigurationInformation;
+import eu.ebrains.kg.commons.model.Result;
 import eu.ebrains.kg.commons.permission.roles.RoleMapping;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.security.SecurityRequirements;
+import io.swagger.v3.oas.annotations.tags.Tag;
+import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 import java.util.Map;
 
 @RestController
-@RequestMapping(Version.API+"/setup")
-public class Setup {
+@RequestMapping(Version.V3 +"/setup")
+public class SetupV3 {
 
     private final Authentication.Client authentication;
 
-    public Setup(Authentication.Client authentication) {
+    public SetupV3(Authentication.Client authentication) {
         this.authentication = authentication;
-    }
-
-    @Operation(hidden = true)
-    @PutMapping("/termsOfUse")
-    @Admin
-    @Deprecated(forRemoval = true)
-    public void registerTermsOfUse(@RequestBody TermsOfUse termsOfUse){
-        authentication.registerTermsOfUse(termsOfUse);
     }
 
     @PatchMapping("/permissions/{role}")
@@ -69,4 +68,16 @@ public class Setup {
     public List<JsonLdDoc> getAllRoleDefinitions() {
         return authentication.getAllRoleDefinitions();
     }
+
+    @Operation(summary = "Get the endpoint of the configured openid configuration")
+    @GetMapping(value = "/authentication", produces = MediaType.APPLICATION_JSON_VALUE)
+    @ExposesConfigurationInformation
+    @SecurityRequirements
+    @Simple
+    public Result<JsonLdDoc> getOpenIdConfigUrl() {
+        JsonLdDoc ld = new JsonLdDoc();
+        ld.addProperty("endpoint", authentication.openIdConfigUrl());
+        return Result.ok(ld);
+    }
+
 }

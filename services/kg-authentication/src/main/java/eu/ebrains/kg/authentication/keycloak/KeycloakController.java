@@ -1,5 +1,6 @@
 /*
  * Copyright 2018 - 2021 Swiss Federal Institute of Technology Lausanne (EPFL)
+ * Copyright 2021 - 2022 EBRAINS AISBL
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,17 +30,13 @@ import eu.ebrains.kg.authentication.model.UserOrClientProfile;
 import eu.ebrains.kg.commons.AuthTokenContext;
 import eu.ebrains.kg.commons.AuthTokens;
 import eu.ebrains.kg.commons.exception.UnauthorizedException;
-import eu.ebrains.kg.commons.model.ReducedUserInformation;
 import eu.ebrains.kg.commons.model.User;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
-import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.BodyInserters;
 import org.springframework.web.reactive.function.client.WebClient;
 
-import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 @ConditionalOnProperty(value = "eu.ebrains.kg.test", havingValue = "false", matchIfMissing = true)
 @Component
@@ -51,17 +48,14 @@ public class KeycloakController {
 
     private final AuthTokenContext authTokenContext;
 
-    private final KeycloakUsers keycloakUsers;
-
     private final JWTVerifier jwtVerifier;
 
     private final UserInfoMapping userInfoMapping;
 
 
-    public KeycloakController(KeycloakClient keycloakClient, AuthTokenContext authTokenContext, KeycloakUsers keycloakUsers, UserInfoMapping userInfoMapping) {
+    public KeycloakController(KeycloakClient keycloakClient, AuthTokenContext authTokenContext, UserInfoMapping userInfoMapping) {
         this.keycloakClient = keycloakClient;
         this.authTokenContext = authTokenContext;
-        this.keycloakUsers = keycloakUsers;
         this.jwtVerifier = keycloakClient.getJWTVerifier(); // Reusable verifier instance
         this.userInfoMapping = userInfoMapping;
     }
@@ -76,33 +70,6 @@ public class KeycloakController {
         }
         return null;
     }
-
-    public User getOtherUserInfo(String id){
-        return keycloakUsers.getOtherUserInfo(id);
-    }
-
-    public ReducedUserInformation getUserById(String userId){
-        return keycloakUsers.getUserById(userId);
-    }
-
-    public List<ReducedUserInformation> findUsers(String search){
-        return keycloakUsers.findUser(search);
-    }
-
-    @Cacheable(value = "usersByAttribute")
-    public List<User> getUsersByAttribute(String attribute, String value) {
-        return keycloakUsers.getAllUsers().stream().filter(user -> {
-            if (user.getAttributes() != null) {
-                List<String> values = user.getAttributes().get(attribute);
-                return values != null && values.contains(value);
-            }
-            return false;
-        }).map(userRepresentation -> new User(userRepresentation.getUsername(), userRepresentation.getFirstName() + " " + userRepresentation.getLastName(),
-                //We explicitly do not share the email address if requested. The name should be sufficient to identify the person.
-                null
-                , userRepresentation.getFirstName(), userRepresentation.getLastName(), userRepresentation.getId())).toList();
-    }
-
 
     public UserOrClientProfile getClientProfile(boolean fetchRoles) {
         AuthTokens authTokens = authTokenContext.getAuthTokens();

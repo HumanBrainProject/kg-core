@@ -1,5 +1,6 @@
 /*
  * Copyright 2018 - 2021 Swiss Federal Institute of Technology Lausanne (EPFL)
+ * Copyright 2021 - 2022 EBRAINS AISBL
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,22 +21,23 @@
  * (Human Brain Project SGA1, SGA2 and SGA3).
  */
 
-package eu.ebrains.kg.authentication.keycloak;
+package eu.ebrains.kg.commons.api;
 
-import org.keycloak.OAuth2Constants;
-import org.keycloak.admin.client.Keycloak;
-import org.keycloak.admin.client.KeycloakBuilder;
-import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
+import io.swagger.v3.oas.models.tags.Tag;
 
-@Configuration
-public class KeycloakAdminConfig {
+import java.util.Arrays;
+import java.util.List;
 
-    @Bean
-    public Keycloak createKeycloak(KeycloakConfig config, KeycloakClient keycloakClient) {
-        return KeycloakBuilder.builder().grantType(OAuth2Constants.CLIENT_CREDENTIALS).
-                clientSecret(config.getKgCoreClientSecret()).clientId(config.getKgCoreClientId()).
-                serverUrl(keycloakClient.getServerUrl()).realm(keycloakClient.getRealm()).build();
+public class APINaming {
+
+    public static final String BASIC = "1 Basic";
+    public static final String ADVANCED = "2 Advanced";
+    public static final String ADMIN = "3 Admin";
+
+
+    public static List<Tag> orderedTags(){
+        return Arrays.asList(new Tag().name(APINaming.BASIC).description("The most used end-points to interact with the EBRAINS KG"),
+                new Tag().name(APINaming.ADVANCED).description("Some advanced endpoints allowing you e.g. to apply bulk manipulations and run operations which are going beyond standard meta-data management"),
+                new Tag().name(APINaming.ADMIN).description("Endpoints for the administration of the EBRAINS KG. Please note, that you won't be able to invoke those endpoints unless you are a global administrator."));
     }
-
 }

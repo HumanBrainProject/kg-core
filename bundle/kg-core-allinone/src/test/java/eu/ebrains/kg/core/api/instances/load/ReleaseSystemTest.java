@@ -1,5 +1,6 @@
 /*
  * Copyright 2018 - 2021 Swiss Federal Institute of Technology Lausanne (EPFL)
+ * Copyright 2021 - 2022 EBRAINS AISBL
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,7 +29,7 @@ import eu.ebrains.kg.commons.jsonld.JsonLdDoc;
 import eu.ebrains.kg.commons.jsonld.JsonLdId;
 import eu.ebrains.kg.commons.jsonld.NormalizedJsonLd;
 import eu.ebrains.kg.commons.model.Result;
-import eu.ebrains.kg.core.api.Instances;
+import eu.ebrains.kg.core.api.v3.InstancesV3;
 import eu.ebrains.kg.core.model.ExposedStage;
 import eu.ebrains.kg.testutils.TestDataFactory;
 import org.junit.jupiter.api.Test;
@@ -46,7 +47,7 @@ import java.util.concurrent.TimeUnit;
 class ReleaseSystemTest extends AbstractInstancesLoadTest {
 
     @Autowired
-    private Instances instances;
+    private InstancesV3 instances;
 
     @Autowired
     private IdUtils idUtils;
@@ -108,9 +109,9 @@ class ReleaseSystemTest extends AbstractInstancesLoadTest {
             JsonLdId id = l.get(i).getBody().getData().id();
             IndexedJsonLdDoc from = IndexedJsonLdDoc.from(l.get(i).getBody().getData());
             ResponseEntity<Result<Void>> resultResponseEntity = instances.releaseInstance(idUtils.getUUID(id), from.getRevision());
-            System.out.println(String.format("Result %d: %d ms", i, resultResponseEntity.getBody().getDurationInMs()));
+            System.out.printf("Result %d: %d ms%n", i, resultResponseEntity.getBody().getDurationInMs());
         }
-        System.out.println(String.format("Total time for %d releases: %d ms", batchInsertion, new Date().getTime() - startTime));
+        System.out.printf("Total time for %d releases: %d ms%n", batchInsertion, new Date().getTime() - startTime);
     }
 
     @Test
@@ -123,9 +124,9 @@ class ReleaseSystemTest extends AbstractInstancesLoadTest {
         for (int i = 0; i < allInstancesFromInProgress.size(); i++) {
             Mockito.doReturn(i).when(testInformation).getExecutionNumber();
             ResponseEntity<Result<Void>> resultResponseEntity = instances.unreleaseInstance(idUtils.getUUID(allInstancesFromInProgress.get(i).id()));
-            System.out.println(String.format("Result %d: %d ms", i, resultResponseEntity.getBody().getDurationInMs()));
+            System.out.printf("Result %d: %d ms%n", i, resultResponseEntity.getBody().getDurationInMs());
         }
-        System.out.println(String.format("Total time for %d unreleases: %d ms", batchInsertion, new Date().getTime() - startTime));
+        System.out.printf("Total time for %d unreleases: %d ms%n", batchInsertion, new Date().getTime() - startTime);
     }
 
 }

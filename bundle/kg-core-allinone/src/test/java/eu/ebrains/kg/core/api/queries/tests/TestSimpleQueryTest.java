@@ -1,5 +1,6 @@
 /*
  * Copyright 2018 - 2021 Swiss Federal Institute of Technology Lausanne (EPFL)
+ * Copyright 2021 - 2022 EBRAINS AISBL
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,9 +28,11 @@ import eu.ebrains.kg.commons.jsonld.JsonLdDoc;
 import eu.ebrains.kg.commons.jsonld.NormalizedJsonLd;
 import eu.ebrains.kg.commons.model.PaginatedStreamResult;
 import eu.ebrains.kg.core.api.AbstractTest;
-import eu.ebrains.kg.core.api.Instances;
-import eu.ebrains.kg.core.api.Queries;
+import eu.ebrains.kg.core.api.v3.InstancesV3;
+import eu.ebrains.kg.core.api.v3.QueriesV3;
 import eu.ebrains.kg.core.api.instances.TestContext;
+import eu.ebrains.kg.core.api.v3beta.InstancesV3Beta;
+import eu.ebrains.kg.core.api.v3beta.QueriesV3Beta;
 import eu.ebrains.kg.core.model.ExposedStage;
 import eu.ebrains.kg.testutils.TestDataFactory;
 
@@ -39,8 +42,8 @@ import java.util.*;
 @SuppressWarnings("java:S2187") //We don't add "tests" to these classes because they are test abstractions and are used in other tests
 public class TestSimpleQueryTest extends AbstractTest {
 
-    private final Queries queries;
-    private final Instances instances;
+    private final QueriesV3 queries;
+    private final InstancesV3 instances;
     private final boolean release;
     public NormalizedJsonLd instanceA;
     public NormalizedJsonLd instanceArelated;
@@ -102,7 +105,7 @@ public class TestSimpleQueryTest extends AbstractTest {
             "}";
 
 
-    public TestSimpleQueryTest(TestContext testContext, Queries queries, Instances instances, ExposedStage stage, boolean release)  throws IOException
+    public TestSimpleQueryTest(TestContext testContext, QueriesV3 queries, InstancesV3 instances, ExposedStage stage, boolean release)  throws IOException
     {
         super(testContext);
         this.instances = instances;
@@ -135,6 +138,6 @@ public class TestSimpleQueryTest extends AbstractTest {
 
     @Override
     protected void run() {
-         response = queries.testQuery(this.query, defaultPaginationParam, stage, null, null, new HashMap<>());
+         response = queries.runDynamicQuery(this.query, defaultPaginationParam, stage, null, null, new HashMap<>());
     }
 }

@@ -1,5 +1,6 @@
 /*
  * Copyright 2018 - 2021 Swiss Federal Institute of Technology Lausanne (EPFL)
+ * Copyright 2021 - 2022 EBRAINS AISBL
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,8 +30,8 @@ import eu.ebrains.kg.commons.model.SpaceName;
 import eu.ebrains.kg.commons.model.external.types.TypeInformation;
 import eu.ebrains.kg.commons.permission.roles.RoleMapping;
 import eu.ebrains.kg.commons.semantics.vocabularies.EBRAINSVocabulary;
-import eu.ebrains.kg.core.api.Instances;
-import eu.ebrains.kg.core.api.Types;
+import eu.ebrains.kg.core.api.v3.InstancesV3;
+import eu.ebrains.kg.core.api.v3.TypesV3;
 import eu.ebrains.kg.core.api.types.test.DefineTypeTest;
 import eu.ebrains.kg.core.api.types.test.GetTypesByNameTest;
 import eu.ebrains.kg.core.api.types.test.GetTypesForInvitation;
@@ -54,10 +55,10 @@ import static org.junit.jupiter.api.Assertions.*;
 class TypesTest extends AbstractFunctionalityTest {
 
     @Autowired
-    Types types;
+    TypesV3 types;
 
     @Autowired
-    Instances instances;
+    InstancesV3 instances;
 
     //TODO we are currently allowing even unauthenticated users to read type information. is this ok?
     private final static RoleMapping[] NON_READ_TYPES_IN_PROGRESS_ROLES = new RoleMapping[]{};

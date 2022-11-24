@@ -1,5 +1,6 @@
 /*
  * Copyright 2018 - 2021 Swiss Federal Institute of Technology Lausanne (EPFL)
+ * Copyright 2021 - 2022 EBRAINS AISBL
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,23 +23,18 @@
 
 package eu.ebrains.kg.core.api.types.test;
 
-import com.arangodb.ArangoDB;
-import eu.ebrains.kg.authentication.api.AuthenticationAPI;
-import eu.ebrains.kg.commons.jsonld.JsonLdId;
 import eu.ebrains.kg.commons.jsonld.NormalizedJsonLd;
-import eu.ebrains.kg.commons.permission.roles.RoleMapping;
-import eu.ebrains.kg.commons.semantics.vocabularies.EBRAINSVocabulary;
 import eu.ebrains.kg.core.api.AbstractTest;
-import eu.ebrains.kg.core.api.Types;
+import eu.ebrains.kg.core.api.v3.TypesV3;
 import eu.ebrains.kg.core.api.instances.TestContext;
 
 @SuppressWarnings("java:S2187") //We don't add "tests" to these classes because they are test abstractions and are used in other tests
 public class DefineTypeTest extends AbstractTest {
 
-    private final Types types;
+    private final TypesV3 types;
     public final NormalizedJsonLd typeDefinition = createTypeDefinition();
 
-    public DefineTypeTest(TestContext testContext, Types types) {
+    public DefineTypeTest(TestContext testContext, TypesV3 types) {
         super(testContext);
         this.types = types;
     }

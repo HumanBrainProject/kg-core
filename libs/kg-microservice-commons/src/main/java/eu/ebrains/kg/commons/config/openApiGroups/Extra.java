@@ -1,5 +1,6 @@
 /*
  * Copyright 2018 - 2021 Swiss Federal Institute of Technology Lausanne (EPFL)
+ * Copyright 2021 - 2022 EBRAINS AISBL
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,6 +23,9 @@
 
 package eu.ebrains.kg.commons.config.openApiGroups;
 
+import eu.ebrains.kg.commons.api.APINaming;
+import io.swagger.v3.oas.annotations.tags.Tag;
+
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
@@ -33,5 +37,6 @@ import java.lang.annotation.Target;
  */
 @Retention(RetentionPolicy.RUNTIME)
 @Target(value={ElementType.METHOD, ElementType.TYPE})
+@Tag(name = APINaming.ADVANCED)
 public @interface Extra {
 }

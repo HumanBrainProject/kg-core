@@ -1,5 +1,6 @@
 /*
  * Copyright 2018 - 2021 Swiss Federal Institute of Technology Lausanne (EPFL)
+ * Copyright 2021 - 2022 EBRAINS AISBL
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,7 +26,7 @@ package eu.ebrains.kg.core.api.instances.tests;
 import eu.ebrains.kg.commons.jsonld.JsonLdDoc;
 import eu.ebrains.kg.commons.jsonld.NormalizedJsonLd;
 import eu.ebrains.kg.commons.model.Result;
-import eu.ebrains.kg.core.api.Instances;
+import eu.ebrains.kg.core.api.v3.InstancesV3;
 import eu.ebrains.kg.core.api.instances.TestContext;
 import eu.ebrains.kg.testutils.TestDataFactory;
 import org.springframework.http.ResponseEntity;
@@ -39,7 +40,7 @@ public class CreateInstanceWithSpecifiedUUIDTest extends AbstractInstanceTest {
     public ResponseEntity<Result<NormalizedJsonLd>> response;
     public UUID clientSpecifiedUUID = UUID.randomUUID();
 
-    public CreateInstanceWithSpecifiedUUIDTest(TestContext testContext, Instances instances) {
+    public CreateInstanceWithSpecifiedUUIDTest(TestContext testContext, InstancesV3 instances) {
         super(testContext, instances);
     }
 

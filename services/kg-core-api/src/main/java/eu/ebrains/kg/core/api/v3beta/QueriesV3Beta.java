@@ -1,5 +1,6 @@
 /*
  * Copyright 2018 - 2021 Swiss Federal Institute of Technology Lausanne (EPFL)
+ * Copyright 2021 - 2022 EBRAINS AISBL
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,7 +21,7 @@
  * (Human Brain Project SGA1, SGA2 and SGA3).
  */
 
-package eu.ebrains.kg.core.api;
+package eu.ebrains.kg.core.api.v3beta;
 
 import eu.ebrains.kg.commons.AuthContext;
 import eu.ebrains.kg.commons.Version;
@@ -54,9 +55,9 @@ import java.util.stream.Collectors;
  * The query API allows to execute and manage queries on top of the EBRAINS KG. This is the main interface for reading clients.
  */
 @RestController
-@RequestMapping(Version.API+"/queries")
+@RequestMapping(Version.V3_BETA +"/queries")
 @Simple
-public class Queries {
+public class QueriesV3Beta {
 
     private final CoreQueryController queryController;
 
@@ -66,7 +67,7 @@ public class Queries {
 
     private final IdsController ids;
 
-    public Queries(CoreQueryController queryController, AuthContext authContext, JsonLd.Client jsonLd, IdsController ids) {
+    public QueriesV3Beta(CoreQueryController queryController, AuthContext authContext, JsonLd.Client jsonLd, IdsController ids) {
         this.queryController = queryController;
         this.authContext = authContext;
         this.jsonLd = jsonLd;
@@ -93,10 +94,10 @@ public class Queries {
     }
 
 
-    @Operation(summary = "Execute the query in the payload in test mode (e.g. for execution before saving with the KG QueryBuilder)")
+    @Operation(summary = "Execute the query in the payload (e.g. for execution before saving with the KG QueryBuilder)")
     @PostMapping
     @ExposesData
-    public PaginatedStreamResult<? extends JsonLdDoc> testQuery(@RequestBody JsonLdDoc query, @ParameterObject PaginationParam paginationParam, @RequestParam("stage") ExposedStage stage, @RequestParam(value = "instanceId", required = false) UUID instanceId, @RequestParam(value = "restrictToSpaces", required = false) List<String> restrictToSpaces, @RequestParam(defaultValue = "{}") Map<String, String> allRequestParams) {
+    public PaginatedStreamResult<? extends JsonLdDoc> runDynamicQuery(@RequestBody JsonLdDoc query, @ParameterObject PaginationParam paginationParam, @RequestParam("stage") ExposedStage stage, @RequestParam(value = "instanceId", required = false) UUID instanceId, @RequestParam(value = "restrictToSpaces", required = false) List<String> restrictToSpaces, @RequestParam(defaultValue = "{}") Map<String, String> allRequestParams) {
         //Remove the non-dynamic parameters from the map
         allRequestParams.remove("stage");
         allRequestParams.remove("instanceId");

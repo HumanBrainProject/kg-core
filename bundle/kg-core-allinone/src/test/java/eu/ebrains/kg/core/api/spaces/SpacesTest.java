@@ -1,5 +1,6 @@
 /*
  * Copyright 2018 - 2021 Swiss Federal Institute of Technology Lausanne (EPFL)
+ * Copyright 2021 - 2022 EBRAINS AISBL
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,8 +29,8 @@ import eu.ebrains.kg.commons.model.external.spaces.SpaceInformation;
 import eu.ebrains.kg.commons.permission.roles.RoleMapping;
 import eu.ebrains.kg.commons.semantics.vocabularies.EBRAINSVocabulary;
 import eu.ebrains.kg.commons.semantics.vocabularies.SchemaOrgVocabulary;
-import eu.ebrains.kg.core.api.Instances;
-import eu.ebrains.kg.core.api.Spaces;
+import eu.ebrains.kg.core.api.v3.InstancesV3;
+import eu.ebrains.kg.core.api.v3.SpacesV3;
 import eu.ebrains.kg.core.api.spaces.test.GetSpaceWithPermissionsTest;
 import eu.ebrains.kg.core.api.spaces.test.GetSpacesWithPermissionsTest;
 import eu.ebrains.kg.testutils.AbstractFunctionalityTest;
@@ -45,10 +46,10 @@ import static org.junit.jupiter.api.Assertions.*;
 class SpacesTest extends AbstractFunctionalityTest {
 
     @Autowired
-    Spaces spaces;
+    SpacesV3 spaces;
 
     @Autowired
-    Instances instances;
+    InstancesV3 instances;
 
     private final static RoleMapping[] NON_READ_SPACE_ROLES = new RoleMapping[]{null};
     private final static RoleMapping[] READ_SPACE_ROLES = RoleMapping.getRemainingUserRoles(NON_READ_SPACE_ROLES);
