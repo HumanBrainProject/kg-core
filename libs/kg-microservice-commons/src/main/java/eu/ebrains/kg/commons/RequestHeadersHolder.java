@@ -31,6 +31,8 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 public class RequestHeadersHolder {
+    private RequestHeadersHolder() {
+    }
 
     private static final ThreadLocal<Map<String, String>> inheritableAuthTokensHolder = new NamedInheritableThreadLocal<>("Request headers");
 

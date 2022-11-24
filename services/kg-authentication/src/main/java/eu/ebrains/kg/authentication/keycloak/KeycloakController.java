@@ -62,7 +62,7 @@ public class KeycloakController {
         this.keycloakClient = keycloakClient;
         this.authTokenContext = authTokenContext;
         this.keycloakUsers = keycloakUsers;
-        this.jwtVerifier = keycloakClient.getJWTVerifier(); //Reusable verifier instance;
+        this.jwtVerifier = keycloakClient.getJWTVerifier(); // Reusable verifier instance
         this.userInfoMapping = userInfoMapping;
     }
 
@@ -100,7 +100,7 @@ public class KeycloakController {
         }).map(userRepresentation -> new User(userRepresentation.getUsername(), userRepresentation.getFirstName() + " " + userRepresentation.getLastName(),
                 //We explicitly do not share the email address if requested. The name should be sufficient to identify the person.
                 null
-                , userRepresentation.getFirstName(), userRepresentation.getLastName(), userRepresentation.getId())).collect(Collectors.toList());
+                , userRepresentation.getFirstName(), userRepresentation.getLastName(), userRepresentation.getId())).toList();
     }
 
 

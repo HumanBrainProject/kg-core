@@ -72,16 +72,16 @@ public class NormalizedJsonLd extends JsonLdDoc {
 
     private Map<String, String> serializeUpdateTimes(Map<String, ZonedDateTime> map) {
         Map<String, String> newMap = new HashMap<>();
-        for (String key : map.keySet()) {
-            newMap.put(key, map.get(key).format(DateTimeFormatter.ISO_INSTANT));
+        for (Map.Entry<String,ZonedDateTime> entry : map.entrySet()) {
+            newMap.put(entry.getKey(), entry.getValue().format(DateTimeFormatter.ISO_INSTANT));
         }
         return newMap;
     }
 
     private Map<String, ZonedDateTime> deserializeUpdateTimes(Map<String, String> map) {
         Map<String, ZonedDateTime> newMap = new HashMap<>();
-        for (String key : map.keySet()) {
-            newMap.put(key, ZonedDateTime.parse(map.get(key)));
+        for (Map.Entry<String,String> entry : map.entrySet()) {
+            newMap.put(entry.getKey(),ZonedDateTime.parse(entry.getValue()));
         }
         return newMap;
     }

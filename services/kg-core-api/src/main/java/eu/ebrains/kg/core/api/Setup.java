@@ -54,7 +54,7 @@ public class Setup {
 
     @PatchMapping("/permissions/{role}")
     @Admin
-    public JsonLdDoc updateClaimForRole(@PathVariable("role") RoleMapping role, @RequestParam(value = "space", required = false) String space, @RequestBody Map<?, ?> claimPattern, @RequestParam("remove") boolean removeClaim) {
+    public JsonLdDoc updateClaimForRole(@PathVariable("role") RoleMapping role, @RequestParam(value = "space", required = false) String space, @RequestBody Map<String, Object> claimPattern, @RequestParam("remove") boolean removeClaim) {
         return authentication.updateClaimForRole(role, space, claimPattern, removeClaim);
     }
 

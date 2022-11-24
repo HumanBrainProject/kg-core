@@ -24,6 +24,8 @@ package eu.ebrains.kg.commons.semantics.vocabularies;
 
 
 public class SchemaOrgVocabulary {
+    private SchemaOrgVocabulary() {
+    }
 
     public static final String ALIAS = "schema";
 

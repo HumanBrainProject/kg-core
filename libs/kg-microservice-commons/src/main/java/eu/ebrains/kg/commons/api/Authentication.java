@@ -62,7 +62,7 @@ public interface Authentication {
 
     void registerTermsOfUse(TermsOfUse version);
 
-    JsonLdDoc updateClaimForRole(RoleMapping role, String space, Map<?, ?> claimPattern, boolean removeClaim);
+    JsonLdDoc updateClaimForRole(RoleMapping role, String space, Map<String, Object> claimPattern, boolean removeClaim);
 
     JsonLdDoc getClaimForRole(RoleMapping role, String space);
 

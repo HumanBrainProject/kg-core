@@ -193,7 +193,7 @@ public class AuthenticationAPI implements Authentication.Client {
      * PERMISSIONS
      **/
     @Override
-    public JsonLdDoc updateClaimForRole(RoleMapping role, String space, Map<?, ?> claimPattern, boolean removeClaim) {
+    public JsonLdDoc updateClaimForRole(RoleMapping role, String space, Map<String, Object> claimPattern, boolean removeClaim) {
         if(removeClaim){
             if(authorizationConfiguration.isDisablePermissionAuthorization() || permissions.hasGlobalPermission(this.getRoles(false), Functionality.DELETE_PERMISSION)) {
                 return authenticationRepository.removeClaimFromRole(role.toRole(SpaceName.fromString(space)), claimPattern);
@@ -229,7 +229,7 @@ public class AuthenticationAPI implements Authentication.Client {
 
     @Override
     public List<JsonLdDoc> getAllRoleDefinitions() {
-        final UserWithRoles roles = this.getRoles(false);
+        this.getRoles(false);
         if(canShowPermissions()) {
             return authenticationRepository.getAllRoleDefinitions();
         }

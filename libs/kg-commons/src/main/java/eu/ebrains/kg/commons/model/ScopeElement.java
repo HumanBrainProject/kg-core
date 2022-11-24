@@ -95,10 +95,10 @@ public class ScopeElement {
             this.space = el.getSpace();
         }
         if(el.getTypes()!=null && !el.getTypes().isEmpty()){
-            this.types = this.types == null ? el.getTypes() : Stream.concat(this.types.stream(), el.getTypes().stream()).distinct().collect(Collectors.toList());
+            this.types = this.types == null ? el.getTypes() : Stream.concat(this.types.stream(), el.getTypes().stream()).distinct().toList();
         }
         if(el.getChildren()!=null && !el.getChildren().isEmpty()){
-            this.children = this.children == null ? el.getChildren() : Stream.concat(this.children.stream(), el.getChildren().stream()).collect(Collectors.toList());
+            this.children = this.children == null ? el.getChildren() : Stream.concat(this.children.stream(), el.getChildren().stream()).toList();
         }
     }
 

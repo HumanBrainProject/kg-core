@@ -31,12 +31,11 @@ public class Permission {
     public enum Level{
         GLOBAL, SPACE, INSTANCE;
 
-        public static List<Level> ALL_LEVELS = Arrays.asList(GLOBAL, SPACE, INSTANCE);
-        public static List<Level> GLOBAL_AND_SPACE = Arrays.asList(GLOBAL, SPACE);
-        public static List<Level> GLOBAL_ONLY = Collections.singletonList(GLOBAL);
+        public static final List<Level> ALL_LEVELS = Arrays.asList(GLOBAL, SPACE, INSTANCE);
+        public static final List<Level> GLOBAL_AND_SPACE = Arrays.asList(GLOBAL, SPACE);
+        public static final List<Level> GLOBAL_ONLY = Collections.singletonList(GLOBAL);
     }
 
-    private Level level;
     private final Functionality functionality;
 
     public Permission(Level level, Functionality functionality) {

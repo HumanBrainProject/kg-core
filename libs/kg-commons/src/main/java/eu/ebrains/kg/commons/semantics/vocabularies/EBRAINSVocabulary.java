@@ -28,7 +28,8 @@ import java.util.Arrays;
 import java.util.Objects;
 
 public class EBRAINSVocabulary {
-
+    private EBRAINSVocabulary() {
+    }
 
     public static final String ALIAS = "ebr";
     public static final String NAMESPACE = "https://core.kg.ebrains.eu/vocab/";

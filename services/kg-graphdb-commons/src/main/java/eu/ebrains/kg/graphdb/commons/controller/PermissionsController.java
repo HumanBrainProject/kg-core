@@ -85,7 +85,7 @@ public class PermissionsController {
             Map<String, Object> bindVars = new HashMap<>();
             Set<SpaceName> spacesWithReadPermission = permissions.getSpacesForPermission(possibleSpaces, userWithRoles, readFunctionality);
             Set<UUID> instancesWithReadPermissions = getInstancesWithExplicitPermission(userWithRoles, stage);
-            bindVars.put(AQL.READ_ACCESS_BY_SPACE, spacesWithReadPermission != null ? spacesWithReadPermission.stream().map(s -> ArangoCollectionReference.fromSpace(s).getCollectionName()).collect(Collectors.toList()) : Collections.emptyList());
+            bindVars.put(AQL.READ_ACCESS_BY_SPACE, spacesWithReadPermission.stream().map(s -> ArangoCollectionReference.fromSpace(s).getCollectionName()).collect(Collectors.toList()));
             bindVars.put(AQL.READ_ACCESS_BY_INVITATION, instancesWithReadPermissions != null ? instancesWithReadPermissions.stream().collect(Collectors.toMap(k -> k, v -> Collections.emptyMap())): Collections.emptyList());
             return bindVars;
         }

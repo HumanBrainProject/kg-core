@@ -23,7 +23,7 @@ public class TypeWithOccurrencesAndProperties {
 
     private String type;
     private Long occurrences;
-    private List<Property> properties;
+    private List<PropertyReflection> properties;
     private List<String> spaces;
 
     public String getType() {
@@ -42,11 +42,11 @@ public class TypeWithOccurrencesAndProperties {
         this.occurrences = occurrences;
     }
 
-    public List<Property> getProperties() {
+    public List<PropertyReflection> getProperties() {
         return properties;
     }
 
-    public void setProperties(List<Property> properties) {
+    public void setProperties(List<PropertyReflection> properties) {
         this.properties = properties;
     }
 

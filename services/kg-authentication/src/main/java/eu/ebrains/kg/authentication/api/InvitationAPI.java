@@ -27,19 +27,15 @@ import eu.ebrains.kg.authentication.controller.InvitationController;
 import eu.ebrains.kg.authentication.keycloak.KeycloakController;
 import eu.ebrains.kg.authentication.model.Invitation;
 import eu.ebrains.kg.commons.model.ReducedUserInformation;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.UUID;
-import java.util.stream.Collectors;
 
 @Component
 public class InvitationAPI implements eu.ebrains.kg.commons.api.Invitation.Client {
-
-    private final Logger logger = LoggerFactory.getLogger(getClass());
 
     private final AuthenticationRepository authenticationRepository;
     private final InvitationController invitationController;
@@ -66,9 +62,9 @@ public class InvitationAPI implements eu.ebrains.kg.commons.api.Invitation.Clien
     public List<ReducedUserInformation> listInvitations(UUID id) {
         if(id!=null){
             final List<Invitation> allInvitationsByInstanceId = authenticationRepository.getAllInvitationsByInstanceId(id.toString());
-            return allInvitationsByInstanceId.stream().map(i -> keycloakController.getUserById(i.getUserId())).filter(Objects::nonNull).collect(Collectors.toList());
+            return allInvitationsByInstanceId.stream().map(i -> keycloakController.getUserById(i.getUserId())).filter(Objects::nonNull).toList();
         }
-        return null;
+        return Collections.emptyList();
     }
 
     @Override

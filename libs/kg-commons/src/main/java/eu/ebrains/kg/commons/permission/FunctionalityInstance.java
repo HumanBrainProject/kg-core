@@ -43,16 +43,10 @@ public class FunctionalityInstance {
             //The review space is special -> we only grant read access
             return this.functionality == Functionality.READ;
         }
-        if(this.space == null && this.id == null){
-            return true;
-        }
-        else if(this.space!=null && this.id == null && (this.space.equals(space) || (this.space.matchesWildcard(space)))){
-            return true;
-        }
-        else if(this.id != null && this.id.equals(id)){
-            return true;
-        }
-        return false;
+        boolean global = this.space == null && this.id == null;
+        boolean bySpace = this.space!=null && this.id == null && (this.space.equals(space) || (this.space.matchesWildcard(space)));
+        boolean byInstance = this.id != null && this.id.equals(id);
+        return global || bySpace || byInstance;
     }
 
     public FunctionalityInstance(Functionality functionality, SpaceName space, UUID id) {

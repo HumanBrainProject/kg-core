@@ -30,10 +30,6 @@ public class PaginatedStreamResult<T> extends Result<Stream<T>> {
     private long from;
 
     public static <T> PaginatedStreamResult<T> ok(PaginatedStream<T> data) {
-        return ok(data, null);
-    }
-
-    public static <T> PaginatedStreamResult<T> ok(PaginatedStream<T> data, String message) {
         PaginatedStreamResult<T> result = new PaginatedStreamResult<>();
         if (data == null) {
             data = new PaginatedStream<>();

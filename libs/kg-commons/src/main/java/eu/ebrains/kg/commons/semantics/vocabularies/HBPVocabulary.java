@@ -23,6 +23,8 @@
 package eu.ebrains.kg.commons.semantics.vocabularies;
 
 public class HBPVocabulary {
+    private HBPVocabulary() {
+    }
 
     public static final String ALIAS = "hbp";
     public static final String NAMESPACE = "https://schema.hbp.eu/";

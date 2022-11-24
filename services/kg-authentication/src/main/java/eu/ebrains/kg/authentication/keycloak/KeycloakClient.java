@@ -128,13 +128,17 @@ public class KeycloakClient {
 
     private Algorithm getAlgorithmFromKeycloakConfig(String publicKey) {
         try {
-            logger.debug(String.format("Validation by public RSA key (%s) of keycloak host %s", publicKey, openIdConfig.getIssuer()));
+            if(logger.isDebugEnabled()) {
+                logger.debug(String.format("Validation by public RSA key (%s) of keycloak host %s", publicKey, openIdConfig.getIssuer()));
+            }
             byte[] buffer = Base64.getDecoder().decode(publicKey);
             KeyFactory keyFactory = KeyFactory.getInstance("RSA");
             X509EncodedKeySpec keySpec = new X509EncodedKeySpec(buffer);
             RSAPublicKey key = (RSAPublicKey) keyFactory.generatePublic(keySpec);
             Algorithm algorithm = Algorithm.RSA256(key, null);
-            logger.info(String.format("Initialized validation by public RSA key of keycloak host %s", openIdConfig.getIssuer()));
+            if(logger.isInfoEnabled()) {
+                logger.info(String.format("Initialized validation by public RSA key of keycloak host %s", openIdConfig.getIssuer()));
+            }
             return algorithm;
         } catch (NoSuchAlgorithmException | InvalidKeySpecException e) {
             throw new RuntimeException(e);

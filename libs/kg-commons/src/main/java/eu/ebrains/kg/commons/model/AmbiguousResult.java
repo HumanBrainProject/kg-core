@@ -49,10 +49,12 @@ public class AmbiguousResult<T> extends Result<T> {
         }
     }
 
+    @Override
     public T getData() {
         return data;
     }
 
+    @Override
     public String getMessage() {
         return message;
     }

@@ -26,7 +26,7 @@ import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 
 @JsonPropertyOrder({ "accepted" })
 public class TermsOfUseResult extends TermsOfUse {
-
+    @SuppressWarnings("java:S1068") //we keep the property to ensure it's properly serialized
     private final Boolean accepted;
 
     public TermsOfUseResult(TermsOfUse termsOfUse, Boolean accepted) {

@@ -26,8 +26,9 @@ import com.fasterxml.jackson.annotation.JsonPropertyOrder;
 
 @JsonPropertyOrder({ "error", "howToFix" })
 public class TermsOfUseError extends TermsOfUse {
-
+    @SuppressWarnings("java:S1068") //we keep the property to ensure it's properly serialized
     private final String error;
+    @SuppressWarnings("java:S1068") //we keep the property to ensure it's properly serialized
     private final String howToFix;
 
     public TermsOfUseError(TermsOfUse termsOfUse) {

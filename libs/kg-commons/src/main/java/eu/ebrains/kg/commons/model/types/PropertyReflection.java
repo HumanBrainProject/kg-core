@@ -19,7 +19,7 @@ package eu.ebrains.kg.commons.model.types;
 import java.util.List;
 import java.util.Objects;
 
-public class Property {
+public class PropertyReflection {
 
     private String property;
 
@@ -55,7 +55,7 @@ public class Property {
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
-        Property property1 = (Property) o;
+        PropertyReflection property1 = (PropertyReflection) o;
         return Objects.equals(property, property1.property) && Objects.equals(occurrences, property1.occurrences) && Objects.equals(targetTypes, property1.targetTypes);
     }
 

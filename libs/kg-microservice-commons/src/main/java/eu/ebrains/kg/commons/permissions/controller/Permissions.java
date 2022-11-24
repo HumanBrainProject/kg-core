@@ -29,6 +29,7 @@ import eu.ebrains.kg.commons.permission.FunctionalityInstance;
 import eu.ebrains.kg.commons.permission.Permission;
 import org.springframework.stereotype.Component;
 
+import javax.validation.constraints.NotNull;
 import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -78,13 +79,11 @@ public class Permissions {
         return hasPermission(userWithRoles, functionality, null, null);
     }
 
+    @NotNull
     public Set<SpaceName> getSpacesForPermission(Set<SpaceName> spaces, UserWithRoles userWithRoles, Functionality functionality) {
         List<FunctionalityInstance> permissions = userWithRoles.getPermissions();
-        if (functionality == null) {
+        if (functionality == null || hasGlobalPermission(userWithRoles, functionality)) {
             return Collections.emptySet();
-        }
-        if (hasGlobalPermission(userWithRoles, functionality)) {
-            return null;
         }
         final Set<FunctionalityInstance> applicableWildcardRoles = permissions.stream().filter(i -> i.getId() == null && i.getSpace() != null && i.getSpace().isWildcard() && i.getFunctionality() == functionality).collect(Collectors.toSet());
         final Stream<SpaceName> directHits = permissions.stream().filter(f -> f.getId() == null && f.getFunctionality().equals(functionality) && spaces.contains(f.getSpace())).map(FunctionalityInstance::getSpace).filter(Objects::nonNull);

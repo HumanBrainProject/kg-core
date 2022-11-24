@@ -30,10 +30,6 @@ public class PaginatedResult<T> extends Result<List<T>> {
     private long from;
 
     public static <T> PaginatedResult<T> ok(Paginated<T> data) {
-        return ok(data, null);
-    }
-
-    public static <T> PaginatedResult<T> ok(Paginated<T> data, String message) {
         PaginatedResult<T> result = new PaginatedResult<>();
         if (data == null) {
             data = new Paginated<>();

@@ -23,6 +23,9 @@
 package eu.ebrains.kg.commons.semantics.vocabularies;
 
 public class ProvVocabulary {
+    private ProvVocabulary() {
+    }
+
     public static final String NAMESPACE = " http://www.w3.org/ns/prov#";
     public static final String ALTERNATE_OF = NAMESPACE+"alternateOf";
 }

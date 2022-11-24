@@ -43,6 +43,7 @@ import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Component;
 
 import javax.annotation.PostConstruct;
+import javax.validation.constraints.NotNull;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -99,16 +100,17 @@ public class AuthenticationRepository implements SetupLogic {
         }
     }
 
-    private Set<String> translateUserInfoToRole(String roleLabel, String key, Map role, Map userInfo) {
+    @NotNull
+    private Set<String> translateUserInfoToRole(String roleLabel, String key, Map<?,?> role, Map<?,?> userInfo) {
         if (!userInfo.containsKey(key)) {
-            return null;
+            return Collections.emptySet();
         }
         Object r = role.get(key);
         Object u = userInfo.get(key);
         if (r instanceof Map && u instanceof Map) {
             return ((Map<?, ?>) r).keySet().stream()
-                    .map(k -> translateUserInfoToRole(roleLabel, (String) k, (Map) r, (Map) u)).filter(Objects::nonNull)
-                    .flatMap(Collection::stream).collect(Collectors.toSet());
+                    .map(k -> translateUserInfoToRole(roleLabel, (String) k, (Map) r, (Map) u)).
+                    flatMap(Collection::stream).collect(Collectors.toSet());
         }
         if(r!=null && u!=null){
             return ensureCollection(u).stream().filter(userClaim -> userClaim instanceof String).map(userClaim ->
@@ -117,7 +119,7 @@ public class AuthenticationRepository implements SetupLogic {
                             .map(roleClaim -> ((String)userClaim).replaceAll((String) roleClaim, roleLabel))
                             .collect(Collectors.toSet())).flatMap(Collection::stream).collect(Collectors.toSet());
         }
-        return null;
+        return Collections.emptySet();
     }
 
     public List<Invitation> getAllInvitationsByInstanceId(String instanceId){
@@ -192,11 +194,11 @@ public class AuthenticationRepository implements SetupLogic {
                     return Collections.singletonList(role);
                 }
                 return r.keySet().stream().filter(k -> !k.startsWith("_"))
-                        .map(k -> translateUserInfoToRole(role, k, r, userInfo)).filter(Objects::nonNull)
+                        .map(k -> translateUserInfoToRole(role, k, r, userInfo))
                         .flatMap(Collection::stream).collect(Collectors.toSet());
             }
             return null;
-        }).filter(Objects::nonNull).flatMap(Collection::stream).distinct().collect(Collectors.toList());
+        }).filter(Objects::nonNull).flatMap(Collection::stream).distinct().toList();
     }
 
 
@@ -204,7 +206,8 @@ public class AuthenticationRepository implements SetupLogic {
         return getPermissionsCollection().getDocument(role.getName(), JsonLdDoc.class);
     }
 
-    public JsonLdDoc addClaimToRole(Role role, Map<?, ?> claimPattern) {
+    @SuppressWarnings("java:S1168") // Although we might be able to return an empty JsonLdDoc, we think it's more readable to return null
+    public JsonLdDoc addClaimToRole(Role role, Map<String, Object> claimPattern) {
         JsonLdDoc document = getPermissionsCollection().getDocument(role.getName(), JsonLdDoc.class);
         if (document == null) {
             document = new JsonLdDoc();
@@ -220,8 +223,8 @@ public class AuthenticationRepository implements SetupLogic {
         }
     }
 
-
-    public JsonLdDoc removeClaimFromRole(Role role, Map<?, ?> claimPattern) {
+    @SuppressWarnings("java:S1168") // Although we might be able to return an empty JsonLdDoc, we think it's more readable to return null
+    public JsonLdDoc removeClaimFromRole(Role role, Map<String, Object> claimPattern) {
         JsonLdDoc document = getPermissionsCollection().getDocument(role.getName(), JsonLdDoc.class);
         if (document == null) {
             //The document doesn't exist - nothing to remove, nothing to do...
@@ -238,48 +241,46 @@ public class AuthenticationRepository implements SetupLogic {
     }
 
 
-    private boolean synchronizeMaps(String role, Map source, Map target, boolean remove) {
-        Set<Object> toBeRemoved = new HashSet<>();
-        for (Object key : source.keySet()) {
-            final Object value = source.get(key);
-            if (!target.containsKey(key)) {
+    private <K, V> boolean synchronizeMaps(String role, Map<K, V> source, Map<K, V> target, boolean remove) {
+        Set<K> toBeRemoved = new HashSet<>();
+        for (Map.Entry<K, V> entry : source.entrySet()) {
+            if (!target.containsKey(entry.getKey())) {
                 if (remove) {
                     //We want to remove, but it doesn't exist - so we're good.
                 } else {
                     //It doesn't exist yet, so we can just attach it
-                    target.put(key, value);
+                    target.put(entry.getKey(), entry.getValue());
                 }
             } else {
-                final Object existingValue = target.get(key);
-                if (value instanceof Map) {
-                    if (existingValue instanceof Map) {
-                        boolean empty = synchronizeMaps(role, (Map) value, (Map) existingValue, remove);
+                final Object existingValue = target.get(entry.getKey());
+                if (entry.getValue() instanceof Map entryMap) {
+                    if (existingValue instanceof Map existingMap)  {
+                        boolean empty = synchronizeMaps(role, entryMap, existingMap, remove);
                         if (empty) {
-                            target.remove(key);
+                            target.remove(entry.getKey());
                         }
                     } else {
                         throw new RuntimeException(String.format(
                                 "There is a problem with the structure of the permission map for the role %s. It seems like there are incompatible levels.", role));
                     }
-                } else if (value instanceof List) {
-                    if (existingValue instanceof List) {
-                        List existingValueList = (List) existingValue;
-                        for (Object e : ((List) value)) {
-                            if (remove && existingValueList.contains(e)) {
-                                existingValueList.remove(e);
-                            } else if (!remove && !existingValueList.contains(e)) {
-                                existingValueList.add(e);
+                } else if (entry.getValue() instanceof List entryList) {
+                    if (existingValue instanceof List existingList) {
+                        for (Object e : entryList) {
+                            if (remove && existingList.contains(e)) {
+                                existingList.remove(e);
+                            } else if (!remove && !existingList.contains(e)) {
+                                existingList.add(e);
                             }
                         }
-                        if (existingValueList.isEmpty()) {
-                            toBeRemoved.add(key);
+                        if (existingList.isEmpty()) {
+                            toBeRemoved.add(entry.getKey());
                         }
                     } else {
                         throw new RuntimeException(String.format(
                                 "There is a problem with the structure of the permission map for the role %s. It seems like there are incompatible levels.", role));
                     }
-                } else if (existingValue != null && existingValue.equals(value)){
-                    toBeRemoved.add(key);
+                } else if (existingValue != null && existingValue.equals(entry.getValue())){
+                    toBeRemoved.add(entry.getKey());
                 }
             }
         }
@@ -289,7 +290,7 @@ public class AuthenticationRepository implements SetupLogic {
 
     public List<UUID> getInvitationRoles(String userId){
         List<String> ids = this.getAllInvitationsForUserId(userId);
-        return ids.stream().distinct().map(UUID::fromString).collect(Collectors.toList());
+        return ids.stream().distinct().map(UUID::fromString).toList();
     }
 
     @Cacheable("termsOfUseByUser")

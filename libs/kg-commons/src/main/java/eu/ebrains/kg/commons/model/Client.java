@@ -35,6 +35,8 @@ public class Client {
     private String identifier;
 
     private String serviceAccountId;
+
+    @SuppressWarnings("java:S1068") //we keep the property to ensure it's properly serialized
     private boolean canExecuteSynchronousQueries;
 
     public Client() {}

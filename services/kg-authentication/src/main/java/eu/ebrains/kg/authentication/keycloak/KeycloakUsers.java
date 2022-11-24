@@ -71,7 +71,7 @@ public class KeycloakUsers {
         return result.stream()
                 .filter(r -> matchesFirstOrLastName(r.getFirstName(), r.getLastName(), words))
                 .map(this::fromUserRepresentation)
-                .collect(Collectors.toList());
+                .toList();
     }
 
 

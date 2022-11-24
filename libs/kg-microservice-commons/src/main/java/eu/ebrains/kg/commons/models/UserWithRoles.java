@@ -92,7 +92,7 @@ public class UserWithRoles {
         if(!CollectionUtils.isEmpty(invitations)){
             return Stream.concat(functionalityInstances.stream(),
                     invitations.stream().map(i -> new FunctionalityInstance(Functionality.READ, null, i)))
-                    .distinct().collect(Collectors.toList());
+                    .distinct().toList();
         }
         else {
             return functionalityInstances;
@@ -105,14 +105,14 @@ public class UserWithRoles {
 
     private List<FunctionalityInstance> reduceFunctionalities(Map<Functionality, List<FunctionalityInstance>> functionalityMap){
         List<FunctionalityInstance> reducedList = new ArrayList<>();
-        for (Functionality functionality : functionalityMap.keySet()) {
-            Optional<FunctionalityInstance> globalFunctionality = functionalityMap.get(functionality).stream().filter(i -> i.getId() == null && i.getSpace() == null).findAny();
+        for (Map.Entry<Functionality, List<FunctionalityInstance>> entry : functionalityMap.entrySet()) {
+            Optional<FunctionalityInstance> globalFunctionality = entry.getValue().stream().filter(i -> i.getId() == null && i.getSpace() == null).findAny();
             if(globalFunctionality.isPresent()){
                 //We have a global permission -> we don't need any other
                 reducedList.add(globalFunctionality.get());
             }
             else{
-                Map<SpaceName, List<FunctionalityInstance>> functionalityBySpace = functionalityMap.get(functionality).stream().collect(Collectors.groupingBy(FunctionalityInstance::getSpace));
+                Map<SpaceName, List<FunctionalityInstance>> functionalityBySpace = entry.getValue().stream().collect(Collectors.groupingBy(FunctionalityInstance::getSpace));
                 functionalityBySpace.forEach((s, spaceInstances) -> {
                     Optional<FunctionalityInstance> spacePermission = spaceInstances.stream().filter(i -> i.getId() == null).findAny();
                     if(spacePermission.isPresent()){
@@ -219,7 +219,9 @@ public class UserWithRoles {
         else{
            return userFunctionalities;
         }
-        logger.trace(String.format("Available roles for user %s in client %s: %s", user != null ? user.getUserName() : "anonymous", clientId, String.join(", ", result.stream().map(Object::toString).collect(Collectors.toSet()))));
+        if(logger.isTraceEnabled()) {
+            logger.trace(String.format("Available roles for user %s in client %s: %s", user != null ? user.getUserName() : "anonymous", clientId, String.join(", ", result.stream().map(Object::toString).collect(Collectors.toSet()))));
+        }
         return new ArrayList<>(result);
     }
 
