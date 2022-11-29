@@ -14,19 +14,19 @@ sequenceDiagram
   Core API ->> Core API: validate payload and check for normalization
   opt payload is not normalized:
       Core API ->> JSON-LD: normalize payload
-      JSON-LD ->> Core API: normalized payload  
+      JSON-LD -->> Core API: normalized payload  
   end
   Core API ->> Ids: find id
-  Ids ->> Core API: Optional[Instance ID]
+  Ids -->> Core API: Optional[Instance ID]
   alt id exists:
-    Core API ->> Client: Conflict (409)
+    Core API -->> Client: Conflict (409)
   else id doesn't exist:
     Core API ->> Core API: specify field update times in payload
     Core API ->> Primary store: post upsert event
-    Primary store ->> Core API: affected instance ids
+    Primary store -->> Core API: affected instance ids
     alt return payload:
         Core API ->> Graph DB: get instances by ids
-        Graph DB ->> Core API: return payloads
+        Graph DB -->> Core API: return payloads
         opt return alternatives:
             Core API ->> Core API: resolve alternatives
         end
@@ -34,9 +34,9 @@ sequenceDiagram
             Core API ->> Core API: enrich payload with permission information
         end        
         Core API ->> Core API: Rename private and invited spaces
-        Core API ->> Client: JSON payloads (200)
+        Core API -->> Client: JSON payloads (200)
     else don't return payload:
-        Core API ->> Client: JSON payload containing ids only (200)
+        Core API -->> Client: JSON payload containing ids only (200)
     end
   end   
 ```
