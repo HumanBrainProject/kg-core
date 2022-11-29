@@ -458,7 +458,7 @@ public class InstancesV3Beta {
 
     @Operation(summary = "List instances with invitations")
     @GetMapping("/instancesWithInvitations")
-    @Admin
+    @Advanced
     public Result<List<UUID>> listInstancesWithInvitations() {
         return Result.ok(instanceController.listInstancesWithInvitations());
     }

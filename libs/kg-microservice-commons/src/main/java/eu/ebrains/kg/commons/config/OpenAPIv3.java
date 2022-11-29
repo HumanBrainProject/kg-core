@@ -83,7 +83,7 @@ public class OpenAPIv3 {
 
         OpenAPI openapi = new OpenAPI().openapi("3.0.3");
         String description = String.format("This is the API of the EBRAINS Knowledge Graph (commit %s).", commit);
-        return openapi.tags(APINaming.orderedTags()).info(new Info().version(Version.V3_BETA).title("This is the EBRAINS KG API").description(description)
+        return openapi.tags(APINaming.orderedTags()).info(new Info().title("This is the EBRAINS KG API").description(description)
                         .license(new License().name("Apache 2.0").url("https://www.apache.org/licenses/LICENSE-2.0.html"))
                         .termsOfService("https://kg.ebrains.eu/search-terms-of-use.html")).components(new Components())
                 .schemaRequirement(AUTHORIZATION_HEADER, userToken).schemaRequirement(CLIENT_AUTHORIZATION_HEADER, clientToken)
