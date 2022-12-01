@@ -69,13 +69,10 @@ public class MainEventTracker implements EventTracker {
     }
 
     private void saveLastSeenEventIdToDB(DataStage stage, String lastSeenEventId) {
-        ArangoCollection eventTracking = getEventTracking(stage);
         Map<String, Object> doc = new HashMap<>();
         doc.put("_key", "primaryStore");
         doc.put("lastEventId", lastSeenEventId);
         doc.put("numberOfEvents", this.numberOfEventsProcessed);
-        //FIXME allow to record the most recent event without introducing concurrency issues
-        //eventTracking.insertDocument(doc, new DocumentCreateOptions().waitForSync(true).overwrite(true));
     }
 
     private String loadLastSeenEventIdFromDB(DataStage stage) {

@@ -89,13 +89,6 @@ public class JsonLdAPI implements eu.ebrains.kg.commons.api.JsonLd.Client {
         this.jsonAdapter = jsonAdapter;
     }
 
-    @Override
-    public List<? extends JsonLdDoc> applyVocab(List<NormalizedJsonLd> documents, String vocab) {
-        if (vocab != null) {
-            documents.forEach(d -> d.applyVocab(vocab));
-        }
-        return documents;
-    }
 
     @Override
     public NormalizedJsonLd normalize(JsonLdDoc payload, boolean keepNullValues) {

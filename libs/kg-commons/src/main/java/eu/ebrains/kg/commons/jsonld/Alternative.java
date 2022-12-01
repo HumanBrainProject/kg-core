@@ -40,9 +40,6 @@ public class Alternative extends TreeMap<String, Object> {
     public Object getValue() {
         return this.get(HBPVocabulary.INFERENCE_ALTERNATIVES_VALUE);
     }
-    public Boolean getIsSelected() {
-        return (Boolean) this.get(HBPVocabulary.INFERENCE_ALTERNATIVES_SELECTED);
-    }
 
     public Set<String> getUserIds() {
         return (Set<String>)this.get(HBPVocabulary.INFERENCE_ALTERNATIVES_USERIDS);

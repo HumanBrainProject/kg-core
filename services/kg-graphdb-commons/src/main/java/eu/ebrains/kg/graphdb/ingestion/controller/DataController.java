@@ -93,7 +93,7 @@ public class DataController {
         return operations;
     }
 
-    public List<DBOperation> createDeleteOperations(DataStage stage, List<ArangoDocumentReference> documentRefs) {
+    public List<DBOperation> createDeleteOperations(List<ArangoDocumentReference> documentRefs) {
         return documentRefs.stream().map(DeleteOperation::new).collect(Collectors.toList());
     }
 

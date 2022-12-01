@@ -37,17 +37,6 @@ public enum Op {
           this.instanceFilter = instanceFilter;
     }
 
-    public static Op valueCaseInsensitive(String value){
-        if(value!=null) {
-            for (Op op : values()) {
-                if (op.toString().equalsIgnoreCase(value)) {
-                    return op;
-                }
-            }
-        }
-        return null;
-    }
-
     public String getName() {
         return name;
     }

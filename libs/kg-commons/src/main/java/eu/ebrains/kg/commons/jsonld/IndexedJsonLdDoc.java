@@ -39,8 +39,6 @@ public class IndexedJsonLdDoc {
     public static final String DOCUMENT_ID = "_documentId";
     public static final String ALTERNATIVE = "_alternative";
     public static final String ORIGINAL_DOCUMENT = "_originalDocument";
-    public static final String DOC_COLLECTION = "_docCollection";
-    public static final String DOC_TYPES = "_docTypes";
     public static final String ORIGINAL_TO = "_originalTo";
     public static final String IDENTIFIERS = "_identifiers";
     public static final String LABEL = "_label";

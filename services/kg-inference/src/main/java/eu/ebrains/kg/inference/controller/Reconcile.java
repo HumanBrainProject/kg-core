@@ -49,7 +49,6 @@ import java.util.stream.Collectors;
  * of which instances are contributing to the same entity. This is solved by known-semantics. The system can think of
  * these information sources:
  * 1. Linking via shared identifiers ({@link eu.ebrains.kg.commons.semantics.vocabularies.SchemaOrgVocabulary#IDENTIFIER})
- * 2. Explicit links (instances are connected via explicit links (e.g. {@link eu.ebrains.kg.commons.semantics.vocabularies.SchemaOrgVocabulary#SAME_AS} or {@link eu.ebrains.kg.commons.semantics.vocabularies.ProvVocabulary#ALTERNATE_OF})
  * <p>
  * The reconciliation of stable links is rather straight forward: If the linking information is available already at the
  * creation time of an instance and is not manipulated anymore, it will just never get its own id in the inferred space.

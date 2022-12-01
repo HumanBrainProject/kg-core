@@ -38,8 +38,6 @@ public interface Authentication {
 
     interface Client extends Authentication {}
 
-    ClientAuthToken fetchToken(String clientId, String clientSecret);
-
     String openIdConfigUrl();
 
     String authEndpoint();

@@ -38,12 +38,9 @@ public class InvitationAPI implements eu.ebrains.kg.commons.api.Invitation.Clien
 
     private final AuthenticationRepository authenticationRepository;
     private final InvitationController invitationController;
-    private final KeycloakController keycloakController;
-
-    public InvitationAPI(AuthenticationRepository authenticationRepository, InvitationController invitationController, KeycloakController keycloakController) {
+    public InvitationAPI(AuthenticationRepository authenticationRepository, InvitationController invitationController) {
         this.authenticationRepository = authenticationRepository;
         this.invitationController = invitationController;
-        this.keycloakController = keycloakController;
     }
 
     @Override

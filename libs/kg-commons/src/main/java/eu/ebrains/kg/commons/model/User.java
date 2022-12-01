@@ -79,7 +79,4 @@ public class User extends NormalizedJsonLd {
         return o1==null && o2==null || (o1!=null && o1.equals(o2));
     }
 
-    public boolean isServiceAccountForClient(String clientId){
-        return getUserName() !=null && getUserName().equals(String.format("service-account-%s", clientId));
-    }
 }

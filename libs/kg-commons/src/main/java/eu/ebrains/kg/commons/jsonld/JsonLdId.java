@@ -31,16 +31,7 @@ import java.util.Objects;
 
 public class JsonLdId {
 
-    public static JsonLdId cast(String id, JsonLdId fallback){
-        try{
-            return new JsonLdId(id);
-        }
-        catch(IllegalArgumentException e){
-            return fallback;
-        }
-    }
-
-    public JsonLdId(String id) {
+     public JsonLdId(String id) {
         if(id==null){
             this.id = null;
         }

@@ -36,10 +36,6 @@ public class AmbiguousIdException extends AmbiguousException {
         super(createMessage(lookupId, idsFound));
     }
 
-    public AmbiguousIdException(UUID lookupId, Throwable cause, List<JsonLdId> idsFound) {
-        super(createMessage(lookupId, idsFound), cause);
-    }
-
     private static final String createMessage(UUID lookupId, List<JsonLdId> ids) {
         return String.format("Ambiguous ids found for %s: %s", lookupId, String.join(", ", ids != null ? ids.stream().map(JsonLdId::getId).collect(Collectors.toSet()) : Collections.emptySet()));
     }

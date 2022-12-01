@@ -42,18 +42,16 @@ public class GetTypesTest extends AbstractTest {
     private final SpaceName spaceName;
     private final boolean withProperties;
     private final boolean withIncomingLinks;
-    private final boolean withCounts;
 
     public PaginatedResult<TypeInformation> response;
 
-    public GetTypesTest(TestContext testContext, SpaceName spaceName, boolean withProperties, boolean withIncomingLinks, boolean withCounts, TypesV3 types, InstancesV3 instances) {
+    public GetTypesTest(TestContext testContext, SpaceName spaceName, boolean withProperties, boolean withIncomingLinks, TypesV3 types, InstancesV3 instances) {
         super(testContext);
         this.instances = instances;
         this.types = types;
         this.spaceName = spaceName;
         this.withProperties = withProperties;
         this.withIncomingLinks = withIncomingLinks;
-        this.withCounts = withCounts;
     }
 
     @Override

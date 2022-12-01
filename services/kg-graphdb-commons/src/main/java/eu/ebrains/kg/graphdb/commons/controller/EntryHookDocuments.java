@@ -44,16 +44,12 @@ import java.util.UUID;
 @Component
 public class EntryHookDocuments {
 
-
-    private final Logger logger = LoggerFactory.getLogger(getClass());
     private final ArangoDatabases databases;
-    private final IdUtils idUtils;
     private final GraphDBArangoUtils utils;
 
-    public EntryHookDocuments(ArangoDatabases databases, GraphDBArangoUtils utils, IdUtils idUtils) {
+    public EntryHookDocuments(ArangoDatabases databases, GraphDBArangoUtils utils) {
         this.databases = databases;
         this.utils = utils;
-        this.idUtils = idUtils;
     }
 
     public ArangoDocumentReference getOrCreateDocumentIdHookDocument(ArangoDocumentReference documentRef, ArangoDatabase database) {

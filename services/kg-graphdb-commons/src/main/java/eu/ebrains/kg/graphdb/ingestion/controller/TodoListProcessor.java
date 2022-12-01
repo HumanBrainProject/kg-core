@@ -87,7 +87,7 @@ public class TodoListProcessor {
                     logger.info("Removing an instance");
                     //Since we're going to do a "hard" delete, we also have to remove all instances that have been contributing to it.
                     final List<ArangoDocumentReference> nativeDocumentsByInferredInstance = getNativeDocumentsByInferredInstance(rootDocumentReference);
-                    repository.executeTransactional(DataStage.NATIVE, dataController.createDeleteOperations(stage, nativeDocumentsByInferredInstance));
+                    repository.executeTransactional(DataStage.NATIVE, dataController.createDeleteOperations(nativeDocumentsByInferredInstance));
                     deleteDocument(DataStage.IN_PROGRESS, rootDocumentReference);
                 }
                 case UNRELEASE -> {
@@ -151,7 +151,7 @@ public class TodoListProcessor {
 
     public void deleteDocument(DataStage stage, ArangoDocumentReference documentReference) {
         if (repository.doesDocumentExist(stage, documentReference)) {
-            final List<DBOperation> deleteOperations = dataController.createDeleteOperations(stage, Collections.singletonList(documentReference));
+            final List<DBOperation> deleteOperations = dataController.createDeleteOperations(Collections.singletonList(documentReference));
             repository.executeTransactional(stage, deleteOperations);
         } else {
             logger.warn(String.format("Tried to remove non-existent document with id %s in stage %s", documentReference.getId(), stage.name()));

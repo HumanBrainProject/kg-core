@@ -117,18 +117,6 @@ public class AQL {
     }
 
 
-    public TrustedAqlValue list(Collection<ArangoCollectionReference> values) {
-        return listValuesWithQuote('`', values, ArangoCollectionReference::getCollectionName);
-    }
-
-    public <T> TrustedAqlValue list(Collection<T> values, Function<T, String> transform) {
-        if (values == null) {
-            return trust("");
-        }
-        return listValuesWithQuote('"', values, transform);
-    }
-
-
     private <T> TrustedAqlValue listValuesWithQuote(Character quote, Collection<T> values, Function<T, String> transform) {
         if (values != null && !values.isEmpty()) {
             String q = quote != null ? String.valueOf(quote) : "";

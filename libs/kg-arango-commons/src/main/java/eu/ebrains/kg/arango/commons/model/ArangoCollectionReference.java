@@ -45,6 +45,7 @@ public class ArangoCollectionReference {
     }
 
 
+    //For serialization
     protected ArangoCollectionReference() {
     }
 

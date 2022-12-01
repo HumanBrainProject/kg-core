@@ -31,5 +31,4 @@ import java.util.List;
 public interface JsonLd {
     interface Client extends JsonLd {}
     NormalizedJsonLd normalize(JsonLdDoc payload, boolean keepNullValues);
-    List<? extends JsonLdDoc> applyVocab(List<NormalizedJsonLd> documents, String vocab);
 }

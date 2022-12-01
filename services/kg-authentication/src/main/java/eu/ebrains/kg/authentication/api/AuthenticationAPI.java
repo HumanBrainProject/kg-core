@@ -81,14 +81,6 @@ public class AuthenticationAPI implements Authentication.Client {
 
 
     /**
-     * CLIENTS
-     **/
-    @Override
-    public ClientAuthToken fetchToken(String clientId, String clientSecret) {
-        return new ClientAuthToken(keycloakController.authenticate(clientId, clientSecret));
-    }
-
-    /**
      * USERS
      **/
     @Override

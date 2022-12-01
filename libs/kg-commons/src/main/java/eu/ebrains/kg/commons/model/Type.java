@@ -56,10 +56,6 @@ public class Type {
         return name;
     }
 
-    public String getEncodedName() {
-        return URLEncoder.encode(getName(), StandardCharsets.UTF_8);
-    }
-
     public Boolean getIgnoreIncomingLinks() {
         return ignoreIncomingLinks;
     }
@@ -95,17 +91,6 @@ public class Type {
         final List<SpaceTypeInformation> spaces = payload.getSpaces();
         if(spaces!=null){
             targetType.spaces = spaces.stream().map(s -> SpaceName.fromString(s.getSpace())).collect(Collectors.toSet());
-        }
-        return targetType;
-    }
-
-
-    public static Type fromPayload(NormalizedJsonLd payload) {
-        Type targetType = new Type(payload.primaryIdentifier());
-        targetType.setIgnoreIncomingLinks(payload.getAs(EBRAINSVocabulary.META_IGNORE_INCOMING_LINKS, Boolean.class));
-        List<NormalizedJsonLd> spaces = payload.getAsListOf(EBRAINSVocabulary.META_SPACES, NormalizedJsonLd.class);
-        if(spaces!=null){
-            targetType.spaces = spaces.stream().map(s -> SpaceName.fromString(s.getAs(EBRAINSVocabulary.META_SPACE, String.class))).collect(Collectors.toSet());
         }
         return targetType;
     }

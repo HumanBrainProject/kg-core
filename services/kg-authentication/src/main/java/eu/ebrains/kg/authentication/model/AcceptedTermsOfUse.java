@@ -30,6 +30,7 @@ public class AcceptedTermsOfUse {
     private String version;
     private Date date;
 
+    // For serialization
     public AcceptedTermsOfUse() {
     }
 

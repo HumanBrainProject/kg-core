@@ -37,10 +37,6 @@ import java.util.stream.Collectors;
  */
 public class JsonLdDoc extends DynamicJson {
 
-    public static final String APPLICATION_JSON = "application/json";
-    public static final String APPLICATION_LD_JSON = "application/ld+json";
-    protected static final List<String> IDENTIFIER_FIELDS = Collections.singletonList(SchemaOrgVocabulary.IDENTIFIER);
-
     public JsonLdDoc() {
     }
 
@@ -88,12 +84,6 @@ public class JsonLdDoc extends DynamicJson {
         put(SchemaOrgVocabulary.IDENTIFIER, allIdentifiers);
     }
 
-    public void removeIdentifiers(String... identifiers) {
-        for (String identifier : identifiers) {
-            identifiers().remove(identifier);
-        }
-    }
-
     public void setId(JsonLdId id) {
         put(JsonLdConsts.ID, id != null ? id.getId() : null);
     }
@@ -105,37 +95,6 @@ public class JsonLdDoc extends DynamicJson {
 
     public void addProperty(Object key, Object value) {
         put(key.toString(), value);
-    }
-
-    public void addReference(String propertyName, String url) {
-        Map<String, String> reference = new HashMap<>();
-        reference.put(JsonLdConsts.ID, url);
-        addToProperty(propertyName, reference);
-    }
-
-    public JsonLdDoc addToProperty(String propertyName, Object value) {
-        addToProperty(propertyName, value, this);
-        return this;
-    }
-
-    public boolean isOfType(String lookupType) {
-        Object type = get(JsonLdConsts.TYPE);
-        if (type != null && lookupType != null) {
-            if (type instanceof String) {
-                return type.equals(lookupType);
-            } else if (type instanceof Collection) {
-                return ((Collection) type).contains(lookupType);
-            }
-        }
-        return false;
-    }
-
-    public boolean hasType() {
-        return hasType(this);
-    }
-
-    private boolean hasType(Map<?, ?> object) {
-        return object.containsKey(JsonLdConsts.TYPE);
     }
 
     private boolean isValidType(Object type) {
@@ -234,45 +193,6 @@ public class JsonLdDoc extends DynamicJson {
         return null;
     }
 
-
-    public void addAlternative(String propertyName, Alternative value) {
-        Map<String, Object> alternatives = (Map<String, Object>) get(HBPVocabulary.INFERENCE_ALTERNATIVES);
-        if (alternatives == null) {
-            alternatives = new TreeMap<>();
-            put(HBPVocabulary.INFERENCE_ALTERNATIVES, alternatives);
-        }
-        Object v;
-        if (alternatives.isEmpty()) {
-            v = new ArrayList<Alternative>();
-            ((List) v).add(value);
-        } else {
-            v = value;
-        }
-        if (!value.getUserIds().isEmpty() && !value.getUserIds().stream().allMatch(Objects::isNull)) {
-            addToProperty(propertyName, v, alternatives);
-        }
-    }
-
-    private static void addToProperty(String propertyName, Object value, Map map) {
-        Object o = map.get(propertyName);
-        if (o == null) {
-            map.put(propertyName, value);
-        } else if (o instanceof Collection) {
-            if (!((Collection) o).contains(value)) {
-                ((Collection) o).add(value);
-            }
-        } else if (!o.equals(value)) {
-            List<Object> list = new ArrayList<>();
-            list.add(o);
-            list.add(value);
-            map.put(propertyName, list);
-        }
-    }
-
-    public void processLinks(Consumer<Map> referenceConsumer) {
-        processLinks(referenceConsumer, this, true);
-    }
-
     private void processLinks(Consumer<Map> referenceConsumer, Map currentMap, boolean root) {
         //Skip root-id
         if (!root && currentMap.containsKey(JsonLdConsts.ID)) {
@@ -288,10 +208,6 @@ public class JsonLdDoc extends DynamicJson {
                 }
             }
         }
-    }
-
-    public void replaceNamespace(String oldNamespace, String newNamespace) {
-        replaceNamespace(oldNamespace, newNamespace, this);
     }
 
     private void replaceNamespace(String oldNamespace, String newNamespace, Map currentMap) {

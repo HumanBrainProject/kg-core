@@ -149,14 +149,6 @@ public class Space extends DynamicJson {
         this.put(EBRAINSVocabulary.META_DEFER_CACHE_SPACE, deferCache);
     }
 
-
-
-
-    @JsonIgnore
-    public static JsonLdId createId(SpaceName name){
-        return EBRAINSVocabulary.createIdForStructureDefinition("spaces", name.getName());
-    }
-
     @JsonIgnore
     public SpaceInformation toSpaceInformation(){
         SpaceInformation information = new SpaceInformation();

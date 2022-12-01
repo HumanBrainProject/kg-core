@@ -49,9 +49,4 @@ public class UserInfoMapping {
         return authenticationRepository.getRolesFromUserInfo(userInfo);
     }
 
-    @CacheEvict("userRoleMapping")
-    public void evictUserOrClientProfile(String token){
-        // This is for cache eviction only
-    }
-
 }

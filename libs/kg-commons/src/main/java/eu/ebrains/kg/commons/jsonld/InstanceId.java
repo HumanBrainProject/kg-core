@@ -35,8 +35,6 @@ import java.util.UUID;
 public class InstanceId implements Serializable {
     public InstanceId() {
     }
-
-
     public InstanceId(UUID id, SpaceName space) {
         this.uuid = id;
         this.space = space;

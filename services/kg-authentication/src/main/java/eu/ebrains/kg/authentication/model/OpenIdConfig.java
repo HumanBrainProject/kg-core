@@ -30,14 +30,8 @@ public class OpenIdConfig {
     @JsonProperty("issuer")
     private String issuer;
 
-    @JsonProperty("authorization_endpoint")
-    private String authorizationEndpoint;
-
     @JsonProperty("token_endpoint")
     private String tokenEndpoint;
-
-    @JsonProperty("token_introspection_endpoint")
-    private String tokenIntrospectionEndpoint;
 
     @JsonProperty("userinfo_endpoint")
     private String userInfoEndpoint;

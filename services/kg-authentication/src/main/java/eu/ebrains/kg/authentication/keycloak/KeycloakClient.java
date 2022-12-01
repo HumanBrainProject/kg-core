@@ -90,10 +90,6 @@ public class KeycloakClient {
         return openIdConfig.getIssuer().split("/realms")[0];
     }
 
-    public String getRealm(){
-        return issuerInfo.getRealm();
-    }
-
     private final int maxTries = 10;
 
     private <X> X loadWithRetry(int currentTry, Function<Integer, X> function) {

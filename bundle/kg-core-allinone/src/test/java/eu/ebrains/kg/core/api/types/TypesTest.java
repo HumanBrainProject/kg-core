@@ -97,7 +97,7 @@ class TypesTest extends AbstractFunctionalityTest {
     @Test
     void getTypesOk() {
         //Given
-        GetTypesTest test = new GetTypesTest(ctx(READ_TYPES_IN_PROGRESS_ROLES), null, false, false, false, types, instances);
+        GetTypesTest test = new GetTypesTest(ctx(READ_TYPES_IN_PROGRESS_ROLES), null, false, false, types, instances);
 
         //When
         test.execute(() -> {
@@ -110,7 +110,7 @@ class TypesTest extends AbstractFunctionalityTest {
     @Test
     void getTypesForbidden() {
         //Given
-        GetTypesTest test = new GetTypesTest(ctx(NON_READ_TYPES_IN_PROGRESS_ROLES), null, false, false, false, types, instances);
+        GetTypesTest test = new GetTypesTest(ctx(NON_READ_TYPES_IN_PROGRESS_ROLES), null, false, false, types, instances);
 
         //When
         test.execute(() -> {
@@ -124,7 +124,7 @@ class TypesTest extends AbstractFunctionalityTest {
     @Test
     void getTypesBySpaceOk() {
         //Given
-        GetTypesTest test = new GetTypesTest(ctx(NON_READ_TYPES_IN_PROGRESS_ROLES), new SpaceName("functionalityTest"), false, false,false,  types, instances);
+        GetTypesTest test = new GetTypesTest(ctx(NON_READ_TYPES_IN_PROGRESS_ROLES), new SpaceName("functionalityTest"), false, false, types, instances);
 
         //When
         test.execute(() -> {
@@ -139,7 +139,7 @@ class TypesTest extends AbstractFunctionalityTest {
     @Test
     void getTypesBySpaceForbidden() {
         //Given
-        GetTypesTest test = new GetTypesTest(ctx(NON_READ_TYPES_IN_PROGRESS_ROLES), new SpaceName("functionalityTest"), false, false,false, types, instances);
+        GetTypesTest test = new GetTypesTest(ctx(NON_READ_TYPES_IN_PROGRESS_ROLES), new SpaceName("functionalityTest"), false, false,types, instances);
 
         //When
         test.execute(() -> {
@@ -154,7 +154,7 @@ class TypesTest extends AbstractFunctionalityTest {
     @Test
     void getTypesWithPropertiesOk() {
         //Given
-        GetTypesTest test = new GetTypesTest(ctx(READ_TYPES_IN_PROGRESS_ROLES), null, true, false, true, types, instances);
+        GetTypesTest test = new GetTypesTest(ctx(READ_TYPES_IN_PROGRESS_ROLES), null, true, false, types, instances);
 
         //When
         test.execute(() -> {
@@ -171,7 +171,7 @@ class TypesTest extends AbstractFunctionalityTest {
     @Test
     void getTypesWithPropertiesForbidden() {
         //Given
-        GetTypesTest test = new GetTypesTest(ctx(NON_READ_TYPES_IN_PROGRESS_ROLES), null, true, false, true, types, instances);
+        GetTypesTest test = new GetTypesTest(ctx(NON_READ_TYPES_IN_PROGRESS_ROLES), null, true, false, types, instances);
 
         //When
         test.execute(() -> {
@@ -185,7 +185,7 @@ class TypesTest extends AbstractFunctionalityTest {
     @Test
     void getTypesBySpaceWithPropertiesOk() {
         //Given
-        GetTypesTest test = new GetTypesTest(ctx(READ_TYPES_IN_PROGRESS_ROLES), new SpaceName("functionalityTest"), true, false, true, types, instances);
+        GetTypesTest test = new GetTypesTest(ctx(READ_TYPES_IN_PROGRESS_ROLES), new SpaceName("functionalityTest"), true, false, types, instances);
 
         //When
         test.execute(() -> {
@@ -199,7 +199,7 @@ class TypesTest extends AbstractFunctionalityTest {
     @Test
     void getTypesBySpaceWithPropertiesForbidden() {
         //Given
-        GetTypesTest test = new GetTypesTest(ctx(NON_READ_TYPES_IN_PROGRESS_ROLES), new SpaceName("functionalityTest"), true, false, true, types, instances);
+        GetTypesTest test = new GetTypesTest(ctx(NON_READ_TYPES_IN_PROGRESS_ROLES), new SpaceName("functionalityTest"), true, false, types, instances);
 
         //When
         test.execute(() -> {
