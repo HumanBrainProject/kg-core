@@ -24,8 +24,8 @@
 package eu.ebrains.kg.commons;
 
 import eu.ebrains.kg.commons.api.Authentication;
-import eu.ebrains.kg.commons.model.internal.spaces.Space;
 import eu.ebrains.kg.commons.model.SpaceName;
+import eu.ebrains.kg.commons.model.internal.spaces.Space;
 import eu.ebrains.kg.commons.models.UserWithRoles;
 import org.springframework.stereotype.Component;
 

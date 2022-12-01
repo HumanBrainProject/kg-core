@@ -29,17 +29,16 @@ import eu.ebrains.kg.commons.model.external.spaces.SpaceInformation;
 import eu.ebrains.kg.commons.permission.roles.RoleMapping;
 import eu.ebrains.kg.commons.semantics.vocabularies.EBRAINSVocabulary;
 import eu.ebrains.kg.commons.semantics.vocabularies.SchemaOrgVocabulary;
-import eu.ebrains.kg.core.api.v3.InstancesV3;
-import eu.ebrains.kg.core.api.v3.SpacesV3;
 import eu.ebrains.kg.core.api.spaces.test.GetSpaceWithPermissionsTest;
 import eu.ebrains.kg.core.api.spaces.test.GetSpacesWithPermissionsTest;
+import eu.ebrains.kg.core.api.v3.InstancesV3;
+import eu.ebrains.kg.core.api.v3.SpacesV3;
 import eu.ebrains.kg.testutils.AbstractFunctionalityTest;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import java.util.Comparator;
 import java.util.List;
-
 
 import static org.junit.jupiter.api.Assertions.*;
 

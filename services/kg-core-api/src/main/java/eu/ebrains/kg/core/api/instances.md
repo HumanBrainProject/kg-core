@@ -12,30 +12,30 @@ sequenceDiagram
   end
   Core API ->> Core API: resolve space name
   Core API ->> Core API: validate payload and check for normalization
-  opt payload is not normalized:
+  opt payload is not normalized
       Core API ->> JSON-LD: normalize payload
       JSON-LD -->> Core API: normalized payload  
   end
   Core API ->> Ids: find id
   Ids -->> Core API: Optional[Instance ID]
-  alt id exists:
+  alt id exists
     Core API -->> Client: Conflict (409)
-  else id doesn't exist:
+  else id doesn't exist
     Core API ->> Core API: specify field update times in payload
     Core API ->> Primary store: post upsert event
     Primary store -->> Core API: affected instance ids
-    alt return payload:
+    alt return payload
         Core API ->> Graph DB: get instances by ids
         Graph DB -->> Core API: return payloads
-        opt return alternatives:
+        opt return alternatives
             Core API ->> Core API: resolve alternatives
         end
-        opt return permissions:
+        opt return permissions
             Core API ->> Core API: enrich payload with permission information
         end        
         Core API ->> Core API: Rename private and invited spaces
         Core API -->> Client: JSON payloads (200)
-    else don't return payload:
+    else don't return payload
         Core API -->> Client: JSON payload containing ids only (200)
     end
   end   
@@ -49,41 +49,41 @@ sequenceDiagram
   actor Client
   Client ->> Core API: contribute to instance
   Core API ->> Core API: validate payload and check for normalization
-  opt payload is not normalized:
+  opt payload is not normalized
       Core API ->> JSON-LD: normalize payload
-      JSON-LD ->> Core API: normalized payload  
+      JSON-LD -->> Core API: normalized payload  
   end
   Core API ->> Ids: find id
   Ids ->> Core API: Optional[Instance ID]
-  alt id doesn't exist:
+  alt id doesn't exist
     Core API ->> Client: Not Found (404)
-  else id does exist:
+  else id does exist
     Core API ->> Core API: calculate document id for user
     Core API ->> Graph DB: look up existing document for user
-    Graph DB ->> Core API: Optional[Document]
-    alt document doesn't exist:
+    Graph DB -->> Core API: Optional[Document]
+    alt document doesn't exist
         Core API ->> Core API: specify update times for each field to "now"
-    else document exists:
+    else document exists
         Core API ->> Core API: replace values of fields and update times for updated fields to "now"
     end
-    opt full replacement:
+    opt full replacement
         Core API ->> Core API: Remove all non-specified fields
     end
     Core API ->> Primary store: post upsert event
-    Primary store ->> Core API: affected instance ids
-    alt return payload:
+    Primary store -->> Core API: affected instance ids
+    alt return payload
         Core API ->> Graph DB: get instances by ids
-        Graph DB ->> Core API: return payloads
-        opt return alternatives:
+        Graph DB -->> Core API: return payloads
+        opt return alternatives
             Core API ->> Core API: resolve alternatives
         end
-        opt return permissions:
+        opt return permissions
             Core API ->> Core API: enrich payload with permission information
         end        
         Core API ->> Core API: Rename private and invited spaces
-        Core API ->> Client: JSON payloads (200)
-    else don't return payload:
-        Core API ->> Client: JSON payload containing ids only (200)
+        Core API -->> Client: JSON payloads (200)
+    else don't return payload
+        Core API -->> Client: JSON payload containing ids only (200)
     end
   end
 ```
@@ -96,23 +96,23 @@ sequenceDiagram
   actor Client
   Client ->> Core API: get instance by id
   Core API ->> Ids: resolve id
-  Ids ->> Core API: Optional[Instance Id]
-  alt Instance Id doesn't exist:
-      Core API ->> Client: Not found (404)
-  else Instance Id exists:
-    alt return payload:
+  Ids -->> Core API: Optional[Instance Id]
+  alt Instance Id doesn't exist
+      Core API -->> Client: Not found (404)
+  else Instance Id exists
+    alt return payload
         Core API ->> Graph DB: get instances by ids
-        Graph DB ->> Core API: return payloads
-        opt return alternatives:
+        Graph DB -->> Core API: return payloads
+        opt return alternatives
             Core API ->> Core API: resolve alternatives
         end
-        opt return permissions:
+        opt return permissions
             Core API ->> Core API: enrich payload with permission information
         end
         Core API ->> Core API: Rename private and invited spaces
-        Core API ->> Client: JSON payloads (200)
-    else don't return payload:
-        Core API ->> Client: JSON payload containing ids only (200)
+        Core API -->> Client: JSON payloads (200)
+    else don't return payload
+        Core API -->> Client: JSON payload containing ids only (200)
     end  
   end
 ```
@@ -124,27 +124,27 @@ sequenceDiagram
   autonumber
   actor Client
   Client ->> Core API: list instances
-  alt is review space:
+  alt is review space
     Core API ->> Core API: get instances by ids with invitation ids
-  else is not review space:
-    opt is searchterm a UUID:
+  else is not review space
+    opt is searchterm a UUID
        Core API ->> Ids: resolve UUID
-       Ids ->> Core API: Optional[Instance Id]
+       Ids -->> Core API: Optional[Instance Id]
        Core API ->> Core API: replace search term with instance id
     end
     Core API ->> Graph DB: get instances by type
-    Graph DB ->> Core API: instances for type
-    alt return payload:
-        opt return alternatives:
+    Graph DB -->> Core API: instances for type
+    alt return payload
+        opt return alternatives
             Core API ->> Core API: resolve alternatives
         end
-        opt return permissions:
+        opt return permissions
             Core API ->> Core API: enrich payload with permission information
         end
         Core API ->> Core API: Rename private and invited spaces
-        Core API ->> Client: JSON payloads (200)
-    else don't return payload:
-        Core API ->> Client: JSON payload containing ids only (200)
+        Core API -->> Client: JSON payloads (200)
+    else don't return payload
+        Core API -->> Client: JSON payload containing ids only (200)
     end  
   end
 ```
@@ -157,18 +157,18 @@ sequenceDiagram
   actor Client
   Client ->> Core API: delete instance
   Core API ->> Ids: Resolve id
-  Ids ->> Core API: Optional[Instance Id]
-  alt Instance Id not exists:
-    Core API ->> Client: Not found (404)
-  else:
+  Ids -->> Core API: Optional[Instance Id]
+  alt Instance Id not exists
+    Core API -->> Client: Not found (404)
+  else Instance Id exists
     Core API ->> Releasing: get release status
-    Releasing ->> Core API: Release status
-    alt Release status is unreleased:
+    Releasing -->> Core API: Release status
+    alt Release status is unreleased
         Core API ->> Primary store: post delete event
-        Primary store ->> Core API: affected instance ids
-        Core API ->> Client: Ok (200)
-    else:
-        Core API ->> Client: Conflict (409)
+        Primary store -->> Core API: affected instance ids
+        Core API -->> Client: Ok (200)
+    else Release status is released or changed
+        Core API -->> Client: Conflict (409)
     end
   end
 ```

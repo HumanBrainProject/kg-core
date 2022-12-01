@@ -24,7 +24,6 @@
 package eu.ebrains.kg.core.api.v3;
 
 import eu.ebrains.kg.commons.Version;
-import eu.ebrains.kg.commons.api.APINaming;
 import eu.ebrains.kg.commons.api.GraphDBTypes;
 import eu.ebrains.kg.commons.config.openApiGroups.Admin;
 import eu.ebrains.kg.commons.jsonld.JsonLdId;
@@ -33,7 +32,6 @@ import eu.ebrains.kg.commons.markers.WritesData;
 import eu.ebrains.kg.commons.semantics.vocabularies.EBRAINSVocabulary;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
-import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.web.bind.annotation.*;
 
 import java.net.URLDecoder;

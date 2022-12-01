@@ -25,11 +25,16 @@ package eu.ebrains.kg.core.controller;
 
 import eu.ebrains.kg.commons.AuthContext;
 import eu.ebrains.kg.commons.IdUtils;
-import eu.ebrains.kg.commons.api.*;
+import eu.ebrains.kg.commons.api.GraphDBInstances;
+import eu.ebrains.kg.commons.api.GraphDBScopes;
+import eu.ebrains.kg.commons.api.Invitation;
+import eu.ebrains.kg.commons.api.PrimaryStoreEvents;
 import eu.ebrains.kg.commons.exception.ForbiddenException;
 import eu.ebrains.kg.commons.exception.InstanceNotFoundException;
 import eu.ebrains.kg.commons.exception.UnauthorizedException;
-import eu.ebrains.kg.commons.jsonld.*;
+import eu.ebrains.kg.commons.jsonld.InstanceId;
+import eu.ebrains.kg.commons.jsonld.JsonLdConsts;
+import eu.ebrains.kg.commons.jsonld.NormalizedJsonLd;
 import eu.ebrains.kg.commons.model.*;
 import eu.ebrains.kg.commons.models.UserWithRoles;
 import eu.ebrains.kg.commons.permission.Functionality;

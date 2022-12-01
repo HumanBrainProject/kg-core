@@ -26,9 +26,9 @@ package eu.ebrains.kg.core.api.properties.test;
 import eu.ebrains.kg.commons.jsonld.NormalizedJsonLd;
 import eu.ebrains.kg.commons.model.ExtendedResponseConfiguration;
 import eu.ebrains.kg.core.api.AbstractTest;
+import eu.ebrains.kg.core.api.instances.TestContext;
 import eu.ebrains.kg.core.api.v3.InstancesV3;
 import eu.ebrains.kg.core.api.v3.PropertiesV3;
-import eu.ebrains.kg.core.api.instances.TestContext;
 import eu.ebrains.kg.testutils.TestDataFactory;
 
 @SuppressWarnings("java:S2187") //We don't add "tests" to these classes because they are test abstractions and are used in other tests

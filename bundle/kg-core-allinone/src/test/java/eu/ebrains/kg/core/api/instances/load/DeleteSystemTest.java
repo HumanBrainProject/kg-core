@@ -32,7 +32,6 @@ import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 
-import java.io.IOException;
 import java.util.List;
 class DeleteSystemTest extends AbstractInstancesLoadTest {
 

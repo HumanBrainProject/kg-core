@@ -26,8 +26,8 @@ package eu.ebrains.kg.core.controller;
 import eu.ebrains.kg.arango.commons.model.InternalSpace;
 import eu.ebrains.kg.commons.AuthContext;
 import eu.ebrains.kg.commons.exception.InvalidRequestException;
-import eu.ebrains.kg.commons.model.internal.spaces.Space;
 import eu.ebrains.kg.commons.model.SpaceName;
+import eu.ebrains.kg.commons.model.internal.spaces.Space;
 import org.springframework.stereotype.Component;
 
 @Component

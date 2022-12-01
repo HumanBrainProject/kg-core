@@ -27,7 +27,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import eu.ebrains.kg.commons.jsonld.JsonLdConsts;
 import eu.ebrains.kg.commons.jsonld.JsonLdDoc;
 import eu.ebrains.kg.commons.jsonld.JsonLdId;
-import eu.ebrains.kg.commons.jsonld.NormalizedJsonLd;
 import eu.ebrains.kg.commons.semantics.vocabularies.SchemaOrgVocabulary;
 
 import java.util.HashMap;

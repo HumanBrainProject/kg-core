@@ -30,7 +30,6 @@ import eu.ebrains.kg.commons.model.*;
 import eu.ebrains.kg.commons.model.internal.spaces.Space;
 import eu.ebrains.kg.graphdb.commons.controller.ArangoRepositoryCommons;
 import eu.ebrains.kg.test.factory.UserFactory;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 

@@ -24,7 +24,6 @@
 package eu.ebrains.kg.commons.model.external.spaces;
 
 import com.fasterxml.jackson.annotation.JsonGetter;
-import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonSetter;
 import eu.ebrains.kg.commons.jsonld.DynamicJson;
 import eu.ebrains.kg.commons.permission.Functionality;

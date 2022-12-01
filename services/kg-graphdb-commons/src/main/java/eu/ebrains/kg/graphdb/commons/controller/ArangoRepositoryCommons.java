@@ -23,7 +23,6 @@
 
 package eu.ebrains.kg.graphdb.commons.controller;
 
-import com.arangodb.ArangoCursor;
 import com.arangodb.ArangoDatabase;
 import com.arangodb.entity.CollectionEntity;
 import com.arangodb.entity.CollectionType;
@@ -31,7 +30,6 @@ import com.arangodb.entity.StreamTransactionEntity;
 import com.arangodb.model.*;
 import eu.ebrains.kg.arango.commons.aqlbuilder.AQL;
 import eu.ebrains.kg.arango.commons.aqlbuilder.ArangoVocabulary;
-import eu.ebrains.kg.arango.commons.model.AQLQuery;
 import eu.ebrains.kg.arango.commons.model.ArangoCollectionReference;
 import eu.ebrains.kg.arango.commons.model.ArangoDocumentReference;
 import eu.ebrains.kg.arango.commons.model.InternalSpace;
@@ -53,7 +51,6 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
 import java.util.*;
-import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -356,27 +353,8 @@ public class ArangoRepositoryCommons {
         }
     }
 
-    public Set<ArangoDocumentReference> findNativeDependenciesForDocumentId(ArangoDocumentReference documentId) {
-        return findArangoReferencesForDocumentId(databases.getByStage(DataStage.NATIVE), documentId.getDocumentId());
-    }
-
     private Set<ArangoDocumentReference> findRemovalOfAllDependenciesForDocumentId(ArangoDatabase db, ArangoDocumentReference delete, Set<ArangoDocumentReference> skipList) {
         return findArangoReferencesForDocumentId(db, delete.getDocumentId()).stream().filter(Objects::nonNull).filter(ref -> !skipList.contains(ref)).collect(Collectors.toSet());
-    }
-
-    public <T> void visitDocuments(ArangoDatabase db, AQLQuery aqlQuery, Consumer<T> consumer, Class<T> clazz) {
-        AQL aql = aqlQuery.getAql();
-        if (logger.isTraceEnabled()) {
-            logger.trace(aql.buildSimpleDebugQuery(aqlQuery.getBindVars()));
-        }
-        String value = aql.build().getValue();
-        long launch = new Date().getTime();
-        ArangoCursor<T> result = db.query(value, aqlQuery.getBindVars(), aql.getQueryOptions(), clazz);
-        logger.debug(String.format("Received %d results from Arango in %dms", result.getCount(), new Date().getTime() - launch));
-        while(result.hasNext()){
-            consumer.accept(result.next());
-        }
-        logger.debug(String.format("Done visiting the results after %dms", new Date().getTime() - launch));
     }
 
 }

@@ -24,7 +24,6 @@
 package eu.ebrains.kg.commons.api;
 
 import eu.ebrains.kg.commons.jsonld.JsonLdDoc;
-import eu.ebrains.kg.commons.model.ReducedUserInformation;
 import eu.ebrains.kg.commons.model.TermsOfUse;
 import eu.ebrains.kg.commons.model.TermsOfUseResult;
 import eu.ebrains.kg.commons.model.User;

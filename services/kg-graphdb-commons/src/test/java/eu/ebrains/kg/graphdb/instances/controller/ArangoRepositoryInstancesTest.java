@@ -25,7 +25,10 @@ package eu.ebrains.kg.graphdb.instances.controller;
 
 import eu.ebrains.kg.arango.commons.model.ArangoCollectionReference;
 import eu.ebrains.kg.commons.jsonld.NormalizedJsonLd;
-import eu.ebrains.kg.commons.model.*;
+import eu.ebrains.kg.commons.model.DataStage;
+import eu.ebrains.kg.commons.model.Paginated;
+import eu.ebrains.kg.commons.model.PaginationParam;
+import eu.ebrains.kg.commons.model.Type;
 import eu.ebrains.kg.graphdb.AbstractGraphTest;
 import eu.ebrains.kg.graphdb.ingestion.controller.TodoListProcessor;
 import eu.ebrains.kg.test.Simpsons;
@@ -34,8 +37,6 @@ import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-
-import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.*;
 

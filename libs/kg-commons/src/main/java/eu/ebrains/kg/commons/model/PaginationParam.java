@@ -23,8 +23,6 @@
 
 package eu.ebrains.kg.commons.model;
 
-import eu.ebrains.kg.commons.model.internal.spaces.Space;
-
 import java.util.Collections;
 import java.util.List;
 

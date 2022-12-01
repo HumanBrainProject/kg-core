@@ -28,16 +28,16 @@ import eu.ebrains.kg.commons.jsonld.JsonLdDoc;
 import eu.ebrains.kg.commons.jsonld.NormalizedJsonLd;
 import eu.ebrains.kg.commons.model.PaginatedStreamResult;
 import eu.ebrains.kg.core.api.AbstractTest;
+import eu.ebrains.kg.core.api.instances.TestContext;
 import eu.ebrains.kg.core.api.v3.InstancesV3;
 import eu.ebrains.kg.core.api.v3.QueriesV3;
-import eu.ebrains.kg.core.api.instances.TestContext;
-import eu.ebrains.kg.core.api.v3beta.InstancesV3Beta;
-import eu.ebrains.kg.core.api.v3beta.QueriesV3Beta;
 import eu.ebrains.kg.core.model.ExposedStage;
 import eu.ebrains.kg.testutils.TestDataFactory;
 
 import java.io.IOException;
-import java.util.*;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.Map;
 
 @SuppressWarnings("java:S2187") //We don't add "tests" to these classes because they are test abstractions and are used in other tests
 public class TestSimpleQueryTest extends AbstractTest {

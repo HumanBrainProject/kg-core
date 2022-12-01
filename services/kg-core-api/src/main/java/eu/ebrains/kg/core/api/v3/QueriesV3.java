@@ -25,7 +25,6 @@ package eu.ebrains.kg.core.api.v3;
 
 import eu.ebrains.kg.commons.AuthContext;
 import eu.ebrains.kg.commons.Version;
-import eu.ebrains.kg.commons.api.APINaming;
 import eu.ebrains.kg.commons.api.JsonLd;
 import eu.ebrains.kg.commons.config.openApiGroups.Simple;
 import eu.ebrains.kg.commons.exception.InstanceNotFoundException;
@@ -44,7 +43,6 @@ import eu.ebrains.kg.core.controller.IdsController;
 import eu.ebrains.kg.core.model.ExposedStage;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
-import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springdoc.api.annotations.ParameterObject;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;

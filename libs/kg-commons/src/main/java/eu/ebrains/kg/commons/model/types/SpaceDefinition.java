@@ -25,7 +25,6 @@ package eu.ebrains.kg.commons.model.types;
 
 import eu.ebrains.kg.commons.model.SpaceName;
 
-import java.util.List;
 import java.util.Objects;
 
 public class SpaceDefinition {

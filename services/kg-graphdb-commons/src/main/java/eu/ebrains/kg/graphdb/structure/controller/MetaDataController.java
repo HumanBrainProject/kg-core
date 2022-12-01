@@ -24,9 +24,7 @@
 package eu.ebrains.kg.graphdb.structure.controller;
 
 import eu.ebrains.kg.arango.commons.model.ArangoCollectionReference;
-import eu.ebrains.kg.commons.IdUtils;
 import eu.ebrains.kg.commons.Tuple;
-import eu.ebrains.kg.commons.api.Ids;
 import eu.ebrains.kg.commons.jsonld.DynamicJson;
 import eu.ebrains.kg.commons.jsonld.NormalizedJsonLd;
 import eu.ebrains.kg.commons.model.DataStage;

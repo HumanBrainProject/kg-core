@@ -25,8 +25,8 @@ package eu.ebrains.kg.commons.model.external.spaces;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import eu.ebrains.kg.commons.model.internal.spaces.Space;
 import eu.ebrains.kg.commons.model.SpaceName;
+import eu.ebrains.kg.commons.model.internal.spaces.Space;
 import eu.ebrains.kg.commons.semantics.vocabularies.EBRAINSVocabulary;
 import eu.ebrains.kg.commons.semantics.vocabularies.SchemaOrgVocabulary;
 

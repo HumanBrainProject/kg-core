@@ -23,7 +23,6 @@
 
 package eu.ebrains.kg.commons.config;
 
-import eu.ebrains.kg.commons.Version;
 import eu.ebrains.kg.commons.api.APINaming;
 import io.swagger.v3.oas.models.Components;
 import io.swagger.v3.oas.models.OpenAPI;
@@ -39,7 +38,6 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 import java.util.Arrays;
-import java.util.List;
 
 @Configuration
 public class OpenAPIv3 {

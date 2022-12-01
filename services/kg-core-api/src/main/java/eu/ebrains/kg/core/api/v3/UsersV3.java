@@ -24,17 +24,18 @@
 package eu.ebrains.kg.core.api.v3;
 
 import eu.ebrains.kg.commons.Version;
-import eu.ebrains.kg.commons.api.APINaming;
 import eu.ebrains.kg.commons.api.Authentication;
 import eu.ebrains.kg.commons.config.openApiGroups.Extra;
 import eu.ebrains.kg.commons.config.openApiGroups.Simple;
 import eu.ebrains.kg.commons.markers.ExposesUserInfo;
-import eu.ebrains.kg.commons.model.*;
+import eu.ebrains.kg.commons.model.Result;
+import eu.ebrains.kg.commons.model.User;
 import eu.ebrains.kg.commons.models.UserWithRoles;
 import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
 
 
 /**

@@ -23,8 +23,6 @@
 
 package eu.ebrains.kg.commons.model;
 
-import eu.ebrains.kg.commons.jsonld.DynamicJson;
-import eu.ebrains.kg.commons.jsonld.NormalizedJsonLd;
 import eu.ebrains.kg.commons.model.external.types.TypeInformation;
 
 import java.util.Map;

@@ -27,12 +27,10 @@ import eu.ebrains.kg.authentication.controller.AuthenticationRepository;
 import eu.ebrains.kg.authentication.controller.InvitationController;
 import eu.ebrains.kg.authentication.keycloak.KeycloakController;
 import eu.ebrains.kg.authentication.model.Invitation;
-import eu.ebrains.kg.commons.model.ReducedUserInformation;
 import org.springframework.stereotype.Component;
 
 import java.util.Collections;
 import java.util.List;
-import java.util.Objects;
 import java.util.UUID;
 
 @Component

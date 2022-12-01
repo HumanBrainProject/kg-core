@@ -25,8 +25,8 @@ package eu.ebrains.kg.core.api.instances.tests;
 
 import eu.ebrains.kg.commons.jsonld.NormalizedJsonLd;
 import eu.ebrains.kg.commons.model.PaginatedResult;
-import eu.ebrains.kg.core.api.v3.InstancesV3;
 import eu.ebrains.kg.core.api.instances.TestContext;
+import eu.ebrains.kg.core.api.v3.InstancesV3;
 import eu.ebrains.kg.core.model.ExposedStage;
 
 @SuppressWarnings("java:S2187") //We don't add "tests" to these classes because they are test abstractions and are used in other tests

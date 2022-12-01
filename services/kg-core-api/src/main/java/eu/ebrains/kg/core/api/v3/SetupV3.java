@@ -24,7 +24,6 @@
 package eu.ebrains.kg.core.api.v3;
 
 import eu.ebrains.kg.commons.Version;
-import eu.ebrains.kg.commons.api.APINaming;
 import eu.ebrains.kg.commons.api.Authentication;
 import eu.ebrains.kg.commons.config.openApiGroups.Admin;
 import eu.ebrains.kg.commons.config.openApiGroups.Simple;
@@ -34,7 +33,6 @@ import eu.ebrains.kg.commons.model.Result;
 import eu.ebrains.kg.commons.permission.roles.RoleMapping;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirements;
-import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.*;
 

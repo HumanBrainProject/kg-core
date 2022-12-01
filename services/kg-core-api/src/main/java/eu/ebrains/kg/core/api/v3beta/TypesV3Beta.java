@@ -32,7 +32,10 @@ import eu.ebrains.kg.commons.jsonld.JsonLdId;
 import eu.ebrains.kg.commons.jsonld.NormalizedJsonLd;
 import eu.ebrains.kg.commons.markers.ExposesType;
 import eu.ebrains.kg.commons.markers.WritesData;
-import eu.ebrains.kg.commons.model.*;
+import eu.ebrains.kg.commons.model.PaginatedResult;
+import eu.ebrains.kg.commons.model.PaginationParam;
+import eu.ebrains.kg.commons.model.Result;
+import eu.ebrains.kg.commons.model.SpaceName;
 import eu.ebrains.kg.commons.model.external.types.TypeInformation;
 import eu.ebrains.kg.commons.semantics.vocabularies.EBRAINSVocabulary;
 import eu.ebrains.kg.core.model.ExposedStage;
@@ -43,7 +46,8 @@ import org.springframework.web.bind.annotation.*;
 
 import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
-import java.util.*;
+import java.util.List;
+import java.util.Map;
 
 /**
  * The types API allows to get information about the available types of instances including statistical values

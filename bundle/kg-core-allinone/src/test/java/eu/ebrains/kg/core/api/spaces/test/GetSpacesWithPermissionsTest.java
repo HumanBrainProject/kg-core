@@ -23,12 +23,14 @@
 
 package eu.ebrains.kg.core.api.spaces.test;
 
-import eu.ebrains.kg.commons.model.*;
+import eu.ebrains.kg.commons.model.ExtendedResponseConfiguration;
+import eu.ebrains.kg.commons.model.PaginatedResult;
+import eu.ebrains.kg.commons.model.PaginationParam;
 import eu.ebrains.kg.commons.model.external.spaces.SpaceInformation;
 import eu.ebrains.kg.core.api.AbstractTest;
+import eu.ebrains.kg.core.api.instances.TestContext;
 import eu.ebrains.kg.core.api.v3.InstancesV3;
 import eu.ebrains.kg.core.api.v3.SpacesV3;
-import eu.ebrains.kg.core.api.instances.TestContext;
 import eu.ebrains.kg.testutils.TestDataFactory;
 
 @SuppressWarnings("java:S2187") //We don't add "tests" to these classes because they are test abstractions and are used in other tests

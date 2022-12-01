@@ -28,7 +28,6 @@ import eu.ebrains.kg.commons.jsonld.NormalizedJsonLd;
 import eu.ebrains.kg.graphdb.queries.model.spec.Specification;
 import eu.ebrains.kg.test.JsonAdapter4Test;
 import eu.ebrains.kg.test.Simpsons;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.*;

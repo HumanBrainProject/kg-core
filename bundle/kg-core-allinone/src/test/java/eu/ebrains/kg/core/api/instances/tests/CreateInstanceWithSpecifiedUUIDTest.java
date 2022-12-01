@@ -26,8 +26,8 @@ package eu.ebrains.kg.core.api.instances.tests;
 import eu.ebrains.kg.commons.jsonld.JsonLdDoc;
 import eu.ebrains.kg.commons.jsonld.NormalizedJsonLd;
 import eu.ebrains.kg.commons.model.Result;
-import eu.ebrains.kg.core.api.v3.InstancesV3;
 import eu.ebrains.kg.core.api.instances.TestContext;
+import eu.ebrains.kg.core.api.v3.InstancesV3;
 import eu.ebrains.kg.testutils.TestDataFactory;
 import org.springframework.http.ResponseEntity;
 

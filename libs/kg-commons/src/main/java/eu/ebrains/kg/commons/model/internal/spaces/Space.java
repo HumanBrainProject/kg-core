@@ -27,20 +27,13 @@ import com.fasterxml.jackson.annotation.JsonGetter;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonSetter;
 import eu.ebrains.kg.commons.jsonld.DynamicJson;
-import eu.ebrains.kg.commons.jsonld.JsonLdConsts;
 import eu.ebrains.kg.commons.jsonld.JsonLdId;
-import eu.ebrains.kg.commons.jsonld.NormalizedJsonLd;
 import eu.ebrains.kg.commons.model.SpaceName;
 import eu.ebrains.kg.commons.model.external.spaces.SpaceInformation;
-import eu.ebrains.kg.commons.permission.Functionality;
-import eu.ebrains.kg.commons.permission.Permission;
 import eu.ebrains.kg.commons.semantics.vocabularies.EBRAINSVocabulary;
 import eu.ebrains.kg.commons.semantics.vocabularies.SchemaOrgVocabulary;
 
-import java.beans.Transient;
-import java.util.List;
 import java.util.Objects;
-import java.util.Set;
 
 public class Space extends DynamicJson {
 

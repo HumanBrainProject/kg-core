@@ -25,7 +25,10 @@ package eu.ebrains.kg.commons.api;
 
 import eu.ebrains.kg.commons.jsonld.JsonLdId;
 import eu.ebrains.kg.commons.jsonld.NormalizedJsonLd;
-import eu.ebrains.kg.commons.model.*;
+import eu.ebrains.kg.commons.model.DataStage;
+import eu.ebrains.kg.commons.model.Paginated;
+import eu.ebrains.kg.commons.model.PaginationParam;
+import eu.ebrains.kg.commons.model.Result;
 import eu.ebrains.kg.commons.model.external.types.TypeInformation;
 
 import java.util.List;

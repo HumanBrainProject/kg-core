@@ -27,7 +27,6 @@ import eu.ebrains.kg.commons.AuthTokens;
 import eu.ebrains.kg.commons.permission.ClientAuthToken;
 import eu.ebrains.kg.commons.permission.UserAuthToken;
 import eu.ebrains.kg.test.TestCategories;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;
 import org.mockito.Mockito;

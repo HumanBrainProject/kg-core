@@ -28,7 +28,6 @@ import eu.ebrains.kg.commons.model.SpaceName;
 import java.math.BigInteger;
 import java.util.*;
 import java.util.function.BiConsumer;
-import java.util.stream.Collectors;
 
 /**
  * A JSON in any format (with / without context) / @graph annotations, etc.

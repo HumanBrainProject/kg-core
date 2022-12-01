@@ -24,9 +24,9 @@
 package eu.ebrains.kg.commons.permission;
 
 import eu.ebrains.kg.commons.model.SpaceName;
+import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.*;
-import org.junit.jupiter.api.Test;
 
 class FunctionalityInstanceTest {
 

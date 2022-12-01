@@ -23,7 +23,9 @@
 
 package eu.ebrains.kg.commons.api;
 
-import eu.ebrains.kg.commons.model.*;
+import eu.ebrains.kg.commons.model.Paginated;
+import eu.ebrains.kg.commons.model.PaginationParam;
+import eu.ebrains.kg.commons.model.SpaceName;
 import eu.ebrains.kg.commons.model.external.spaces.SpaceSpecification;
 import eu.ebrains.kg.commons.model.internal.spaces.Space;
 
