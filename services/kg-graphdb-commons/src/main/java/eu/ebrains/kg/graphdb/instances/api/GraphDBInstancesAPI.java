@@ -39,7 +39,7 @@ import eu.ebrains.kg.commons.model.external.types.TargetType;
 import eu.ebrains.kg.commons.model.external.types.TypeInformation;
 import eu.ebrains.kg.commons.params.ReleaseTreeScope;
 import eu.ebrains.kg.commons.semantics.vocabularies.EBRAINSVocabulary;
-import eu.ebrains.kg.graphdb.instances.controller.ArangoRepositoryInstances;
+import eu.ebrains.kg.graphdb.instances.controller.*;
 import eu.ebrains.kg.graphdb.instances.model.ArangoRelation;
 import eu.ebrains.kg.graphdb.structure.api.GraphDBTypesAPI;
 import org.apache.commons.lang3.StringUtils;
@@ -54,13 +54,25 @@ import java.util.stream.Collectors;
 @Component
 public class GraphDBInstancesAPI implements GraphDBInstances.Client {
 
-    private final ArangoRepositoryInstances repository;
+    private final InstancesRepository instances;
+    private final IncomingLinksRepository incomingLinks;
+    private final QueriesRepository queries;
+    private final DocumentsRepository documents;
+    private final NeighborsRepository neighbors;
+    private final SuggestionsRepository suggestions;
+    private final ReleaseStatusRepository releaseStatus;
     private final AuthContext authContext;
     private final IdUtils idUtils;
     private final GraphDBTypesAPI types;
 
-    public GraphDBInstancesAPI(ArangoRepositoryInstances repository, AuthContext authContext, IdUtils idUtils, GraphDBTypesAPI types) {
-        this.repository = repository;
+    public GraphDBInstancesAPI(InstancesRepository instances, IncomingLinksRepository incomingLinks, QueriesRepository queries, DocumentsRepository documents, NeighborsRepository neighbors, SuggestionsRepository suggestions, ReleaseStatusRepository releaseStatus, AuthContext authContext, IdUtils idUtils, GraphDBTypesAPI types) {
+        this.instances = instances;
+        this.incomingLinks = incomingLinks;
+        this.queries = queries;
+        this.documents = documents;
+        this.neighbors = neighbors;
+        this.suggestions = suggestions;
+        this.releaseStatus = releaseStatus;
         this.authContext = authContext;
         this.idUtils = idUtils;
         this.types = types;
@@ -68,18 +80,18 @@ public class GraphDBInstancesAPI implements GraphDBInstances.Client {
 
     @Override
     public Paginated<NormalizedJsonLd> getIncomingLinks(String space, UUID id, DataStage stage, String property, String type, PaginationParam paginationParam) {
-        return repository.getIncomingLinks(stage, new SpaceName(space), id, property, type, paginationParam);
+        return incomingLinks.getIncomingLinks(stage, new SpaceName(space), id, property, type, paginationParam, documents.getInvitationDocuments());
     }
 
     @Override
     public NormalizedJsonLd getInstanceById(String space, UUID id, DataStage stage, boolean returnEmbedded, boolean returnAlternatives, boolean returnIncomingLinks, Long incomingLinksPageSize, boolean removeInternalProperties) {
-        return repository.getInstance(stage, new SpaceName(space), id, returnEmbedded, removeInternalProperties, returnAlternatives, returnIncomingLinks, incomingLinksPageSize);
+        return instances.getInstance(stage, new SpaceName(space), id, returnEmbedded, removeInternalProperties, returnAlternatives, returnIncomingLinks, incomingLinksPageSize);
     }
 
     @Override
     @ExposesQuery
     public NormalizedJsonLd getQueryById(String space, UUID id) {
-        return repository.getQuery(new SpaceName(space), id);
+        return queries.getQuery(new SpaceName(space), id);
     }
 
     @Override
@@ -111,63 +123,63 @@ public class GraphDBInstancesAPI implements GraphDBInstances.Client {
                 }
             }
         }
-        return repository.getDocumentsByTypes(stage, type, SpaceName.PRIVATE_SPACE.equals(space) ? authContext.getUserWithRolesWithoutTermsCheck().getPrivateSpace() : SpaceName.fromString(space), filterProperty, filterValue, paginationParam, searchByLabel, returnEmbedded, returnAlternatives, searchableProperties);
+        return documents.getDocumentsByTypes(stage, type, SpaceName.PRIVATE_SPACE.equals(space) ? authContext.getUserWithRolesWithoutTermsCheck().getPrivateSpace() : SpaceName.fromString(space), filterProperty, filterValue, paginationParam, searchByLabel, returnEmbedded, returnAlternatives, searchableProperties);
     }
 
     @Override
     @ExposesQuery
     public Paginated<NormalizedJsonLd> getQueriesByType(DataStage stage, String searchByLabel, boolean returnAlternatives, boolean returnEmbedded, PaginationParam paginationParam, String rootType) {
-        return repository.getQueriesByRootType(stage, paginationParam, searchByLabel, returnEmbedded, returnAlternatives, rootType == null ? null : URLDecoder.decode(rootType, StandardCharsets.UTF_8));
+        return queries.getQueriesByRootType(stage, paginationParam, searchByLabel, returnEmbedded, returnAlternatives, rootType == null ? null : URLDecoder.decode(rootType, StandardCharsets.UTF_8));
     }
 
     @Override
     @ExposesData
     public Map<UUID, Result<NormalizedJsonLd>> getInstancesByIds(List<String> ids, DataStage stage, String typeRestriction, boolean returnEmbedded, boolean returnAlternatives, boolean returnIncomingLinks, Long incomingLinksPageSize) {
         List<InstanceId> instanceIds = ids.stream().map(InstanceId::deserialize).filter(Objects::nonNull).collect(Collectors.toList());
-        return repository.getDocumentsByIdList(stage, instanceIds, typeRestriction, returnEmbedded, returnAlternatives, returnIncomingLinks, incomingLinksPageSize);
+        return documents.getDocumentsByIdList(stage, instanceIds, typeRestriction, returnEmbedded, returnAlternatives, returnIncomingLinks, incomingLinksPageSize);
     }
 
     @Override
     @ExposesMinimalData
     public Map<UUID, String> getLabels(List<String> ids, DataStage stage) {
         Set<InstanceId> instanceIds = ids.stream().map(InstanceId::deserialize).filter(Objects::nonNull).collect(Collectors.toSet());
-        return repository.getLabelsForInstances(stage, instanceIds);
+        return instances.getLabelsForInstances(stage, instanceIds);
     }
 
     @Override
     @ExposesData
     public List<NormalizedJsonLd> getInstancesByIdentifier(String identifier, String space, DataStage stage) {
-        return repository.getDocumentsByIdentifiers(Collections.singleton(identifier), stage, new SpaceName(space), false, false);
+        return documents.getDocumentsByIdentifiers(Collections.singleton(identifier), stage, new SpaceName(space), false, false);
     }
 
     @Override
     @ExposesData
     public List<NormalizedJsonLd> getDocumentWithRelatedInstancesByIdentifiers(String space, UUID id, DataStage stage, boolean returnEmbedded, boolean returnAlternatives) {
-        return repository.getDocumentsBySharedIdentifiers(stage, new SpaceName(space), id, returnEmbedded, returnAlternatives);
+        return documents.getDocumentsBySharedIdentifiers(stage, new SpaceName(space), id, returnEmbedded, returnAlternatives);
     }
 
     @Override
     @ExposesData
     public List<NormalizedJsonLd> getDocumentWithIncomingRelatedInstances(String space, UUID id, DataStage stage, String relation, boolean useOriginalTo, boolean returnEmbedded, boolean returnAlternatives) {
-        return repository.getDocumentsByIncomingRelation(stage, new SpaceName(space), id, new ArangoRelation(URLDecoder.decode(relation, StandardCharsets.UTF_8)), useOriginalTo, returnEmbedded, returnAlternatives);
+        return documents.getDocumentsByIncomingRelation(stage, new SpaceName(space), id, new ArangoRelation(URLDecoder.decode(relation, StandardCharsets.UTF_8)), useOriginalTo, returnEmbedded, returnAlternatives);
     }
 
     @Override
     @ExposesMinimalData
     public GraphEntity getNeighbors(String space, UUID id, DataStage stage) {
-        return repository.getNeighbors(stage, new SpaceName(space), id);
+        return neighbors.getNeighbors(stage, new SpaceName(space), id);
     }
 
     @Override
     @ExposesReleaseStatus
     public ReleaseStatus getReleaseStatus(String space, UUID id, ReleaseTreeScope treeScope) {
-        return repository.getReleaseStatus(new SpaceName(space), id, treeScope);
+        return releaseStatus.getReleaseStatus(new SpaceName(space), id, treeScope);
     }
 
     @Override
     @ExposesReleaseStatus
     public Map<UUID, ReleaseStatus> getIndividualReleaseStatus(List<InstanceId> instanceIds, ReleaseTreeScope releaseTreeScope) {
-        return repository.getIndividualReleaseStatus(instanceIds, releaseTreeScope);
+        return releaseStatus.getIndividualReleaseStatus(instanceIds, releaseTreeScope);
     }
 
 
@@ -181,7 +193,7 @@ public class GraphDBInstancesAPI implements GraphDBInstances.Client {
             sourceTypes = Collections.singletonList(new Type(URLDecoder.decode(sourceType, StandardCharsets.UTF_8)));
         } else {
             if (payload == null) {
-                payload = repository.getInstance(stage, new SpaceName(space), id, true, true, false, false, null);
+                payload = instances.getInstance(stage, new SpaceName(space), id, true, true, false, false, null);
             }
             if (payload != null) {
                 sourceTypes = payload.types().stream().map(Type::new).collect(Collectors.toList());
@@ -211,7 +223,7 @@ public class GraphDBInstancesAPI implements GraphDBInstances.Client {
             }
         });
         final List<Type> targetTypes = suggestionResult.getTypes().values().stream().map(Type::fromPayload).collect(Collectors.toList());
-        Paginated<SuggestedLink> documentsByTypes = repository.getSuggestionsByTypes(stage, paginationParam, targetTypes, searchablePropertiesByType, search, existingLinks);
+        Paginated<SuggestedLink> documentsByTypes = suggestions.getSuggestionsByTypes(stage, paginationParam, targetTypes, searchablePropertiesByType, search, existingLinks);
 
         //We check for those instances that do not have additional information, if we can get something from the released endpoint
         final List<InstanceId> instancesWithoutAdditionalInfo = documentsByTypes.getData().stream().filter(d -> d.getAdditionalInformation() == null).map(d -> {
@@ -220,7 +232,7 @@ public class GraphDBInstancesAPI implements GraphDBInstances.Client {
             }
             return null;
         }).filter(Objects::nonNull).distinct().collect(Collectors.toList());
-        final Map<UUID, Result<NormalizedJsonLd>> documentsByIdList = repository.getDocumentsByIdList(DataStage.RELEASED, instancesWithoutAdditionalInfo, null, false, false, false, null);
+        final Map<UUID, Result<NormalizedJsonLd>> documentsByIdList = documents.getDocumentsByIdList(DataStage.RELEASED, instancesWithoutAdditionalInfo, null, false, false, false, null);
         documentsByTypes.getData().stream().filter(d -> d.getAdditionalInformation() == null).forEach(d -> {
             final List<String> searchableProperties = searchablePropertiesByType.get(d.getType());
             if (!CollectionUtils.isEmpty(searchableProperties)) {

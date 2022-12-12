@@ -24,17 +24,14 @@
 package eu.ebrains.kg.graphdb.structure.api;
 
 import eu.ebrains.kg.commons.AuthContext;
-import eu.ebrains.kg.commons.IdUtils;
 import eu.ebrains.kg.commons.api.GraphDBTypes;
-import eu.ebrains.kg.commons.api.Ids;
 import eu.ebrains.kg.commons.exception.ForbiddenException;
 import eu.ebrains.kg.commons.jsonld.JsonLdId;
 import eu.ebrains.kg.commons.jsonld.NormalizedJsonLd;
 import eu.ebrains.kg.commons.model.*;
 import eu.ebrains.kg.commons.model.external.types.TypeInformation;
 import eu.ebrains.kg.graphdb.commons.controller.PermissionsController;
-import eu.ebrains.kg.graphdb.instances.controller.ArangoRepositoryInstances;
-import eu.ebrains.kg.graphdb.queries.utils.InvitationUtils;
+import eu.ebrains.kg.graphdb.instances.controller.DocumentsRepository;
 import eu.ebrains.kg.graphdb.structure.controller.MetaDataController;
 import eu.ebrains.kg.graphdb.structure.controller.StructureRepository;
 import org.springframework.stereotype.Component;
@@ -50,31 +47,26 @@ public class GraphDBTypesAPI implements GraphDBTypes.Client {
     private final StructureRepository structureRepository;
     private final MetaDataController metaDataController;
     private final PermissionsController permissionsController;
-    private final ArangoRepositoryInstances instancesRepository;
-    private final Ids.Client ids;
-    private final IdUtils idUtils;
+    private final DocumentsRepository documents;
 
-
-    public GraphDBTypesAPI(AuthContext authContext, StructureRepository structureRepository, MetaDataController metaDataController, PermissionsController permissionsController, Ids.Client ids, IdUtils idUtils, ArangoRepositoryInstances instancesRepository) {
+    public GraphDBTypesAPI(AuthContext authContext, StructureRepository structureRepository, MetaDataController metaDataController, PermissionsController permissionsController, DocumentsRepository documents) {
         this.authContext = authContext;
         this.structureRepository = structureRepository;
         this.metaDataController = metaDataController;
         this.permissionsController = permissionsController;
-        this.ids = ids;
-        this.idUtils = idUtils;
-        this.instancesRepository = instancesRepository;
+        this.documents = documents;
     }
 
     @Override
     public Paginated<TypeInformation> listTypes(DataStage stage, String space, boolean withProperties,
                                                 boolean withIncomingLinks, PaginationParam paginationParam) {
-        return PaginationParam.paginate(metaDataController.readMetaDataStructure(stage, space, null, withProperties, withIncomingLinks, authContext.getUserWithRoles(), InvitationUtils.getClientSpace(authContext), authContext.getUserWithRolesWithoutTermsCheck().getPrivateSpace(), InvitationUtils.getInvitationDocuments(authContext, ids, instancesRepository, idUtils)), paginationParam);
+        return PaginationParam.paginate(metaDataController.readMetaDataStructure(stage, space, null, withProperties, withIncomingLinks, authContext.getUserWithRoles(), authContext.getClientSpace() != null ? authContext.getClientSpace().getName() : null, authContext.getUserWithRolesWithoutTermsCheck().getPrivateSpace(), documents.getInvitationDocuments()), paginationParam);
     }
 
     @Override
     public Map<String, Result<TypeInformation>> getTypesByName(List<String> types, DataStage stage, String space,
                                                                boolean withProperties, boolean withIncomingLinks) {
-        return metaDataController.getTypesByName(types, stage, space, withProperties, withIncomingLinks, authContext.getUserWithRoles(), InvitationUtils.getClientSpace(authContext), InvitationUtils.getInvitationDocuments(authContext, ids, instancesRepository, idUtils));
+        return metaDataController.getTypesByName(types, stage, space, withProperties, withIncomingLinks, authContext.getUserWithRoles(), authContext.getClientSpace()!=null ? authContext.getClientSpace().getName() : null, documents.getInvitationDocuments());
     }
 
     @Override
@@ -113,7 +105,7 @@ public class GraphDBTypesAPI implements GraphDBTypes.Client {
     }
 
     private SpaceName getClientSpaceOrThrowException(){
-        final SpaceName clientSpace = InvitationUtils.getClientSpace(authContext);
+        final SpaceName clientSpace = authContext.getClientSpace() != null ? authContext.getClientSpace().getName() : null;
         if(clientSpace==null){
             throw new IllegalArgumentException("You need to be logged in with a client to be able to specify a type non-globally");
         }

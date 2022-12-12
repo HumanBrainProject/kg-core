@@ -23,20 +23,12 @@
 
 package eu.ebrains.kg.graphdb.instances.controller;
 
-import eu.ebrains.kg.commons.AuthContext;
 import eu.ebrains.kg.commons.IdUtils;
 import eu.ebrains.kg.commons.JsonAdapter;
-import eu.ebrains.kg.commons.api.Ids;
 import eu.ebrains.kg.commons.api.PrimaryStoreUsers;
 import eu.ebrains.kg.commons.jsonld.NormalizedJsonLd;
-import eu.ebrains.kg.commons.permissions.controller.Permissions;
 import eu.ebrains.kg.graphdb.commons.controller.ArangoDatabases;
-import eu.ebrains.kg.graphdb.commons.controller.ArangoRepositoryCommons;
 import eu.ebrains.kg.graphdb.commons.controller.GraphDBArangoUtils;
-import eu.ebrains.kg.graphdb.commons.controller.PermissionsController;
-import eu.ebrains.kg.graphdb.queries.controller.QueryController;
-import eu.ebrains.kg.graphdb.structure.controller.MetaDataController;
-import eu.ebrains.kg.graphdb.structure.controller.StructureRepository;
 import eu.ebrains.kg.test.JsonAdapter4Test;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
@@ -46,12 +38,12 @@ import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-public class ArangoRepositoryInstancesUnitTest {
+public class EmbeddedAndAlternativesRepositoryUnitTest {
 
     @Test
     public void mergeEmbeddedDocuments() {
         //Given
-        ArangoRepositoryInstances repository = new ArangoRepositoryInstances(Mockito.mock(ArangoRepositoryCommons.class), Mockito.mock(PermissionsController.class), Mockito.mock(Permissions.class), Mockito.mock(AuthContext.class), Mockito.mock(GraphDBArangoUtils.class), Mockito.mock(QueryController.class), Mockito.mock(ArangoDatabases.class), Mockito.mock(IdUtils.class), Mockito.mock(JsonAdapter.class), Mockito.mock(MetaDataController.class), Mockito.mock(StructureRepository.class), Mockito.mock(Ids.Client.class), Mockito.mock(PrimaryStoreUsers.Client.class));
+        EmbeddedAndAlternativesRepository repository = new EmbeddedAndAlternativesRepository(Mockito.mock(PrimaryStoreUsers.Client.class), Mockito.mock(IdUtils.class), Mockito.mock(ArangoDatabases.class), Mockito.mock(GraphDBArangoUtils.class));
         JsonAdapter jsonAdapter = new JsonAdapter4Test();
         String originalDoc = """
            {

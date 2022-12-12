@@ -25,7 +25,8 @@ package eu.ebrains.kg.graphdb.documents.api;
 
 import eu.ebrains.kg.commons.api.GraphDBDocuments;
 import eu.ebrains.kg.commons.model.SpaceName;
-import eu.ebrains.kg.graphdb.instances.controller.ArangoRepositoryInstances;
+import eu.ebrains.kg.graphdb.instances.controller.DocumentsRepository;
+import eu.ebrains.kg.graphdb.instances.controller.InstancesRepository;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
@@ -33,9 +34,9 @@ import java.util.List;
 @Component
 public class GraphDBDocumentsAPI implements GraphDBDocuments.Client {
 
-    private final ArangoRepositoryInstances repository;
+    private final DocumentsRepository repository;
 
-    public GraphDBDocumentsAPI(ArangoRepositoryInstances repository) {
+    public GraphDBDocumentsAPI(DocumentsRepository repository) {
         this.repository = repository;
     }
 

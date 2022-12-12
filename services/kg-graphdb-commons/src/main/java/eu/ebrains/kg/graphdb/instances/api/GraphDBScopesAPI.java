@@ -28,7 +28,8 @@ import eu.ebrains.kg.commons.markers.ExposesMinimalData;
 import eu.ebrains.kg.commons.model.DataStage;
 import eu.ebrains.kg.commons.model.ScopeElement;
 import eu.ebrains.kg.commons.model.SpaceName;
-import eu.ebrains.kg.graphdb.instances.controller.ArangoRepositoryInstances;
+import eu.ebrains.kg.graphdb.instances.controller.InstancesRepository;
+import eu.ebrains.kg.graphdb.instances.controller.ScopeRepository;
 import org.springframework.stereotype.Component;
 
 import java.util.UUID;
@@ -36,9 +37,9 @@ import java.util.UUID;
 @Component
 public class GraphDBScopesAPI implements GraphDBScopes.Client {
 
-    private final ArangoRepositoryInstances repository;
+    private final ScopeRepository repository;
 
-    public GraphDBScopesAPI(ArangoRepositoryInstances repository) {
+    public GraphDBScopesAPI(ScopeRepository repository) {
         this.repository = repository;
     }
 

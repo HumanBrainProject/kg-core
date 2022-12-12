@@ -42,10 +42,10 @@ import static org.junit.jupiter.api.Assertions.*;
 
 @Tag(TestCategories.API)
 @Disabled("Fix me")
-class ArangoRepositoryInstancesTest extends AbstractGraphTest {
+class DocumentsRepositoryTest extends AbstractGraphTest {
 
     @Autowired
-    ArangoRepositoryInstances arangoRepository;
+    DocumentsRepository documentsRepository;
 
     @Autowired
     TodoListProcessor todoListProcessor;
@@ -62,8 +62,8 @@ class ArangoRepositoryInstancesTest extends AbstractGraphTest {
         upsert(Simpsons.SPACE_NAME, jsonAdapter.fromJson(Simpsons.Characters.MAGGIE, NormalizedJsonLd.class), stage);
 
         //When
-        Paginated<NormalizedJsonLd> kids = arangoRepository.getDocumentsByTypes(stage, new Type("http://schema.org/Kid"), null, null, null, null, null, false, false,  null);
-        Paginated<NormalizedJsonLd> familyMembers = arangoRepository.getDocumentsByTypes(stage, new Type("https://thesimpsons.com/FamilyMember"), null, null, null, null, null, false, false, null);
+        Paginated<NormalizedJsonLd> kids = documentsRepository.getDocumentsByTypes(stage, new Type("http://schema.org/Kid"), null, null, null, null, null, false, false,  null);
+        Paginated<NormalizedJsonLd> familyMembers = documentsRepository.getDocumentsByTypes(stage, new Type("https://thesimpsons.com/FamilyMember"), null, null, null, null, null, false, false, null);
 
 
         //Then
@@ -89,7 +89,7 @@ class ArangoRepositoryInstancesTest extends AbstractGraphTest {
         pagination.setFrom(1L);
 
         //When
-        Paginated<NormalizedJsonLd> familyMembers = arangoRepository.getDocumentsByTypes(stage, new Type("https://thesimpsons.com/FamilyMember"), null, null, null, pagination, null, false, false,  null);
+        Paginated<NormalizedJsonLd> familyMembers = documentsRepository.getDocumentsByTypes(stage, new Type("https://thesimpsons.com/FamilyMember"), null, null, null, pagination, null, false, false,  null);
 
         //Then
         assertEquals(1, familyMembers.getSize());
