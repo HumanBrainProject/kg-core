@@ -58,7 +58,7 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
         <docker.image.prefix>registry.humanbrainproject.org/humanbrainproject/kg-core</docker.image.prefix>
-        <spring.version>2.7.4</spring.version>
+        <spring.version>2.7.7</spring.version>
         <sonar.coverage.jacoco.xmlReportPaths>${project.basedir}/../../bundle/kg-core-allinone/target/site/jacoco-aggregate/jacoco.xml</sonar.coverage.jacoco.xmlReportPaths>
     </properties>
 
