@@ -30,6 +30,7 @@ import eu.ebrains.kg.authentication.model.IssuerInfo;
 import eu.ebrains.kg.authentication.model.OpenIdConfig;
 import eu.ebrains.kg.commons.JsonAdapter;
 import eu.ebrains.kg.commons.exception.UnauthorizedException;
+import jakarta.annotation.PostConstruct;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.MediaType;
@@ -37,7 +38,6 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.reactive.function.client.WebClientResponseException;
 
-import javax.annotation.PostConstruct;
 import java.security.KeyFactory;
 import java.security.NoSuchAlgorithmException;
 import java.security.interfaces.RSAPublicKey;

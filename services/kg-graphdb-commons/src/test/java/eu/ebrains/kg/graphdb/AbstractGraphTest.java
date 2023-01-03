@@ -35,14 +35,13 @@ import eu.ebrains.kg.commons.model.SpaceName;
 import eu.ebrains.kg.graphdb.commons.controller.ArangoDatabases;
 import eu.ebrains.kg.graphdb.ingestion.controller.TodoListProcessor;
 import eu.ebrains.kg.test.factory.UserFactory;
+import jakarta.validation.constraints.NotNull;
 import org.junit.jupiter.api.BeforeEach;
 import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.test.context.TestPropertySource;
-
-import javax.validation.constraints.NotNull;
 import java.util.UUID;
 
 @SpringBootTest

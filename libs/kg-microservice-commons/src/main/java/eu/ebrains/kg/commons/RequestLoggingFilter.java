@@ -26,16 +26,15 @@ package eu.ebrains.kg.commons;
 import eu.ebrains.kg.commons.exception.NotAcceptedTermsOfUseException;
 import eu.ebrains.kg.commons.exception.UnauthorizedException;
 import eu.ebrains.kg.commons.models.UserWithRoles;
-import net.logstash.logback.argument.StructuredArguments;
+import jakarta.servlet.FilterChain;
+import jakarta.servlet.ServletException;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
-import javax.servlet.FilterChain;
-import javax.servlet.ServletException;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.util.Date;
 import java.util.UUID;
@@ -61,25 +60,15 @@ public class RequestLoggingFilter extends OncePerRequestFilter {
             } catch (UnauthorizedException | NotAcceptedTermsOfUseException ex) {
                 userWithRoles = null;
             }
-            requestLogger.info("{}, {}, {}, {}, {}, {}, {}", StructuredArguments.keyValue("action", "API request"),
-                    StructuredArguments.keyValue("id", apiRequestId),
-                    StructuredArguments.keyValue("method", request.getMethod()),
-                    StructuredArguments.keyValue("path", request.getRequestURI()),
-                    StructuredArguments.keyValue("query", request.getQueryString()),
-                    StructuredArguments.keyValue("authenticatedUser", userWithRoles != null && userWithRoles.getUser() != null ? userWithRoles.getUser().getNativeId() : "anonymous"),
-                    StructuredArguments.keyValue("authenticatedClient", userWithRoles != null && userWithRoles.getClientId()!=null ? userWithRoles.getClientId() : "direct access"));
+            if(requestLogger.isInfoEnabled()) {
+                requestLogger.info("action=API request, id={}, method={}, path={}, query={}, authenticatedUser={}, authenticatedClient={}", apiRequestId, request.getMethod(), request.getRequestURI(), request.getQueryString(), userWithRoles != null && userWithRoles.getUser() != null ? userWithRoles.getUser().getNativeId() : "anonymous", userWithRoles != null && userWithRoles.getClientId() != null ? userWithRoles.getClientId() : "direct access");
+            }
             Date start = new Date();
             filterChain.doFilter(request, response);
             Date end = new Date();
-            	requestLogger.info("{}, {}, {}, {}, {}, {}, {}, {}, {}", StructuredArguments.keyValue("action", "API response"),
-                    StructuredArguments.keyValue("id", apiRequestId),
-                    StructuredArguments.keyValue("method", request.getMethod()),
-                    StructuredArguments.keyValue("path", request.getRequestURI()),
-                    StructuredArguments.keyValue("query", request.getQueryString()),
-                    StructuredArguments.keyValue("statusCode", response.getStatus()),
-                    StructuredArguments.keyValue("executionDuration", String.format("%d ms", end.getTime()-start.getTime())),
-                    StructuredArguments.keyValue("authenticatedUser", userWithRoles != null && userWithRoles.getUser() != null ? userWithRoles.getUser().getNativeId() : "anonymous"),
-                    StructuredArguments.keyValue("authenticatedClient", userWithRoles != null && userWithRoles.getClientId()!=null ? userWithRoles.getClientId() : "direct access"));
+            if(requestLogger.isInfoEnabled()) {
+                requestLogger.info("action=API response, id={}, method={}, path={}, query={}, statusCode={}, executionDuration={} ms, authenticatedUser={}, authenticatedClient={}", apiRequestId, request.getMethod(), request.getRequestURI(), request.getQueryString(), response.getStatus(), end.getTime() - start.getTime(), userWithRoles != null && userWithRoles.getUser() != null ? userWithRoles.getUser().getNativeId() : "anonymous", userWithRoles != null && userWithRoles.getClientId() != null ? userWithRoles.getClientId() : "direct access");
+            }
         } else {
             filterChain.doFilter(request, response);
         }

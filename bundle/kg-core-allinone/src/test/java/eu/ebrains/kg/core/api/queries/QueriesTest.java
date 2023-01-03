@@ -29,6 +29,7 @@ import eu.ebrains.kg.commons.model.SpaceName;
 import eu.ebrains.kg.commons.permission.roles.Role;
 import eu.ebrains.kg.commons.permission.roles.RoleMapping;
 import eu.ebrains.kg.commons.semantics.vocabularies.SchemaOrgVocabulary;
+import eu.ebrains.kg.core.api.queries.tests.TestMultiSpaceQueryTest;
 import eu.ebrains.kg.core.api.queries.tests.TestSimpleQueryTest;
 import eu.ebrains.kg.core.api.v3.InstancesV3;
 import eu.ebrains.kg.core.api.v3.QueriesV3;
@@ -355,6 +356,41 @@ class QueriesTest extends AbstractFunctionalityTest {
             //Then
             Stream<? extends Map<?, ?>> normalizedJsonLds = test.assureValidPayload(test.response);
             assertEquals(0, normalizedJsonLds.count(), "We were querying the released instances but no instances have been released. So we expect the response to be empty.");
+        });
+    }
+
+    // *************************************
+    // Empty results due to no data
+    // *************************************
+
+    @Test
+    void queryAllSpaces() throws IOException {
+        //Given
+        TestMultiSpaceQueryTest test = new TestMultiSpaceQueryTest(ctx(rolesAllSpacesInProgress), queries, instances, ExposedStage.IN_PROGRESS, null);
+
+        //When
+        test.execute(() -> {
+            //Then
+            final List<? extends Map<?, ?>> normalizedJsonLds = test.assureValidPayload(test.response).toList();
+            assertEquals(2, normalizedJsonLds.size(), "We were querying both instances to be returned");
+        });
+    }
+
+
+    // *************************************
+    // Empty results due to no data
+    // *************************************
+
+    @Test
+    void restrictSpaces() throws IOException {
+        //Given
+        TestMultiSpaceQueryTest test = new TestMultiSpaceQueryTest(ctx(rolesAllSpacesInProgress), queries, instances, ExposedStage.IN_PROGRESS, Collections.singletonList("a"));
+
+        //When
+        test.execute(() -> {
+            //Then
+            final List<? extends Map<?, ?>> normalizedJsonLds = test.assureValidPayload(test.response).toList();
+            assertEquals(1, normalizedJsonLds.size(), "We were querying only one space and are accordingly assuming one instance only.");
         });
     }
 

@@ -37,28 +37,23 @@ import eu.ebrains.kg.testutils.TestDataFactory;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 
 @SuppressWarnings("java:S2187") //We don't add "tests" to these classes because they are test abstractions and are used in other tests
-public class TestSimpleQueryTest extends AbstractTest {
+public class TestMultiSpaceQueryTest extends AbstractTest {
 
     private final QueriesV3 queries;
     private final InstancesV3 instances;
-    private final boolean release;
     public NormalizedJsonLd instanceA;
-    public NormalizedJsonLd instanceArelated;
     public NormalizedJsonLd instanceB;
     public ExposedStage stage;
 
-    public String relationToArelated = "http://test/aRelated";
-    public String relationToB = "http://test/b";
-
     public JsonLdDoc query;
 
+    private final List<String> restrictToSpaces;
+
     public PaginatedStreamResult<? extends Map<?,?>> response;
-    public final String nameOfRoot = "http://test/nameOfRoot";
-    public final String nameOfARel = "http://test/nameOfArelated";
-    public final String nameOfB = "http://test/nameOfB";
 
     public String testQuery = """ 
                                 {
@@ -73,37 +68,24 @@ public class TestSimpleQueryTest extends AbstractTest {
                                 },
                                 "query:structure": [
                                     {
-                                        "query:propertyName": { "@id":  "$nameOfRoot" },
-                                        query:path": { "@id": "schema:name" }
-                                    },
-                                    {
-                                        "query:propertyName": { "@id":  "$nameOfARel"},
-                                        "query:singleValue": "FIRST",
                                         "query:path": [
-                                            { "@id": "$relationToArelated" }
-                                            { "@id": "schema:name" }
-                                        ]
-                                    },
-                                    {
-                                        "query:propertyName": {"@id":  "$nameOfB"},
-                                        "query:singleValue": "FIRST",
-                                        "query:path": [
-                                            { "@id": "$relationToB" },
                                             { "@id": "schema:name" }
                                         ]
                                     }
                                 ]
-                                }""".replace("$testType", TestDataFactory.TEST_TYPE).replace("$nameOfRoot", nameOfRoot).replace("$nameOfARel", nameOfARel).replace("$nameOfB", nameOfB).replace("$relationToB", relationToB);
+                                }""".replace("$testType", TestDataFactory.TEST_TYPE);
 
 
-    public TestSimpleQueryTest(TestContext testContext, QueriesV3 queries, InstancesV3 instances, ExposedStage stage, boolean release)  throws IOException
+
+
+    public TestMultiSpaceQueryTest(TestContext testContext, QueriesV3 queries, InstancesV3 instances, ExposedStage stage, List<String> restrictToSpaces)  throws IOException
     {
         super(testContext);
         this.instances = instances;
         this.queries = queries;
         this.query = new JsonLdDoc(new ObjectMapper().readValue(this.testQuery, LinkedHashMap.class));
         this.stage = stage;
-        this.release = release;
+        this.restrictToSpaces = restrictToSpaces;
     }
 
     private NormalizedJsonLd createTestInstance(JsonLdDoc doc, String space){
@@ -112,23 +94,14 @@ public class TestSimpleQueryTest extends AbstractTest {
 
     @Override
     protected void setup() {
-        JsonLdDoc docB = TestDataFactory.createTestData(smallPayload, "b", true);
-        instanceB = createTestInstance(docB, "b");
-        JsonLdDoc docArelated = TestDataFactory.createTestData(smallPayload, "aRelated", true);
-        instanceArelated = createTestInstance(docArelated, "a");
         JsonLdDoc docA = TestDataFactory.createTestData(smallPayload, "a", true);
-        docA.put(relationToArelated, instanceArelated.id());
-        docA.put(relationToB, instanceB.id());
+        JsonLdDoc docB = TestDataFactory.createTestData(smallPayload, "b", true);
         instanceA = createTestInstance(docA, "a");
-        if(release) {
-            instances.releaseInstance(testContext.getIdUtils().getUUID(instanceA.id()), null);
-            instances.releaseInstance(testContext.getIdUtils().getUUID(instanceB.id()), null);
-            instances.releaseInstance(testContext.getIdUtils().getUUID(instanceArelated.id()), null);
-        }
+        instanceB = createTestInstance(docB, "b");
     }
 
     @Override
     protected void run() {
-         response = queries.runDynamicQuery(this.query, defaultPaginationParam, stage, null, null, new HashMap<>());
+         response = queries.runDynamicQuery(this.query, defaultPaginationParam, stage, null, restrictToSpaces, new HashMap<>());
     }
 }

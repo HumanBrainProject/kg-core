@@ -39,11 +39,11 @@ import eu.ebrains.kg.graphdb.commons.model.ArangoInstance;
 import eu.ebrains.kg.graphdb.ingestion.model.DBOperation;
 import eu.ebrains.kg.graphdb.ingestion.model.EdgeResolutionOperation;
 import eu.ebrains.kg.graphdb.ingestion.model.RemoveReleaseStateOperation;
+import jakarta.validation.constraints.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
-import javax.validation.constraints.NotNull;
 import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;

@@ -23,10 +23,10 @@
 
 package eu.ebrains.kg.commons;
 
+import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.core.NamedInheritableThreadLocal;
 import org.springframework.lang.Nullable;
 
-import javax.servlet.http.HttpServletRequest;
 import java.util.Collections;
 import java.util.Map;
 import java.util.stream.Collectors;

@@ -31,12 +31,12 @@ import eu.ebrains.kg.authentication.model.ArangoTermsOfUse;
 import eu.ebrains.kg.commons.JsonAdapter;
 import eu.ebrains.kg.commons.SetupLogic;
 import eu.ebrains.kg.commons.model.TermsOfUse;
+import jakarta.annotation.PostConstruct;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Component;
 
-import javax.annotation.PostConstruct;
 import java.util.Arrays;
 
 @Component

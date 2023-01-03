@@ -46,14 +46,14 @@ import eu.ebrains.kg.commons.permission.Functionality;
 import eu.ebrains.kg.commons.permissions.controller.Permissions;
 import eu.ebrains.kg.commons.semantics.vocabularies.HBPVocabulary;
 import eu.ebrains.kg.commons.semantics.vocabularies.SchemaOrgVocabulary;
+import jakarta.annotation.PostConstruct;
+import jakarta.validation.constraints.NotNull;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Component;
 
-import javax.annotation.PostConstruct;
-import javax.validation.constraints.NotNull;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
 
