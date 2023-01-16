@@ -31,6 +31,7 @@ import eu.ebrains.kg.arango.commons.model.AQLQuery;
 import eu.ebrains.kg.arango.commons.model.ArangoCollectionReference;
 import eu.ebrains.kg.arango.commons.model.InternalSpace;
 import eu.ebrains.kg.commons.Tuple;
+import eu.ebrains.kg.commons.exception.LimitExceededException;
 import eu.ebrains.kg.commons.model.PaginationParam;
 import eu.ebrains.kg.commons.model.QueryResult;
 import eu.ebrains.kg.commons.model.StreamedQueryResult;
@@ -46,6 +47,7 @@ import eu.ebrains.kg.graphdb.structure.controller.MetaDataController;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
 
 import java.util.*;
@@ -85,7 +87,7 @@ public class QueryController {
             return new QueryResult(ArangoQueries.queryDocuments(database, q.getA(), maxMemoryForQuery), q.getB().getResponseVocab());
         } catch (ArangoDBException ex) {
             logger.error(String.format("Was not able to execute query: %s", q.getA()));
-            throw ex;
+            throw new LimitExceededException(String.format("%s - Bandwidth Limit Exceeded", HttpStatus.BANDWIDTH_LIMIT_EXCEEDED.value()));
         }
     }
 
