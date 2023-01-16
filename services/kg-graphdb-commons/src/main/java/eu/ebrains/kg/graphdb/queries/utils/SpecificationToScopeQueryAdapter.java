@@ -31,13 +31,12 @@ import eu.ebrains.kg.graphdb.queries.model.spec.SpecProperty;
 import eu.ebrains.kg.graphdb.queries.model.spec.SpecTraverse;
 import eu.ebrains.kg.graphdb.queries.model.spec.Specification;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
+import java.util.*;
 
 public class SpecificationToScopeQueryAdapter {
     private final Specification originalSpec;
-    private final List<SpecProperty> root = new ArrayList<>();
+
+    private Map<String, SpecProperty> specPropertiesByConcatenatedPath = new HashMap<>();
     private int propertyCounter = 0;
 
     public SpecificationToScopeQueryAdapter(Specification originalSpec) {
@@ -74,6 +73,7 @@ public class SpecificationToScopeQueryAdapter {
 
 
     public Specification translate(){
+        final List<SpecProperty> root = new ArrayList<>();
         root.add(idProperty());
         root.add(typeProperty());
         root.add(internalIdProperty());
@@ -81,7 +81,46 @@ public class SpecificationToScopeQueryAdapter {
         root.add(embeddedProperty());
         root.add(labelProperty());
         originalSpec.getProperties().stream().map(this::handleProperty).forEach(root::addAll);
-        return new Specification(root, originalSpec.getDocumentFilter(), originalSpec.getRootType(), originalSpec.getResponseVocab());
+        List<SpecProperty> normalized = normalize(root, "");
+
+
+        return new Specification(normalized, originalSpec.getDocumentFilter(), originalSpec.getRootType(), originalSpec.getResponseVocab());
+    }
+
+
+    private List<SpecProperty> normalize(List<SpecProperty> properties, String prefix){
+        List<SpecProperty> result = new ArrayList<>();
+        for (SpecProperty property : properties) {
+            final String concatenatedPath = appendToConcatenatedPath(prefix, property);
+            if(specPropertiesByConcatenatedPath.containsKey(concatenatedPath)){
+                SpecProperty propertyToAttach = specPropertiesByConcatenatedPath.get(concatenatedPath);
+                if(property.hasSubProperties()){
+                    propertyToAttach.property.addAll(property.property);
+                    final List<SpecProperty> normalized = normalize(propertyToAttach.property, concatenatedPath);
+                    propertyToAttach.property.clear();
+                    propertyToAttach.property.addAll(normalized);
+                }
+                if(!result.contains(propertyToAttach)) {
+                    result.add(propertyToAttach);
+                }
+            }
+            else{
+                specPropertiesByConcatenatedPath.put(concatenatedPath, property);
+                result.add(property);
+            }
+        }
+        return result;
+    }
+
+    private String appendToConcatenatedPath(String path, SpecProperty specProperty){
+        final SpecTraverse specTraverse = specProperty.path.get(0);
+        StringBuilder sb = new StringBuilder();
+        sb.append(path).append('€');
+        if(specTraverse.reverse){
+            sb.append('-');
+        }
+        sb.append(specTraverse.pathName);
+        return sb.toString();
     }
 
 
