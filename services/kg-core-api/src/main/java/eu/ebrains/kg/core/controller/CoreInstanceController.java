@@ -254,15 +254,22 @@ public class CoreInstanceController {
 
     public Paginated<NormalizedJsonLd> getInstances(DataStage stage, Type type, SpaceName space, String searchByLabel, String filterProperty, String filterValue, ResponseConfiguration responseConfiguration, PaginationParam paginationParam) {
         Paginated<NormalizedJsonLd> instancesByType = graphDBInstances.getInstancesByType(stage, type != null ? type.getName() : null, space != null ? space.getName() : null, searchByLabel, filterProperty, filterValue, responseConfiguration.isReturnAlternatives(), responseConfiguration.isReturnEmbedded(), paginationParam);
-        if (responseConfiguration.isReturnAlternatives()) {
-            resolveAlternatives(stage, instancesByType.getData());
+        if (responseConfiguration.isReturnPayload()) {
+            if (responseConfiguration.isReturnAlternatives()) {
+                resolveAlternatives(stage, instancesByType.getData());
+            }
+            if (responseConfiguration.isReturnPermissions()) {
+                enrichWithPermissionInformation(stage, instancesByType.getData().stream().map(Result::ok).collect(Collectors.toList()));
+            }
+            final SpaceName privateSpaceName = authContext.getUserWithRoles().getPrivateSpace();
+            instancesByType.getData().forEach(d -> d.renameSpace(privateSpaceName, isInvited(d)));
+            return instancesByType;
+        } else {
+            instancesByType.getData().forEach(r -> {
+                r.removeAllPropertiesExceptId();
+            });
+            return instancesByType;
         }
-        if (responseConfiguration.isReturnPermissions()) {
-            enrichWithPermissionInformation(stage, instancesByType.getData().stream().map(Result::ok).collect(Collectors.toList()));
-        }
-        final SpaceName privateSpaceName = authContext.getUserWithRoles().getPrivateSpace();
-        instancesByType.getData().forEach(d -> d.renameSpace(privateSpaceName, isInvited(d)));
-        return instancesByType;
     }
 
     public ResponseEntity<Result<NormalizedJsonLd>> handleIngestionResponse(ResponseConfiguration responseConfiguration, Set<InstanceId> instanceIds) {
