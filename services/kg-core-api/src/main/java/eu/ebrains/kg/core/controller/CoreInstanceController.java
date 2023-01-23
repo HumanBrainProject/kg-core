@@ -320,9 +320,12 @@ public class CoreInstanceController {
             }
             return instance;
         } else {
-            NormalizedJsonLd idPayload = new NormalizedJsonLd();
-            idPayload.setId(idUtils.buildAbsoluteUrl(instanceId.getUuid()));
-            return idPayload;
+            NormalizedJsonLd instance = graphDBInstances.getInstanceByIdWithoutPayload(stage, instanceId.getSpace().getName(), instanceId.getUuid(), true, responseConfiguration.isReturnIncomingLinks(), responseConfiguration.getIncomingLinksPageSize(), responseConfiguration.isReturnPermissions());
+            if (responseConfiguration.isReturnPermissions() && instance != null) {
+                enrichWithPermissionInformation(stage, Collections.singletonList(Result.ok(instance)));
+            }
+            instance.removeNameSpace();
+            return instance;
         }
     }
     public boolean isInvited(NormalizedJsonLd normalizedJsonLd) {

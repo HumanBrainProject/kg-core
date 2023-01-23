@@ -24,6 +24,7 @@
 package eu.ebrains.kg.commons.jsonld;
 
 import eu.ebrains.kg.commons.model.SpaceName;
+import eu.ebrains.kg.commons.semantics.vocabularies.EBRAINSVocabulary;
 
 import java.math.BigInteger;
 import java.util.*;
@@ -94,6 +95,14 @@ public class DynamicJson extends LinkedHashMap<String, Object> {
         this.keySet().removeIf(DynamicJson::isInternalKey);
     }
 
+    public void removeAllPropertiesWhenNoPayload() {
+        this.keySet().removeIf(DynamicJson::isNotNecessaryKey);
+    }
+
+    public void removeNameSpace() {
+        this.keySet().removeIf(DynamicJson::isNameSpaceKey);
+    }
+
     public void visitPublicKeys(BiConsumer<String, Object> consumer) {
         for (Map.Entry<String, Object> entry : entrySet()) {
             String key = entry.getKey();
@@ -128,6 +137,14 @@ public class DynamicJson extends LinkedHashMap<String, Object> {
 
     public static boolean isInternalKey(String key) {
         return key.startsWith("_");
+    }
+
+    public static boolean isNotNecessaryKey(String key) {
+        return (!key.equals(EBRAINSVocabulary.META_SPACE) && !key.equals(EBRAINSVocabulary.META_INCOMING_LINKS) && !key.equals("@id"));
+    }
+
+    public static boolean isNameSpaceKey(String key) {
+        return key.equals(EBRAINSVocabulary.META_SPACE);
     }
 
     private <T> T castType(Class<T> clazz, Object o, boolean throwException) {
