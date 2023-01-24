@@ -34,6 +34,7 @@ import eu.ebrains.kg.commons.exception.InstanceNotFoundException;
 import eu.ebrains.kg.commons.exception.UnauthorizedException;
 import eu.ebrains.kg.commons.jsonld.InstanceId;
 import eu.ebrains.kg.commons.jsonld.JsonLdConsts;
+import eu.ebrains.kg.commons.jsonld.JsonLdId;
 import eu.ebrains.kg.commons.jsonld.NormalizedJsonLd;
 import eu.ebrains.kg.commons.model.*;
 import eu.ebrains.kg.commons.models.UserWithRoles;
@@ -265,10 +266,15 @@ public class CoreInstanceController {
             instancesByType.getData().forEach(d -> d.renameSpace(privateSpaceName, isInvited(d)));
             return instancesByType;
         } else {
+            List<NormalizedJsonLd> result = new ArrayList<>();
             instancesByType.getData().forEach(r -> {
-                r.removeAllPropertiesExceptId();
+                if (r.containsKey(JsonLdConsts.ID)) {
+                    NormalizedJsonLd jsonLd = new NormalizedJsonLd();
+                    jsonLd.setId(new JsonLdId(r.get(JsonLdConsts.ID).toString()));
+                    result.add(jsonLd);
+                }
             });
-            return instancesByType;
+            return new Paginated<>(result, Long.valueOf(result.size()), result.size(), 0);
         }
     }
 
