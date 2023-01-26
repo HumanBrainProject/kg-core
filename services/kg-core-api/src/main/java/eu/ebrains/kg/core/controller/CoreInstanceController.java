@@ -268,13 +268,14 @@ public class CoreInstanceController {
         } else {
             List<NormalizedJsonLd> result = new ArrayList<>();
             instancesByType.getData().forEach(r -> {
-                if (r.containsKey(JsonLdConsts.ID)) {
+                final JsonLdId id = r.id();
+                if (id != null) {
                     NormalizedJsonLd jsonLd = new NormalizedJsonLd();
-                    jsonLd.setId(new JsonLdId(r.get(JsonLdConsts.ID).toString()));
+                    jsonLd.setId(id);
                     result.add(jsonLd);
                 }
             });
-            return new Paginated<>(result, Long.valueOf(result.size()), result.size(), 0);
+            return new Paginated<>(result, instancesByType.getTotalResults(), instancesByType.getSize(), instancesByType.getFrom());
         }
     }
 
