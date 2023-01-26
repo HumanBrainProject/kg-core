@@ -94,10 +94,6 @@ public class DynamicJson extends LinkedHashMap<String, Object> {
         this.keySet().removeIf(DynamicJson::isInternalKey);
     }
 
-    public void removeAllPropertiesExceptId() {
-        this.keySet().removeIf(DynamicJson::isNotId);
-    }
-
     public void visitPublicKeys(BiConsumer<String, Object> consumer) {
         for (Map.Entry<String, Object> entry : entrySet()) {
             String key = entry.getKey();
@@ -132,10 +128,6 @@ public class DynamicJson extends LinkedHashMap<String, Object> {
 
     public static boolean isInternalKey(String key) {
         return key.startsWith("_");
-    }
-
-    public static boolean isNotId(String key) {
-        return !(key.equals("@id"));
     }
 
     private <T> T castType(Class<T> clazz, Object o, boolean throwException) {
