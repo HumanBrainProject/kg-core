@@ -34,6 +34,7 @@ import eu.ebrains.kg.commons.exception.InstanceNotFoundException;
 import eu.ebrains.kg.commons.exception.UnauthorizedException;
 import eu.ebrains.kg.commons.jsonld.InstanceId;
 import eu.ebrains.kg.commons.jsonld.JsonLdConsts;
+import eu.ebrains.kg.commons.jsonld.JsonLdId;
 import eu.ebrains.kg.commons.jsonld.NormalizedJsonLd;
 import eu.ebrains.kg.commons.model.*;
 import eu.ebrains.kg.commons.models.UserWithRoles;
@@ -254,15 +255,28 @@ public class CoreInstanceController {
 
     public Paginated<NormalizedJsonLd> getInstances(DataStage stage, Type type, SpaceName space, String searchByLabel, String filterProperty, String filterValue, ResponseConfiguration responseConfiguration, PaginationParam paginationParam) {
         Paginated<NormalizedJsonLd> instancesByType = graphDBInstances.getInstancesByType(stage, type != null ? type.getName() : null, space != null ? space.getName() : null, searchByLabel, filterProperty, filterValue, responseConfiguration.isReturnAlternatives(), responseConfiguration.isReturnEmbedded(), paginationParam);
-        if (responseConfiguration.isReturnAlternatives()) {
-            resolveAlternatives(stage, instancesByType.getData());
+        if (responseConfiguration.isReturnPayload()) {
+            if (responseConfiguration.isReturnAlternatives()) {
+                resolveAlternatives(stage, instancesByType.getData());
+            }
+            if (responseConfiguration.isReturnPermissions()) {
+                enrichWithPermissionInformation(stage, instancesByType.getData().stream().map(Result::ok).collect(Collectors.toList()));
+            }
+            final SpaceName privateSpaceName = authContext.getUserWithRoles().getPrivateSpace();
+            instancesByType.getData().forEach(d -> d.renameSpace(privateSpaceName, isInvited(d)));
+            return instancesByType;
+        } else {
+            List<NormalizedJsonLd> result = new ArrayList<>();
+            instancesByType.getData().forEach(r -> {
+                final JsonLdId id = r.id();
+                if (id != null) {
+                    NormalizedJsonLd jsonLd = new NormalizedJsonLd();
+                    jsonLd.setId(id);
+                    result.add(jsonLd);
+                }
+            });
+            return new Paginated<>(result, instancesByType.getTotalResults(), instancesByType.getSize(), instancesByType.getFrom());
         }
-        if (responseConfiguration.isReturnPermissions()) {
-            enrichWithPermissionInformation(stage, instancesByType.getData().stream().map(Result::ok).collect(Collectors.toList()));
-        }
-        final SpaceName privateSpaceName = authContext.getUserWithRoles().getPrivateSpace();
-        instancesByType.getData().forEach(d -> d.renameSpace(privateSpaceName, isInvited(d)));
-        return instancesByType;
     }
 
     public ResponseEntity<Result<NormalizedJsonLd>> handleIngestionResponse(ResponseConfiguration responseConfiguration, Set<InstanceId> instanceIds) {
