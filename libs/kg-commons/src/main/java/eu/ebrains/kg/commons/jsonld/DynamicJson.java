@@ -95,14 +95,6 @@ public class DynamicJson extends LinkedHashMap<String, Object> {
         this.keySet().removeIf(DynamicJson::isInternalKey);
     }
 
-    public void removeAllPropertiesWhenNoPayload() {
-        this.keySet().removeIf(DynamicJson::isNotNecessaryKey);
-    }
-
-    public void removeNameSpace() {
-        this.keySet().removeIf(DynamicJson::isNameSpaceKey);
-    }
-
     public void visitPublicKeys(BiConsumer<String, Object> consumer) {
         for (Map.Entry<String, Object> entry : entrySet()) {
             String key = entry.getKey();

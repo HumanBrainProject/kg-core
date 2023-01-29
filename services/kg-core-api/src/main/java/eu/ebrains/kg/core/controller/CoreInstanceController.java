@@ -34,6 +34,7 @@ import eu.ebrains.kg.commons.exception.InstanceNotFoundException;
 import eu.ebrains.kg.commons.exception.UnauthorizedException;
 import eu.ebrains.kg.commons.jsonld.InstanceId;
 import eu.ebrains.kg.commons.jsonld.JsonLdConsts;
+import eu.ebrains.kg.commons.jsonld.JsonLdId;
 import eu.ebrains.kg.commons.jsonld.NormalizedJsonLd;
 import eu.ebrains.kg.commons.model.*;
 import eu.ebrains.kg.commons.models.UserWithRoles;
@@ -238,31 +239,51 @@ public class CoreInstanceController {
             if (responseConfiguration.isReturnAlternatives()) {
                 resolveAlternatives(stage, instancesByIds.values().stream().map(Result::getData).filter(Objects::nonNull).collect(Collectors.toList()));
             }
-            if (responseConfiguration.isReturnPermissions()) {
-                enrichWithPermissionInformation(stage, instancesByIds.values());
-            }
         } else {
             idsAfterResolution.forEach(idAfterResolution -> {
-                NormalizedJsonLd idPayload = new NormalizedJsonLd();
+                NormalizedJsonLd idPayload = graphDBInstances.getInstanceByIdWithoutPayload(stage, idAfterResolution.getSpace().getName(), idAfterResolution.getUuid(), true, responseConfiguration.isReturnIncomingLinks(), responseConfiguration.getIncomingLinksPageSize(), responseConfiguration.isReturnPermissions());
+                idPayload.removeNameSpace();
                 UUID uuid = idAfterResolution.getUuid();
                 idPayload.setId(idUtils.buildAbsoluteUrl(uuid));
                 result.put(uuid.toString(), Result.ok(idPayload));
             });
+        }
+        if (responseConfiguration.isReturnPermissions()) {
+            enrichWithPermissionInformation(stage, result.values());
         }
         return result;
     }
 
     public Paginated<NormalizedJsonLd> getInstances(DataStage stage, Type type, SpaceName space, String searchByLabel, String filterProperty, String filterValue, ResponseConfiguration responseConfiguration, PaginationParam paginationParam) {
         Paginated<NormalizedJsonLd> instancesByType = graphDBInstances.getInstancesByType(stage, type != null ? type.getName() : null, space != null ? space.getName() : null, searchByLabel, filterProperty, filterValue, responseConfiguration.isReturnAlternatives(), responseConfiguration.isReturnEmbedded(), paginationParam);
-        if (responseConfiguration.isReturnAlternatives()) {
-            resolveAlternatives(stage, instancesByType.getData());
+        Paginated<NormalizedJsonLd> result;
+
+        if (responseConfiguration.isReturnPayload()) {
+            if (responseConfiguration.isReturnAlternatives()) {
+                resolveAlternatives(stage, instancesByType.getData());
+            }
+            final SpaceName privateSpaceName = authContext.getUserWithRoles().getPrivateSpace();
+            instancesByType.getData().forEach(d -> d.renameSpace(privateSpaceName, isInvited(d)));
+            result = instancesByType;
+        } else {
+            List<NormalizedJsonLd> newResult = new ArrayList<>();
+            instancesByType.getData().forEach(r -> {
+                final JsonLdId id = r.id();
+                if (id != null) {
+                    NormalizedJsonLd jsonLd = new NormalizedJsonLd();
+                    jsonLd.setId(id);
+                    newResult.add(jsonLd);
+                }
+            });
+            result = new Paginated<>(newResult, instancesByType.getTotalResults(), instancesByType.getSize(), instancesByType.getFrom());
         }
+
         if (responseConfiguration.isReturnPermissions()) {
-            enrichWithPermissionInformation(stage, instancesByType.getData().stream().map(Result::ok).collect(Collectors.toList()));
+            enrichWithPermissionInformation(stage, result.getData().stream().map(Result::ok).collect(Collectors.toList()));
         }
-        final SpaceName privateSpaceName = authContext.getUserWithRoles().getPrivateSpace();
-        instancesByType.getData().forEach(d -> d.renameSpace(privateSpaceName, isInvited(d)));
-        return instancesByType;
+
+
+        return result;
     }
 
     public ResponseEntity<Result<NormalizedJsonLd>> handleIngestionResponse(ResponseConfiguration responseConfiguration, Set<InstanceId> instanceIds) {
@@ -297,7 +318,7 @@ public class CoreInstanceController {
             return null;
         }
         final SpaceName privateSpaceName = authContext.getUserWithRoles().getPrivateSpace();
-        final Paginated<NormalizedJsonLd> incomingLinks = graphDBInstances.getIncomingLinks(instanceId.getSpace().getName(), instanceId.getUuid(), stage, property, type.getName(), pagination);
+        final Paginated<NormalizedJsonLd> incomingLinks = graphDBInstances.getIncomingLinks(instanceId.getSpace().getName(), instanceId.getUuid(), stage, property != null ? property : null, type != null ? type.getName() : null, pagination);
         incomingLinks.getData().forEach(d -> d.renameSpace(privateSpaceName, isInvited(d)));
         return incomingLinks;
     }
@@ -307,26 +328,25 @@ public class CoreInstanceController {
         if (instanceId == null) {
             return null;
         }
+        NormalizedJsonLd instance;
         if (responseConfiguration.isReturnPayload()) {
-            NormalizedJsonLd instance = graphDBInstances.getInstanceById(instanceId.getSpace().getName(), instanceId.getUuid(), stage, responseConfiguration.isReturnEmbedded(), responseConfiguration.isReturnAlternatives(), responseConfiguration.isReturnIncomingLinks(), responseConfiguration.getIncomingLinksPageSize(), true);
+            instance = graphDBInstances.getInstanceById(instanceId.getSpace().getName(), instanceId.getUuid(), stage, responseConfiguration.isReturnEmbedded(), responseConfiguration.isReturnAlternatives(), responseConfiguration.isReturnIncomingLinks(), responseConfiguration.getIncomingLinksPageSize(), true);
             if (responseConfiguration.isReturnAlternatives()) {
                 resolveAlternatives(stage, Collections.singletonList(instance));
-            }
-            if (responseConfiguration.isReturnPermissions() && instance != null) {
-                enrichWithPermissionInformation(stage, Collections.singletonList(Result.ok(instance)));
             }
             if (instance != null) {
                 instance.renameSpace(authContext.getUserWithRoles().getPrivateSpace(), isInvited(instance));
             }
-            return instance;
         } else {
-            NormalizedJsonLd instance = graphDBInstances.getInstanceByIdWithoutPayload(stage, instanceId.getSpace().getName(), instanceId.getUuid(), true, responseConfiguration.isReturnIncomingLinks(), responseConfiguration.getIncomingLinksPageSize(), responseConfiguration.isReturnPermissions());
-            if (responseConfiguration.isReturnPermissions() && instance != null) {
-                enrichWithPermissionInformation(stage, Collections.singletonList(Result.ok(instance)));
-            }
+            instance = graphDBInstances.getInstanceByIdWithoutPayload(stage, instanceId.getSpace().getName(), instanceId.getUuid(), true, responseConfiguration.isReturnIncomingLinks(), responseConfiguration.getIncomingLinksPageSize(), responseConfiguration.isReturnPermissions());
             instance.removeNameSpace();
-            return instance;
         }
+
+        if (responseConfiguration.isReturnPermissions() && instance != null) {
+            enrichWithPermissionInformation(stage, Collections.singletonList(Result.ok(instance)));
+        }
+
+        return instance;
     }
     public boolean isInvited(NormalizedJsonLd normalizedJsonLd) {
         final UUID uuid = idUtils.getUUID(normalizedJsonLd.id());

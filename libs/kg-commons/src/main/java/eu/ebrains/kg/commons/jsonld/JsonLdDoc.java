@@ -222,4 +222,13 @@ public class JsonLdDoc extends DynamicJson {
             }
         }
     }
+
+    public void removeAllPropertiesWhenNoPayload() {
+        this.keySet().removeIf(DynamicJson::isNotNecessaryKey);
+    }
+
+    public void removeNameSpace() {
+        this.keySet().removeIf(DynamicJson::isNameSpaceKey);
+    }
+
 }
