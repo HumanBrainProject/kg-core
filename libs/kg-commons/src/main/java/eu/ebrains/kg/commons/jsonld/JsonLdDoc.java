@@ -25,7 +25,6 @@ package eu.ebrains.kg.commons.jsonld;
 
 import eu.ebrains.kg.commons.exception.InvalidRequestException;
 import eu.ebrains.kg.commons.semantics.vocabularies.EBRAINSVocabulary;
-import eu.ebrains.kg.commons.semantics.vocabularies.HBPVocabulary;
 import eu.ebrains.kg.commons.semantics.vocabularies.SchemaOrgVocabulary;
 
 import java.util.*;
@@ -227,8 +226,8 @@ public class JsonLdDoc extends DynamicJson {
         this.keySet().removeIf(DynamicJson::isNotNecessaryKey);
     }
 
-    public void removeNameSpace() {
-        this.keySet().removeIf(DynamicJson::isNameSpaceKey);
+    public void removeSpace() {
+        this.keySet().removeIf(DynamicJson::isSpaceKey);
     }
 
 }

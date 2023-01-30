@@ -132,10 +132,10 @@ public class DynamicJson extends LinkedHashMap<String, Object> {
     }
 
     public static boolean isNotNecessaryKey(String key) {
-        return (!key.equals(EBRAINSVocabulary.META_SPACE) && !key.equals(EBRAINSVocabulary.META_INCOMING_LINKS) && !key.equals("@id"));
+        return (!key.equals(EBRAINSVocabulary.META_SPACE) && !key.equals(EBRAINSVocabulary.META_INCOMING_LINKS) && !key.equals(JsonLdConsts.ID));
     }
 
-    public static boolean isNameSpaceKey(String key) {
+    public static boolean isSpaceKey(String key) {
         return key.equals(EBRAINSVocabulary.META_SPACE);
     }
 

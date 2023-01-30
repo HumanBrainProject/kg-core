@@ -89,8 +89,8 @@ public class GraphDBInstancesAPI implements GraphDBInstances.Client {
     }
 
     @Override
-    public NormalizedJsonLd getInstanceByIdWithoutPayload(DataStage stage, String space, UUID id, boolean removeInternalProperties, boolean returnIncomingLinks, Long incomingLinksPageSize, boolean returnPermissions) {
-        return instances.getInstanceWithoutPayload(stage, new SpaceName(space), id, removeInternalProperties, returnIncomingLinks, incomingLinksPageSize, returnPermissions);
+    public NormalizedJsonLd getInstanceByIdAndPayload(String space, UUID id, DataStage stage, boolean returnEmbedded, boolean returnAlternatives, boolean returnIncomingLinks, Long incomingLinksPageSize, boolean removeInternalProperties) {
+        return instances.getInstanceByPayload(false, stage, new SpaceName(space), id, returnEmbedded, removeInternalProperties, returnAlternatives, returnIncomingLinks, incomingLinksPageSize);
     }
 
     @Override

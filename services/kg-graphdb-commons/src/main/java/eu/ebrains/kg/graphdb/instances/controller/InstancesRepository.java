@@ -68,6 +68,11 @@ public class InstancesRepository extends AbstractRepository {
 
     @ExposesData
     public NormalizedJsonLd getInstance(DataStage stage, SpaceName space, UUID id, boolean embedded, boolean removeInternalProperties, boolean alternatives, boolean showIncomingLinks, Long incomingLinksPageSize) {
+        return getInstanceByPayload(true, stage, space, id, embedded, removeInternalProperties, alternatives, showIncomingLinks, incomingLinksPageSize);
+    }
+
+    @ExposesData
+    public NormalizedJsonLd getInstanceByPayload(boolean returnPayload, DataStage stage, SpaceName space, UUID id, boolean embedded, boolean removeInternalProperties, boolean alternatives, boolean showIncomingLinks, Long incomingLinksPageSize) {
         if (!permissions.hasPermission(authContext.getUserWithRoles(), Functionality.MINIMAL_READ, space, id)) {
             throw new ForbiddenException(String.format("You don't have read rights on the instance with the id %s", id));
         }
@@ -82,7 +87,7 @@ public class InstancesRepository extends AbstractRepository {
         final List<NormalizedJsonLd> invitationDocuments = documents.getInvitationDocuments();
         if (showIncomingLinks) {
             ArangoDocumentReference arangoDocumentReference = ArangoDocumentReference.fromInstanceId(new InstanceId(id, space));
-            final boolean ignoreIncomingLinks = metaDataController.getTypesByName(document.getDoc().types(), stage, space.getName(), false, false, authContext.getUserWithRoles(), authContext.getClientSpace()!=null ? authContext.getClientSpace().getName() : null, invitationDocuments).values().stream().filter(t -> t.getData() != null).map(t -> Type.fromPayload(t.getData())).anyMatch(t -> t.getIgnoreIncomingLinks() != null && t.getIgnoreIncomingLinks());
+            final boolean ignoreIncomingLinks = metaDataController.getTypesByName(document.getDoc().types(), stage, space.getName(), false, false, authContext.getUserWithRoles(), authContext.getClientSpace() != null ? authContext.getClientSpace().getName() : null, invitationDocuments).values().stream().filter(t -> t.getData() != null).map(t -> Type.fromPayload(t.getData())).anyMatch(t -> t.getIgnoreIncomingLinks() != null && t.getIgnoreIncomingLinks());
             if (!ignoreIncomingLinks) {
                 NormalizedJsonLd instanceIncomingLinks = incomingLinks.fetchIncomingLinks(Collections.singletonList(arangoDocumentReference), stage, 0L, incomingLinksPageSize, null, null);
                 if (!CollectionUtils.isEmpty(instanceIncomingLinks)) {
@@ -96,52 +101,15 @@ public class InstancesRepository extends AbstractRepository {
             document.getDoc().removeAllInternalProperties();
         }
         NormalizedJsonLd doc = document.getDoc();
+        if (!returnPayload) {
+            doc.removeAllPropertiesWhenNoPayload();
+        }
         if (doc != null && !permissions.hasPermission(authContext.getUserWithRoles(), stage == DataStage.RELEASED ? Functionality.READ_RELEASED : Functionality.READ, space, id)) {
             //The user doesn't have read rights - we need to restrict the information to minimal data
             doc.keepPropertiesOnly(documents.getMinimalFields(stage, doc.types(), invitationDocuments));
         }
         return doc;
     }
-
-    @ExposesData
-    public NormalizedJsonLd getInstanceWithoutPayload(DataStage stage, SpaceName space, UUID id, boolean removeInternalProperties, boolean showIncomingLinks, Long incomingLinksPageSize, boolean returnPermissions) {
-        if (!permissions.hasPermission(authContext.getUserWithRoles(), Functionality.MINIMAL_READ, space, id)) {
-            throw new ForbiddenException(String.format("You don't have read rights on the instance with the id %s", id));
-        }
-        ArangoDocument document = documents.getDocument(stage, ArangoCollectionReference.fromSpace(space).doc(id));
-        if (document == null) {
-            return null;
-        }
-
-        NormalizedJsonLd instance = new NormalizedJsonLd();
-        List<NormalizedJsonLd> singleDoc = Collections.singletonList(new NormalizedJsonLd());
-
-        final List<NormalizedJsonLd> invitationDocuments = documents.getInvitationDocuments();
-        if (showIncomingLinks) {
-            ArangoDocumentReference arangoDocumentReference = ArangoDocumentReference.fromInstanceId(new InstanceId(id, space));
-            final boolean ignoreIncomingLinks = metaDataController.getTypesByName(document.getDoc().types(), stage, space.getName(), false, false, authContext.getUserWithRoles(), authContext.getClientSpace()!=null ? authContext.getClientSpace().getName() : null, invitationDocuments).values().stream().filter(t -> t.getData() != null).map(t -> Type.fromPayload(t.getData())).anyMatch(t -> t.getIgnoreIncomingLinks() != null && t.getIgnoreIncomingLinks());
-            if (!ignoreIncomingLinks) {
-                NormalizedJsonLd instanceIncomingLinks = incomingLinks.fetchIncomingLinks(Collections.singletonList(arangoDocumentReference), stage, 0L, incomingLinksPageSize, null, null);
-                if (!CollectionUtils.isEmpty(instanceIncomingLinks)) {
-                    incomingLinks.resolveIncomingLinks(stage, instanceIncomingLinks, invitationDocuments);
-                    NormalizedJsonLd d = document.getDoc();
-                    d.put(EBRAINSVocabulary.META_INCOMING_LINKS, instanceIncomingLinks.get(id.toString()));
-                    instance.put(EBRAINSVocabulary.META_INCOMING_LINKS, instanceIncomingLinks.get(id.toString()));
-                }
-            }
-        }
-        if (removeInternalProperties) {
-            document.getDoc().removeAllInternalProperties();
-        }
-        NormalizedJsonLd doc = document.getDoc();
-        doc.removeAllPropertiesWhenNoPayload();
-        if (doc != null && !permissions.hasPermission(authContext.getUserWithRoles(), stage == DataStage.RELEASED ? Functionality.READ_RELEASED : Functionality.READ, space, id)) {
-            //The user doesn't have read rights - we need to restrict the information to minimal data
-            doc.keepPropertiesOnly(documents.getMinimalFields(stage, doc.types(), invitationDocuments));
-        }
-        return doc;
-    }
-
 
     @ExposesMinimalData
     public Map<UUID, String> getLabelsForInstances(DataStage stage, Set<InstanceId> ids) {

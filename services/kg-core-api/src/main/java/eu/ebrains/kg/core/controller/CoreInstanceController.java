@@ -241,8 +241,7 @@ public class CoreInstanceController {
             }
         } else {
             idsAfterResolution.forEach(idAfterResolution -> {
-                NormalizedJsonLd idPayload = graphDBInstances.getInstanceByIdWithoutPayload(stage, idAfterResolution.getSpace().getName(), idAfterResolution.getUuid(), true, responseConfiguration.isReturnIncomingLinks(), responseConfiguration.getIncomingLinksPageSize(), responseConfiguration.isReturnPermissions());
-                idPayload.removeNameSpace();
+                NormalizedJsonLd idPayload = graphDBInstances.getInstanceByIdAndPayload(idAfterResolution.getSpace().getName(), idAfterResolution.getUuid(), stage, responseConfiguration.isReturnEmbedded(), responseConfiguration.isReturnAlternatives(), responseConfiguration.isReturnIncomingLinks(), responseConfiguration.getIncomingLinksPageSize(), true);
                 UUID uuid = idAfterResolution.getUuid();
                 idPayload.setId(idUtils.buildAbsoluteUrl(uuid));
                 result.put(uuid.toString(), Result.ok(idPayload));
@@ -250,6 +249,11 @@ public class CoreInstanceController {
         }
         if (responseConfiguration.isReturnPermissions()) {
             enrichWithPermissionInformation(stage, result.values());
+        }
+        if (!responseConfiguration.isReturnPayload()) {
+            result.values().forEach(r -> {
+                    r.getData().removeSpace();
+            });
         }
         return result;
     }
@@ -334,16 +338,24 @@ public class CoreInstanceController {
             if (responseConfiguration.isReturnAlternatives()) {
                 resolveAlternatives(stage, Collections.singletonList(instance));
             }
+            if (responseConfiguration.isReturnPermissions() && instance != null) {
+                enrichWithPermissionInformation(stage, Collections.singletonList(Result.ok(instance)));
+            }
             if (instance != null) {
                 instance.renameSpace(authContext.getUserWithRoles().getPrivateSpace(), isInvited(instance));
             }
         } else {
-            instance = graphDBInstances.getInstanceByIdWithoutPayload(stage, instanceId.getSpace().getName(), instanceId.getUuid(), true, responseConfiguration.isReturnIncomingLinks(), responseConfiguration.getIncomingLinksPageSize(), responseConfiguration.isReturnPermissions());
-            instance.removeNameSpace();
-        }
-
-        if (responseConfiguration.isReturnPermissions() && instance != null) {
-            enrichWithPermissionInformation(stage, Collections.singletonList(Result.ok(instance)));
+            if (!responseConfiguration.isReturnPermissions() && !responseConfiguration.isReturnIncomingLinks()) {
+                NormalizedJsonLd idPayload = new NormalizedJsonLd();
+                idPayload.setId(idUtils.buildAbsoluteUrl(instanceId.getUuid()));
+                return idPayload;
+            } else {
+                instance = graphDBInstances.getInstanceByIdAndPayload(instanceId.getSpace().getName(), instanceId.getUuid(), stage, responseConfiguration.isReturnEmbedded(),responseConfiguration.isReturnAlternatives(), responseConfiguration.isReturnIncomingLinks(), responseConfiguration.getIncomingLinksPageSize(), true);
+                if (responseConfiguration.isReturnPermissions() && instance != null) {
+                    enrichWithPermissionInformation(stage, Collections.singletonList(Result.ok(instance)));
+                }
+                instance.removeSpace();
+            }
         }
 
         return instance;

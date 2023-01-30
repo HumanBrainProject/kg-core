@@ -47,7 +47,7 @@ public interface GraphDBInstances {
     NormalizedJsonLd getInstanceById(String space, UUID id, DataStage stage, boolean returnEmbedded, boolean returnAlternatives, boolean returnIncomingLinks, Long incomingLinksPageSize, boolean removeInternalProperties);
 
     @ExposesData
-    NormalizedJsonLd getInstanceByIdWithoutPayload(DataStage stage, String space, UUID id, boolean removeInternalProperties, boolean returnIncomingLinks, Long incomingLinksPageSize, boolean returnPermissions);
+    NormalizedJsonLd getInstanceByIdAndPayload(String space, UUID id, DataStage stage, boolean returnEmbedded, boolean returnAlternatives, boolean returnIncomingLinks, Long incomingLinksPageSize, boolean removeInternalProperties);
 
     @ExposesData
     NormalizedJsonLd getQueryById(String space, UUID id);
