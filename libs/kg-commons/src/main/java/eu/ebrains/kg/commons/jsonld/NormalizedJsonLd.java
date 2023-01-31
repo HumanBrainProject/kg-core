@@ -115,4 +115,20 @@ public class NormalizedJsonLd extends JsonLdDoc {
         return this;
     }
 
+    public void removeAllPropertiesWhenNoPayload() {
+        this.keySet().removeIf(NormalizedJsonLd::isNotNecessaryKey);
+    }
+
+    public void removeSpace() {
+        this.keySet().removeIf(NormalizedJsonLd::isSpaceKey);
+    }
+
+    public static boolean isNotNecessaryKey(String key) {
+        return (!key.equals(EBRAINSVocabulary.META_SPACE) && !key.equals(EBRAINSVocabulary.META_INCOMING_LINKS) && !key.equals(JsonLdConsts.ID));
+    }
+
+    public static boolean isSpaceKey(String key) {
+        return key.equals(EBRAINSVocabulary.META_SPACE);
+    }
+
 }

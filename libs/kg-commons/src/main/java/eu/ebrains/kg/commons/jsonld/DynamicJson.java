@@ -131,14 +131,6 @@ public class DynamicJson extends LinkedHashMap<String, Object> {
         return key.startsWith("_");
     }
 
-    public static boolean isNotNecessaryKey(String key) {
-        return (!key.equals(EBRAINSVocabulary.META_SPACE) && !key.equals(EBRAINSVocabulary.META_INCOMING_LINKS) && !key.equals(JsonLdConsts.ID));
-    }
-
-    public static boolean isSpaceKey(String key) {
-        return key.equals(EBRAINSVocabulary.META_SPACE);
-    }
-
     private <T> T castType(Class<T> clazz, Object o, boolean throwException) {
         if (o == null) {
             return null;

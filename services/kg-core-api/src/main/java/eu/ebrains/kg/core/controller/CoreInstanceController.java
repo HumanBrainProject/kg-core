@@ -322,7 +322,7 @@ public class CoreInstanceController {
             return null;
         }
         final SpaceName privateSpaceName = authContext.getUserWithRoles().getPrivateSpace();
-        final Paginated<NormalizedJsonLd> incomingLinks = graphDBInstances.getIncomingLinks(instanceId.getSpace().getName(), instanceId.getUuid(), stage, property != null ? property : null, type != null ? type.getName() : null, pagination);
+        final Paginated<NormalizedJsonLd> incomingLinks = graphDBInstances.getIncomingLinks(instanceId.getSpace().getName(), instanceId.getUuid(), stage, property, type.getName(), pagination);
         incomingLinks.getData().forEach(d -> d.renameSpace(privateSpaceName, isInvited(d)));
         return incomingLinks;
     }
