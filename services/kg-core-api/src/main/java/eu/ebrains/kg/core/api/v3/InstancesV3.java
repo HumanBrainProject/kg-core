@@ -93,10 +93,10 @@ public class InstancesV3 {
     @Operation(
             summary = "Create new instance with a system generated id",
             description = """
-            The invocation of this endpoint causes the ingestion of the payload (if valid) in the KG by assigning a new "@id" to it.
-                        
-            Please note that any "@id" specified in the payload will be interpreted as an additional identifier and therefore added to the "http://schema.org/identifier" array.
-            """)
+                    The invocation of this endpoint causes the ingestion of the payload (if valid) in the KG by assigning a new "@id" to it.
+                                
+                    Please note that any "@id" specified in the payload will be interpreted as an additional identifier and therefore added to the "http://schema.org/identifier" array.
+                    """)
     @io.swagger.v3.oas.annotations.parameters.RequestBody(content = @Content(examples = {
             @ExampleObject(name = InstancesExamples.PAYLOAD_MINIMAL_NAME, description = InstancesExamples.PAYLOAD_MINIMAL_DESC, value = InstancesExamples.PAYLOAD_MINIMAL),
             @ExampleObject(name = InstancesExamples.PAYLOAD_WITH_PROPERTY_NAME, description = InstancesExamples.PAYLOAD_WITH_PROPERTY_DESC, value = InstancesExamples.PAYLOAD_WITH_PROPERTY),
@@ -114,10 +114,10 @@ public class InstancesV3 {
     @Operation(
             summary = "Create new instance with a client defined id",
             description = """
-            The invocation of this endpoint causes the ingestion of the payload (if valid) in the KG by using the specified UUID
-            
-            Please note that any "@id" specified in the payload will be interpreted as an additional identifier and therefore added to the "http://schema.org/identifier" array.
-            """)
+                    The invocation of this endpoint causes the ingestion of the payload (if valid) in the KG by using the specified UUID
+                                
+                    Please note that any "@id" specified in the payload will be interpreted as an additional identifier and therefore added to the "http://schema.org/identifier" array.
+                    """)
     @PostMapping("/instances/{id}")
     @ExposesData
     @WritesData
@@ -208,6 +208,10 @@ public class InstancesV3 {
 
 
     @Operation(summary = "Get the scope for the instance by its KG-internal ID")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "The scope of the instance"),
+            @ApiResponse(responseCode = "404", description = "Instance not found"),
+            @ApiResponse(responseCode = "509", description = "Bandwidth Limit Exceeded")})
     @GetMapping("/instances/{id}/scope")
     @ExposesMinimalData
     @Advanced

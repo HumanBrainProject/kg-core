@@ -106,4 +106,9 @@ public class RestControllerAdvice {
         CancelProcessException e = (CancelProcessException) ex;
         return ResponseEntity.status(e.getStatus()).body(e.getResult());
     }
+
+    @ExceptionHandler({LimitExceededException.class})
+    protected ResponseEntity<?> handleLimitExceeded(RuntimeException ex, WebRequest request) {
+        return ResponseEntity.status(HttpStatus.BANDWIDTH_LIMIT_EXCEEDED).body(ex.getMessage());
+    }
 }

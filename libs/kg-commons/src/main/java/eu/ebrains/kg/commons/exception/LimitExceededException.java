@@ -23,9 +23,8 @@
 
 package eu.ebrains.kg.commons.exception;
 
-public class InstanceNotFoundException extends RuntimeException {
-
-        public InstanceNotFoundException(String message) {
-            super(message);
-        }
+public class LimitExceededException extends RuntimeException {
+    public LimitExceededException(String message) {
+        super(message);
+    }
 }
