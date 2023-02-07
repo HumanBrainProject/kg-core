@@ -51,7 +51,7 @@ public class EBRAINSVocabulary {
 
     public static final String ADDITIONAL_INFO = NAMESPACE+"additionalInformation";
 
-    public static final String META = NAMESPACE+"meta/";
+    public static final String META = NAMESPACE+"meta";
     public static final String META_SPACES = META + "spaces";
     public static final String META_USER = META+"user";
     public static final String META_CAN_BE_EXCLUDED_FROM_SCOPE = META+"canBeExcludedFromScope";
@@ -100,6 +100,12 @@ public class EBRAINSVocabulary {
     public static final String META_PROPERTY_DEFINITION_TYPE = META+"PropertyDefinition";
 
     public final static String META_USER_PICTURE_TYPE = META+"UserPicture";
+
+    public final static String QUERY = NAMESPACE + "query/";
+
+    public final static String QUERY_META = QUERY + "meta";
+
+    public final static String QUERY_STRUCTURE = QUERY + "structure";
 
 
 }

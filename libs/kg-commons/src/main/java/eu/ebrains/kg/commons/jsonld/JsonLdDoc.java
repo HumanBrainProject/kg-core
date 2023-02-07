@@ -222,4 +222,25 @@ public class JsonLdDoc extends DynamicJson {
             }
         }
     }
+
+    public void validateQuery(){
+        visitKeys((map, key) ->{
+            final Object value = map.get(key);
+//            switch (key) {
+//                case EBRAINSVocabulary.QUERY_META  :
+//                    System.out.println(InstrumentationAgent.getObjectSize(value));
+//                    if (InstrumentationAgent.getObjectSize(value) == 0) {
+//                        throw new InvalidRequestException(String.format("400 - Bad request : The query provided is missing URI on key", value));
+//                    }
+//                    break;
+//                case EBRAINSVocabulary.QUERY_STRUCTURE :
+//                    if (InstrumentationAgent.getObjectSize(value) == 0) {
+//                        throw new InvalidRequestException(String.format("400 - Bad request : The query provided is missing URI on key", value));
+//                    }
+//                    break;
+//                default:
+//                    break;
+//            }
+        });
+    }
 }
