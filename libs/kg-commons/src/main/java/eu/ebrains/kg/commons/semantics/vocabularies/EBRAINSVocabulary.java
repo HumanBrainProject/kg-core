@@ -107,5 +107,9 @@ public class EBRAINSVocabulary {
 
     public final static String QUERY_STRUCTURE = QUERY + "structure";
 
+    public final static String QUERY_TYPE = QUERY + "type";
+
+    public final static String QUERY_PATH = QUERY + "path";
+
 
 }
