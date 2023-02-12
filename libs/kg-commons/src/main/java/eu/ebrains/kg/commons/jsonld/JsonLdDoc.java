@@ -24,6 +24,7 @@
 package eu.ebrains.kg.commons.jsonld;
 
 import eu.ebrains.kg.commons.exception.InvalidRequestException;
+import eu.ebrains.kg.commons.exception.MissingQueryFieldsException;
 import eu.ebrains.kg.commons.semantics.vocabularies.EBRAINSVocabulary;
 import eu.ebrains.kg.commons.semantics.vocabularies.SchemaOrgVocabulary;
 
@@ -231,26 +232,28 @@ public class JsonLdDoc extends DynamicJson {
             String keyValue;
             switch (key) {
                 case EBRAINSVocabulary.QUERY_META  :
+                    // We can also test with length of value (should be equals to 2 if there is just brackets {}
                     if (!value.equals("{}")) {
                         keyValue = value.substring(1, value.indexOf("="));
                         isQueryMeta.set(true);
                         if (!keyValue.equals(EBRAINSVocabulary.QUERY_TYPE)) {
-                            throw new InvalidRequestException(String.format("400 - Bad request : The query provided is missing URI on key %s", EBRAINSVocabulary.QUERY_TYPE));
+                            throw new MissingQueryFieldsException(String.format("400 - Bad request : The query provided is missing URI on key %s", EBRAINSVocabulary.QUERY_TYPE));
                         }
                     } else {
-                        throw new InvalidRequestException(String.format("400 - Bad request : The query provided is missing URI on key %s", EBRAINSVocabulary.QUERY_TYPE));
+                        throw new MissingQueryFieldsException(String.format("400 - Bad request : The query provided is missing URI on key %s", EBRAINSVocabulary.QUERY_TYPE));
                     }
 
                     break;
                 case EBRAINSVocabulary.QUERY_STRUCTURE :
+                    // We can also test with length of value (should be equals to 2 if there is just brackets {}
                     if (!value.equals("{}")) {
                         keyValue = value.substring(1, value.indexOf("="));
                         isQueryStructure.set(true);
                         if (!keyValue.equals(EBRAINSVocabulary.QUERY_PATH)) {
-                            throw new InvalidRequestException(String.format("400 - Bad request : The query provided is missing URI on key %s", EBRAINSVocabulary.QUERY_PATH));
+                            throw new MissingQueryFieldsException(String.format("400 - Bad request : The query provided is missing URI on key %s", EBRAINSVocabulary.QUERY_PATH));
                         }
                     } else {
-                        throw new InvalidRequestException(String.format("400 - Bad request : The query provided is missing URI on key %s", EBRAINSVocabulary.QUERY_PATH));
+                        throw new MissingQueryFieldsException(String.format("400 - Bad request : The query provided is missing URI on key %s", EBRAINSVocabulary.QUERY_PATH));
                     }
                     break;
                 default:
@@ -258,10 +261,10 @@ public class JsonLdDoc extends DynamicJson {
             }
         });
         if (!isQueryMeta.get()) {
-            throw new InvalidRequestException(String.format("Bad request : The query provided is missing URI on key %s", EBRAINSVocabulary.QUERY_META));
+            throw new InvalidRequestException(String.format("400 - Bad request : The query provided is missing URI on key %s", EBRAINSVocabulary.QUERY_META));
         }
         if (!isQueryStructure.get()) {
-            throw new InvalidRequestException(String.format("Bad request : The query provided is missing URI on key %s", EBRAINSVocabulary.QUERY_STRUCTURE));
+            throw new InvalidRequestException(String.format("400 - Bad request : The query provided is missing URI on key %s", EBRAINSVocabulary.QUERY_STRUCTURE));
         }
     }
 }
