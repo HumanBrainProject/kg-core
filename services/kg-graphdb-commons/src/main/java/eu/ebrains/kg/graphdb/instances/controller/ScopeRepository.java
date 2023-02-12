@@ -41,7 +41,6 @@ import java.util.stream.Stream;
 @Component
 public class ScopeRepository {
 
-    private final static List<String> SPACES_FOR_SCOPE = Collections.singletonList("kg-search");
     private final InstancesRepository instances;
 
     private final QueriesRepository queries;
@@ -71,7 +70,7 @@ public class ScopeRepository {
         //get scope relevant queries
         //TODO as a performance optimization, we could try to apply the restrictions already to the queries instead of excluding the instances in a post processing step.
         Stream<NormalizedJsonLd> typeQueries = instance.types().stream().map(type -> queries.getQueriesByRootType(stage, null, null, false, false, type).getData()).flatMap(Collection::stream);
-        List<NormalizedJsonLd> results = typeQueries.filter(q -> SPACES_FOR_SCOPE.contains(q.getAs(EBRAINSVocabulary.META_SPACE, String.class))).map(q -> {
+        List<NormalizedJsonLd> results = typeQueries.filter(q -> "true".equals(q.getAs(EBRAINSVocabulary.META_SCOPE_RELEVANT_SPACE, String.class))).map(q -> {
             QueryResult queryResult = queryController.query(authContext.getUserWithRoles(),
                     new KgQuery(q, stage).setIdRestrictions(
                             Collections.singletonList(id)), null, null, true);

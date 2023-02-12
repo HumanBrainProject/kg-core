@@ -66,6 +66,10 @@ public class PermissionsController {
         return permissions.hasGlobalPermission(userWithRoles, readFunctionality);
     }
 
+    public boolean canDefineScopeSpace(UserWithRoles userWithRoles) {
+        return permissions.hasGlobalPermission(userWithRoles, Functionality.DEFINE_SCOPE_RELEVANT_SPACE);
+    }
+
     public Set<SpaceName> removeSpacesWithoutReadAccess(Set<SpaceName> spaces, UserWithRoles userWithRoles, DataStage stage){
         Functionality readFunctionality = getReadFunctionality(stage);
         Set<SpaceName> spacesWithReadPermission = permissions.getSpacesForPermission(spaces, userWithRoles, readFunctionality);
