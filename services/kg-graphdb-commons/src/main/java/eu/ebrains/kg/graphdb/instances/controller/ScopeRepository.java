@@ -28,6 +28,7 @@ import eu.ebrains.kg.commons.*;
 import eu.ebrains.kg.commons.jsonld.*;
 import eu.ebrains.kg.commons.markers.*;
 import eu.ebrains.kg.commons.model.*;
+import eu.ebrains.kg.commons.model.internal.spaces.Space;
 import eu.ebrains.kg.commons.query.KgQuery;
 import eu.ebrains.kg.commons.semantics.vocabularies.EBRAINSVocabulary;
 import eu.ebrains.kg.graphdb.queries.controller.QueryController;
@@ -70,7 +71,8 @@ public class ScopeRepository {
         //get scope relevant queries
         //TODO as a performance optimization, we could try to apply the restrictions already to the queries instead of excluding the instances in a post processing step.
         Stream<NormalizedJsonLd> typeQueries = instance.types().stream().map(type -> queries.getQueriesByRootType(stage, null, null, false, false, type).getData()).flatMap(Collection::stream);
-        List<NormalizedJsonLd> results = typeQueries.filter(q -> "true".equals(q.getAs(EBRAINSVocabulary.META_SCOPE_RELEVANT_SPACE, String.class))).map(q -> {
+        Set<String> relevantSpaces = structureRepository.getSpaceSpecifications().stream().filter(Space::isScopeRelevant).map(s -> s.getName().getName()).collect(Collectors.toSet());
+        List<NormalizedJsonLd> results = typeQueries.filter(q -> relevantSpaces.contains(q.getAs(EBRAINSVocabulary.META_SPACE, String.class))).map(q -> {
             QueryResult queryResult = queryController.query(authContext.getUserWithRoles(),
                     new KgQuery(q, stage).setIdRestrictions(
                             Collections.singletonList(id)), null, null, true);
