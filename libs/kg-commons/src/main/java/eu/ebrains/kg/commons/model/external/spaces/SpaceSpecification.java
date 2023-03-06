@@ -48,6 +48,9 @@ public class SpaceSpecification {
     @JsonProperty(EBRAINSVocabulary.META_CLIENT_SPACE)
     private Boolean clientSpace;
 
+    @JsonProperty(EBRAINSVocabulary.META_SCOPE_RELEVANT_SPACE)
+    private Boolean scopeRelevant;
+
     public String getName() {
         return name;
     }
@@ -88,9 +91,17 @@ public class SpaceSpecification {
         this.deferCache = deferCache;
     }
 
+    public Boolean getScopeRelevant() {
+        return scopeRelevant;
+    }
+
+    public void setScopeRelevant(Boolean scopeRelevant) {
+        this.scopeRelevant = scopeRelevant;
+    }
+
     @JsonIgnore
     public Space toSpace(){
-       return new Space(new SpaceName(name), autoRelease != null && autoRelease, false, deferCache != null && deferCache);
+       return new Space(new SpaceName(name), autoRelease != null && autoRelease, false, deferCache != null && deferCache, scopeRelevant != null && scopeRelevant);
     }
 
 }
