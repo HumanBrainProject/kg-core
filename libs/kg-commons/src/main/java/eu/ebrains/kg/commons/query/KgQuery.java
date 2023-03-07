@@ -23,9 +23,11 @@
 
 package eu.ebrains.kg.commons.query;
 
+import eu.ebrains.kg.commons.exception.MissingQueryFieldsException;
 import eu.ebrains.kg.commons.jsonld.NormalizedJsonLd;
 import eu.ebrains.kg.commons.model.DataStage;
 import eu.ebrains.kg.commons.model.SpaceName;
+import eu.ebrains.kg.commons.semantics.vocabularies.EBRAINSVocabulary;
 
 import java.util.List;
 import java.util.UUID;
@@ -79,5 +81,21 @@ public class KgQuery {
     public KgQuery setRestrictToSpaces(List<SpaceName> restrictToSpaces) {
         this.restrictToSpaces = restrictToSpaces;
         return this;
+    }
+
+    public static void validateQuery(NormalizedJsonLd query){
+        NormalizedJsonLd meta = query.getAs(EBRAINSVocabulary.QUERY_META, NormalizedJsonLd.class);
+        List<NormalizedJsonLd> structure = query.getAsListOf(EBRAINSVocabulary.QUERY_STRUCTURE, NormalizedJsonLd.class);
+        if (meta == null) {
+            throw new MissingQueryFieldsException(String.format("Bad request : The query provided is missing a value for %s", EBRAINSVocabulary.QUERY_META));
+        } else {
+            String type = meta.getAs(EBRAINSVocabulary.QUERY_TYPE, String.class);
+            if (type == null || type.isEmpty()) {
+                throw new MissingQueryFieldsException(String.format("Bad request : The query provided is missing a value for %s in %s",EBRAINSVocabulary.QUERY_TYPE, EBRAINSVocabulary.QUERY_META));
+            }
+        }
+        if (structure == null || structure.isEmpty()) {
+            throw new MissingQueryFieldsException(String.format("Bad request : The query provided is missing a value for %s", EBRAINSVocabulary.QUERY_STRUCTURE));
+        }
     }
 }

@@ -24,12 +24,10 @@
 package eu.ebrains.kg.commons.jsonld;
 
 import eu.ebrains.kg.commons.exception.InvalidRequestException;
-import eu.ebrains.kg.commons.exception.MissingQueryFieldsException;
 import eu.ebrains.kg.commons.semantics.vocabularies.EBRAINSVocabulary;
 import eu.ebrains.kg.commons.semantics.vocabularies.SchemaOrgVocabulary;
 
 import java.util.*;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
@@ -221,50 +219,6 @@ public class JsonLdDoc extends DynamicJson {
                 }
                 currentMap.put(newNamespace + ((String) key).substring(oldNamespace.length()), value);
             }
-        }
-    }
-
-    public void validateQuery(){
-        AtomicBoolean isQueryMeta = new AtomicBoolean(false);
-        AtomicBoolean isQueryStructure = new AtomicBoolean(false);
-        visitKeys((map, key) ->{
-            final String value = map.get(key).toString();
-            String keyValue;
-            switch (key) {
-                case EBRAINSVocabulary.QUERY_META  :
-                    // We can also test with length of value (should be equals to 2 if there is just brackets {}
-                    if (!value.equals("{}")) {
-                        keyValue = value.substring(1, value.indexOf("="));
-                        isQueryMeta.set(true);
-                        if (!keyValue.equals(EBRAINSVocabulary.QUERY_TYPE)) {
-                            throw new MissingQueryFieldsException(String.format("400 - Bad request : The query provided is missing URI on key %s", EBRAINSVocabulary.QUERY_TYPE));
-                        }
-                    } else {
-                        throw new MissingQueryFieldsException(String.format("400 - Bad request : The query provided is missing URI on key %s", EBRAINSVocabulary.QUERY_TYPE));
-                    }
-
-                    break;
-                case EBRAINSVocabulary.QUERY_STRUCTURE :
-                    // We can also test with length of value (should be equals to 2 if there is just brackets {}
-                    if (!value.equals("{}")) {
-                        keyValue = value.substring(1, value.indexOf("="));
-                        isQueryStructure.set(true);
-                        if (!keyValue.equals(EBRAINSVocabulary.QUERY_PATH)) {
-                            throw new MissingQueryFieldsException(String.format("400 - Bad request : The query provided is missing URI on key %s", EBRAINSVocabulary.QUERY_PATH));
-                        }
-                    } else {
-                        throw new MissingQueryFieldsException(String.format("400 - Bad request : The query provided is missing URI on key %s", EBRAINSVocabulary.QUERY_PATH));
-                    }
-                    break;
-                default:
-                    break;
-            }
-        });
-        if (!isQueryMeta.get()) {
-            throw new InvalidRequestException(String.format("400 - Bad request : The query provided is missing URI on key %s", EBRAINSVocabulary.QUERY_META));
-        }
-        if (!isQueryStructure.get()) {
-            throw new InvalidRequestException(String.format("400 - Bad request : The query provided is missing URI on key %s", EBRAINSVocabulary.QUERY_STRUCTURE));
         }
     }
 }

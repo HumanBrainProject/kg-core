@@ -52,6 +52,8 @@ import org.springframework.web.bind.annotation.*;
 import java.util.*;
 import java.util.stream.Collectors;
 
+import static eu.ebrains.kg.commons.query.KgQuery.validateQuery;
+
 /**
  * The query API allows to execute and manage queries on top of the EBRAINS KG. This is the main interface for reading clients.
  */
@@ -109,9 +111,7 @@ public class QueriesV3 {
         allRequestParams.remove("from");
         allRequestParams.remove("size");
         NormalizedJsonLd normalizedJsonLd = jsonLd.normalize(query, true);
-        Set<String> identifiers = normalizedJsonLd.allIdentifiersIncludingId();
-        normalizedJsonLd.validateQuery();
-//        queryController.validatePayloadQuery(normalizedJsonLd);
+        validateQuery(normalizedJsonLd);
         KgQuery q = new KgQuery(normalizedJsonLd, stage.getStage());
         if(instanceId!=null){
             q.setIdRestrictions(Collections.singletonList(instanceId));

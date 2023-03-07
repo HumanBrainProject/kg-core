@@ -28,6 +28,7 @@ import eu.ebrains.kg.commons.Version;
 import eu.ebrains.kg.commons.api.JsonLd;
 import eu.ebrains.kg.commons.config.openApiGroups.Simple;
 import eu.ebrains.kg.commons.exception.InstanceNotFoundException;
+import eu.ebrains.kg.commons.exception.MissingQueryFieldsException;
 import eu.ebrains.kg.commons.jsonld.InstanceId;
 import eu.ebrains.kg.commons.jsonld.JsonLdDoc;
 import eu.ebrains.kg.commons.jsonld.NormalizedJsonLd;
@@ -50,6 +51,8 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.*;
 import java.util.stream.Collectors;
+
+import static eu.ebrains.kg.commons.query.KgQuery.validateQuery;
 
 /**
  * The query API allows to execute and manage queries on top of the EBRAINS KG. This is the main interface for reading clients.
@@ -98,12 +101,16 @@ public class QueriesV3Beta {
     @PostMapping
     @ExposesData
     public PaginatedStreamResult<? extends JsonLdDoc> runDynamicQuery(@RequestBody JsonLdDoc query, @ParameterObject PaginationParam paginationParam, @RequestParam("stage") ExposedStage stage, @RequestParam(value = "instanceId", required = false) UUID instanceId, @RequestParam(value = "restrictToSpaces", required = false) List<String> restrictToSpaces, @RequestParam(defaultValue = "{}") Map<String, String> allRequestParams) {
+        if (query.size() == 0) {
+            throw new MissingQueryFieldsException(String.format("%s - Bad request : The provided query is empty", HttpStatus.BAD_REQUEST.value()));
+        }
         //Remove the non-dynamic parameters from the map
         allRequestParams.remove("stage");
         allRequestParams.remove("instanceId");
         allRequestParams.remove("from");
         allRequestParams.remove("size");
         NormalizedJsonLd normalizedJsonLd = jsonLd.normalize(query, true);
+        validateQuery(normalizedJsonLd);
         KgQuery q = new KgQuery(normalizedJsonLd, stage.getStage());
         if(instanceId!=null){
             q.setIdRestrictions(Collections.singletonList(instanceId));
