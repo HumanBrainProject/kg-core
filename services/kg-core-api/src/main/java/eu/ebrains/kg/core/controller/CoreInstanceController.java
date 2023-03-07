@@ -252,7 +252,7 @@ public class CoreInstanceController {
         }
         if (!responseConfiguration.isReturnPayload()) {
             result.values().forEach(r -> {
-                    r.getData().removeSpace();
+                    removeSpace(r.getData());
             });
         }
         return result;
@@ -354,7 +354,7 @@ public class CoreInstanceController {
                 if (responseConfiguration.isReturnPermissions() && instance != null) {
                     enrichWithPermissionInformation(stage, Collections.singletonList(Result.ok(instance)));
                 }
-                instance.removeSpace();
+                removeSpace(instance);
             }
         }
 
@@ -461,6 +461,14 @@ public class CoreInstanceController {
             return scope;
         }
         return null;
+    }
+
+    public void removeSpace(NormalizedJsonLd instance) {
+        instance.keySet().removeIf(CoreInstanceController::isSpaceKey);
+    }
+
+    public static boolean isSpaceKey(String key) {
+        return key.equals(EBRAINSVocabulary.META_SPACE);
     }
 
     public GraphEntity getNeighbors(UUID id, DataStage stage) {

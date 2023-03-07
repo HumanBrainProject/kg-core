@@ -28,6 +28,7 @@ import eu.ebrains.kg.arango.commons.model.ArangoDocumentReference;
 import eu.ebrains.kg.commons.AuthContext;
 import eu.ebrains.kg.commons.exception.ForbiddenException;
 import eu.ebrains.kg.commons.jsonld.InstanceId;
+import eu.ebrains.kg.commons.jsonld.JsonLdConsts;
 import eu.ebrains.kg.commons.jsonld.NormalizedJsonLd;
 import eu.ebrains.kg.commons.markers.ExposesData;
 import eu.ebrains.kg.commons.markers.ExposesMinimalData;
@@ -102,7 +103,7 @@ public class InstancesRepository extends AbstractRepository {
         }
         NormalizedJsonLd doc = document.getDoc();
         if (!returnPayload) {
-            doc.removeAllPropertiesWhenNoPayload();
+            removeAllPropertiesWhenNoPayload(doc);
         }
         if (doc != null && !permissions.hasPermission(authContext.getUserWithRoles(), stage == DataStage.RELEASED ? Functionality.READ_RELEASED : Functionality.READ, space, id)) {
             //The user doesn't have read rights - we need to restrict the information to minimal data
@@ -116,4 +117,11 @@ public class InstancesRepository extends AbstractRepository {
         return getLabelsForInstances(stage, ids, databases);
     }
 
+    public void removeAllPropertiesWhenNoPayload(NormalizedJsonLd instance) {
+        instance.keySet().removeIf(InstancesRepository::isNotNecessaryKey);
+    }
+
+    public static boolean isNotNecessaryKey(String key) {
+        return (!key.equals(EBRAINSVocabulary.META_SPACE) && !key.equals(EBRAINSVocabulary.META_INCOMING_LINKS) && !key.equals(JsonLdConsts.ID));
+    }
 }
