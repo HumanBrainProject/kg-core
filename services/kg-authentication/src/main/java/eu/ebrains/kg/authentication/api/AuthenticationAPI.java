@@ -49,6 +49,7 @@ import org.springframework.stereotype.Component;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 @Component
 public class AuthenticationAPI implements Authentication.Client {
@@ -210,7 +211,8 @@ public class AuthenticationAPI implements Authentication.Client {
     public List<JsonLdDoc> getAllRoleDefinitions() {
         this.getRoles(false);
         if(canShowPermissions()) {
-            return authenticationRepository.getAllRoleDefinitions();
+            List<JsonLdDoc> allRoleDefinitions = authenticationRepository.getAllRoleDefinitions();
+            return allRoleDefinitions.stream().filter(rd -> !(rd.keySet().stream().allMatch(r -> r.startsWith("_")))).collect(Collectors.toList());
         }
         else{
             throw new UnauthorizedException("You don't have the rights to show permissions");

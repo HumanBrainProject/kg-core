@@ -175,7 +175,7 @@ public class AuthenticationRepository implements SetupLogic {
 
     public List<JsonLdDoc> getAllRoleDefinitions(){
         AQL aql = new AQL();
-        aql.add(AQL.trust("FOR d in permissions RETURN d"));
+        aql.add(AQL.trust("FOR d in permissions SORT d.`_key` ASC RETURN d"));
         return arangoDatabase.get().query(aql.build().getValue(), JsonLdDoc.class).asListRemaining();
     }
 
