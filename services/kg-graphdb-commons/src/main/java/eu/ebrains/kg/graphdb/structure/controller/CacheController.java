@@ -241,7 +241,6 @@ public class CacheController {
 
     @Scheduled(fixedRate = 30000)
     public synchronized void checkDeferredCacheEviction() {
-        try {
             logger.info("Checking for deferred cache eviction...");
             final Set<Tuple<SpaceName, DataStage>> handledSpaceTypes = deferredSpaceTypesForCacheEviction.keySet().stream().filter(k ->
                     deferredSpaceTypesForCacheEviction.size() > DEFER_CACHE_EVICTION_MAX_MAP_ENTRIES ||
@@ -260,8 +259,5 @@ public class CacheController {
                                     Duration.between(deferredSpaceTypePropertiesForTargetTypeEviction.get(k), LocalDateTime.now()).toSeconds() > DEFER_CACHE_EVICTION_DELAY_IN_S).
                     peek(k -> structureRepository.refreshTargetTypesCache(k.getB(), k.getA().getA(), k.getA().getB(), k.getA().getC())).collect(Collectors.toSet());
             handledSpaceTypePropertiesForTargetType.forEach(deferredSpaceTypePropertiesForTargetTypeEviction::remove);
-        } catch (Exception e) {
-            logger.info("Here !!!!!");
-        }
     }
 }
