@@ -24,8 +24,11 @@
 package eu.ebrains.kg.authentication.keycloak;
 
 import eu.ebrains.kg.authentication.controller.AuthenticationRepository;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
@@ -33,6 +36,9 @@ import java.util.Map;
 
 @Component
 public class UserInfoMapping {
+
+
+    private final Logger logger = LoggerFactory.getLogger(getClass());
 
     private final KeycloakClient keycloakClient;
 
@@ -47,6 +53,12 @@ public class UserInfoMapping {
     public List<String> getUserOrClientProfile(String token){
         Map<String, Object> userInfo = keycloakClient.getUserInfo(token);
         return authenticationRepository.getRolesFromUserInfo(userInfo);
+    }
+
+    @Scheduled(fixedRate = 1000*60*60) //TODO this is a quickfix to make sure the cache is cleared regularly. Please replace with a proper cache implementation supporting a TTL on a per-entry level
+    @CacheEvict(value = "userRoleMappings", allEntries = true)
+    public void evictUserOrClientProfiles(String version, String userId) {
+        logger.info("Wiping cached user role mappings");
     }
 
 }
