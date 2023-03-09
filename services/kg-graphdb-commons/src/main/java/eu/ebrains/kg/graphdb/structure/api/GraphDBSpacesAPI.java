@@ -94,7 +94,7 @@ public class GraphDBSpacesAPI implements GraphDBSpaces.Client {
 
     @Override
     public void specifySpace(SpaceSpecification spaceSpecification) {
-        if (spaceSpecification.getScopeRelevant() && !permissionsController.canDefineScopeSpace(authContext.getUserWithRoles())) {
+        if (spaceSpecification.getScopeRelevant() != null && spaceSpecification.getScopeRelevant() && !permissionsController.canDefineScopeSpace(authContext.getUserWithRoles())) {
             throw new ForbiddenException(NO_RIGHTS_TO_MANAGE_SPACES);
         }
         if(permissionsController.canManageSpaces(authContext.getUserWithRoles(), SpaceName.fromString(spaceSpecification.getName()))) {
