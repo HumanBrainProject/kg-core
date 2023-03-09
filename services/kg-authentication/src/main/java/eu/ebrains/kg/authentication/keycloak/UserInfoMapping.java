@@ -57,7 +57,7 @@ public class UserInfoMapping {
 
     @Scheduled(fixedRate = 1000*60*60) //TODO this is a quickfix to make sure the cache is cleared regularly. Please replace with a proper cache implementation supporting a TTL on a per-entry level
     @CacheEvict(value = "userRoleMappings", allEntries = true)
-    public void evictUserOrClientProfiles(String version, String userId) {
+    public void evictUserOrClientProfiles() {
         logger.info("Wiping cached user role mappings");
     }
 
