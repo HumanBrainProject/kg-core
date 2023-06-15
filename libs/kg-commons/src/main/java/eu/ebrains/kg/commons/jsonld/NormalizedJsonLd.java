@@ -114,5 +114,4 @@ public class NormalizedJsonLd extends JsonLdDoc {
         }
         return this;
     }
-
 }

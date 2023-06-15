@@ -224,9 +224,6 @@ public class CoreInstanceController {
         if (responseConfiguration.isReturnPayload()) {
             Map<UUID, Result<NormalizedJsonLd>> instancesByIds = graphDBInstances.getInstancesByIds(idsAfterResolution.stream().filter(i -> !i.isUnresolved()).map(InstanceId::serialize).collect(Collectors.toList()), stage, typeRestriction, responseConfiguration.isReturnEmbedded(), responseConfiguration.isReturnAlternatives(), responseConfiguration.isReturnIncomingLinks(), responseConfiguration.getIncomingLinksPageSize());
             instancesByIds.forEach((k, v) -> {
-                if (v.getData() != null) {
-                    v.getData().renameSpace(privateSpaceName, isInvited(v.getData()));
-                }
                 result.put(k.toString(), v);
             });
             ids.stream().filter(Objects::nonNull).forEach(
@@ -239,47 +236,58 @@ public class CoreInstanceController {
             if (responseConfiguration.isReturnAlternatives()) {
                 resolveAlternatives(stage, instancesByIds.values().stream().map(Result::getData).filter(Objects::nonNull).collect(Collectors.toList()));
             }
-            if (responseConfiguration.isReturnPermissions()) {
-                enrichWithPermissionInformation(stage, instancesByIds.values());
-            }
         } else {
             idsAfterResolution.forEach(idAfterResolution -> {
-                NormalizedJsonLd idPayload = new NormalizedJsonLd();
-                UUID uuid = idAfterResolution.getUuid();
-                idPayload.setId(idUtils.buildAbsoluteUrl(uuid));
-                idPayload.addProperty(EBRAINSVocabulary.META_SPACE, idAfterResolution.getSpace().getName());
-                idPayload.renameSpace(privateSpaceName, isInvited(idPayload));
-                result.put(uuid.toString(), Result.ok(idPayload));
+                if (!responseConfiguration.isReturnIncomingLinks()) {
+                    NormalizedJsonLd idPayload = new NormalizedJsonLd();
+                    UUID uuid = idAfterResolution.getUuid();
+                    idPayload.setId(idUtils.buildAbsoluteUrl(uuid));
+                    idPayload.addProperty(EBRAINSVocabulary.META_SPACE, idAfterResolution.getSpace().getName());
+                    result.put(uuid.toString(), Result.ok(idPayload));
+                }
+                else {
+                    NormalizedJsonLd idPayload = graphDBInstances.getInstanceByIdWithoutPayload(idAfterResolution.getSpace().getName(), idAfterResolution.getUuid(), stage, responseConfiguration.isReturnIncomingLinks(), responseConfiguration.getIncomingLinksPageSize());
+                    result.put(idAfterResolution.getUuid().toString(), Result.ok(idPayload));
+                }
             });
+        }
+        result.values().stream().map(Result::getData).filter(Objects::nonNull).forEach(r -> r.renameSpace(privateSpaceName, isInvited(r)));
+
+        if (responseConfiguration.isReturnPermissions()) {
+            enrichWithPermissionInformation(stage, result.values());
         }
         return result;
     }
 
     public Paginated<NormalizedJsonLd> getInstances(DataStage stage, Type type, SpaceName space, String searchByLabel, String filterProperty, String filterValue, ResponseConfiguration responseConfiguration, PaginationParam paginationParam) {
-        Paginated<NormalizedJsonLd> instancesByType = graphDBInstances.getInstancesByType(stage, type != null ? type.getName() : null, space != null ? space.getName() : null, searchByLabel, filterProperty, filterValue, responseConfiguration.isReturnAlternatives(), responseConfiguration.isReturnEmbedded(), paginationParam);
-        final SpaceName privateSpaceName = authContext.getUserWithRoles().getPrivateSpace();
-        instancesByType.getData().forEach(d -> d.renameSpace(privateSpaceName, isInvited(d)));
+	Paginated<NormalizedJsonLd> instancesByType = graphDBInstances.getInstancesByType(stage, type != null ? type.getName() : null, space != null ? space.getName() : null, searchByLabel, filterProperty, filterValue, responseConfiguration.isReturnAlternatives(), responseConfiguration.isReturnEmbedded(), paginationParam);
+        Paginated<NormalizedJsonLd> result;
         if (responseConfiguration.isReturnPayload()) {
             if (responseConfiguration.isReturnAlternatives()) {
                 resolveAlternatives(stage, instancesByType.getData());
             }
-            if (responseConfiguration.isReturnPermissions()) {
-                enrichWithPermissionInformation(stage, instancesByType.getData().stream().map(Result::ok).collect(Collectors.toList()));
-            }
-            return instancesByType;
+            final SpaceName privateSpaceName = authContext.getUserWithRoles().getPrivateSpace();
+            instancesByType.getData().forEach(d -> d.renameSpace(privateSpaceName, isInvited(d)));
+            result = instancesByType;
         } else {
-            List<NormalizedJsonLd> result = new ArrayList<>();
-            instancesByType.getData().forEach(r -> {
+            final List<NormalizedJsonLd> collectedResult = instancesByType.getData().stream().map(r -> {
                 final JsonLdId id = r.id();
                 if (id != null) {
                     NormalizedJsonLd jsonLd = new NormalizedJsonLd();
                     jsonLd.setId(id);
                     jsonLd.addProperty(EBRAINSVocabulary.META_SPACE, r.getAs(EBRAINSVocabulary.META_SPACE, String.class));
-                    result.add(jsonLd);
+                    return jsonLd;
+                } else {
+                    return null;
                 }
-            });
-            return new Paginated<>(result, instancesByType.getTotalResults(), instancesByType.getSize(), instancesByType.getFrom());
+            }).filter(Objects::nonNull).toList();
+            result = new Paginated<>(collectedResult, instancesByType.getTotalResults(), instancesByType.getSize(), instancesByType.getFrom());
         }
+
+        if (responseConfiguration.isReturnPermissions()) {
+            enrichWithPermissionInformation(stage, result.getData().stream().map(Result::ok).collect(Collectors.toList()));
+        }
+        return result;
     }
 
     public ResponseEntity<Result<NormalizedJsonLd>> handleIngestionResponse(ResponseConfiguration responseConfiguration, Set<InstanceId> instanceIds) {
@@ -327,25 +335,28 @@ public class CoreInstanceController {
         if (instanceId == null) {
             return null;
         }
+        NormalizedJsonLd instance;
         if (responseConfiguration.isReturnPayload()) {
-            NormalizedJsonLd instance = graphDBInstances.getInstanceById(instanceId.getSpace().getName(), instanceId.getUuid(), stage, responseConfiguration.isReturnEmbedded(), responseConfiguration.isReturnAlternatives(), responseConfiguration.isReturnIncomingLinks(), responseConfiguration.getIncomingLinksPageSize(), true);
+            instance = graphDBInstances.getInstanceById(instanceId.getSpace().getName(), instanceId.getUuid(), stage, responseConfiguration.isReturnEmbedded(), responseConfiguration.isReturnAlternatives(), responseConfiguration.isReturnIncomingLinks(), responseConfiguration.getIncomingLinksPageSize(), true);
             if (responseConfiguration.isReturnAlternatives()) {
                 resolveAlternatives(stage, Collections.singletonList(instance));
             }
-            if (responseConfiguration.isReturnPermissions() && instance != null) {
+        } else {
+            if (!responseConfiguration.isReturnIncomingLinks()) {
+                instance = new NormalizedJsonLd();
+                instance.setId(idUtils.buildAbsoluteUrl(instanceId.getUuid()));
+                instance.addProperty(EBRAINSVocabulary.META_SPACE, instanceId.getSpace().getName());
+            } else {
+                instance = graphDBInstances.getInstanceByIdWithoutPayload(instanceId.getSpace().getName(), instanceId.getUuid(), stage, responseConfiguration.isReturnIncomingLinks(), responseConfiguration.getIncomingLinksPageSize());
+            }
+        }
+        if(instance!=null) {
+            instance.renameSpace(privateSpaceName, isInvited(instance));
+            if (responseConfiguration.isReturnPermissions()) {
                 enrichWithPermissionInformation(stage, Collections.singletonList(Result.ok(instance)));
             }
-            if (instance != null) {
-                instance.renameSpace(privateSpaceName, isInvited(instance));
-            }
-            return instance;
-        } else {
-            NormalizedJsonLd idPayload = new NormalizedJsonLd();
-            idPayload.setId(idUtils.buildAbsoluteUrl(instanceId.getUuid()));
-            idPayload.addProperty(EBRAINSVocabulary.META_SPACE, instanceId.getSpace().getName());
-            idPayload.renameSpace(privateSpaceName, isInvited(idPayload));
-            return idPayload;
         }
+        return instance;
     }
     public boolean isInvited(NormalizedJsonLd normalizedJsonLd) {
         final UUID uuid = idUtils.getUUID(normalizedJsonLd.id());

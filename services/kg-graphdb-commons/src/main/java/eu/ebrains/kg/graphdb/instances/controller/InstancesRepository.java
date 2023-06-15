@@ -28,6 +28,7 @@ import eu.ebrains.kg.arango.commons.model.ArangoDocumentReference;
 import eu.ebrains.kg.commons.AuthContext;
 import eu.ebrains.kg.commons.exception.ForbiddenException;
 import eu.ebrains.kg.commons.jsonld.InstanceId;
+import eu.ebrains.kg.commons.jsonld.JsonLdConsts;
 import eu.ebrains.kg.commons.jsonld.NormalizedJsonLd;
 import eu.ebrains.kg.commons.markers.ExposesData;
 import eu.ebrains.kg.commons.markers.ExposesMinimalData;
@@ -68,6 +69,11 @@ public class InstancesRepository extends AbstractRepository {
 
     @ExposesData
     public NormalizedJsonLd getInstance(DataStage stage, SpaceName space, UUID id, boolean embedded, boolean removeInternalProperties, boolean alternatives, boolean showIncomingLinks, Long incomingLinksPageSize) {
+        return getInstanceByPayload(true, stage, space, id, embedded, removeInternalProperties, alternatives, showIncomingLinks, incomingLinksPageSize);
+    }
+
+    @ExposesData
+    public NormalizedJsonLd getInstanceByPayload(boolean returnPayload, DataStage stage, SpaceName space, UUID id, boolean embedded, boolean removeInternalProperties, boolean alternatives, boolean showIncomingLinks, Long incomingLinksPageSize) {
         if (!permissions.hasPermission(authContext.getUserWithRoles(), Functionality.MINIMAL_READ, space, id)) {
             throw new ForbiddenException(String.format("You don't have read rights on the instance with the id %s", id));
         }
@@ -82,7 +88,7 @@ public class InstancesRepository extends AbstractRepository {
         final List<NormalizedJsonLd> invitationDocuments = documents.getInvitationDocuments();
         if (showIncomingLinks) {
             ArangoDocumentReference arangoDocumentReference = ArangoDocumentReference.fromInstanceId(new InstanceId(id, space));
-            final boolean ignoreIncomingLinks = metaDataController.getTypesByName(document.getDoc().types(), stage, space.getName(), false, false, authContext.getUserWithRoles(), authContext.getClientSpace()!=null ? authContext.getClientSpace().getName() : null, invitationDocuments).values().stream().filter(t -> t.getData() != null).map(t -> Type.fromPayload(t.getData())).anyMatch(t -> t.getIgnoreIncomingLinks() != null && t.getIgnoreIncomingLinks());
+            final boolean ignoreIncomingLinks = metaDataController.getTypesByName(document.getDoc().types(), stage, space.getName(), false, false, authContext.getUserWithRoles(), authContext.getClientSpace() != null ? authContext.getClientSpace().getName() : null, invitationDocuments).values().stream().filter(t -> t.getData() != null).map(t -> Type.fromPayload(t.getData())).anyMatch(t -> t.getIgnoreIncomingLinks() != null && t.getIgnoreIncomingLinks());
             if (!ignoreIncomingLinks) {
                 NormalizedJsonLd instanceIncomingLinks = incomingLinks.fetchIncomingLinks(Collections.singletonList(arangoDocumentReference), stage, 0L, incomingLinksPageSize, null, null);
                 if (!CollectionUtils.isEmpty(instanceIncomingLinks)) {
@@ -96,6 +102,9 @@ public class InstancesRepository extends AbstractRepository {
             document.getDoc().removeAllInternalProperties();
         }
         NormalizedJsonLd doc = document.getDoc();
+        if (!returnPayload) {
+            removeAllPropertiesWhenNoPayload(doc);
+        }
         if (doc != null && !permissions.hasPermission(authContext.getUserWithRoles(), stage == DataStage.RELEASED ? Functionality.READ_RELEASED : Functionality.READ, space, id)) {
             //The user doesn't have read rights - we need to restrict the information to minimal data
             doc.keepPropertiesOnly(documents.getMinimalFields(stage, doc.types(), invitationDocuments));
@@ -103,10 +112,16 @@ public class InstancesRepository extends AbstractRepository {
         return doc;
     }
 
-
     @ExposesMinimalData
     public Map<UUID, String> getLabelsForInstances(DataStage stage, Set<InstanceId> ids) {
         return getLabelsForInstances(stage, ids, databases);
     }
 
+    public void removeAllPropertiesWhenNoPayload(NormalizedJsonLd instance) {
+        instance.keySet().removeIf(InstancesRepository::isNotNecessaryKey);
+    }
+
+    public static boolean isNotNecessaryKey(String key) {
+        return (!key.equals(EBRAINSVocabulary.META_SPACE) && !key.equals(EBRAINSVocabulary.META_INCOMING_LINKS) && !key.equals(JsonLdConsts.ID));
+    }
 }
