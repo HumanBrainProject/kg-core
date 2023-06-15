@@ -45,6 +45,7 @@ public class KgQuery {
     public KgQuery(NormalizedJsonLd payload, DataStage stage) {
         this.payload = payload;
         this.stage = stage;
+        this.validateQuery();
     }
 
     public NormalizedJsonLd getPayload() {
@@ -83,19 +84,22 @@ public class KgQuery {
         return this;
     }
 
-    public static void validateQuery(NormalizedJsonLd query){
-        NormalizedJsonLd meta = query.getAs(EBRAINSVocabulary.QUERY_META, NormalizedJsonLd.class);
-        List<NormalizedJsonLd> structure = query.getAsListOf(EBRAINSVocabulary.QUERY_STRUCTURE, NormalizedJsonLd.class);
+    private void validateQuery(){
+        if (this.payload == null || this.payload.size() == 0) {
+            throw new MissingQueryFieldsException("The provided query is empty");
+        }
+        NormalizedJsonLd meta = this.payload.getAs(EBRAINSVocabulary.QUERY_META, NormalizedJsonLd.class);
         if (meta == null) {
-            throw new MissingQueryFieldsException(String.format("Bad request : The query provided is missing a value for %s", EBRAINSVocabulary.QUERY_META));
+            throw new MissingQueryFieldsException(String.format("The query provided is missing a value for %s", EBRAINSVocabulary.QUERY_META));
         } else {
             String type = meta.getAs(EBRAINSVocabulary.QUERY_TYPE, String.class);
             if (type == null || type.isEmpty()) {
-                throw new MissingQueryFieldsException(String.format("Bad request : The query provided is missing a value for %s in %s",EBRAINSVocabulary.QUERY_TYPE, EBRAINSVocabulary.QUERY_META));
+                throw new MissingQueryFieldsException(String.format("The query provided is missing a value for %s in %s",EBRAINSVocabulary.QUERY_TYPE, EBRAINSVocabulary.QUERY_META));
             }
         }
+        List<NormalizedJsonLd> structure = this.payload.getAsListOf(EBRAINSVocabulary.QUERY_STRUCTURE, NormalizedJsonLd.class);
         if (structure == null || structure.isEmpty()) {
-            throw new MissingQueryFieldsException(String.format("Bad request : The query provided is missing a value for %s", EBRAINSVocabulary.QUERY_STRUCTURE));
+            throw new MissingQueryFieldsException(String.format("The query provided is missing a value for %s", EBRAINSVocabulary.QUERY_STRUCTURE));
         }
     }
 }
