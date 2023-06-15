@@ -111,4 +111,9 @@ public class RestControllerAdvice {
     protected ResponseEntity<?> handleLimitExceeded(RuntimeException ex, WebRequest request) {
         return ResponseEntity.status(HttpStatus.BANDWIDTH_LIMIT_EXCEEDED).body(ex.getMessage());
     }
+
+    @ExceptionHandler({MissingQueryFieldsException.class})
+    protected ResponseEntity<?> handleMissingQueryFields(RuntimeException ex, WebRequest request) {
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ex.getMessage());
+    }
 }

@@ -25,7 +25,6 @@ package eu.ebrains.kg.commons.jsonld;
 
 import eu.ebrains.kg.commons.exception.InvalidRequestException;
 import eu.ebrains.kg.commons.semantics.vocabularies.EBRAINSVocabulary;
-import eu.ebrains.kg.commons.semantics.vocabularies.HBPVocabulary;
 import eu.ebrains.kg.commons.semantics.vocabularies.SchemaOrgVocabulary;
 
 import java.util.*;

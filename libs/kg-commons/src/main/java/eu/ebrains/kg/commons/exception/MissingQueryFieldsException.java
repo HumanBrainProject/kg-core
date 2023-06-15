@@ -23,9 +23,8 @@
 
 package eu.ebrains.kg.commons.exception;
 
-public class InstanceNotFoundException extends RuntimeException {
-
-    public InstanceNotFoundException(String message) {
+public class MissingQueryFieldsException extends RuntimeException {
+    public MissingQueryFieldsException(String message) {
         super(message);
     }
 }

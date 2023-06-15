@@ -101,5 +101,12 @@ public class EBRAINSVocabulary {
 
     public final static String META_USER_PICTURE_TYPE = META+"UserPicture";
 
+    public final static String QUERY = NAMESPACE + "query/";
+
+    public final static String QUERY_META = QUERY + "meta";
+    public final static String QUERY_STRUCTURE = QUERY + "structure";
+    public final static String QUERY_TYPE = QUERY + "type";
+    public final static String QUERY_PATH = QUERY + "path";
+
 
 }
