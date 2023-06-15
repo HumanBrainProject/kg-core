@@ -42,7 +42,10 @@ public class TypeUtils {
         int numberOfChunks = (list.size() / chunkSize) + 1;
         List<List<T>> result = new ArrayList<>(numberOfChunks);
         for (int i = 0; i < numberOfChunks; i++) {
-            result.add(list.subList(i * chunkSize, Math.min((i + 1) * chunkSize, list.size())));
+            List<T> subL = list.subList(i * chunkSize, Math.min((i + 1) * chunkSize, list.size()));
+            if(!subL.isEmpty()) {
+                result.add(subL);
+            }
         }
         return result;
     }

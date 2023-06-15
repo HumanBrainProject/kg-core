@@ -88,7 +88,7 @@ public class QueryController {
         } catch (ArangoDBException ex) {
             logger.error(String.format("Was not able to execute query: %s", q.getA()));
             // Test if the exception error num is for "Query use more memory than allowed"
-            if (ex.getErrorNum() == 32) {
+            if (ex.getErrorNum()!=null && ex.getErrorNum() == 32) {
                 throw new LimitExceededException(String.format("%s - Bandwidth Limit Exceeded - %s", HttpStatus.BANDWIDTH_LIMIT_EXCEEDED.value(), ex.getErrorNum()));
             } else {
                 throw ex;

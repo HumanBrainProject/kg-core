@@ -24,7 +24,6 @@
 package eu.ebrains.kg.commons.jsonld;
 
 import eu.ebrains.kg.commons.model.SpaceName;
-import eu.ebrains.kg.commons.semantics.vocabularies.EBRAINSVocabulary;
 
 import java.math.BigInteger;
 import java.util.*;

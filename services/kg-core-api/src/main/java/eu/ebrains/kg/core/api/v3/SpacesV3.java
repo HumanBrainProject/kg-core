@@ -101,7 +101,7 @@ public class SpacesV3 {
     @PutMapping("{space}/specification")
     @Admin
     @ExposesInputWithoutEnrichedSensitiveData
-    public void createSpaceDefinition(@PathVariable(value = "space") @Parameter(description = "The space the definition is valid for. Please note that you can't do so for your private space (\"" + SpaceName.PRIVATE_SPACE + "\")") String space, @RequestParam(value = "autorelease", required = false, defaultValue = "false") boolean autoRelease, @RequestParam(value = "clientSpace", required = false, defaultValue = "false") boolean clientSpace, @RequestParam(value = "deferCache", required = false, defaultValue = "false") boolean deferCache) {
+    public void createSpaceDefinition(@PathVariable(value = "space") @Parameter(description = "The space the definition is valid for. Please note that you can't do so for your private space (\"" + SpaceName.PRIVATE_SPACE + "\")") String space, @RequestParam(value = "autorelease", required = false, defaultValue = "false") boolean autoRelease, @RequestParam(value = "clientSpace", required = false, defaultValue = "false") boolean clientSpace, @RequestParam(value = "deferCache", required = false, defaultValue = "false") boolean deferCache, @RequestParam(value = "scopeRelevant", required = false, defaultValue = "false") boolean scopeRelevant) {
         if(space == null){
             throw new InvalidRequestException("You need to provide a space name to execute this functionality");
         }
@@ -111,6 +111,7 @@ public class SpacesV3 {
         spaceSpecification.setAutoRelease(autoRelease);
         spaceSpecification.setDeferCache(deferCache);
         spaceSpecification.setClientSpace(clientSpace);
+        spaceSpecification.setScopeRelevant(scopeRelevant);
         spaceController.createSpaceDefinition(spaceSpecification);
     }
 
