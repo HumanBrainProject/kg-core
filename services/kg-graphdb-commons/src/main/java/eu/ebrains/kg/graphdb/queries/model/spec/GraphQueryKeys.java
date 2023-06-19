@@ -41,7 +41,6 @@ public enum GraphQueryKeys {
     GRAPH_QUERY_REQUIRED("required"),
     GRAPH_QUERY_REVERSE("reverse"),
     GRAPH_QUERY_SORT("sort"),
-    GRAPH_QUERY_SORT_CONTENT("sortContent"),
     GRAPH_QUERY_GROUP_BY("groupBy"),
     GRAPH_QUERY_ENSURE_ORDER("ensureOrder"),
     GRAPH_QUERY_GROUPED_INSTANCES("groupedInstances"),

@@ -43,8 +43,7 @@ public class SpecProperty {
     public final List<SpecTraverse> path;
     private transient Integer aliasPostfix;
     public boolean required;
-    public boolean sortAlphabetically;
-    public boolean sortContent;
+    public boolean sort;
     public boolean groupBy;
     public boolean ensureOrder;
     public final String groupedInstances;
@@ -59,17 +58,16 @@ public class SpecProperty {
         this.aliasPostfix = aliasPostfix;
     }
 
-    public SpecProperty(String fieldName, List<SpecProperty> property, List<SpecTraverse> path, String groupedInstances, boolean required, boolean sortAlphabetically, boolean sortContent, boolean groupBy, boolean ensureOrder, PropertyFilter propertyFilter, SingleItemStrategy singleItem) {
-        this(fieldName, property, path, groupedInstances, required, sortAlphabetically, sortContent, groupBy, ensureOrder, propertyFilter, singleItem, null);
+    public SpecProperty(String fieldName, List<SpecProperty> property, List<SpecTraverse> path, String groupedInstances, boolean required, boolean sort, boolean groupBy, boolean ensureOrder, PropertyFilter propertyFilter, SingleItemStrategy singleItem) {
+        this(fieldName, property, path, groupedInstances, required, sort, groupBy, ensureOrder, propertyFilter, singleItem, null);
     }
 
-    public SpecProperty(String fieldName, List<SpecProperty> property, List<SpecTraverse> path, String groupedInstances, boolean required, boolean sortAlphabetically, boolean sortContent, boolean groupBy, boolean ensureOrder, PropertyFilter propertyFilter, SingleItemStrategy singleItem, Map<String, Object> customDirectives) {
+    public SpecProperty(String fieldName, List<SpecProperty> property, List<SpecTraverse> path, String groupedInstances, boolean required, boolean sort, boolean groupBy, boolean ensureOrder, PropertyFilter propertyFilter, SingleItemStrategy singleItem, Map<String, Object> customDirectives) {
         this.propertyName = fieldName;
         this.required = required;
         this.property = property != null ? new ArrayList<>(property) : new ArrayList<>();
         this.path = path ==null ? Collections.emptyList() : Collections.unmodifiableList(path);
-        this.sortAlphabetically = sortAlphabetically;
-        this.sortContent = sortContent;
+        this.sort = sort;
         this.groupBy = groupBy;
         this.groupedInstances = groupedInstances;
         this.ensureOrder = ensureOrder;
@@ -86,14 +84,6 @@ public class SpecProperty {
     public boolean hasSubProperties(){
         //TODO check how to handle merges
         return property !=null && !property.isEmpty();
-    }
-
-    public SingleItemStrategy getSingleItem() {
-        return singleItem;
-    }
-
-    public String getGroupedInstances() {
-        return groupedInstances;
     }
 
     public boolean isRequired() {
@@ -116,19 +106,6 @@ public class SpecProperty {
         return !property.isEmpty() || this.path.size()>1;
     }
 
-    public SpecTraverse getFirstTraversal(){
-        return !path.isEmpty() ? path.get(0) : null;
-    }
-
-    public List<SpecTraverse> getAdditionalDirectTraversals(){
-        int numberOfDirectTraversals = numberOfDirectTraversals();
-        if(numberOfDirectTraversals-1>0 && path.size()>1){
-            return path.subList(1, numberOfDirectTraversals);
-        }
-        else{
-            return Collections.emptyList();
-        }
-    }
 
     public SpecTraverse getLeafPath(){
         if(isLeaf() && !path.isEmpty()){
@@ -137,24 +114,8 @@ public class SpecProperty {
         return null;
     }
 
-    public int numberOfDirectTraversals(){
-        if(!needsTraversal()){
-            return 0;
-        }
-        if(isLeaf()){
-            return this.path.size()-1;
-        }
-        else{
-            return this.path.size();
-        }
-    }
-
-    public boolean isSortAlphabetically() {
-        return sortAlphabetically;
-    }
-
-    public boolean isSortContent() {
-        return sortContent;
+    public boolean isSort() {
+        return sort;
     }
 
     public boolean hasGrouping(){
@@ -166,25 +127,6 @@ public class SpecProperty {
             }
         }
         return false;
-    }
-
-    public boolean hasNestedGrouping(){
-        if(property !=null && !property.isEmpty()){
-            for (SpecProperty field : property) {
-                if(field.isGroupBy() || field.hasNestedGrouping()){
-                    return true;
-                }
-            }
-        }
-        return false;
-    }
-
-    public List<SpecProperty> getSubPropertiesWithSort(){
-        if(property !=null && !property.isEmpty()){
-            return property.stream().filter(SpecProperty::isSortAlphabetically).collect(Collectors.toList());
-        }
-        return Collections.emptyList();
-
     }
 
 }

@@ -36,7 +36,7 @@ import java.util.*;
 public class SpecificationToScopeQueryAdapter {
     private final Specification originalSpec;
 
-    private Map<String, SpecProperty> specPropertiesByConcatenatedPath = new HashMap<>();
+    private final Map<String, SpecProperty> specPropertiesByConcatenatedPath = new HashMap<>();
     private int propertyCounter = 0;
 
     public SpecificationToScopeQueryAdapter(Specification originalSpec) {
@@ -50,7 +50,7 @@ public class SpecificationToScopeQueryAdapter {
         if(property.needsTraversal()) {
             for (SpecTraverse specTraverse : property.path) {
                 if(specTraverse!=property.getLeafPath()) {
-                    SpecProperty traversalProperty = new SpecProperty(String.format("dependency_%d", propertyCounter++), new ArrayList<>(), Collections.singletonList(specTraverse), null, false, false, false, false, false, null, null);
+                    SpecProperty traversalProperty = new SpecProperty(String.format("dependency_%d", propertyCounter++), new ArrayList<>(), Collections.singletonList(specTraverse), null, false, false, false, false, null, null);
                     traversalProperty.property.add(idProperty());
                     traversalProperty.property.add(typeProperty());
                     traversalProperty.property.add(internalIdProperty());
@@ -125,22 +125,22 @@ public class SpecificationToScopeQueryAdapter {
 
 
     private SpecProperty idProperty(){
-        return new SpecProperty("id", null, Collections.singletonList(new SpecTraverse(JsonLdConsts.ID, false, null)), null, false, false, false, false, false, null, SpecProperty.SingleItemStrategy.FIRST);
+        return new SpecProperty("id", null, Collections.singletonList(new SpecTraverse(JsonLdConsts.ID, false, null)), null, false, false, false, false, null, SpecProperty.SingleItemStrategy.FIRST);
     }
     private SpecProperty internalIdProperty(){
-        return new SpecProperty("internalId", null, Collections.singletonList(new SpecTraverse(ArangoVocabulary.ID, false, null)), null, false, false, false, false, false, null, SpecProperty.SingleItemStrategy.FIRST);
+        return new SpecProperty("internalId", null, Collections.singletonList(new SpecTraverse(ArangoVocabulary.ID, false, null)), null, false, false, false, false, null, SpecProperty.SingleItemStrategy.FIRST);
     }
     private SpecProperty labelProperty(){
-        return new SpecProperty("label", null, Collections.singletonList(new SpecTraverse(IndexedJsonLdDoc.LABEL, false, null)), null, false, false, false, false, false, null, SpecProperty.SingleItemStrategy.FIRST);
+        return new SpecProperty("label", null, Collections.singletonList(new SpecTraverse(IndexedJsonLdDoc.LABEL, false, null)), null, false, false, false, false, null, SpecProperty.SingleItemStrategy.FIRST);
     }
     private SpecProperty embeddedProperty(){
-        return new SpecProperty("embedded", null, Collections.singletonList(new SpecTraverse(IndexedJsonLdDoc.EMBEDDED, false, null)), null, false, false, false, false, false, null, SpecProperty.SingleItemStrategy.FIRST);
+        return new SpecProperty("embedded", null, Collections.singletonList(new SpecTraverse(IndexedJsonLdDoc.EMBEDDED, false, null)), null, false, false, false, false, null, SpecProperty.SingleItemStrategy.FIRST);
     }
     private SpecProperty typeProperty(){
-        return new SpecProperty("type", null, Collections.singletonList(new SpecTraverse(JsonLdConsts.TYPE, false, null)), null, false, false, false, false,false, null, SpecProperty.SingleItemStrategy.FIRST);
+        return new SpecProperty("type", null, Collections.singletonList(new SpecTraverse(JsonLdConsts.TYPE, false, null)), null, false, false, false,false, null, SpecProperty.SingleItemStrategy.FIRST);
     }
     private SpecProperty spaceProperty(){
-        return new SpecProperty("space", null, Collections.singletonList(new SpecTraverse(EBRAINSVocabulary.META_SPACE, false, null)), null, false, false, false, false,false, null, SpecProperty.SingleItemStrategy.FIRST);
+        return new SpecProperty("space", null, Collections.singletonList(new SpecTraverse(EBRAINSVocabulary.META_SPACE, false, null)), null, false, false, false,false, null, SpecProperty.SingleItemStrategy.FIRST);
     }
 
 }

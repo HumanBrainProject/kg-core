@@ -23,6 +23,7 @@
 
 package eu.ebrains.kg.graphdb.queries.controller;
 
+import eu.ebrains.kg.commons.exception.InvalidRequestException;
 import eu.ebrains.kg.commons.jsonld.JsonLdConsts;
 import eu.ebrains.kg.commons.jsonld.NormalizedJsonLd;
 import eu.ebrains.kg.commons.model.Type;
@@ -66,7 +67,7 @@ public class SpecificationInterpreter {
         }
 
         if (jsonObject.containsKey(GraphQueryKeys.GRAPH_QUERY_STRUCTURE.getFieldName())) {
-            specFields = createSpecFields(jsonObject.get(GraphQueryKeys.GRAPH_QUERY_STRUCTURE.getFieldName()));
+            specFields = createSpecFields(jsonObject.get(GraphQueryKeys.GRAPH_QUERY_STRUCTURE.getFieldName()), true);
         }
         PropertyFilter fieldFilter = null;
         if (jsonObject.containsKey(GraphQueryKeys.GRAPH_QUERY_FILTER.getFieldName())) {
@@ -76,12 +77,12 @@ public class SpecificationInterpreter {
     }
 
 
-    private List<SpecProperty> createSpecFields(Object origin) {
+    private List<SpecProperty> createSpecFields(Object origin, boolean rootLevel) {
         List<SpecProperty> result = new ArrayList<>();
         if (origin instanceof List) {
             List<?> originArray = (List<?>) origin;
             for (Object o : originArray) {
-                result.addAll(createSpecFields(o));
+                result.addAll(createSpecFields(o, rootLevel));
             }
         } else if (origin instanceof Map) {
             Map<?,?> originObj = (Map<?,?>) origin;
@@ -96,8 +97,7 @@ public class SpecificationInterpreter {
                     String fieldName = null;
                     List<SpecProperty> specFields = null;
                     boolean required = false;
-                    boolean sortAlphabetically = false;
-                    boolean sortContent = false;
+                    boolean sort = false;
                     boolean groupBy = false;
                     boolean ensureOrder = false;
                     PropertyFilter fieldFilter = null;
@@ -111,16 +111,17 @@ public class SpecificationInterpreter {
                         fieldName = traversalPath.get(traversalPath.size() - 1).pathName;
                     }
                     if (originObj.containsKey(GraphQueryKeys.GRAPH_QUERY_STRUCTURE.getFieldName())) {
-                        specFields = createSpecFields(originObj.get(GraphQueryKeys.GRAPH_QUERY_STRUCTURE.getFieldName()));
+                        specFields = createSpecFields(originObj.get(GraphQueryKeys.GRAPH_QUERY_STRUCTURE.getFieldName()), false);
                     }
                     if (originObj.containsKey(GraphQueryKeys.GRAPH_QUERY_REQUIRED.getFieldName())) {
                         required = (Boolean) originObj.get(GraphQueryKeys.GRAPH_QUERY_REQUIRED.getFieldName());
                     }
+                    // Sorting is only allowed on the root level
                     if (originObj.containsKey(GraphQueryKeys.GRAPH_QUERY_SORT.getFieldName())) {
-                        sortAlphabetically = (Boolean) originObj.get(GraphQueryKeys.GRAPH_QUERY_SORT.getFieldName());
-                    }
-                    if (originObj.containsKey(GraphQueryKeys.GRAPH_QUERY_SORT_CONTENT.getFieldName())) {
-                        sortContent = (Boolean) originObj.get(GraphQueryKeys.GRAPH_QUERY_SORT_CONTENT.getFieldName());
+                        if(!rootLevel){
+                            throw new InvalidRequestException("Sorting is only allowed on the root level of a query. If you want to sort by a nested value, please flatten it.");
+                        }
+                        sort = (Boolean) originObj.get(GraphQueryKeys.GRAPH_QUERY_SORT.getFieldName());
                     }
                     if (originObj.containsKey(GraphQueryKeys.GRAPH_QUERY_ENSURE_ORDER.getFieldName())) {
                         ensureOrder = (Boolean) originObj.get(GraphQueryKeys.GRAPH_QUERY_ENSURE_ORDER.getFieldName());
@@ -144,7 +145,7 @@ public class SpecificationInterpreter {
                             customDirectives.put((String) key, originObj.get(key));
                         }
                     }
-                    fieldForRelativePath = new SpecProperty(fieldName, specFields, traversalPath, groupedInstances, required, sortAlphabetically, sortContent, groupBy, ensureOrder, fieldFilter, singleItemStrategy, customDirectives);
+                    fieldForRelativePath = new SpecProperty(fieldName, specFields, traversalPath, groupedInstances, required, sort, groupBy, ensureOrder, fieldFilter, singleItemStrategy, customDirectives);
                 }
                 if (fieldForRelativePath != null) {
                     return Collections.singletonList(fieldForRelativePath);

@@ -123,7 +123,7 @@ public class DataQueryBuilder {
     static TrustedAqlValue getRepresentationOfField(ArangoAlias alias, SpecProperty field) {
         AQL representation = new AQL();
         if (field.isDirectChild()) {
-            return representation.add(trust(String.format("%s${parentAlias}.`${originalKey}`%s", field.isSortContent() ? "SORTED(" : "", field.isSortContent() ? ")" : ""))).setTrustedParameter("parentAlias", alias.getArangoDocName()).setParameter("originalKey", field.getLeafPath().pathName).build();
+            return representation.add(trust("${parentAlias}.`${originalKey}`")).setTrustedParameter("parentAlias", alias.getArangoDocName()).setParameter("originalKey", field.getLeafPath().pathName).build();
         } else if (field.hasGrouping()) {
             return representation.add(preventAqlInjection(fromSpecField(field).getArangoName() + "_grp")).build();
         } else {
@@ -230,7 +230,6 @@ public class DataQueryBuilder {
                     ArangoAlias alias = traversalFieldAlias;
                     Stack<ArangoAlias> aliasStack = new Stack<>();
                     aliasStack.push(parentAlias);
-                    List<SpecProperty> subFieldsWithSort = traversalProperty.getSubPropertiesWithSort();
                     SpecProperty.SingleItemStrategy singleItemStrategy = traversalProperty.singleItem;
                     for (SpecTraverse traverse : traversalProperty.path) {
                         boolean lastTraversal;
@@ -239,7 +238,7 @@ public class DataQueryBuilder {
                         } else {
                             lastTraversal = traverse == traversalProperty.path.get(traversalProperty.path.size() - 1);
                         }
-                        properties.addLine(handleTraverse(traversalProperty.isSortAlphabetically() || !subFieldsWithSort.isEmpty(), singleItemStrategy, traverse, alias, aliasStack, traversalProperty.ensureOrder));
+                        properties.addLine(handleTraverse(traversalProperty.isSort(), singleItemStrategy, traverse, alias, aliasStack, traversalProperty.ensureOrder));
                         singleItemStrategy = null;
                         aliasStack.push(alias);
                         if (lastTraversal) {
@@ -266,22 +265,11 @@ public class DataQueryBuilder {
                             returnStructure.setParameter("traverseField", a.getArangoName());
                             properties.addLine(returnStructure.build());
                         } else if (aliasStack.size() == 1) {
-                            if (traversalProperty.isSortAlphabetically() || !subFieldsWithSort.isEmpty()) {
+                            if (traversalProperty.isSort()) {
                                 AQL sortStructure = new AQL();
-                                if (traversalProperty.isSortAlphabetically()) {
-                                    sortStructure.indent().addLine(trust("SORT ${traverseField}_sort ASC"));
-                                }
-                                for (SpecProperty specField : subFieldsWithSort) {
-                                    if (specField.isSortAlphabetically()) {
-                                        AQL subFieldSort = new AQL();
-                                        subFieldSort.addLine(trust("SORT ${traverseField}_sort.`${fieldName}` ASC"));
-                                        subFieldSort.setParameter("fieldName", specField.propertyName);
-                                        sortStructure.addLine(subFieldSort.build());
-                                    }
-                                }
+                                sortStructure.indent().addLine(trust("SORT ${traverseField}_sort ASC"));
                                 sortStructure.addLine(trust("RETURN ${traverseField}_sort")).outdent();
                                 sortStructure.addLine(trust(")"));
-
                                 sortStructure.setParameter("traverseField", a.getArangoName());
                                 properties.addLine(sortStructure.build());
                             }
@@ -356,7 +344,7 @@ public class DataQueryBuilder {
         }
 
         private void sortGroupedFields(AQL group, List<SpecProperty> groupByFields) {
-            List<SpecProperty> groupedSortFields = groupByFields.stream().filter(SpecProperty::isSortAlphabetically).collect(Collectors.toList());
+            List<SpecProperty> groupedSortFields = groupByFields.stream().filter(SpecProperty::isSort).collect(Collectors.toList());
             if (!groupedSortFields.isEmpty()) {
                 group.add(trust("SORT "));
                 for (SpecProperty specField : groupedSortFields) {
@@ -373,7 +361,7 @@ public class DataQueryBuilder {
         }
 
         private void sortNotGroupedFields(AQL group, List<SpecProperty> notGroupedByFields) {
-            List<SpecProperty> notGroupedSortFields = notGroupedByFields.stream().filter(SpecProperty::isSortAlphabetically).collect(Collectors.toList());
+            List<SpecProperty> notGroupedSortFields = notGroupedByFields.stream().filter(SpecProperty::isSort).collect(Collectors.toList());
             if (!notGroupedSortFields.isEmpty()) {
                 group.add(trust("SORT "));
                 for (SpecProperty notGroupedSortField : notGroupedSortFields) {
@@ -470,7 +458,7 @@ public class DataQueryBuilder {
 
 
         private List<SpecProperty> fieldsWithSort() {
-            return fields.stream().filter(SpecProperty::isSortAlphabetically).collect(Collectors.toList());
+            return fields.stream().filter(SpecProperty::isSort).collect(Collectors.toList());
         }
 
         TrustedAqlValue getSort() {
