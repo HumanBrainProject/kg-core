@@ -52,9 +52,11 @@ public class IdsController {
 
 
     public InstanceId resolveId(DataStage stage, UUID id) {
-        List<InstanceId> documentIds = resolveIdsByUUID(stage, Collections.singletonList(id), false);
-        if (documentIds != null && documentIds.size() == 1) {
-            return documentIds.get(0);
+        if(id!=null) {
+            List<InstanceId> documentIds = resolveIdsByUUID(stage, Collections.singletonList(id), false);
+            if (documentIds != null && documentIds.size() == 1) {
+                return documentIds.get(0);
+            }
         }
         return null;
     }

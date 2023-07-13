@@ -24,19 +24,19 @@
 package eu.ebrains.kg.commons.query;
 
 import eu.ebrains.kg.commons.exception.MissingQueryFieldsException;
+import eu.ebrains.kg.commons.jsonld.InstanceId;
 import eu.ebrains.kg.commons.jsonld.NormalizedJsonLd;
 import eu.ebrains.kg.commons.model.DataStage;
 import eu.ebrains.kg.commons.model.SpaceName;
 import eu.ebrains.kg.commons.semantics.vocabularies.EBRAINSVocabulary;
 
 import java.util.List;
-import java.util.UUID;
 
 public class KgQuery {
 
     private NormalizedJsonLd payload;
     private DataStage stage;
-    private List<UUID> idRestrictions;
+    private InstanceId idRestriction;
     private List<SpaceName> restrictToSpaces;
 
     public KgQuery() {
@@ -66,12 +66,12 @@ public class KgQuery {
         return this;
     }
 
-    public List<UUID> getIdRestrictions() {
-        return idRestrictions;
+    public InstanceId getIdRestriction() {
+        return idRestriction;
     }
 
-    public KgQuery setIdRestrictions(List<UUID> idRestrictions) {
-        this.idRestrictions = idRestrictions;
+    public KgQuery setIdRestriction(InstanceId idRestriction) {
+        this.idRestriction = idRestriction;
         return this;
     }
 

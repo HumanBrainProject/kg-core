@@ -106,9 +106,7 @@ public class QueriesV3 {
         allRequestParams.remove("size");
         NormalizedJsonLd normalizedJsonLd = jsonLd.normalize(query, true);
         KgQuery q = new KgQuery(normalizedJsonLd, stage.getStage());
-        if(instanceId!=null){
-            q.setIdRestrictions(Collections.singletonList(instanceId));
-        }
+        q.setIdRestriction(ids.resolveId(stage.getStage(), instanceId));
         if(restrictToSpaces!=null){
             q.setRestrictToSpaces(restrictToSpaces.stream().filter(Objects::nonNull).map(r -> SpaceName.getInternalSpaceName(r, authContext.getUserWithRoles().getPrivateSpace())).collect(Collectors.toList()));
         }
@@ -209,9 +207,8 @@ public class QueriesV3 {
             throw new InstanceNotFoundException(String.format("Query with id %s not found", queryId));
         }
         KgQuery query = new KgQuery(queryPayload, stage.getStage());
-        if(instanceId!=null){
-            query.setIdRestrictions(Collections.singletonList(instanceId));
-        }
+
+        query.setIdRestriction(ids.resolveId(stage.getStage(), instanceId));
         if(restrictToSpaces!=null){
             query.setRestrictToSpaces(restrictToSpaces.stream().filter(Objects::nonNull).map(r -> SpaceName.getInternalSpaceName(r, authContext.getUserWithRoles().getPrivateSpace())).collect(Collectors.toList()));
         }

@@ -27,6 +27,7 @@ import eu.ebrains.kg.arango.commons.aqlbuilder.*;
 import eu.ebrains.kg.arango.commons.model.AQLQuery;
 import eu.ebrains.kg.arango.commons.model.ArangoCollectionReference;
 import eu.ebrains.kg.arango.commons.model.InternalSpace;
+import eu.ebrains.kg.commons.jsonld.InstanceId;
 import eu.ebrains.kg.commons.model.PaginationParam;
 import eu.ebrains.kg.commons.model.Type;
 import eu.ebrains.kg.graphdb.queries.model.fieldFilter.Op;
@@ -55,6 +56,8 @@ public class DataQueryBuilder {
     private final Map<String, Object> whiteListFilter;
     private final List<String> spaceRestriction;
 
+    private final InstanceId idRestriction;
+
     public static ArangoAlias fromSpecField(SpecProperty specField) {
         return new ArangoAlias(String.format("%s_%d", specField.propertyName, specField.getAliasPostfix()));
     }
@@ -76,8 +79,6 @@ public class DataQueryBuilder {
 
         addDocumentFilterWithWhitelistFilter(q, rootAlias.getArangoDocName(), whiteListFilter, spaceRestriction);
 
-        q.addLine(trust("FILTER TO_ARRAY(@idRestriction) == [] OR root_doc._key IN TO_ARRAY(@idRestriction)"));
-
         //Define the complex fields (the ones with traversals)
         q.add(new TraverseBuilder(rootAlias, specification.getProperties()).getTraversedProperty());
 
@@ -88,6 +89,13 @@ public class DataQueryBuilder {
         q.addLine(new SortBuilder(rootAlias, specification.getProperties()).getSort());
 
         //Pagination
+        if(idRestriction != null){
+            //If the query is id restricted we might not need the size nor the total results
+            if(pagination.getSize()==null || pagination.getSize() > 0) {
+                pagination.setSize(null);
+                pagination.setReturnTotalResults(false);
+            }
+        }
         q.addPagination(pagination);
 
         //Define return value
@@ -96,7 +104,7 @@ public class DataQueryBuilder {
         return new AQLQuery(q, bindVars);
     }
 
-    public DataQueryBuilder(Specification specification, PaginationParam pagination, Map<String, Object> whitelistFilter, List<String> spaceRestriction, Map<String, String> filterValues, List<ArangoCollectionReference> existingCollections) {
+    public DataQueryBuilder(Specification specification, PaginationParam pagination, Map<String, Object> whitelistFilter, List<String> spaceRestriction, InstanceId idRestriction, Map<String, String> filterValues, List<ArangoCollectionReference> existingCollections) {
         this.q = new AQL();
         this.specification = specification;
         this.pagination = pagination;
@@ -104,6 +112,7 @@ public class DataQueryBuilder {
         this.existingCollections = existingCollections;
         this.whiteListFilter = whitelistFilter;
         this.spaceRestriction = spaceRestriction;
+        this.idRestriction = idRestriction;
     }
 
     public void defineRootInstance() {
@@ -111,12 +120,19 @@ public class DataQueryBuilder {
             this.q.specifyWhitelist();
             this.bindVars.putAll(whiteListFilter);
         }
-        this.q.addLine(trust("FOR root_doc IN 1..1 OUTBOUND DOCUMENT(@@typeCollection, @typeId) @@typeRelation"));
-        ArangoCollectionReference collectionReference = ArangoCollectionReference.fromSpace(InternalSpace.TYPE_SPACE);
-        this.bindVars.put("@typeCollection", collectionReference.getCollectionName());
-        this.bindVars.put("@typeRelation", InternalSpace.TYPE_EDGE_COLLECTION.getCollectionName());
-        final Type rootType = this.specification.getRootType();
-        this.bindVars.put("typeId", collectionReference.docWithStableId(rootType.getName()).getDocumentId().toString());
+        if(idRestriction != null) {
+            this.q.addLine(trust("LET root_doc = DOCUMENT(@@rootCollection, @rootId)"));
+            this.bindVars.put("@rootCollection", ArangoCollectionReference.fromSpace(idRestriction.getSpace()).getCollectionName());
+            this.bindVars.put("rootId",idRestriction.getUuid().toString());
+        }
+        else {
+            this.q.addLine(trust("FOR root_doc IN 1..1 OUTBOUND DOCUMENT(@@typeCollection, @typeId) @@typeRelation"));
+            ArangoCollectionReference collectionReference = ArangoCollectionReference.fromSpace(InternalSpace.TYPE_SPACE);
+            this.bindVars.put("@typeCollection", collectionReference.getCollectionName());
+            this.bindVars.put("@typeRelation", InternalSpace.TYPE_EDGE_COLLECTION.getCollectionName());
+            final Type rootType = this.specification.getRootType();
+            this.bindVars.put("typeId", collectionReference.docWithStableId(rootType.getName()).getDocumentId().toString());
+        }
         this.q.addLine(trust(""));
     }
 
@@ -578,7 +594,9 @@ public class DataQueryBuilder {
                 if (postfixWildcard && !value.endsWith("%")) {
                     value = value + "%";
                 }
-                DataQueryBuilder.this.bindVars.put(key, value);
+                if(!DataQueryBuilder.this.bindVars.containsKey(key)) {
+                    DataQueryBuilder.this.bindVars.put(key, value);
+                }
                 AQL aql = new AQL();
                 if (fieldFilter.getOp().isInstanceFilter()) {
                     aql.add(trust("@${field}"));
