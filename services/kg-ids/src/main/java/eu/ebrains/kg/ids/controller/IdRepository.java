@@ -204,7 +204,7 @@ public class IdRepository {
         idsWithAlternatives.addAll(remainingIds.stream().map(id -> new Tuple<>(idUtils.buildAbsoluteUrl(id.getId()).getId(), id.getSpace() != null ? new SpaceName(id.getSpace()) : null)).collect(Collectors.toSet()));
 
         //Depending on the size of the list, this can be overwhelming for the DB. Accordingly, we are going to run this in multiple steps...
-        final List<PersistedId> persistedIdsByAlternativeIds = TypeUtils.splitList(new ArrayList<>(idsWithAlternatives), 2000).stream().map(i -> fetchPersistedIdsByAlternativeId(database, i, collectionName)).flatMap(Collection::stream).collect(Collectors.toList());
+        final List<PersistedId> persistedIdsByAlternativeIds = TypeUtils.splitList(new ArrayList<>(idsWithAlternatives), 300).stream().map(i -> fetchPersistedIdsByAlternativeId(database, i, collectionName)).flatMap(Collection::stream).collect(Collectors.toList());
         Map<String, PersistedId> persistedIdsByAlternative = new HashMap<>();
         persistedIdsByAlternativeIds.forEach(p -> {
             persistedIdsByAlternative.put(idUtils.buildAbsoluteUrl(p.getUUID()).getId(), p);
