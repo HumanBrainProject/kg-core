@@ -89,7 +89,7 @@ public class DataQueryBuilder {
         q.addLine(new SortBuilder(rootAlias, specification.getProperties()).getSort());
 
         //Pagination
-        if(idRestriction != null){
+        if(pagination != null && idRestriction != null){
             //If the query is id restricted we might not need the size nor the total results
             if(pagination.getSize()==null || pagination.getSize() > 0) {
                 pagination.setSize(null);
