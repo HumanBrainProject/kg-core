@@ -64,7 +64,6 @@ public class DataQueryBuilderTest {
 
                 FILTER root_doc != NULL
                 FILTER root_doc._collection IN whitelist OR HAS(invitation, root_doc._key)
-                FILTER TO_ARRAY(@idRestriction) == [] OR root_doc._key IN TO_ARRAY(@idRestriction)
                 FILTER root_doc != NULL
 
                 RETURN {
@@ -90,8 +89,7 @@ public class DataQueryBuilderTest {
         String expected = """            
                      
                 FOR root_doc IN 1..1 OUTBOUND DOCUMENT(@@typeCollection, @typeId) @@typeRelation
-                 
-                FILTER TO_ARRAY(@idRestriction) == [] OR root_doc._key IN TO_ARRAY(@idRestriction)
+                
                 LET schema_org_streetaddress_1 = FIRST((FOR schema_org_streetaddress_1_sort IN UNIQUE(FLATTEN(FOR schema_org_streetaddress_1_doc\s
                     IN 1..1 OUTBOUND root_doc `schema_org_address`
                     FILTER  "http://schema.org/PostalAddress" IN schema_org_streetaddress_1_doc.`@type`
@@ -131,8 +129,7 @@ public class DataQueryBuilderTest {
         String expected = """
 
                 FOR root_doc IN 1..1 OUTBOUND DOCUMENT(@@typeCollection, @typeId) @@typeRelation
-
-                FILTER TO_ARRAY(@idRestriction) == [] OR root_doc._key IN TO_ARRAY(@idRestriction)
+                
                 LET schema_org_children_1 = UNIQUE(FLATTEN(FOR schema_org_children_1_doc\s
                     IN 1..1 OUTBOUND root_doc `schema_org_children`
                 FILTER schema_org_children_1_doc != NULL
@@ -167,8 +164,7 @@ public class DataQueryBuilderTest {
         String expected = """
 
                 FOR root_doc IN 1..1 OUTBOUND DOCUMENT(@@typeCollection, @typeId) @@typeRelation
-
-                FILTER TO_ARRAY(@idRestriction) == [] OR root_doc._key IN TO_ARRAY(@idRestriction)
+                
                 LET schema_org_streetaddress_1 = FIRST((FOR schema_org_streetaddress_1_sort IN UNIQUE(FLATTEN(FOR schema_org_streetaddress_1_doc\s
                     IN []\s
                     FILTER  "http://schema.org/PostalAddress" IN schema_org_streetaddress_1_doc.`@type`
