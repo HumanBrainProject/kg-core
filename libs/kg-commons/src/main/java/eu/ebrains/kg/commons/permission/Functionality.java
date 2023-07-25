@@ -78,7 +78,9 @@ public enum Functionality {
 
     DEFINE_TERMS_OF_USE(Permission.Level.GLOBAL_ONLY, FunctionalityGroup.PERMISSIONS, null, null, null),
     DEFINE_PUBLIC_SPACE(Permission.Level.GLOBAL_ONLY, FunctionalityGroup.PERMISSIONS, null, null, null),
-    DEFINE_SCOPE_RELEVANT_SPACE(Permission.Level.GLOBAL_ONLY, FunctionalityGroup.PERMISSIONS, null, null, null);
+    DEFINE_SCOPE_RELEVANT_SPACE(Permission.Level.GLOBAL_ONLY, FunctionalityGroup.PERMISSIONS, null, null, null),
+
+    CHECK_HEALTH_STATUS(Permission.Level.GLOBAL_ONLY, FunctionalityGroup.PERMISSIONS, null, null, null);
 
 
     private final List<Permission.Level> allowedPermissionLevels;

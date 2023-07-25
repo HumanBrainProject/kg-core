@@ -80,7 +80,7 @@ public class SpecificationToScopeQueryAdapter {
         root.add(spaceProperty());
         root.add(embeddedProperty());
         root.add(labelProperty());
-        originalSpec.getProperties().stream().map(this::handleProperty).forEach(root::addAll);
+        originalSpec.getProperties().stream().map(p -> handleProperty(p)).forEach(root::addAll);
         List<SpecProperty> normalized = normalize(root, "");
 
 
