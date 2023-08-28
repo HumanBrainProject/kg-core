@@ -26,18 +26,16 @@ package eu.ebrains.kg.graphdb.health.api;
 import eu.ebrains.kg.commons.AuthContext;
 import eu.ebrains.kg.commons.api.GraphDBHealth;
 import eu.ebrains.kg.commons.exception.UnauthorizedException;
+import eu.ebrains.kg.commons.jsonld.DynamicJson;
 import eu.ebrains.kg.commons.model.DataStage;
 import eu.ebrains.kg.commons.permission.Functionality;
-import eu.ebrains.kg.commons.permission.FunctionalityInstance;
 import eu.ebrains.kg.commons.permissions.controller.Permissions;
-import eu.ebrains.kg.graphdb.health.controller.RelationConsistency;
+import eu.ebrains.kg.graphdb.health.controller.HealthController;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 @Component
 public class HealthAPI implements GraphDBHealth.Client {
@@ -45,23 +43,37 @@ public class HealthAPI implements GraphDBHealth.Client {
     private final Logger logger = LoggerFactory.getLogger(getClass());
 
     private final AuthContext authContext;
-    private final RelationConsistency relationConsistency;
     private final Permissions permissions;
 
-    public HealthAPI(AuthContext authContext, RelationConsistency relationConsistency, Permissions permissions) {
+    private final HealthController healthController;
+
+    public HealthAPI(AuthContext authContext, Permissions permissions, HealthController healthController) {
         this.authContext = authContext;
-        this.relationConsistency = relationConsistency;
         this.permissions = permissions;
+        this.healthController = healthController;
     }
 
-    public Map<String, List<String>> healthStatus(){
-        logger.info("Checking health status of DB");
+    @Override
+    public void analyzeHealthStatus(){
         if(!permissions.hasGlobalPermission(authContext.getUserWithRoles(), Functionality.CHECK_HEALTH_STATUS)){
             throw new UnauthorizedException("The current user doesn't have the rights to run the health status check");
         }
-        Map<String, List<String>> resultCollector = new HashMap<>();
-        relationConsistency.checkRelationConsistency(DataStage.RELEASED, resultCollector);
-        return resultCollector;
+        logger.info("Checking health status of DB");
+        healthController.analyze();
     }
 
+    @Override
+    public List<DynamicJson> getReport(DataStage stage, String name) {
+        if(!permissions.hasGlobalPermission(authContext.getUserWithRoles(), Functionality.CHECK_HEALTH_STATUS)){
+            throw new UnauthorizedException("The current user doesn't have the rights to run the health status check");
+        }
+        final List<DynamicJson> report = healthController.getReport(stage, name);
+        //TODO use the right status codes
+        return report;
+    }
+
+    @Override
+    public List<String> getAvailableChecks() {
+        return healthController.getAvailableChecks();
+    }
 }

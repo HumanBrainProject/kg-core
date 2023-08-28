@@ -26,7 +26,15 @@ package eu.ebrains.kg.core.api.v3;
 import eu.ebrains.kg.commons.Version;
 import eu.ebrains.kg.commons.api.GraphDBHealth;
 import eu.ebrains.kg.commons.config.openApiGroups.Admin;
+import eu.ebrains.kg.commons.jsonld.DynamicJson;
+import eu.ebrains.kg.commons.model.DataStage;
+import eu.ebrains.kg.core.model.ExposedStage;
+import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
 
 
 @RestController
@@ -41,9 +49,23 @@ public class HealthV3{
 
 
     @Admin
-    @GetMapping
+    @PutMapping
+    @ResponseStatus(HttpStatus.CREATED)
     public void healthStatus(){
-        graphDBHealth.healthStatus();
+        graphDBHealth.analyzeHealthStatus();
     }
+
+    @Admin
+    @GetMapping("{name}")
+    public List<DynamicJson> getReport(@RequestParam("stage") ExposedStage stage, @PathVariable("name") String name){
+        return graphDBHealth.getReport(stage.getStage(), name);
+    }
+
+    @Admin
+    @GetMapping
+    public List<String> getAvailableChecks(){
+        return graphDBHealth.getAvailableChecks();
+    }
+
 
 }

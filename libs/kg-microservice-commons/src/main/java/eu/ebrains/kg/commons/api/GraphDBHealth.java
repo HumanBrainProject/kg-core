@@ -23,12 +23,19 @@
 
 package eu.ebrains.kg.commons.api;
 
+import eu.ebrains.kg.commons.jsonld.DynamicJson;
+import eu.ebrains.kg.commons.model.DataStage;
+
 import java.util.List;
-import java.util.Map;
 
 public interface GraphDBHealth {
 
     interface Client extends GraphDBHealth {}
 
-    Map<String, List<String>> healthStatus();
+    void analyzeHealthStatus();
+
+    List<DynamicJson> getReport(DataStage stage, String name);
+
+    List<String> getAvailableChecks();
+
 }

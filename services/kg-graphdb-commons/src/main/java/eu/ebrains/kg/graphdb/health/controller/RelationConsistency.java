@@ -24,20 +24,16 @@
 package eu.ebrains.kg.graphdb.health.controller;
 
 import com.arangodb.ArangoCursor;
+import com.arangodb.ArangoDBException;
 import com.arangodb.ArangoDatabase;
 import com.arangodb.entity.CollectionEntity;
-import com.arangodb.entity.CollectionType;
-import com.arangodb.model.CollectionsReadOptions;
 import eu.ebrains.kg.arango.commons.aqlbuilder.ArangoVocabulary;
 import eu.ebrains.kg.arango.commons.model.ArangoCollectionReference;
 import eu.ebrains.kg.arango.commons.model.ArangoDocumentReference;
 import eu.ebrains.kg.commons.IdUtils;
-import eu.ebrains.kg.commons.jsonld.IndexedJsonLdDoc;
 import eu.ebrains.kg.commons.jsonld.JsonLdId;
 import eu.ebrains.kg.commons.jsonld.NormalizedJsonLd;
-import eu.ebrains.kg.commons.model.DataStage;
 import eu.ebrains.kg.commons.model.SpaceName;
-import eu.ebrains.kg.graphdb.commons.controller.ArangoDatabases;
 import eu.ebrains.kg.graphdb.commons.model.ArangoDocument;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -51,20 +47,46 @@ import java.util.stream.Collectors;
 public class RelationConsistency {
     private final Logger logger = LoggerFactory.getLogger(getClass());
 
-    private final ArangoDatabases arangoDatabases;
+    private static final List<String> EXCLUDED_SPACES = List.of("files"); //FIXME get rid of this hardcoded value
+    private static final List<String> EXCLUDED_PROPERTIES = List.of("https://core.kg.ebrains.eu/vocab/meta/user", "https://core.kg.ebrains.eu/vocab/query/structure");
+
     private final IdUtils idUtils;
 
-    public RelationConsistency(ArangoDatabases arangoDatabases, IdUtils idUtils) {
-        this.arangoDatabases = arangoDatabases;
+    public RelationConsistency(IdUtils idUtils) {
         this.idUtils = idUtils;
     }
 
-    public void checkRelationConsistency(DataStage stage, Map<String, List<String>> resultCollector){
-        final ArangoDatabase database = arangoDatabases.getByStage(stage);
-        final Collection<CollectionEntity> collections = database.getCollections(new CollectionsReadOptions().excludeSystem(true));
-        collections.stream().filter(collectionEntity -> collectionEntity.getType() == CollectionType.DOCUMENT).forEach(collectionEntity -> doCheckRelationConsistency(database, collectionEntity, resultCollector));
+    public Map<String, List<String>> checkRelationConsistency(ArangoDatabase database, CollectionEntity collection) {
+        if(EXCLUDED_SPACES.contains(collection.getName())){
+            logger.info("Skipping relation consistency check for collection {} because it's flagged as excluded", collection.getName());
+            return null;
+        }
+        else {
+            Map<String, List<String>> resultCollector = new HashMap<>();
+            logger.info("Checking relation consistency for collection {} in database {}", collection.getName(), database.getInfo().getName());
+            int currentPage = -1;
+            List<RelationFromPayload> result;
+            while (!(result = retrieveRelationsFromPayload(database, collection.getName(), ++currentPage)).isEmpty()) {
+                logger.info("Page {} for collection {} in database {}", currentPage, collection.getName(), database.getInfo().getName());
+                result.forEach(r -> {
+                    r.getRefs().forEach(propertyRelation -> {
+                        final String sourceDocument = String.format("%s/%s", r.collection, r.id);
+                        final Map<String, Object> bindVars = Map.of("@collection", ArangoCollectionReference.fromSpace(new SpaceName(propertyRelation.getProperty()), true).getCollectionName(),
+                                "documentId", sourceDocument);
+                        try (final ArangoCursor<NormalizedJsonLd> query = database.query("FOR r IN @@collection FILTER r._from == @documentId RETURN r", bindVars, NormalizedJsonLd.class)) {
+                            final List<NormalizedJsonLd> relationsFromEdge = query.asListRemaining();
+                            compareRelationsFromPayloadWithThoseFromEdge(r.id, sourceDocument, propertyRelation.getProperty(), propertyRelation.getInstances(), relationsFromEdge, resultCollector);
+                        } catch (ArangoDBException | IOException e) {
+                            final String message = String.format("Was not able to read the edges of %s - %s", propertyRelation.property, e.getMessage());
+                            resultCollector.computeIfAbsent(r.id, x -> new ArrayList<>()).add(message);
+                            logger.error(message, e);
+                        }
+                    });
+                });
+            }
+            return resultCollector;
+        }
     }
-
 
 
     public static class PropertyRelation {
@@ -120,66 +142,46 @@ public class RelationConsistency {
     }
 
 
-    private void compareRelationsFromPayloadWithThoseFromEdge(String id, String sourceIdWithCollection, String propertyName, List<String> fromPayload, List<NormalizedJsonLd> fromEdge, Map<String, List<String>> resultCollector){
-        Set<String> handledEdges = new HashSet<>();
-        fromPayload.forEach(payload -> {
-            final UUID targetUUID = idUtils.getUUID(new JsonLdId(payload));
-            final Set<NormalizedJsonLd> foundRelationsFromEdge = fromEdge.stream().filter(e -> {
-                final String to = e.getAs(ArangoVocabulary.TO, String.class);
-                return to != null && to.endsWith(String.format("/%s", targetUUID));
-            }).collect(Collectors.toSet());
-            if(foundRelationsFromEdge.isEmpty()){
-                resultCollector.computeIfAbsent(id, x -> new ArrayList<>()).add(String.format("Edge not found for property %s", propertyName));
-            }
-            else if(foundRelationsFromEdge.size()>1){
-                resultCollector.computeIfAbsent(id, x -> new ArrayList<>()).add(String.format("Too many edges found for property %s", propertyName));
-            }
-            else{
-                final ArangoDocument edge = ArangoDocument.from(foundRelationsFromEdge.iterator().next());
-                handledEdges.add(edge.getId().getId());
-                final ArangoDocumentReference originalDocument = edge.getOriginalDocument();
-                if(originalDocument == null){
-                    resultCollector.computeIfAbsent(id, x -> new ArrayList<>()).add(String.format("Found an edge (%s) without original document", edge.getId()));
-                }
-                else if (!originalDocument.getId().equals(sourceIdWithCollection)){
-                    resultCollector.computeIfAbsent(id, x -> new ArrayList<>()).add(String.format("Found edge (%s) with inconsistent original document (%s instead of %s)", edge.getId(), edge.getOriginalDocument(), sourceIdWithCollection));
-                }
-            }
-        });
-        fromEdge.stream().map(ArangoDocument::from).filter(e -> !handledEdges.contains(e.getId().getId())).forEach(e -> {
-            resultCollector.computeIfAbsent(id, x -> new ArrayList<>()).add(String.format("Found edge (%s) which is not reflected in its document", e.getId().getId()));
-        });
-    }
-
-    private void doCheckRelationConsistency(ArangoDatabase database, CollectionEntity collection, Map<String, List<String>> resultCollector){
-        logger.info("Checking relation consistency for collection {} in database {}", collection.getName(), database.getInfo().getName());
-        int currentPage = 0;
-        List<RelationFromPayload> result;
-        while (!(result = retrieveRelationsFromPayload(database, currentPage)).isEmpty()){
-            result.forEach(r -> {
-                r.getRefs().forEach(propertyRelation -> {
-                    final String sourceDocument = String.format("%s/%s", r.collection, r.id);
-                    final Map<String, Object> bindVars = Map.of("@collection", ArangoCollectionReference.fromSpace(new SpaceName(propertyRelation.getProperty()), true).getCollectionName(),
-                            "documentId", sourceDocument);
-                    try(final ArangoCursor<NormalizedJsonLd> query = database.query("FOR r IN @@collection FILTER r._from == @documentId RETURN r", bindVars, NormalizedJsonLd.class)){
-                        final List<NormalizedJsonLd> relationsFromEdge = query.asListRemaining();
-                        compareRelationsFromPayloadWithThoseFromEdge(r.id, sourceDocument, propertyRelation.getProperty(), propertyRelation.getInstances(), relationsFromEdge, resultCollector);
+    private void compareRelationsFromPayloadWithThoseFromEdge(String id, String sourceIdWithCollection, String propertyName, List<String> fromPayload, List<NormalizedJsonLd> fromEdge, Map<String, List<String>> resultCollector) {
+        if (!EXCLUDED_PROPERTIES.contains(propertyName)) {
+            Set<String> handledEdges = new HashSet<>();
+            fromPayload.forEach(payload -> {
+                final UUID targetUUID = idUtils.getUUID(new JsonLdId(payload));
+                final Set<NormalizedJsonLd> foundRelationsFromEdge = fromEdge.stream().filter(e -> {
+                    final String to = e.getAs(ArangoVocabulary.TO, String.class);
+                    return to != null && to.endsWith(String.format("/%s", targetUUID));
+                }).collect(Collectors.toSet());
+                if (foundRelationsFromEdge.isEmpty()) {
+                    resultCollector.computeIfAbsent(id, x -> new ArrayList<>()).add(String.format("Edge not found for property %s (targeting %s)", propertyName, payload));
+                    logger.error(String.format("%s - Edge not found for property %s (targeting %s)", id, propertyName, payload));
+                } else if (foundRelationsFromEdge.size() > 1) {
+                    resultCollector.computeIfAbsent(id, x -> new ArrayList<>()).add(String.format("Too many edges found for property %s (targeting %s)", propertyName, payload));
+                    logger.error(String.format("%s - Too many edges found for property %s (targeting %s)", id, propertyName, payload));
+                } else {
+                    final ArangoDocument edge = ArangoDocument.from(foundRelationsFromEdge.iterator().next());
+                    handledEdges.add(edge.getId().getId());
+                    final ArangoDocumentReference originalDocument = edge.getOriginalDocument();
+                    if (originalDocument == null) {
+                        resultCollector.computeIfAbsent(id, x -> new ArrayList<>()).add(String.format("Found an edge (%s) without original document", edge.getId()));
+                        logger.error(String.format("%s - Found an edge (%s) without original document", id, edge.getId()));
+                    } else if (!originalDocument.getId().equals(sourceIdWithCollection)) {
+                        resultCollector.computeIfAbsent(id, x -> new ArrayList<>()).add(String.format("Found edge (%s) with inconsistent original document (%s instead of %s)", edge.getId(), edge.getOriginalDocument(), sourceIdWithCollection));
+                        logger.error(String.format("%s - Found edge (%s) with inconsistent original document (%s instead of %s)", id, edge.getId(), edge.getOriginalDocument(), sourceIdWithCollection));
                     }
-                    catch (IOException e){
-                        final String message = String.format("Was not able to read the edges of %s for instance %s", propertyRelation.property);
-                        resultCollector.computeIfAbsent(r.id, x -> new ArrayList<>()).add(message);
-                        logger.error(message, e);
-                    }
-                });
+                }
+            });
+            fromEdge.stream().map(ArangoDocument::from).filter(e -> !handledEdges.contains(e.getId().getId())).forEach(e -> {
+                resultCollector.computeIfAbsent(id, x -> new ArrayList<>()).add(String.format("Found edge (%s) which is not reflected in its document", e.getId().getId()));
+                logger.error(String.format("%s - Found edge (%s) which is not reflected in its document", id, e.getId().getId()));
             });
         }
-
     }
 
-    private static final int PAGE_SIZE = 100;
-    private List<RelationFromPayload> retrieveRelationsFromPayload(ArangoDatabase database, int currentPage){
-        try(final ArangoCursor<RelationFromPayload> cursor = database.query(String.format("""
-                FOR d in dataset
+    private static final int PAGE_SIZE = 2000;
+
+    private List<RelationFromPayload> retrieveRelationsFromPayload(ArangoDatabase database, String collection, int currentPage) {
+        try (final ArangoCursor<RelationFromPayload> cursor = database.query(String.format("""
+                FOR d in @@collection
                     FILTER d.`_alternative` == NULL or d.`_alternative` == false
                     LET refs = (FOR a in ATTRIBUTES(d)
                         FILTER STARTS_WITH(a, "_") == false
@@ -196,10 +198,9 @@ public class RelationConsistency {
                         "collection": d._collection,
                         "refs" : refs
                     }
-                """, currentPage * PAGE_SIZE, PAGE_SIZE), RelationFromPayload.class)){
-           return cursor.asListRemaining();
-        }
-        catch (IOException e){
+                """, currentPage * PAGE_SIZE, PAGE_SIZE), Map.of("@collection", collection), RelationFromPayload.class)) {
+            return cursor.asListRemaining();
+        } catch (IOException e) {
             throw new RuntimeException(e);
         }
     }
