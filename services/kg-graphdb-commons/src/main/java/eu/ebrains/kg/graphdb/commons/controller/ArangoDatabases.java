@@ -77,18 +77,18 @@ public class ArangoDatabases {
         consistencyChecks.createIfItDoesntExist();
         StructureRepository.setupCollections(structureDB);
         logger.debug("Setting up in progress db... ");
-//        ArangoDatabase inProgress = inProgressDB.get();
-//        inProgress.getCollections(new CollectionsReadOptions().excludeSystem(true)).parallelStream().forEach(c -> {
-//            logger.debug(String.format("Ensuring configuration of collection \"%s\" in \"in progress\"", c.getName()));
-//            ArangoCollection collection = inProgress.collection(c.getName());
-//            ArangoDatabaseProxy.ensureIndicesOnCollection(collection);
-//        });
-//        ArangoDatabase released = releasedDB.get();
-//        released.getCollections(new CollectionsReadOptions().excludeSystem(true)).parallelStream().forEach(c -> {
-//            logger.debug(String.format("Ensuring configuration of collection \"%s\" in \"released\"", c.getName()));
-//            ArangoCollection collection = released.collection(c.getName());
-//            ArangoDatabaseProxy.ensureIndicesOnCollection(collection);
-//        });
+        ArangoDatabase inProgress = inProgressDB.get();
+        inProgress.getCollections(new CollectionsReadOptions().excludeSystem(true)).parallelStream().forEach(c -> {
+            logger.debug(String.format("Ensuring configuration of collection \"%s\" in \"in progress\"", c.getName()));
+            ArangoCollection collection = inProgress.collection(c.getName());
+            ArangoDatabaseProxy.ensureIndicesOnCollection(collection);
+        });
+        ArangoDatabase released = releasedDB.get();
+        released.getCollections(new CollectionsReadOptions().excludeSystem(true)).parallelStream().forEach(c -> {
+            logger.debug(String.format("Ensuring configuration of collection \"%s\" in \"released\"", c.getName()));
+            ArangoCollection collection = released.collection(c.getName());
+            ArangoDatabaseProxy.ensureIndicesOnCollection(collection);
+        });
     }
 
 
